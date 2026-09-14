@@ -25,17 +25,18 @@ static const ParameterInfo parameter_lookup[] = {
     { 31, 1, 0, 1 }, // sharp function
     { 33, 1, 0, 1 }, // barry harris mode
     { 34, 1, 0, 6 }, // chord frame shift
+    { 237, 1, 0, 5 }, // temperament
     { 35, 1, 0, 20 }, // chord key signature
     { 37, 1, 0, 3 }, // chord inversion
     { 38, 1, 0, 4 }, // chord spacing
     { 39, 1, 0, 1 }, // chord layout
-    { 202, 1, 0, 18 }, // alt layout maj
-    { 203, 1, 0, 18 }, // alt layout min
-    { 204, 1, 0, 18 }, // alt layout 7th
-    { 205, 1, 0, 18 }, // alt layout maj+7th
-    { 206, 1, 0, 18 }, // alt layout min+7th
-    { 207, 1, 0, 18 }, // alt layout maj+min
-    { 208, 1, 0, 18 }, // alt layout all three
+    { 202, 1, 0, 22 }, // alt layout maj
+    { 203, 1, 0, 22 }, // alt layout min
+    { 204, 1, 0, 22 }, // alt layout 7th
+    { 205, 1, 0, 22 }, // alt layout maj+7th
+    { 206, 1, 0, 22 }, // alt layout min+7th
+    { 207, 1, 0, 22 }, // alt layout maj+min
+    { 208, 1, 0, 22 }, // alt layout all three
     { 200, 1, 0, 219 }, // double tap control
     { 201, 1, 0, 4095 }, // double tap value
     { 36, 1, 0, 11 }, // scalar harp mode
