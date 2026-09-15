@@ -59,7 +59,6 @@ static const ParameterInfo parameter_lookup[] = {
     { 5, 1, 0, 1024 }, // harp alternate value
     { 6, 1, 0, 1024 }, // mod alternate value
     { 7, 0, 0, 10 }, // firmware revision
-    { 255, 1, 4320, 4460 }, // master tuning
     { 2, 0, 0, 1 }, // global gain
     { 99, 1, 0, 4 }, // octave change
     { 40, 1, 0, 6 }, // harp shuffling

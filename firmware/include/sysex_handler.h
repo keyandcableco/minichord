@@ -138,9 +138,6 @@ void apply_audio_parameter(int adress, int value) {
       case 7:
         current_sysex_parameters[7]=version_ID;
         break;
-      case 255:
-        if (constrain(value / 10.0, 432.0, 446.0) != a4_master_tuning) { master_tuning_dirty = true; master_tuning_save_timer = 0; } a4_master_tuning = constrain(value / 10.0, 432.0, 446.0); current_sysex_parameters[255] = (int16_t)lround(a4_master_tuning * 10.0); c_frequency = 130.81 * (a4_master_tuning / 440.0); for (int i = 0; i < 4; i++) { if (chord_envelope_array[i]->isActive()) { set_chord_voice_frequency(i, current_chord_notes[i]); } } for (int i = 0; i < 12; i++) { if (string_enveloppe_array[i]->isActive()) { set_harp_voice_frequency(i, current_harp_notes[i]); } }
-        break;
       case 2:
         string_gain.amplitude(value/100.0,100);  harp_attack_velocity=value/100.0*127;
         break;
