@@ -2003,7 +2003,7 @@ void handle_key_change_mode(uint8_t up_transition, uint8_t down_transition, bool
     // way out, rather than on every selection while the player auditions keys.
     if (key_change_reported != key_signature_selection) {
       key_change_reported = key_signature_selection;
-      control_command(0, 0);
+      if (sysex_controler_connected) control_command(0, 0);
     }
     preset_inhibit = true;
     preset_inhibit_timer = 0;
@@ -2147,8 +2147,9 @@ void toggle_double_tap_target() {
   // remote editor keeps displaying the value the player has just toggled away
   // from. Report the new state so the control on screen follows the gesture.
   // save_config still writes the underlying value, so a save while engaged is
-  // unaffected by this.
-  control_command(0, 0);
+  // unaffected by this. Only when a controller is listening: an unsolicited
+  // dump lands on the performance port of whatever else is connected.
+  if (sysex_controler_connected) control_command(0, 0);
 }
 
 // Repopulate the live tables from the generated ones. Everything downstream —
