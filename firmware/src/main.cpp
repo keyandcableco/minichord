@@ -987,7 +987,16 @@ void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
     chord_osc_1_array[i]->frequency(osc_1_freq_multiplier * middle_freq);
     chord_osc_2_array[i]->frequency(osc_2_freq_multiplier * middle_freq);
     chord_osc_3_array[i]->frequency(osc_3_freq_multiplier * middle_freq);
-    chord_freq_dc_array[i]->amplitude(note_delta/24.0,glide_length);
+    // The oscillators sit on the middle note and the DC offset reaches the
+    // voice's own note through frequencyModulation(2), two octaves per unit.
+    // note_delta/24 is that distance only in equal temperament with twelve
+    // steps; anywhere else the offset has to come from the real ratio, or every
+    // glide voice lands on an equal-tempered pitch (and in 19 or 31 steps, on
+    // an unrelated one, since a step is read as a semitone).
+    float glide_offset = (temperament_selection == 0)
+      ? note_delta/24.0
+      : log2f(note_freq / middle_freq) / 2.0f;
+    chord_freq_dc_array[i]->amplitude(glide_offset,glide_length);
     // chord_voice_filter_array[i]->frequency(1*freq);
     AudioInterrupts();
   }else{
@@ -2193,7 +2202,7 @@ void toggle_double_tap_target() {
 // on the same flat arrays it always did, so only these copies know about
 // temperament at all.
 void apply_temperament(uint8_t t) {
-  if (t >= temperament_profile_count) t = 0;
+  if (t >= temperament_count) t = 0;
   uint8_t previous_edo = EDO;
   temperament_selection = t;
   edo_index = temperament_profiles[t].edo_index;
