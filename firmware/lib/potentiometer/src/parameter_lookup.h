@@ -25,7 +25,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 31, 1, 0, 1 }, // sharp function
     { 33, 1, 0, 1 }, // barry harris mode
     { 34, 1, 0, 6 }, // chord frame shift
-    { 237, 1, 0, 5 }, // temperament
+    { 237, 1, 0, 11 }, // temperament
     { 35, 1, 0, 20 }, // chord key signature
     { 37, 1, 0, 3 }, // chord inversion
     { 38, 1, 0, 4 }, // chord spacing

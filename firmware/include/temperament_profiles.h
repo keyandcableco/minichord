@@ -20,5 +20,11 @@ const TemperamentProfile temperament_profiles[] = {
   {0, {  0, -10,   4,  -6,   8,  -2,  12,   2,  -8,   6,  -4,  10}},   // 3 pythagorean
   {1, {  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0}},   // 4 19-EDO
   {2, {  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0}},   // 5 31-EDO
+  {0, {  0, -10,  -8,  -6, -10,  -2, -12,  -4,  -8, -12,  -4,  -8}},   // 6 werckmeister III
+  {0, {  0, -10,  -7,  -6, -14,  -2, -10,  -3,  -8, -10,  -4, -12}},   // 7 kirnberger III
+  {0, {  0,  -6,  -4,  -2,  -8,   2,  -8,  -2,  -4,  -6,   0, -10}},   // 8 vallotti
+  {0, {  0, -10,  -4,  -6,  -8,  -2, -12,  -2,  -8,  -6,  -4, -10}},   // 9 young no. 2
+  {0, {  0, -10,  -5,  -6, -11,  -2, -12,  -3,  -8,  -8,  -4,  -9}},   // 10 kellner
+  {0, {  0, -11,  -3,   5,  -7,   2, -10,  -2, -13,  -5,   3,  -8}},   // 11 sixth-comma meantone
 };
 const uint8_t temperament_profile_count = sizeof(temperament_profiles) / sizeof(temperament_profiles[0]);

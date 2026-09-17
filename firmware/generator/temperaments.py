@@ -28,7 +28,7 @@ already have them (19 and 31) are accepted here.
 Run:  python3 temperaments.py           regenerate
       python3 temperaments.py --check   exit 1 if anything generated is out of date
 """
-import json, re, sys
+import json, os, re, sys
 from math import log2
 
 PURE_FIFTH = 1200 * log2(3 / 2)
@@ -88,13 +88,38 @@ PROFILES = [
     dict(name="31-EDO", label="31-EDO",
          note="Thirty-one steps. Major thirds essentially exact, and the augmented sixth lands within a cent of the 7:4 harmonic seventh — the interval twelve-note tuning has no room for. Sharps and flats are two steps apart here.",
          tuning=edo(31)),
+    # Well temperaments and a second meantone, as a piano tuner would set them.
+    # Every one is anchored on C and rounded to whole cents like the others.
+    dict(name="werckmeister III", label="Werckmeister III",
+         note="Andreas Werckmeister, 1691. Four fifths (C–G, G–D, D–A and B–F#) narrowed by a quarter of the Pythagorean comma, the rest pure. Every key is playable: C and F major have the calmest thirds, 3.9 cents wide, and Db, F# and Ab major the widest, 21.5.",
+         tuning=fifths([-PYTHAGOREAN_COMMA / 4] * 3 + [0, 0, -PYTHAGOREAN_COMMA / 4] + [0] * 5 + [None])),
+    dict(name="kirnberger III", label="Kirnberger III",
+         note="Johann Philipp Kirnberger, 1779. The fifths from C to E are narrowed by a quarter of the syntonic comma, so C–E is a pure 5:4; F#–C# gives up a schisma and the rest are pure. The home keys are very sweet and the far ones pointedly bright.",
+         # C-G, G-D, D-A, A-E a quarter syntonic comma narrow; F#-C# a schisma narrow
+         tuning=fifths([-SYNTONIC_COMMA / 4] * 4 + [0, 0, -(PYTHAGOREAN_COMMA - SYNTONIC_COMMA)] + [0] * 4 + [None])),
+    dict(name="vallotti", label="Vallotti",
+         note="Francesco Antonio Vallotti, 18th century. The six fifths from F to B are narrowed by a sixth of the Pythagorean comma and the other six are pure. Smooth and even-handed, and a common choice today for Baroque music: thirds from 5.9 cents wide in F, C and G major to 21.5 in Db, F# and B.",
+         # C-G through E-B tempered; F-C, the closing fifth, takes the sixth share
+         tuning=fifths([-PYTHAGOREAN_COMMA / 6] * 5 + [0] * 6 + [None])),
+    dict(name="young no. 2", label="Young",
+         note="Thomas Young, 1800. Vallotti's shape moved up a fifth: the six fifths from C to F# are narrowed by a sixth of the Pythagorean comma, the rest pure. C, D and G major have the calmest thirds, 5.9 cents wide.",
+         tuning=fifths([-PYTHAGOREAN_COMMA / 6] * 6 + [0] * 5 + [None])),
+    dict(name="kellner", label="Kellner",
+         note="Herbert Anton Kellner's 1977 proposal for the tuning of Bach's Well-Tempered Clavier. Five fifths (C–G, G–D, D–A, A–E and B–F#) narrowed by a fifth of the Pythagorean comma. Thirds from 2.7 cents wide in C major to 21.5 in Db, F# and Ab.",
+         tuning=fifths([-PYTHAGOREAN_COMMA / 5] * 4 + [0, -PYTHAGOREAN_COMMA / 5] + [0] * 5 + [None])),
+    dict(name="sixth-comma meantone", label="1/6 Meantone",
+         note="Meantone with fifths narrowed by a sixth of the syntonic comma instead of a quarter. Major thirds are 7.2 cents wide rather than pure, and the wolf between G# and Eb shrinks to 16 cents, so more keys are usable. Often associated with Gottfried Silbermann's organs.",
+         # eleven fifths a sixth syntonic comma narrow; the wolf sits between G# and Eb
+         tuning=fifths([-SYNTONIC_COMMA / 6] * 8 + [None] + [-SYNTONIC_COMMA / 6] * 3)),
     # add new profiles here, at the end
 ]
 
 TOOLTIP_TAIL = "Anchored on C, so keys far from C sound progressively stranger in the unequal ones, as they did historically"
 TEMPERAMENT_ADDRESS = 237
-HEADER = "../include/temperament_profiles.h"
-PARAMETERS = "parameters.json"
+# paths from this script, so it runs from any directory
+HERE = os.path.dirname(os.path.abspath(__file__))
+HEADER = os.path.join(HERE, "..", "include", "temperament_profiles.h")
+PARAMETERS = os.path.join(HERE, "parameters.json")
 
 
 def header_text():
@@ -146,24 +171,25 @@ def parameters_text(current):
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8")
     check = "--check" in sys.argv
     stale = []
     header = header_text()
     try:
-        old_header = open(HEADER).read()
+        old_header = open(HEADER, encoding="utf-8").read()
     except FileNotFoundError:
         old_header = None
     if old_header != header:
         stale.append(HEADER)
         if not check:
-            open(HEADER, "w").write(header)
-    params = open(PARAMETERS).read()
+            open(HEADER, "w", encoding="utf-8").write(header)
+    params = open(PARAMETERS, encoding="utf-8").read()
     new_params = parameters_text(params)
     json.loads(new_params)
     if new_params != params:
         stale.append(PARAMETERS)
         if not check:
-            open(PARAMETERS, "w").write(new_params)
+            open(PARAMETERS, "w", encoding="utf-8").write(new_params)
     if check:
         if stale:
             print("out of date: " + ", ".join(stale) + " (run python3 temperaments.py)")
