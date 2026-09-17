@@ -355,6 +355,11 @@ bool slash_chord = false;      // flag for when a slashed chord is currently act
 bool button_pushed = false;    // flag for when any button has been pushed during the main loop
 bool trigger_chord = false;    // flag to trigger the enveloppe of the chord
 bool sharp_active = false;     // flag for when the sharp is active
+// The modifier and slash state the chord and harp notes were last worked out
+// with. Both flags follow the buttons, so once a chord is released (or held by
+// the hold button) they no longer describe what is sounding; these do.
+bool chord_context_sharp = false;
+bool chord_context_slashed = false;
 bool flat_button_modifier= false; //flag to set the modifier to flat instead of sharp
 // The modifier button both sharpens the chord and selects the potentiometers'
 // alternate targets, so reaching for an alternate setting while playing would
@@ -1855,6 +1860,8 @@ void detect_slash() {
 
 void update_chord_notes() {
   if (button_pushed) {
+    chord_context_sharp = sharp_active;
+    chord_context_slashed = slash_chord;
     for (int i = 0; i < 7; i++) {
       current_chord_notes[i] = calculate_note_chord(i, slash_chord, sharp_active);
     }
@@ -1873,6 +1880,8 @@ void update_chord_notes() {
 
 void update_harp_notes() {
   if (button_pushed) {
+    chord_context_sharp = sharp_active;
+    chord_context_slashed = slash_chord;
     for (int i = 0; i < 12; i++) {
       current_harp_notes[i] = calculate_note_harp(i, slash_chord, sharp_active);
       if (change_held_strings && harp_started_notes[i] != 0) {
@@ -2186,6 +2195,7 @@ void toggle_double_tap_target() {
 // temperament at all.
 void apply_temperament(uint8_t t) {
   if (t > 5) t = 0;
+  uint8_t previous_edo = EDO;
   temperament_selection = t;
   edo_index = (t <= 3) ? 0 : (t == 4 ? 1 : 2);
   EDO = edo_steps[edo_index];
@@ -2229,15 +2239,64 @@ void apply_temperament(uint8_t t) {
    * matches what master tuning already does, but it is why this belongs on a
    * deliberate setting change and nowhere near a knob sweep.
    */
-  if (current_line >= 0) {
-    for (int i = 0; i < 7; i++) current_chord_notes[i] = calculate_note_chord(i, slash_chord, sharp_active);
-    for (int i = 0; i < 12; i++) current_harp_notes[i] = calculate_note_harp(i, slash_chord, sharp_active);
+  //
+  // The recalculation used to run only while a chord button was down. A chord
+  // still sounding after release, or held by the hold button, kept its old note
+  // numbers, which were then read in the new division: a fifth of 7 is nearly a
+  // quarter-octave lower in 31, and 18 from 31 read in 12 lands an octave and a
+  // half up. Recalculate from the context the notes were last built with
+  // instead of the live buttons, which a released chord no longer holds.
+  //
+  // Each sounding voice is then moved to the NEW number for the note it was
+  // playing, found by position in the old arrays, rather than to
+  // current_chord_notes[voice]: in rhythm mode a voice plays whichever chord
+  // degree the pattern gave it, not the one at its own index.
+  bool division_changed = (EDO != previous_edo);
+  uint8_t old_chord_notes[7], old_harp_notes[12];
+  memcpy(old_chord_notes, current_chord_notes, sizeof(old_chord_notes));
+  memcpy(old_harp_notes, current_harp_notes, sizeof(old_harp_notes));
+  for (int i = 0; i < 7; i++) current_chord_notes[i] = calculate_note_chord(i, chord_context_slashed, chord_context_sharp);
+  for (int i = 0; i < 12; i++) current_harp_notes[i] = calculate_note_harp(i, chord_context_slashed, chord_context_sharp);
+
+  auto remap = [](const uint8_t *from, const uint8_t *to, uint8_t n, uint16_t note, uint16_t &out) {
+    for (uint8_t j = 0; j < n; j++) {
+      if (from[j] == note) { out = to[j]; return true; }
+    }
+    out = note;
+    return false;
+  };
+
+  // the notes the rhythm engine plays from next, updated with timer interrupts
+  // held so a step never reads half of each
+  noInterrupts();
+  for (int i = 0; i < 7; i++) {
+    uint16_t n;
+    remap(old_chord_notes, current_chord_notes, 7, current_applied_chord_notes[i], n);
+    current_applied_chord_notes[i] = n;
+    remap(old_chord_notes, current_chord_notes, 7, rythm_freeze_current_chord_notes[i], n);
+    rythm_freeze_current_chord_notes[i] = n;
   }
+  interrupts();
+
+  // A voice whose note is not in the old arrays is left at the pitch it has
+  // when the division changes, since its number means nothing in the new one.
   for (int i = 0; i < 4; i++) {
-    if (chord_envelope_array[i]->isActive()) { set_chord_voice_frequency(i, current_chord_notes[i]); }
+    noInterrupts();
+    if (chord_envelope_array[i]->isActive()) {
+      uint16_t n;
+      if (remap(old_chord_notes, current_chord_notes, 7, chord_voice_current_note[i], n) || !division_changed) {
+        set_chord_voice_frequency(i, n);
+      }
+    }
+    interrupts();
   }
   for (int i = 0; i < 12; i++) {
-    if (string_enveloppe_array[i]->isActive()) { set_harp_voice_frequency(i, current_harp_notes[i]); }
+    if (string_enveloppe_array[i]->isActive()) {
+      uint16_t n;
+      if (remap(old_harp_notes, current_harp_notes, 12, harp_voice_current_note[i], n) || !division_changed) {
+        set_harp_voice_frequency(i, n);
+      }
+    }
   }
   update_chord_notes();
   update_harp_notes();
