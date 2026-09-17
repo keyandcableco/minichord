@@ -15,7 +15,7 @@ struct TemperamentProfile {
 
 const TemperamentProfile temperament_profiles[] = {
   {0, {  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0}},   // 0 equal
-  {0, {  0,  17,  -7,  10, -14,   3, -21,  -3,  14, -10,   7, -17}},   // 1 quarter-comma meantone
+  {0, {  0, -24,  -7,  10, -14,   3, -21,  -3, -27, -10,   7, -17}},   // 1 quarter-comma meantone
   {0, {  0,  12,   4,  16, -14,  -2, -10,   2,  14, -16,  -4, -12}},   // 2 five-limit just (C major)
   {0, {  0, -10,   4,  -6,   8,  -2,  12,   2,  -8,   6,  -4,  10}},   // 3 pythagorean
   {1, {  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0}},   // 4 19-EDO

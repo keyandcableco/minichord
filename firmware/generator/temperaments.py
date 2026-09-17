@@ -73,9 +73,10 @@ PROFILES = [
          note="Twelve identical steps. Every key sounds the same and no interval is quite in tune — a major third is 13.7 cents sharp, which is the faint beating you hear in a piano chord.",
          tuning=fifths([-PYTHAGOREAN_COMMA / 12] * 11 + [None])),
     dict(name="quarter-comma meantone", label="Meantone",
-         note="Quarter-comma meantone, what most Renaissance and early Baroque music was written for. Major thirds are pure. Fifths pay for it, 5.4 cents flat, and keys far from C get progressively stranger — which is why that music stays near home.",
-         # eleven fifths a quarter of a syntonic comma narrow; the wolf sits between F# and C#
-         tuning=fifths([-SYNTONIC_COMMA / 4] * 6 + [None] + [-SYNTONIC_COMMA / 4] * 5)),
+         note="Quarter-comma meantone, what most Renaissance and early Baroque music was written for. Major thirds are pure, fifths pay for it at 5.4 cents flat, and the wolf sits between G# and Eb: Bb through E major are sweet, while B, F#, Db and Ab major are unusable — which is why that music stays near home.",
+         # eleven fifths a quarter of a syntonic comma narrow; the wolf sits between G#
+         # and Eb, the usual keyboard layout (Eb to G#), which keeps A and E major pure
+         tuning=fifths([-SYNTONIC_COMMA / 4] * 8 + [None] + [-SYNTONIC_COMMA / 4] * 3)),
     dict(name="five-limit just (C major)", label="Just",
          note="Five-limit just intonation for C major. Thirds and fifths dead in tune in the home key, noticeably out in others.",
          tuning=ratios([1, 16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 16/9, 15/8])),
