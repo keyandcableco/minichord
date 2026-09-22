@@ -106,25 +106,25 @@ void apply_audio_parameter(int adress, int value) {
         pan=value/100.0;apply_audio_parameter(85, current_sysex_parameters[85]);apply_audio_parameter(184, current_sysex_parameters[184]);
         break;
       case 10:
-        chord_pot.set_alternate(value);
+        chord_pot.set_alternate(constrain(value,0,parameter_size-1));
         break;
       case 11:
         chord_pot.set_alternate_range(value);
         break;
       case 12:
-        harp_pot.set_alternate(value);
+        harp_pot.set_alternate(constrain(value,0,parameter_size-1));
         break;
       case 13:
         harp_pot.set_alternate_range(value);
         break;
       case 14:
-        mod_pot.set_main(value);
+        mod_pot.set_main(constrain(value,0,parameter_size-1));
         break;
       case 15:
         mod_pot.set_main_range(value);
         break;
       case 16:
-        mod_pot.set_alternate(value);
+        mod_pot.set_alternate(constrain(value,0,parameter_size-1));
         break;
       case 17:
         mod_pot.set_alternate_range(value);
@@ -675,13 +675,13 @@ void apply_audio_parameter(int adress, int value) {
         ws_sin_param=value;calculate_ws_array(); chord_waveshape.shape(wave_shape,257);
         break;
       case 187:
-        rythm_bpm=value;recalculate_timer();
+        rythm_bpm=constrain(value,30,300);recalculate_timer();
         break;
       case 188:
-        rythm_loop_length=value;
+        rythm_loop_length=constrain(value,1,16);
         break;
       case 189:
-        rythm_limit_change_to_every=value;
+        rythm_limit_change_to_every=constrain(value,1,8);
         break;
       case 190:
         shuffle=value/100.0;recalculate_timer();
