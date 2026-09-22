@@ -156,6 +156,7 @@ const uint16_t modifier_tap_max = 250;  // ms: a press longer than this is a hol
 const uint16_t modifier_tap_gap = 400;  // ms: the second tap must land within this of the first
 bool double_tap_engaged = false;
 int16_t double_tap_saved = 0;
+int16_t double_tap_engaged_adress = -1; // the parameter the engaged toggle is holding, latched at engage time
 const uint8_t double_tap_control_adress = 200;
 const uint8_t double_tap_value_adress = 201;
 
@@ -1586,7 +1587,7 @@ void save_config(int bank_number, bool default_save) {
     // its value were written here the preset would come back already holding it,
     // and the gesture would then toggle between two identical values and appear
     // to do nothing. So the underlying value is what gets saved.
-    int16_t held_adress = current_sysex_parameters[double_tap_control_adress];
+    int16_t held_adress = double_tap_engaged_adress;
     int16_t held_value = 0;
     bool restore_held = double_tap_engaged && held_adress >= 21 && held_adress <= 219;
     if (restore_held) {
@@ -2086,6 +2087,10 @@ void handle_key_change_mode(uint8_t up_transition, uint8_t down_transition, bool
       current_sysex_parameters[35] = selected_key;
       update_harp_notes();
       update_chord_notes();
+      // A re-keying is a deliberate setting change, so it persists the way a
+      // pot move does: written back by the save that runs on the next preset
+      // change, once no controller is connected.
+      flag_save_needed = true;
     }
 
     // Hold the chosen key's colour steady while its button is down. A flash was
@@ -2180,16 +2185,20 @@ void trigger_chord_notes() {
 
 // Applies the chosen value, or puts back what was there before.
 void toggle_double_tap_target() {
-  int16_t adress = current_sysex_parameters[double_tap_control_adress];
-  if (adress < 21 || adress > 219) return;   // 0 means the gesture is unassigned
-  if (adress == double_tap_control_adress || adress == double_tap_value_adress) return;
   if (double_tap_engaged) {
-    current_sysex_parameters[adress] = double_tap_saved;
-    apply_audio_parameter(adress, double_tap_saved);
+    // Restore to the address latched at engage time: the assignment at address
+    // 200 can be rewritten while the toggle is held, and the restore belongs to
+    // the parameter that was actually toggled, not to the new target.
+    current_sysex_parameters[double_tap_engaged_adress] = double_tap_saved;
+    apply_audio_parameter(double_tap_engaged_adress, double_tap_saved);
     double_tap_engaged = false;
     set_led_color(bank_led_hue, 1.0, 1 - led_attenuation);
   } else {
+    int16_t adress = current_sysex_parameters[double_tap_control_adress];
+    if (adress < 21 || adress > 219) return;   // 0 means the gesture is unassigned
+    if (adress == double_tap_control_adress || adress == double_tap_value_adress) return;
     double_tap_saved = current_sysex_parameters[adress];
+    double_tap_engaged_adress = adress;
     int16_t value = current_sysex_parameters[double_tap_value_adress];
     current_sysex_parameters[adress] = value;
     apply_audio_parameter(adress, value);
