@@ -1378,12 +1378,44 @@ uint8_t calculate_static_scale_note(uint8_t string, uint8_t mode, uint8_t key) {
 }
 
 // Modes 8 and 9: a scale chosen to suit the chord being held, rooted on it.
+// Retune a mapped scale to the sounding chord: for each tone of the chord, the
+// nearest scale degree is replaced by that tone, upper neighbour on a tie.
+// Only the ratio-built chords go through this, so for them the harp's third or
+// seventh is the chord's own instead of the diatonic stand-in one step away;
+// passing notes stay diatonic. The classical chords never reach it: their
+// scales were designed around their tones, including the pentatonic rows that
+// deliberately voice a sixth in place of a seventh.
+void substitute_chord_tones(uint8_t *scale, uint8_t scale_length, uint8_t (*chord)[7]) {
+  uint8_t tones[4];
+  uint8_t n = collect_chord_tones(chord, tones);
+  for (uint8_t i = 0; i < n; i++) {
+    uint8_t best = 0;
+    uint8_t best_distance = 255;
+    for (uint8_t j = 0; j < scale_length; j++) {
+      uint8_t distance = (scale[j] > tones[i]) ? scale[j] - tones[i] : tones[i] - scale[j];
+      if (distance < best_distance || (distance == best_distance && scale[j] > tones[i])) {
+        best_distance = distance;
+        best = j;
+      }
+    }
+    scale[best] = tones[i];
+  }
+}
+
 uint8_t calculate_chord_specific_note(uint8_t string, uint8_t root_note, int8_t sharp_offset,
                                       uint8_t (*chord)[7], bool use_pentatonic) {
-  uint8_t scale_index = get_chord_scale_index(get_chord_type(chord), use_pentatonic);
+  ChordType chord_type = get_chord_type(chord);
+  uint8_t scale_index = get_chord_scale_index(chord_type, use_pentatonic);
   uint8_t scale_length = chord_scale_lengths[scale_index];
   uint8_t octave = string / scale_length;
   uint8_t scale_degree = string % scale_length;
+  if (chord_type == CHORD_NEUTRAL || chord_type == CHORD_HARMONIC_7TH ||
+      chord_type == CHORD_SUBMINOR || chord_type == CHORD_SUPERMAJOR) {
+    uint8_t scale[8];
+    memcpy(scale, chord_scale_intervals[scale_index], 8); // work on a copy, never the live table
+    substitute_chord_tones(scale, scale_length, chord);
+    return root_note + sharp_offset + scale[scale_degree] + (octave * EDO);
+  }
   return root_note + sharp_offset + chord_scale_intervals[scale_index][scale_degree] + (octave * EDO);
 }
 
