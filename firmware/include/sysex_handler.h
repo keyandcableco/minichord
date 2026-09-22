@@ -40,7 +40,7 @@ void apply_audio_parameter(int adress, int value) {
         apply_temperament(value);
         break;
       case 35:
-        key_signature_selection=value;
+        key_signature_selection=constrain(value,0,20);
         break;
       case 37:
         chord_inversion=value; for (int i = 0; i < 7; i++) { current_chord_notes[i]=calculate_note_chord(i,slash_chord,sharp_active); } for (int i = 0; i < 4; i++) { if (chord_envelope_array[i]->isActive()) { set_chord_voice_frequency(i, current_chord_notes[i]); } }
@@ -151,7 +151,7 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 40:
         for (int i=0;i<12;i++){
-          harp_shuffling_selection=value; current_harp_notes[i]=calculate_note_harp(i,slash_chord,sharp_active);
+          harp_shuffling_selection=constrain(value,0,6); current_harp_notes[i]=calculate_note_harp(i,slash_chord,sharp_active);
         }
         break;
       case 98:
@@ -164,7 +164,7 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 42:
         for (int i=0;i<12;i++){
-          string_waveform_array[i]->begin(waveform_array[value]);
+          string_waveform_array[i]->begin(waveform_array[constrain(value,0,11)]);
         }
         break;
       case 43:
@@ -245,7 +245,7 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 100:
         for (int i=0;i<12;i++){
-          string_transient_waveform_array[i]->begin(waveform_array[value]);
+          string_transient_waveform_array[i]->begin(waveform_array[constrain(value,0,11)]);
         }
         break;
       case 101:
@@ -272,7 +272,7 @@ void apply_audio_parameter(int adress, int value) {
         transient_note_level=value;
         break;
       case 59:
-        string_tremolo_lfo.begin(waveform_array[value]);
+        string_tremolo_lfo.begin(waveform_array[constrain(value,0,11)]);
         break;
       case 60:
         string_tremolo_lfo.frequency(value/100.0);
@@ -281,7 +281,7 @@ void apply_audio_parameter(int adress, int value) {
         string_tremolo_lfo.amplitude(0.01+value/100.0);string_tremolo_lfo.offset(1-value/100.0);
         break;
       case 62:
-        string_vibrato_lfo.begin(waveform_array[value]);
+        string_vibrato_lfo.begin(waveform_array[constrain(value,0,11)]);
         break;
       case 63:
         string_vibrato_lfo.frequency(value/100.0);
@@ -376,7 +376,7 @@ void apply_audio_parameter(int adress, int value) {
         string_filter_mixer.gain(2,value/100.0);
         break;
       case 93:
-        string_filter_lfo.begin(waveform_array[value]);
+        string_filter_lfo.begin(waveform_array[constrain(value,0,11)]);
         break;
       case 94:
         string_filter_lfo.frequency(value/100.0);
@@ -395,7 +395,7 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 120:
         for (int i=0;i<7;i++){
-          chord_shuffling_selection=value; current_chord_notes[i]=calculate_note_chord(i,slash_chord,sharp_active);
+          chord_shuffling_selection=constrain(value,0,5); current_chord_notes[i]=calculate_note_chord(i,slash_chord,sharp_active);
         }
         break;
       case 198:
@@ -413,7 +413,7 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 122:
         for (int i=0;i<4;i++){
-          chord_osc_1_array[i]->begin(waveform_array[value]);
+          chord_osc_1_array[i]->begin(waveform_array[constrain(value,0,11)]);
         }
         break;
       case 123:
@@ -426,7 +426,7 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 125:
         for (int i=0;i<4;i++){
-          chord_osc_2_array[i]->begin(waveform_array[value]);
+          chord_osc_2_array[i]->begin(waveform_array[constrain(value,0,11)]);
         }
         break;
       case 126:
@@ -439,7 +439,7 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 128:
         for (int i=0;i<4;i++){
-          chord_osc_3_array[i]->begin(waveform_array[value]);
+          chord_osc_3_array[i]->begin(waveform_array[constrain(value,0,11)]);
         }
         break;
       case 129:
@@ -540,7 +540,7 @@ void apply_audio_parameter(int adress, int value) {
         }
         break;
       case 152:
-        chords_filter_LFO.begin(waveform_array[value]);
+        chords_filter_LFO.begin(waveform_array[constrain(value,0,11)]);
         break;
       case 153:
         chords_filter_LFO.frequency(value/100.0);
@@ -555,7 +555,7 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 156:
         for (int i=0;i<4;i++){
-          chords_tremolo_lfo.begin(waveform_array[value]);
+          chords_tremolo_lfo.begin(waveform_array[constrain(value,0,11)]);
         }
         break;
       case 157:
@@ -571,7 +571,7 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 160:
         for (int i=0;i<4;i++){
-          chords_vibrato_lfo.begin(waveform_array[value]);
+          chords_vibrato_lfo.begin(waveform_array[constrain(value,0,11)]);
         }
         break;
       case 161:
