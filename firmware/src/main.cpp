@@ -342,6 +342,7 @@ uint8_t chord_octave_change=4;
 uint8_t harp_octave_change=4;
 uint8_t chord_frame_shift=0;
 uint8_t transpose_semitones=0;                       // to use to transpose the instrument, number of semitones
+uint8_t transpose_steps=0;                           // the same transposition in steps of the live division; equal to transpose_semitones in 12
 uint8_t (*current_chord)[7] = &major;            // the array holding the current chord
 uint8_t current_chord_notes[7];                  // the array for the note calculation within the chord, calculate 7 of them for the arpeggiator mode
 uint8_t current_applied_chord_notes[7];          // the array for the note calculation within the chord
@@ -529,8 +530,8 @@ uint8_t chord_spacing = 0;   // 0 = close, 1 = drop 2, 2 = drop 3, 3 = drop 2+4,
 // carries the rest as a DC offset which saturates past two octaves, so
 // whole-octave moves belong in the centre rather than the offset.
 int8_t chord_voice_octave_shift[4] = {0, 0, 0, 0};
-const int8_t chord_note_floor = 12;  // below this the chord voices turn to mud
-const int8_t chord_note_ceiling = 96;
+int16_t chord_note_floor = 12;    // one octave above the base, in steps of the live division; below this the chord voices turn to mud
+int16_t chord_note_ceiling = 96;  // eight octaves above the base; both move with the division in apply_temperament
 // retrigger release for chord delayed note
 int chord_retrigger_release=0;
 int glide_length=0;
@@ -974,14 +975,14 @@ void refresh_chord_filter() {
 
 void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
   chord_voice_current_note[i] = current_note;
-  float note_freq = pow(2,chord_octave_change)*c_frequency/8 * temper_ratio(current_note+transpose_semitones); //down one octave to let more possibilities with the shuffling array
+  float note_freq = pow(2,chord_octave_change)*c_frequency/8 * temper_ratio(current_note+transpose_steps); //down one octave to let more possibilities with the shuffling array
   if(glide_length>0){
         //ok so first we need to set the "middle note". Keep in mind that the signal will be +/-1 and will go +/- 2 octaves (frequencyModulation(2), hence the /24.0 below)
     //let's do a trick to select a middle note: get the level (relative to the C) and the note and do a modulo 
-    int note_level=EDO*chord_octave_change-3*EDO+current_note+transpose_semitones;
+    int note_level=EDO*chord_octave_change-3*EDO+current_note+transpose_steps;
     int base_octave =chord_octave_change-2+(chord_shuffling_array[chord_shuffling_selection][i])/10
       + (i < 4 ? chord_voice_octave_shift[i] : 0);
-    int middle_note=base_octave*EDO+transpose_semitones; 
+    int middle_note=base_octave*EDO+transpose_steps; 
     int note_delta=note_level-middle_note;
     float middle_freq=c_frequency*temper_ratio(middle_note);
 
@@ -1008,7 +1009,7 @@ void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
     // chord_voice_filter_array[i]->frequency(1*freq);
     AudioInterrupts();
   }else{
-    float note_freq = pow(2,chord_octave_change)*c_frequency/8 * temper_ratio(current_note+transpose_semitones); //down one octave to let more possibilities with the shuffling array
+    float note_freq = pow(2,chord_octave_change)*c_frequency/8 * temper_ratio(current_note+transpose_steps); //down one octave to let more possibilities with the shuffling array
     AudioNoInterrupts();
     chord_voice_note_freq[i] = note_freq;
     chords_vibrato_lfo.frequency(chord_vibrato_base_freq + chord_vibrato_keytrack * current_chord_notes[0]);
@@ -1037,8 +1038,8 @@ void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
 // setting the harp
 void set_harp_voice_frequency(uint8_t i, uint16_t current_note) {
   harp_voice_current_note[i] = current_note;
-  float note_freq =  pow(2,harp_octave_change)*c_frequency/4 * temper_ratio(current_note+transpose_semitones);
-  float transient_freq =  64.0*c_frequency/4 *temper_ratio((current_note+transpose_semitones)%EDO+transient_note_level);
+  float note_freq =  pow(2,harp_octave_change)*c_frequency/4 * temper_ratio(current_note+transpose_steps);
+  float transient_freq =  64.0*c_frequency/4 *temper_ratio((current_note+transpose_steps)%EDO+transient_note_level);
   AudioNoInterrupts();
   string_waveform_array[i]->frequency(note_freq);
   string_transient_waveform_array[i]->frequency(transient_freq);
@@ -1184,10 +1185,10 @@ int8_t inversion_octave_part(uint8_t (*chord)[7], uint8_t voice, uint8_t inversi
 
 int8_t chord_spacing_shift(uint8_t voice) {
   switch (chord_spacing) {
-    case 1: return (voice == 2) ? -12 : 0;                        // drop 2
-    case 2: return (voice == 1) ? -12 : 0;                        // drop 3
-    case 3: return (voice == 2 || voice == 0) ? -12 : 0;          // drop 2 and 4
-    case 4: return (voice == 0) ? -12 : ((voice == 3) ? 12 : 0);  // spread the outer voices
+    case 1: return (voice == 2) ? -EDO : 0;                         // drop 2
+    case 2: return (voice == 1) ? -EDO : 0;                         // drop 3
+    case 3: return (voice == 2 || voice == 0) ? -EDO : 0;           // drop 2 and 4
+    case 4: return (voice == 0) ? -EDO : ((voice == 3) ? EDO : 0);  // spread the outer voices
     default: return 0;
   }
 }
@@ -1206,7 +1207,7 @@ uint8_t apply_chord_spacing(uint8_t note, uint8_t voice, uint8_t level, bool sla
   // underneath it. Another octave of the slash root is fine, and thickens it;
   // any other tone below would turn a C/G into something closer to a C/E.
   if (slashed && shift < 0) {
-    int8_t slash_offset = sharp ? (flat_button_modifier ? -1 : 1) : 0;
+    int8_t slash_offset = sharp ? (flat_button_modifier ? -sharp_step : sharp_step) : 0;
     int16_t slash_note = EDO * (level / 10)
       + get_root_button(key_signature_selection, chord_frame_shift, slash_value)
       + slash_offset;
@@ -1398,7 +1399,7 @@ uint8_t calculate_note_harp(uint8_t string, bool slashed, bool sharp) {
 
   // Mode 10 runs the user scale from the key signature, like modes 1-7
   if (scalar_harp_selection == 10) {
-    return calculate_custom_scale_note(string, scale_root_offsets[key_signature_selection] + 12, 0);
+    return calculate_custom_scale_note(string, scale_root_offsets[key_signature_selection] + EDO, 0);
   }
 
   // Mode 11 runs the user scale from the chord's root, like modes 8 and 9
@@ -2224,6 +2225,9 @@ void apply_temperament(uint8_t t) {
   edo_index = temperament_profiles[t].edo_index;
   EDO = edo_steps[edo_index];
   sharp_step = edo_sharp[edo_index];
+  transpose_steps = (transpose_semitones * EDO + 6) / 12; // one semitone of transposition is EDO/12 steps here
+  chord_note_floor = EDO;      // the spacing rails are octaves, so they move with the division
+  chord_note_ceiling = 8 * EDO;
   memcpy(base_notes, edo_base_notes[edo_index], sizeof(base_notes));
   memcpy(scale_root_offsets, edo_scale_root_offsets[edo_index], sizeof(scale_root_offsets));
   memcpy(scale_intervals, edo_scale_intervals[edo_index], sizeof(scale_intervals));

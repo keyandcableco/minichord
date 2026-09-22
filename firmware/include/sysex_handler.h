@@ -16,7 +16,7 @@ void apply_audio_parameter(int adress, int value) {
         note_slash_level=value;
         break;
       case 30:
-        transpose_semitones=value;midi_base_note_transposed=midi_base_note+transpose_semitones;
+        transpose_semitones=value;transpose_steps=(transpose_semitones*EDO+6)/12;midi_base_note_transposed=midi_base_note+transpose_semitones;
         break;
       case 106:
         chord_channel=max(value,1);
