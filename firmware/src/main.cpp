@@ -433,8 +433,15 @@ uint8_t (*chord_catalogue[27])[7] = {
   &maj_sixth, &min_sixth, &full_dim, &half_dim,
   &sus_fourth, &sus_second, &seventh_sus,
   &major_ninth, &minor_ninth, &added_ninth, &six_nine,
-  &neutral, &harmonic_7th, &subminor, &supermajor,
-  &subminor_seventh, &utonal_tetrad, &harmonic_ninth, &neutral_seventh, &otonal_hexad
+  // The entries past eighteen keep the order of their twelve tone counterparts:
+  // triads first (supermajor as major, subminor as minor, neutral as the third
+  // triad twelve does not have), then the sevenths tracking dominant, major and
+  // minor in that order -- 11/6 sits nearer the major seventh than the minor,
+  // so the neutral seventh takes the major seat -- then the
+  // utonal tetrad where m7b5 sits, the harmonic ninth with the ninths, and the
+  // hexad last.
+  &supermajor, &subminor, &neutral, &harmonic_7th,
+  &neutral_seventh, &subminor_seventh, &utonal_tetrad, &harmonic_ninth, &otonal_hexad
 };
 const uint8_t chord_catalogue_size = 27;
 
