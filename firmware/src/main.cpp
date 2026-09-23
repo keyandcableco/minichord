@@ -911,6 +911,7 @@ void recalculate_timer();
 uint8_t calculate_note_harp(uint8_t string, bool slashed, bool sharp);
 uint8_t calculate_note_chord(uint8_t voice, bool slashed, bool sharp);
 bool apply_voice_leading(bool sharp, uint8_t *out);
+void refresh_chord_voicing();
 void set_chord_voice_frequency(uint8_t i, uint16_t current_note);
 void retune_active_voices();
 void refresh_chord_filter();
@@ -2285,22 +2286,48 @@ void detect_slash() {
   }
 }
 
+// Builds the chord notes from the harmonic context and leads the voices if that
+// is on. Everything that rebuilds a chord goes through here -- update_chord_notes
+// below, and every parameter whose method revoices. A second way to build a
+// chord is how a voicing gets quietly thrown away: before this existed, writing
+// the inversion, the spacing, the shuffling or the octave rebuilt the chord with
+// plain calculate_note_chord, and a voice led chord collapsed back to root
+// position on any such write -- including an editor echoing parameters back.
+//
+// The sharp and slash come from the stored context rather than the buttons,
+// because a chord can be sounding with nothing held: under the hold button the
+// live flags say no sharp and no slash, and a rebuild from those strips both.
+void build_chord_notes() {
+  for (int i = 0; i < 7; i++) {
+    current_chord_notes[i] = calculate_note_chord(i, chord_context_slashed, chord_context_sharp);
+  }
+  // A slash chord names its own bass, so it is left as it was built; voice
+  // leading would move the note the player asked for.
+  if (voice_leading && !chord_context_slashed) {
+    uint8_t led[4];
+    if (apply_voice_leading(chord_context_sharp, led)) {
+      for (int i = 0; i < 4; i++) current_chord_notes[i] = led[i];
+    }
+  }
+  for (int i = 0; i < 4; i++) previous_voicing[i] = current_chord_notes[i];
+}
+
+// Rebuild what is sounding and retune the voices still active. This is what a
+// parameter method calls; it never starts a note.
+void refresh_chord_voicing() {
+  build_chord_notes();
+  for (int i = 0; i < 4; i++) {
+    if (chord_envelope_array[i]->isActive()) {
+      set_chord_voice_frequency(i, current_chord_notes[i]);
+    }
+  }
+}
+
 void update_chord_notes() {
   if (button_pushed) {
     chord_context_sharp = sharp_active;
     chord_context_slashed = slash_chord;
-    for (int i = 0; i < 7; i++) {
-      current_chord_notes[i] = calculate_note_chord(i, slash_chord, sharp_active);
-    }
-    // A slash chord names its own bass, so it is left as it was built; voice
-    // leading would move the note the player asked for.
-    if (voice_leading && !slash_chord) {
-      uint8_t led[4];
-      if (apply_voice_leading(sharp_active, led)) {
-        for (int i = 0; i < 4; i++) current_chord_notes[i] = led[i];
-      }
-    }
-    for (int i = 0; i < 4; i++) previous_voicing[i] = current_chord_notes[i];
+    build_chord_notes();
     Serial.println("Updating frequencies");
     if (!rythm_mode && !trigger_chord && !retrigger_chord) {
       for (int i = 0; i < 4; i++) {

@@ -46,16 +46,16 @@ void apply_audio_parameter(int adress, int value) {
         key_signature_selection=constrain(value,0,20);
         break;
       case 37:
-        chord_inversion=value; for (int i = 0; i < 7; i++) { current_chord_notes[i]=calculate_note_chord(i,slash_chord,sharp_active); } for (int i = 0; i < 4; i++) { if (chord_envelope_array[i]->isActive()) { set_chord_voice_frequency(i, current_chord_notes[i]); } }
+        chord_inversion=value; refresh_chord_voicing();
         break;
       case 38:
-        chord_spacing=value; for (int i = 0; i < 7; i++) { current_chord_notes[i]=calculate_note_chord(i,slash_chord,sharp_active); } for (int i = 0; i < 4; i++) { if (chord_envelope_array[i]->isActive()) { set_chord_voice_frequency(i, current_chord_notes[i]); } }
+        chord_spacing=value; refresh_chord_voicing();
         break;
       case 111:
-        voice_leading=value; for (int i = 0; i < 7; i++) { current_chord_notes[i]=calculate_note_chord(i,slash_chord,sharp_active); } if (voice_leading && !slash_chord) { uint8_t led[4]; if (apply_voice_leading(sharp_active, led)) { for (int i = 0; i < 4; i++) { current_chord_notes[i]=led[i]; } } } for (int i = 0; i < 4; i++) { previous_voicing[i]=current_chord_notes[i]; } for (int i = 0; i < 4; i++) { if (chord_envelope_array[i]->isActive()) { set_chord_voice_frequency(i, current_chord_notes[i]); } }
+        voice_leading=value; refresh_chord_voicing();
         break;
       case 112:
-        voice_leading_range=value; for (int i = 0; i < 7; i++) { current_chord_notes[i]=calculate_note_chord(i,slash_chord,sharp_active); } if (voice_leading && !slash_chord) { uint8_t led[4]; if (apply_voice_leading(sharp_active, led)) { for (int i = 0; i < 4; i++) { current_chord_notes[i]=led[i]; } } } for (int i = 0; i < 4; i++) { previous_voicing[i]=current_chord_notes[i]; } for (int i = 0; i < 4; i++) { if (chord_envelope_array[i]->isActive()) { set_chord_voice_frequency(i, current_chord_notes[i]); } }
+        voice_leading_range=value; refresh_chord_voicing();
         break;
       case 109:
         { int tenths = (value == 0) ? 4400 : constrain(value, 4320, 4460); float tuned_c_frequency = 130.81 * (tenths / 4400.0); if (tuned_c_frequency != c_frequency) { c_frequency = tuned_c_frequency; retune_active_voices(); } }
@@ -403,14 +403,10 @@ void apply_audio_parameter(int adress, int value) {
         chords_gain.amplitude(value/100.0,100); chord_attack_velocity=value/100.0*127;
         break;
       case 120:
-        for (int i=0;i<7;i++){
-          chord_shuffling_selection=constrain(value,0,5); current_chord_notes[i]=calculate_note_chord(i,slash_chord,sharp_active);
-        }
+        chord_shuffling_selection=constrain(value,0,5); refresh_chord_voicing();
         break;
       case 198:
-        for (int i=0;i<4;i++){
-          chord_octave_change=value; current_chord_notes[i]=calculate_note_chord(i,slash_chord,sharp_active);
-        }
+        chord_octave_change=value; refresh_chord_voicing();
         break;
       case 199:
         glide_length=value;
