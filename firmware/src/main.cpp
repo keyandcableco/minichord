@@ -35,6 +35,9 @@ LittleFS_Program myfs; // to save the settings
 float color_led_blink_val = 1.0;
 bool led_blinking_flag = false;
 float led_attenuation = 0.0; 
+
+
+
 //>>CHORD DEFINITION<<
 //for each chord, we first have the 4 notes of the chord, then decoration that might be used in specific modes
 /* ---- temperament ------------------------------------------------------------
@@ -146,8 +149,6 @@ uint8_t minor_ninth[7] = {0, 3, 10, 2, 7, 5, 8};    // min9, no fifth
 uint8_t added_ninth[7] = {0, 4, 7, 2, 5, 9, 11};    // add9
 uint8_t six_nine[7]    = {0, 4, 9, 2, 7, 5, 11};    // 6/9
 uint8_t half_dim[7]    = {0, 3, 6, 10, 2, 5, 8};    // m7b5
-uint8_t alt_chord_layout = 0;   // 0 = standard chords, 1 = suspended and extended
-
 // Double-tapping the modifier toggles one parameter between its stored value
 // and a chosen one, and back. Which parameter and which value are up to the
 // player, so the gesture is not tied to the chord layout: it can just as well
@@ -162,6 +163,9 @@ const uint8_t double_tap_value_adress = 201;
 
 uint8_t dim[7] = {0, 3, 6, 12, 2, 5, 9};
 uint8_t full_dim[7] = {0, 3, 6, 9, 2, 5, 12};
+uint8_t alt_chord_layout = 0;   // 0 = standard chords, 1 = suspended and extended
+
+uint8_t (*alt_chord_for(uint8_t slot))[7];
 uint8_t key_signature_selection = 0; // 0=C, 1=G, 2=D, 3=A, 4=E, 5=B, 6=F, 7=Bb, 8=Eb, 9=Ab, 10=Db, 11=Gb
 enum KeySig { // Enums for KeySigs
   KEY_SIG_C, KEY_SIG_G, KEY_SIG_D, KEY_SIG_A, KEY_SIG_E, KEY_SIG_B, KEY_SIG_F,
@@ -995,9 +999,9 @@ void control_command(uint8_t command, uint8_t parameter) {
     Serial.println("Reporting all data");
     uint8_t midi_data_array[parameter_size * 2];
     for (int i = 0; i < parameter_size; i++) {
-      int16_t value = constrain(current_sysex_parameters[i], 0, 16383); // a sysex byte only carries 7 bits
-      midi_data_array[2 * i] = value % 128;
-      midi_data_array[2 * i + 1] = value / 128;
+      int16_t parameter_value = constrain(current_sysex_parameters[i], 0, 16383); // a sysex byte only carries 7 bits
+      midi_data_array[2 * i] = parameter_value % 128;
+      midi_data_array[2 * i + 1] = parameter_value / 128;
     }
     usbMIDI.sendSysEx(parameter_size * 2, midi_data_array,0);
     break;
@@ -2219,6 +2223,7 @@ void handle_harp() {
     }
   }
 }
+
 
 void handle_chord_type(bool button_maj, bool button_min, bool button_seventh) {
   static uint8_t previous_button_count = 0;
