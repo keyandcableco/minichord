@@ -91,6 +91,15 @@ const uint8_t edo_sus_fourth[3][7] = {{0, 5, 7, 12, 2, 9, 10}, {0, 8, 11, 19, 3,
 const uint8_t edo_sus_second[3][7] = {{0, 2, 7, 12, 5, 9, 4}, {0, 3, 11, 19, 8, 14, 6}, {0, 5, 18, 31, 13, 23, 10}};
 const uint8_t edo_seventh_sus[3][7] = {{0, 5, 10, 7, 2, 9, 4}, {0, 8, 16, 11, 3, 14, 6}, {0, 13, 26, 18, 5, 23, 10}};
 const uint8_t edo_major_ninth[3][7] = {{0, 4, 11, 2, 7, 5, 9}, {0, 6, 17, 3, 11, 8, 14}, {0, 10, 28, 5, 18, 13, 23}};
+// The just sonorities. Steps are round(cents * EDO / 1200) of the ratio; the
+// worst tone error in 31 is 5.2 cents, in 19 the septimal tones sit within 22
+// cents but the neutral third rounds to the major third, since 19 has no
+// neutral intervals -- that chord is only itself in 31.
+const uint8_t edo_subminor_seventh[3][7] = {{0, 3, 7, 10, 2, 5, 9}, {0, 4, 11, 15, 3, 7, 14}, {0, 7, 18, 25, 5, 12, 23}};   // 1 7/6 3/2 7/4 | 9/8 21/16 5/3
+const uint8_t edo_utonal_tetrad[3][7]    = {{0, 3, 6, 10, 2, 5, 8}, {0, 4, 9, 15, 3, 8, 13}, {0, 7, 15, 25, 5, 13, 21}};    // 1 7/6 7/5 7/4 | 9/8 4/3 8/5
+const uint8_t edo_harmonic_ninth[3][7]   = {{0, 2, 4, 10, 7, 6, 8}, {0, 3, 6, 15, 11, 9, 13}, {0, 5, 10, 25, 18, 14, 22}};  // 1 9/8 5/4 7/4 | 3/2 11/8 13/8
+const uint8_t edo_neutral_seventh[3][7]  = {{0, 3, 7, 10, 2, 6, 9}, {0, 6, 11, 17, 2, 9, 13}, {0, 9, 18, 27, 4, 14, 22}};   // 1 11/9 3/2 11/6 | 12/11 11/8 18/11
+const uint8_t edo_otonal_hexad[3][7]     = {{0, 4, 7, 10, 2, 6, 12}, {0, 6, 11, 15, 3, 9, 19}, {0, 10, 18, 25, 5, 14, 31}}; // 1 5/4 3/2 7/4 | 9/8 11/8 2
 const uint8_t edo_minor_ninth[3][7] = {{0, 3, 10, 2, 7, 5, 8}, {0, 5, 16, 3, 11, 8, 13}, {0, 8, 26, 5, 18, 13, 21}};
 const uint8_t edo_added_ninth[3][7] = {{0, 4, 7, 2, 5, 9, 11}, {0, 6, 11, 3, 8, 14, 17}, {0, 10, 18, 5, 13, 23, 28}};
 const uint8_t edo_six_nine[3][7] = {{0, 4, 9, 2, 7, 5, 11}, {0, 6, 14, 3, 11, 8, 17}, {0, 10, 23, 5, 18, 13, 28}};
@@ -149,6 +158,19 @@ uint8_t minor_ninth[7] = {0, 3, 10, 2, 7, 5, 8};    // min9, no fifth
 uint8_t added_ninth[7] = {0, 4, 7, 2, 5, 9, 11};    // add9
 uint8_t six_nine[7]    = {0, 4, 9, 2, 7, 5, 11};    // 6/9
 uint8_t half_dim[7]    = {0, 3, 6, 10, 2, 5, 8};    // m7b5
+// Chords the divided octaves are for. Each is a just sonority, its steps
+// rounded per division; the ratios and the rounding are in the edo_ tables
+// below. In 12 most of them collapse onto chords already here -- the subminor
+// seventh onto m7, the utonal tetrad onto m7b5 -- which is the point: twelve
+// cannot tell them apart, nineteen almost can, thirty one can.
+// The four voices take the first four entries; the remaining tones of the
+// larger sonorities live in the extras, which the rhythm voices and the harp
+// spell. Entries ascend, so a harp strum through them ascends too.
+uint8_t subminor_seventh[7] = {0, 3, 7, 10, 2, 5, 9};    // 12:14:18:21
+uint8_t utonal_tetrad[7]    = {0, 3, 6, 10, 2, 5, 8};    // 1/7:1/6:1/5:1/4
+uint8_t harmonic_ninth[7]   = {0, 2, 4, 10, 7, 6, 8};    // 4:5:6:7:9, fifth in the extras
+uint8_t neutral_seventh[7]  = {0, 3, 7, 10, 2, 6, 9};    // 1 11/9 3/2 11/6
+uint8_t otonal_hexad[7]     = {0, 4, 7, 10, 2, 6, 12};   // 4:5:6:7:9:11
 // Double-tapping the modifier toggles one parameter between its stored value
 // and a chosen one, and back. Which parameter and which value are up to the
 // player, so the gesture is not tied to the chord layout: it can just as well
@@ -406,14 +428,15 @@ int16_t current_sysex_parameters[parameter_size] = {0,0,50,50,512,512,512,1,0,0,
 
 // Every chord the instrument can make, in one list, so a button combination can
 // be pointed at any of them rather than at a fixed table.
-uint8_t (*chord_catalogue[22])[7] = {
+uint8_t (*chord_catalogue[27])[7] = {
   &major, &minor, &seventh, &maj_seventh, &min_seventh, &dim, &aug,
   &maj_sixth, &min_sixth, &full_dim, &half_dim,
   &sus_fourth, &sus_second, &seventh_sus,
   &major_ninth, &minor_ninth, &added_ninth, &six_nine,
-  &neutral, &harmonic_7th, &subminor, &supermajor
+  &neutral, &harmonic_7th, &subminor, &supermajor,
+  &subminor_seventh, &utonal_tetrad, &harmonic_ninth, &neutral_seventh, &otonal_hexad
 };
-const uint8_t chord_catalogue_size = 22;
+const uint8_t chord_catalogue_size = 27;
 
 // Which entry of the catalogue each button combination plays in the alternate
 // layout. The defaults give the suspended and extended set; any slot can be
@@ -2780,6 +2803,11 @@ void apply_temperament(uint8_t t) {
   memcpy(harmonic_7th, edo_harmonic_7th[edo_index], 7);
   memcpy(subminor, edo_subminor[edo_index], 7);
   memcpy(supermajor, edo_supermajor[edo_index], 7);
+  memcpy(subminor_seventh, edo_subminor_seventh[edo_index], 7);
+  memcpy(utonal_tetrad, edo_utonal_tetrad[edo_index], 7);
+  memcpy(harmonic_ninth, edo_harmonic_ninth[edo_index], 7);
+  memcpy(neutral_seventh, edo_neutral_seventh[edo_index], 7);
+  memcpy(otonal_hexad, edo_otonal_hexad[edo_index], 7);
 
   /* Every note number just changed meaning: in 31 a fifth is 18 rather than 7.
    * So the note arrays are recomputed unconditionally — update_chord_notes and
