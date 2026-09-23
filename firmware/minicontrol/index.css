@@ -645,3 +645,73 @@ body.dark-mode #theme-toggle::before {
 .degree_box:checked {
   background-color: var(--slider_color, #333);
 }
+
+/* Parameter list layout.
+   The list runs to around two hundred rows across three sections. The group a
+   row belongs to used to be printed in a cell on that group's first row only,
+   so scrolling lost it; it is now its own row, and it sticks to the top while
+   its parameters are on screen. The filter field above the list narrows it to
+   whatever is being looked for. Everything here is plain CSS apart from the
+   filter itself. */
+
+.filter_bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding-bottom: 0.5em;
+}
+
+#parameter_filter {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 1.4em;
+  padding: 0.3em 0.5em;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  border: 1px solid var(--control-border);
+  border-radius: 2px;
+}
+
+.filter_count {
+  font-size: 1.2em;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+.section_line {
+  margin-top: 1.5em;
+}
+
+.column_labels {
+  opacity: 0.5;
+  padding-bottom: 0.3em;
+}
+
+.group_line {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin-top: 1em;
+  padding: 0.5em 0 0.3em 0;
+  background-color: var(--background-color);
+  border-bottom: 1px solid var(--hr-color);
+}
+
+.group_title {
+  font-weight: bold;
+  text-transform: lowercase;
+}
+
+.content_line {
+  padding: 0.2em 0;
+}
+
+.icon_button {
+  background: none;
+  border: none;
+  font-size: 1.4em;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-color);
+}

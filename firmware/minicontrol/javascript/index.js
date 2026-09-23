@@ -585,3 +585,51 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add('dark-mode');
   }
 });
+// Filtering the parameter list.
+// There are close to two hundred parameters across the three sections, so
+// finding one by scrolling is slow. Each row carries a data_search attribute
+// holding its name, group, section and address, and this hides the rows that
+// do not match. A group heading with nothing left under it hides too, so the
+// result reads as a short list rather than a page of headings.
+function filter_parameters(input) {
+  const query = input.value.trim().toLowerCase();
+  let shown = 0;
+  const rows = document.getElementsByClassName('content_line');
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (row.classList.contains('hidden')) continue;
+    const match = query === '' || (row.getAttribute('data_search') || '').indexOf(query) !== -1;
+    row.style.display = match ? '' : 'none';
+    if (match) shown++;
+  }
+  const groups = document.getElementsByClassName('group_line');
+  for (let i = 0; i < groups.length; i++) {
+    const group = groups[i];
+    if (group.classList.contains('hidden')) continue;
+    let sibling = group.nextElementSibling;
+    let any = false;
+    while (sibling && sibling.classList.contains('content_line')) {
+      if (sibling.style.display !== 'none' && !sibling.classList.contains('hidden')) any = true;
+      sibling = sibling.nextElementSibling;
+    }
+    group.style.display = any ? '' : 'none';
+  }
+  const count = document.getElementById('filter_count');
+  if (count) {
+    count.innerHTML = query === '' ? '' : shown + ' of ' + rows.length;
+  }
+}
+
+// Escape clears the filter, so the whole list comes back without reaching for
+// the field.
+document.addEventListener('DOMContentLoaded', () => {
+  const field = document.getElementById('parameter_filter');
+  if (field) {
+    field.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        field.value = '';
+        filter_parameters(field);
+      }
+    });
+  }
+});
