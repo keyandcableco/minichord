@@ -15,7 +15,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=10; //to be read 00.03, stored at adress 7 in memory
+int version_ID=11; //to be read 00.03, stored at adress 7 in memory
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -617,12 +617,17 @@ uint midi_buffer_delay=300; //in microseconds, helps compatibility with some har
 // usbMIDI. Everything else enqueues via queue_midi(), safe from ISR context.
 #define MIDI_QUEUE_SIZE 256 // power of two, max 256 for uint8_t indices
 #define MIDI_DRAIN_MAX_PER_LOOP 16 // caps how long a drain can hold up loop()
+#define MIDI_EVT_NOTE_ON 0
+#define MIDI_EVT_NOTE_OFF 1
+#define MIDI_EVT_BEND 2
+#define MIDI_EVT_CC 3
 struct midi_event_t {
-  uint8_t note;
-  uint8_t velocity;
+  uint8_t note;      // note number, or controller number for a CC
+  uint8_t velocity;  // velocity, or controller value for a CC
   uint8_t channel;
   uint8_t cable;
-  bool note_on;
+  uint8_t kind;
+  int16_t bend;      // MIDI_EVT_BEND only, -8192..8191
 };
 volatile midi_event_t midi_queue[MIDI_QUEUE_SIZE];
 volatile uint8_t midi_queue_head = 0; // written by producers
@@ -631,22 +636,38 @@ volatile uint32_t midi_queue_dropped = 0; // diagnostic: events lost to a full q
 
 // Safe to call from any context, including an ISR. Drops the event if the queue is
 // full rather than blocking -- blocking is what caused the original fault.
-void queue_midi(bool note_on, uint8_t note, uint8_t velocity, uint8_t channel, uint8_t cable) {
+void queue_midi_event(uint8_t kind, uint8_t a, uint8_t b, int16_t bend, uint8_t channel, uint8_t cable) {
   uint32_t primask;
   __asm__ volatile("mrs %0, primask" : "=r"(primask));
   __disable_irq();
   uint8_t next = (midi_queue_head + 1) & (MIDI_QUEUE_SIZE - 1);
   if (next != midi_queue_tail) {
-    midi_queue[midi_queue_head].note = note;
-    midi_queue[midi_queue_head].velocity = velocity;
+    midi_queue[midi_queue_head].note = a;
+    midi_queue[midi_queue_head].velocity = b;
     midi_queue[midi_queue_head].channel = channel;
     midi_queue[midi_queue_head].cable = cable;
-    midi_queue[midi_queue_head].note_on = note_on;
+    midi_queue[midi_queue_head].kind = kind;
+    midi_queue[midi_queue_head].bend = bend;
     midi_queue_head = next;
   } else {
     midi_queue_dropped++;
   }
   if (!primask) __enable_irq();
+}
+
+void queue_midi(bool note_on, uint8_t note, uint8_t velocity, uint8_t channel, uint8_t cable) {
+  queue_midi_event(note_on ? MIDI_EVT_NOTE_ON : MIDI_EVT_NOTE_OFF, note, velocity, 0, channel, cable);
+}
+
+// Pitch bend and control change, for the MPE output below. Same queue, so they
+// keep their order with the notes they belong to -- a bend that has to arrive
+// before its note-on actually does.
+void queue_midi_bend(int16_t bend, uint8_t channel, uint8_t cable) {
+  queue_midi_event(MIDI_EVT_BEND, 0, 0, bend, channel, cable);
+}
+
+void queue_midi_cc(uint8_t controller, uint8_t value, uint8_t channel, uint8_t cable) {
+  queue_midi_event(MIDI_EVT_CC, controller, value, 0, channel, cable);
 }
 
 // Called from loop() only. The single point at which this firmware talks to usbMIDI.
@@ -661,17 +682,215 @@ void drain_midi_queue() {
     e.velocity = midi_queue[midi_queue_tail].velocity;
     e.channel = midi_queue[midi_queue_tail].channel;
     e.cable = midi_queue[midi_queue_tail].cable;
-    e.note_on = midi_queue[midi_queue_tail].note_on;
+    e.kind = midi_queue[midi_queue_tail].kind;
+    e.bend = midi_queue[midi_queue_tail].bend;
     midi_queue_tail = (midi_queue_tail + 1) & (MIDI_QUEUE_SIZE - 1);
-    if (sent) delayMicroseconds(midi_buffer_delay); // pacing for slower hardware synths
-    if (e.note_on) {
-      usbMIDI.sendNoteOn(e.note, e.velocity, e.channel, e.cable);
-    } else {
-      usbMIDI.sendNoteOff(e.note, e.velocity, e.channel, e.cable);
+    // The pacing exists for slower hardware synths reading notes; bends and the
+    // zone setup are a USB-side concern and a glide would stall behind it.
+    if (sent && e.kind <= MIDI_EVT_NOTE_OFF) delayMicroseconds(midi_buffer_delay);
+    switch (e.kind) {
+      case MIDI_EVT_NOTE_ON:  usbMIDI.sendNoteOn(e.note, e.velocity, e.channel, e.cable); break;
+      case MIDI_EVT_NOTE_OFF: usbMIDI.sendNoteOff(e.note, e.velocity, e.channel, e.cable); break;
+      case MIDI_EVT_BEND:     usbMIDI.sendPitchBend(e.bend, e.channel, e.cable); break;
+      case MIDI_EVT_CC:       usbMIDI.sendControlChange(e.note, e.velocity, e.channel, e.cable); break;
     }
     sent = true;
   }
   if (sent) usbMIDI.send_now();
+}
+
+//-->>MPE OUTPUT
+// One channel carries one pitch bend and one note identity, which is not enough
+// for an instrument whose voices move independently. Glide slides each chord
+// voice along its own contour and the note stream steps. Two voices landing on
+// the same note number arrive as one note, so the first note off releases both.
+// And once the octave is divided into other than twelve, midi_out_note() has to
+// round every step to the nearest semitone, which collapses distinct chords into
+// each other: in 31 steps a subminor, a minor and a neutral third all leave as
+// three semitones. MPE is the standard answer and is still MIDI 1.0: give every
+// voice its own channel, and a bend belongs to one note.
+//
+// Opt-in. With the mode off nothing here sends anything and the output is what
+// it has always been, byte for byte.
+//
+// Channel layout: the chord takes the first four member channels of its cable,
+// the harp the first twelve of its own. With single port mode on they share a
+// cable, and fifteen member channels have to hold sixteen voices: the chord
+// takes 2 to 5 and the strings 6 to 16, the twelfth string sharing the first
+// string's channel.
+#define MPE_BEND_RANGE_SEMITONES 48  // the MPE default, and wide enough for any glide
+#define MPE_GLIDE_UPDATE_MS 10       // how often a moving voice re-sends its bend
+#define MPE_BEND_EPSILON 8           // about a cent at that range; smaller moves wait
+
+uint8_t mpe_mode = 0;          // 0 single channel (unchanged), 1 MPE
+bool mpe_zone_declared = false;
+
+// Where each chord voice is, in semitones, between the note it left and the note
+// it is heading for. The firmware cannot read a glide back out of the audio
+// library -- amplitude(target, milliseconds) ramps the DC inside the object --
+// so the ramp is modelled here. The DC reaches the voice through
+// frequencyModulation(2), so a linear ramp is linear in octaves, and a straight
+// interpolation between the two pitches is the real curve rather than an
+// approximation of it. Both ends are taken from the frequencies the voice is
+// actually given, so the model holds in any temperament or division.
+float mpe_chord_from[4] = {0, 0, 0, 0};
+float mpe_chord_to[4] = {0, 0, 0, 0};
+uint32_t mpe_chord_ramp_start[4] = {0, 0, 0, 0};
+uint16_t mpe_chord_ramp_ms[4] = {0, 0, 0, 0};
+float mpe_chord_static[4] = {0, 0, 0, 0};   // see mpe_offset_semitones()
+int16_t mpe_chord_bend_sent[4] = {0, 0, 0, 0};
+uint32_t mpe_chord_bend_time[4] = {0, 0, 0, 0};
+int16_t mpe_harp_bend_sent[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint32_t mpe_harp_bend_time[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+static inline uint8_t mpe_chord_channel_for(uint8_t i, uint8_t mode) {
+  return mode ? (uint8_t)(2 + i) : chord_channel;
+}
+
+static inline uint8_t mpe_harp_channel_for(uint8_t i, uint8_t mode) {
+  if (!mode) return harp_channel;
+  if (harp_port != chord_port) return 2 + i;
+  return 6 + (i % 11);  // shared cable: string twelve doubles up on string one
+}
+
+static inline uint8_t mpe_chord_channel(uint8_t i) { return mpe_chord_channel_for(i, mpe_mode); }
+static inline uint8_t mpe_harp_channel(uint8_t i) { return mpe_harp_channel_for(i, mpe_mode); }
+
+// How far a note really sits from the note number it is sent as. In twelve equal
+// this is zero. In a historical temperament it is that pitch class's offset. In
+// 19 or 31 it is everything midi_out_note() had to round away, so the five
+// thirds that arrive as two intervals arrive as five again.
+static inline float mpe_offset_semitones(int note) {
+  return 12.0f * (float)log2((double)temper_ratio(note + transpose_steps))
+         - (float)(transpose_semitones + midi_out_note(note));
+}
+
+float mpe_chord_position(uint8_t i) {
+  if (mpe_chord_ramp_ms[i] == 0) return mpe_chord_to[i];
+  uint32_t elapsed = millis() - mpe_chord_ramp_start[i];
+  if (elapsed >= mpe_chord_ramp_ms[i]) return mpe_chord_to[i];
+  return mpe_chord_from[i] + (mpe_chord_to[i] - mpe_chord_from[i]) * ((float)elapsed / (float)mpe_chord_ramp_ms[i]);
+}
+
+static inline int16_t mpe_bend_value(float semitones) {
+  float v = semitones * (8192.0f / MPE_BEND_RANGE_SEMITONES);
+  if (v > 8191.0f) v = 8191.0f;
+  if (v < -8192.0f) v = -8192.0f;
+  return (int16_t)lroundf(v);
+}
+
+static inline float mpe_chord_bend_semitones(uint8_t i) {
+  return (mpe_chord_position(i) - mpe_chord_to[i]) + mpe_chord_static[i];
+}
+
+// Called wherever a chord voice is given a new note, so the model starts from
+// where the voice actually is: a note arriving mid-glide ramps from the current
+// position, exactly as the DC object does. target is the pitch in semitones,
+// taken from the frequency the voice was just set to.
+void mpe_chord_note_change(uint8_t i, float target, uint16_t ramp_ms, int note) {
+  mpe_chord_from[i] = ramp_ms ? mpe_chord_position(i) : target;
+  mpe_chord_to[i] = target;
+  mpe_chord_ramp_start[i] = millis();
+  mpe_chord_ramp_ms[i] = ramp_ms;
+  mpe_chord_static[i] = mpe_offset_semitones(note);
+}
+
+// The bend has to reach the receiver before the note does, or the note speaks at
+// the equal tempered pitch and jumps to the right one.
+void mpe_prepare_chord(uint8_t i) {
+  if (!mpe_mode) return;
+  int16_t b = mpe_bend_value(mpe_chord_bend_semitones(i));
+  queue_midi_bend(b, mpe_chord_channel(i), chord_port);
+  mpe_chord_bend_sent[i] = b;
+  mpe_chord_bend_time[i] = millis();
+}
+
+void mpe_prepare_harp(uint8_t i) {
+  if (!mpe_mode) return;
+  int16_t b = mpe_bend_value(mpe_offset_semitones(current_harp_notes[i]));
+  if (b == mpe_harp_bend_sent[i]) return;
+  queue_midi_bend(b, mpe_harp_channel(i), harp_port);
+  mpe_harp_bend_sent[i] = b;
+  mpe_harp_bend_time[i] = millis();
+}
+
+// Called from loop(). A gliding voice re-sends its bend as it moves and settles
+// when the ramp is over. Strings are checked too, so a temperament or a division
+// changed under a held string follows it out instead of waiting for the next
+// strike.
+void mpe_update_glide() {
+  if (!mpe_mode) return;
+  uint32_t now = millis();
+  for (uint8_t i = 0; i < 4; i++) {
+    if (chord_started_notes[i] == 0) continue;
+    if (now - mpe_chord_bend_time[i] < MPE_GLIDE_UPDATE_MS) continue;
+    int16_t b = mpe_bend_value(mpe_chord_bend_semitones(i));
+    if (abs(b - mpe_chord_bend_sent[i]) < MPE_BEND_EPSILON) continue;
+    queue_midi_bend(b, mpe_chord_channel(i), chord_port);
+    mpe_chord_bend_sent[i] = b;
+    mpe_chord_bend_time[i] = now;
+  }
+  for (uint8_t i = 0; i < 12; i++) {
+    if (harp_started_notes[i] == 0) continue;
+    if (now - mpe_harp_bend_time[i] < MPE_GLIDE_UPDATE_MS) continue;
+    int16_t b = mpe_bend_value(mpe_offset_semitones(current_harp_notes[i]));
+    if (b == mpe_harp_bend_sent[i]) continue;
+    queue_midi_bend(b, mpe_harp_channel(i), harp_port);
+    mpe_harp_bend_sent[i] = b;
+    mpe_harp_bend_time[i] = now;
+  }
+}
+
+// RPN 6 on a master channel declares a zone and how many member channels it has;
+// RPN 0 on any member sets the bend range for the whole zone. A host that reads
+// these configures itself, so the player does not set channels on both sides.
+void mpe_send_rpn(uint8_t rpn, uint8_t value, uint8_t channel, uint8_t cable) {
+  queue_midi_cc(101, 0, channel, cable);
+  queue_midi_cc(100, rpn, channel, cable);
+  queue_midi_cc(6, value, channel, cable);
+}
+
+void mpe_configure() {
+  if (!mpe_mode) {
+    if (!mpe_zone_declared) return;  // nothing was declared, so nothing to release
+    mpe_send_rpn(6, 0, 1, chord_port);
+    if (harp_port != chord_port) mpe_send_rpn(6, 0, 1, harp_port);
+    mpe_zone_declared = false;
+    return;
+  }
+  if (harp_port != chord_port) {
+    mpe_send_rpn(6, 4, 1, chord_port);
+    mpe_send_rpn(0, MPE_BEND_RANGE_SEMITONES, 2, chord_port);
+    mpe_send_rpn(6, 12, 1, harp_port);
+    mpe_send_rpn(0, MPE_BEND_RANGE_SEMITONES, 2, harp_port);
+  } else {
+    mpe_send_rpn(6, 15, 1, chord_port);
+    mpe_send_rpn(0, MPE_BEND_RANGE_SEMITONES, 2, chord_port);
+  }
+  mpe_zone_declared = true;
+}
+
+// Switching mode moves every voice to a different channel, so anything sounding
+// is released on the channel it was started on before the change takes effect.
+void mpe_set_mode(uint8_t value) {
+  uint8_t requested = value ? 1 : 0;
+  if (requested != mpe_mode) {
+    for (uint8_t i = 0; i < 4; i++) {
+      if (chord_started_notes[i] != 0) {
+        queue_midi(false, chord_started_notes[i], chord_release_velocity, mpe_chord_channel_for(i, mpe_mode), chord_port);
+        chord_started_notes[i] = 0;
+      }
+    }
+    for (uint8_t i = 0; i < 12; i++) {
+      if (harp_started_notes[i] != 0) {
+        queue_midi(false, harp_started_notes[i], harp_release_velocity, mpe_harp_channel_for(i, mpe_mode), harp_port);
+        harp_started_notes[i] = 0;
+      }
+      mpe_harp_bend_sent[i] = 0;
+    }
+    mpe_mode = requested;
+  }
+  mpe_configure();
 }
 
 //-->>FUNCTION THAT NEED ANNOUNCING
@@ -878,9 +1097,10 @@ void play_single_note(int i, IntervalTimer *timer) {
   chord_envelope_filter_array[i]->noteOn();
   // ISR context: queue only, never touch usbMIDI here.
   if(chord_started_notes[i]!=0){
-    queue_midi(false, chord_started_notes[i],chord_release_velocity,chord_channel, chord_port);
+    queue_midi(false, chord_started_notes[i],chord_release_velocity,mpe_chord_channel(i), chord_port);
     chord_started_notes[i]=0;}
-  queue_midi(true, midi_base_note_transposed+ midi_out_note(current_applied_chord_notes[i]),chord_attack_velocity,chord_channel, chord_port);
+  mpe_prepare_chord(i);
+  queue_midi(true, midi_base_note_transposed+ midi_out_note(current_applied_chord_notes[i]),chord_attack_velocity,mpe_chord_channel(i), chord_port);
   chord_started_notes[i]=midi_base_note_transposed+ midi_out_note(current_applied_chord_notes[i]);
 }
 
@@ -892,9 +1112,10 @@ void play_note_selected_duration(int i,int current_note){
   note_off_timing[i]=0;
   // ISR context: queue only, never touch usbMIDI here.
   if(chord_started_notes[i]!=0){
-    queue_midi(false, chord_started_notes[i],chord_release_velocity,chord_channel, chord_port);
+    queue_midi(false, chord_started_notes[i],chord_release_velocity,mpe_chord_channel(i), chord_port);
     chord_started_notes[i]=0;}
-  queue_midi(true, midi_base_note_transposed+midi_out_note(current_note),chord_attack_velocity,chord_channel, chord_port);
+  mpe_prepare_chord(i);
+  queue_midi(true, midi_base_note_transposed+midi_out_note(current_note),chord_attack_velocity,mpe_chord_channel(i), chord_port);
   chord_started_notes[i]=midi_base_note_transposed+midi_out_note(current_note);
 }
 
@@ -1006,6 +1227,7 @@ void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
       ? note_delta/24.0
       : log2f(note_freq / middle_freq) / 2.0f;
     chord_freq_dc_array[i]->amplitude(glide_offset,glide_length);
+    mpe_chord_note_change(i, 12.0f * log2f(note_freq), glide_length, current_note);
     // chord_voice_filter_array[i]->frequency(1*freq);
     AudioInterrupts();
   }else{
@@ -1021,6 +1243,7 @@ void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
     chord_osc_2_array[i]->frequency(osc_2_freq_multiplier * note_freq);
     chord_osc_3_array[i]->frequency(osc_3_freq_multiplier * note_freq);
     chord_freq_dc_array[i]->amplitude(0,0);
+    mpe_chord_note_change(i, 12.0f * log2f(note_freq), 0, current_note);
     // chord_voice_filter_array[i]->frequency(1*freq);
     AudioInterrupts();
   }
@@ -1029,9 +1252,10 @@ void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
   // (play_single_note, rythm_tick_function), so it must queue rather than send.
   if(chord_started_notes[i]!=0 && chord_started_notes[i]!=midi_base_note_transposed+midi_out_note(current_note)){
     //we need to change the note without triggering the change, ie a pitch bend
-    queue_midi(false, chord_started_notes[i],chord_release_velocity,chord_channel, chord_port);
+    queue_midi(false, chord_started_notes[i],chord_release_velocity,mpe_chord_channel(i), chord_port);
     chord_started_notes[i]=0;
-    queue_midi(true, midi_base_note_transposed+midi_out_note(current_note),chord_attack_velocity,chord_channel, chord_port);
+    mpe_prepare_chord(i);
+    queue_midi(true, midi_base_note_transposed+midi_out_note(current_note),chord_attack_velocity,mpe_chord_channel(i), chord_port);
     chord_started_notes[i]=midi_base_note_transposed+ midi_out_note(current_note);
   }
 }
@@ -1823,9 +2047,10 @@ void handle_harp() {
       string_transient_envelope_array[i]->noteOn();
       AudioInterrupts();
       if (harp_started_notes[i] != 0) {
-        queue_midi(false, harp_started_notes[i], harp_release_velocity, harp_channel, harp_port);
+        queue_midi(false, harp_started_notes[i], harp_release_velocity, mpe_harp_channel(i), harp_port);
       }
-      queue_midi(true, midi_base_note_transposed + midi_out_note(current_harp_notes[i]), harp_attack_velocity, harp_channel, harp_port);
+      mpe_prepare_harp(i);
+      queue_midi(true, midi_base_note_transposed + midi_out_note(current_harp_notes[i]), harp_attack_velocity, mpe_harp_channel(i), harp_port);
       harp_started_notes[i] = midi_base_note_transposed + midi_out_note(current_harp_notes[i]);
     } else if (value == 1) {
       AudioNoInterrupts();
@@ -1834,7 +2059,7 @@ void handle_harp() {
       string_enveloppe_filter_array[i]->noteOff();
       AudioInterrupts();
       if (harp_started_notes[i] != 0) {
-        queue_midi(false, harp_started_notes[i], harp_release_velocity, harp_channel, harp_port);
+        queue_midi(false, harp_started_notes[i], harp_release_velocity, mpe_harp_channel(i), harp_port);
         harp_started_notes[i] = 0;
       }
     }
@@ -1934,8 +2159,9 @@ void update_harp_notes() {
     for (int i = 0; i < 12; i++) {
       current_harp_notes[i] = calculate_note_harp(i, slash_chord, sharp_active);
       if (change_held_strings && harp_started_notes[i] != 0) {
-        queue_midi(false, harp_started_notes[i], harp_release_velocity, harp_channel, harp_port);
-        queue_midi(true, midi_base_note_transposed + midi_out_note(current_harp_notes[i]), harp_attack_velocity, harp_channel, harp_port);
+        queue_midi(false, harp_started_notes[i], harp_release_velocity, mpe_harp_channel(i), harp_port);
+        mpe_prepare_harp(i);
+        queue_midi(true, midi_base_note_transposed + midi_out_note(current_harp_notes[i]), harp_attack_velocity, mpe_harp_channel(i), harp_port);
         harp_started_notes[i] = midi_base_note_transposed + midi_out_note(current_harp_notes[i]);
         if (string_enveloppe_array[i]->isSustain()) {
           set_harp_voice_frequency(i, current_harp_notes[i]);
@@ -1959,7 +2185,7 @@ void stop_chord_notes() {
     // Sent regardless of the internal envelope: an external synth holds the note
     // until it receives the Note Off.
     if (chord_started_notes[i] != 0) {
-      queue_midi(false, chord_started_notes[i], chord_release_velocity, chord_channel, chord_port);
+      queue_midi(false, chord_started_notes[i], chord_release_velocity, mpe_chord_channel(i), chord_port);
       chord_started_notes[i] = 0;
     }
   }
@@ -1977,7 +2203,7 @@ void handle_rhythm_mode() {
       }
       // See stop_chord_notes().
       if (chord_started_notes[i] != 0) {
-        queue_midi(false, chord_started_notes[i], chord_release_velocity, chord_channel, chord_port);
+        queue_midi(false, chord_started_notes[i], chord_release_velocity, mpe_chord_channel(i), chord_port);
         chord_started_notes[i] = 0;
       }
     }
@@ -2470,5 +2696,6 @@ void loop() {
 
   // The only point at which this firmware transmits MIDI. Must stay last, and must
   // stay in loop() -- see the MIDI OUTPUT QUEUE comment above.
+  mpe_update_glide();
   drain_midi_queue();
 }

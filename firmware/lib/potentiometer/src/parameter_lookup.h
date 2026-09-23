@@ -22,6 +22,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 106, 1, 1, 16 }, // chord channel
     { 107, 1, 1, 16 }, // harp channel
     { 108, 1, 0, 1 }, // single port mode
+    { 110, 1, 0, 1 }, // MPE output
     { 31, 1, 0, 1 }, // sharp function
     { 33, 1, 0, 1 }, // barry harris mode
     { 34, 1, 0, 6 }, // chord frame shift
