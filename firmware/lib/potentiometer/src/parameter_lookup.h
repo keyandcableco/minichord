@@ -30,6 +30,8 @@ static const ParameterInfo parameter_lookup[] = {
     { 35, 1, 0, 20 }, // chord key signature
     { 37, 1, 0, 3 }, // chord inversion
     { 38, 1, 0, 4 }, // chord spacing
+    { 111, 1, 0, 1 }, // voice leading
+    { 112, 1, 0, 24 }, // voice leading range
     { 109, 1, 4320, 4460 }, // master tuning
     { 39, 1, 0, 1 }, // chord layout
     { 202, 1, 0, 22 }, // alt layout maj

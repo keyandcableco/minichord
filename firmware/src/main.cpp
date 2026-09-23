@@ -15,7 +15,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=11; //to be read 00.03, stored at adress 7 in memory
+int version_ID=12; //to be read 00.03, stored at adress 7 in memory
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -524,6 +524,17 @@ int8_t chord_shuffling_array[6][7] = {
     {20, 21, 22, 23, 24, 25, 26}};//two octave up
 int8_t chord_shuffling_selection = 0;
 uint8_t chord_inversion = 0; // 0 = root position, 1-3 = successive inversions
+// Automatic voice leading. When on, the four chord voices are placed to move as
+// little as possible from the chord already sounding, instead of being built
+// upward from the root every time. The range is how far, in semitones, the
+// voicing may sit outside where root position would have put it; it is
+// converted to steps of the live division where it is used.
+uint8_t voice_leading = 0;
+uint8_t voice_leading_range = 12;
+#define VOICE_POOL_MAX 40
+#define UNREACHABLE 32767
+// what the four voices were last given, so the next chord can be placed near them
+int16_t previous_voicing[4] = {0, 0, 0, 0};
 uint8_t chord_spacing = 0;   // 0 = close, 1 = drop 2, 2 = drop 3, 3 = drop 2+4, 4 = spread
 // Whole octaves each chord voice has been displaced by, from the inversion and
 // the spacing together. The glide path centres an oscillator per voice and
@@ -899,6 +910,7 @@ void load_config(int bank_number);
 void recalculate_timer();
 uint8_t calculate_note_harp(uint8_t string, bool slashed, bool sharp);
 uint8_t calculate_note_chord(uint8_t voice, bool slashed, bool sharp);
+bool apply_voice_leading(bool sharp, uint8_t *out);
 void set_chord_voice_frequency(uint8_t i, uint16_t current_note);
 void retune_active_voices();
 void refresh_chord_filter();
@@ -1482,6 +1494,147 @@ uint8_t calculate_note_chord(uint8_t voice, bool slashed, bool sharp) {
   }
   return note;
 }
+/* ---- automatic voice leading ------------------------------------------------
+ *
+ * A chord is a set of pitch classes; which octave each voice takes it in is
+ * free, and the ear notices the choice more than the chord. Built upward from
+ * the root every time, C major to A minor moves every voice and leaps an
+ * octave, though the two chords share two notes. Placed by nearness instead,
+ * two voices are simply held and one steps up to the A.
+ *
+ * So: collect the chord's tones in every octave that keeps the voicing within
+ * voice_leading_range of where root position would have put it, then choose
+ * four of them, in ascending order, that move the least from what is already
+ * sounding. Voices may not cross -- a choir does not -- which is what keeps the
+ * search small: a shortest path over at most forty candidates, four deep.
+ *
+ * The search also carries which of the chord's tones it has used, and a voicing
+ * is complete only when every one appears. Without that, movement alone is the
+ * wrong objective: asked for a seventh while a triad is sounding, the cheapest
+ * answer doubles a note it already has rather than reaching for the seventh,
+ * and a whole column of chord types collapses into the same sound.
+ *
+ * Everything here counts in steps of the live division, so it holds in 19 and
+ * 31 as it does in 12: the tones come from collect_chord_tones(), which already
+ * works modulo EDO, and the octave is EDO steps wide.
+ *
+ * With nothing sounding the previous voicing is taken to be root position, so
+ * the search returns root position exactly and a chord played into silence is
+ * always voiced the same way.
+ */
+bool apply_voice_leading(bool sharp, uint8_t *out) {
+  uint8_t tones[4];
+  uint8_t tone_count = collect_chord_tones(current_chord, tones);
+  if (tone_count == 0) return false;
+
+  int8_t sharp_offset = sharp ? (flat_button_modifier ? -sharp_step : sharp_step) : 0;
+  int16_t root = get_root_button(key_signature_selection, chord_frame_shift, fundamental) + sharp_offset;
+
+  // Root position is the anchor: the range is measured from where this chord
+  // would have sat with no voice leading at all, so the frame shift, the
+  // shuffling octaves, the key and the division all carry through without being
+  // consulted.
+  int16_t anchor[4];
+  int16_t lowest = 32767, highest = -32768;
+  for (uint8_t voice = 0; voice < 4; voice++) {
+    uint8_t level = chord_shuffling_array[chord_shuffling_selection][voice];
+    anchor[voice] = EDO * (level / 10) + root + inverted_voice_offset(current_chord, voice, 0);
+    if (anchor[voice] < lowest) lowest = anchor[voice];
+    if (anchor[voice] > highest) highest = anchor[voice];
+  }
+
+  // Not clamped to chord_note_floor: at the default shuffling the voices already
+  // sit below it, so clamping there would put the pool above the chord's own
+  // root position and the search could not even return the chord it was given.
+  // The range is the control that keeps the voicing out of the mud.
+  // The range is set in semitones, so it means the same interval in every
+  // division -- the same conversion transposition uses.
+  int16_t range_steps = (int16_t)((voice_leading_range * EDO + 6) / 12);
+  int16_t low_limit = lowest - range_steps;
+  int16_t high_limit = highest + range_steps;
+  if (low_limit < 0) low_limit = 0;
+  if (high_limit > chord_note_ceiling) high_limit = chord_note_ceiling;
+
+  int16_t pool[VOICE_POOL_MAX];
+  uint8_t pool_tone[VOICE_POOL_MAX];   // which of the chord's tones each candidate is
+  uint8_t count = 0;
+  for (int16_t note = low_limit; note <= high_limit && count < VOICE_POOL_MAX; note++) {
+    int16_t pitch_class = ((note - root) % EDO + EDO) % EDO;
+    for (uint8_t i = 0; i < tone_count; i++) {
+      if (pitch_class == tones[i]) { pool[count] = note; pool_tone[count] = i; count++; break; }
+    }
+  }
+  if (count < 4) return false;  // nothing to choose from, leave the chord alone
+
+  bool sounding = false;
+  for (uint8_t i = 0; i < 4; i++) {
+    if (chord_envelope_array[i]->isActive()) sounding = true;
+  }
+  int16_t from[4];
+  for (uint8_t voice = 0; voice < 4; voice++) {
+    from[voice] = sounding ? previous_voicing[voice] : anchor[voice];
+  }
+
+  const uint8_t full_mask = (uint8_t)((1 << tone_count) - 1);
+  const uint8_t mask_count = (uint8_t)(1 << tone_count);
+  static int16_t cost[4][VOICE_POOL_MAX][16];
+  static uint8_t came_index[4][VOICE_POOL_MAX][16];
+  static uint8_t came_mask[4][VOICE_POOL_MAX][16];
+
+  for (uint8_t i = 0; i < count; i++) {
+    for (uint8_t mask = 0; mask < mask_count; mask++) cost[0][i][mask] = UNREACHABLE;
+    uint8_t mask = (uint8_t)(1 << pool_tone[i]);
+    cost[0][i][mask] = (int16_t)abs(pool[i] - from[0]);
+  }
+
+  for (uint8_t voice = 1; voice < 4; voice++) {
+    int16_t best[16];
+    uint8_t best_index[16];
+    for (uint8_t mask = 0; mask < mask_count; mask++) { best[mask] = UNREACHABLE; best_index[mask] = 0; }
+    for (uint8_t i = 0; i < count; i++) {
+      if (i > 0) {
+        for (uint8_t mask = 0; mask < mask_count; mask++) {
+          if (cost[voice - 1][i - 1][mask] < best[mask]) {
+            best[mask] = cost[voice - 1][i - 1][mask];
+            best_index[mask] = i - 1;
+          }
+        }
+      }
+      for (uint8_t mask = 0; mask < mask_count; mask++) cost[voice][i][mask] = UNREACHABLE;
+      uint8_t bit = (uint8_t)(1 << pool_tone[i]);
+      int16_t step = (int16_t)abs(pool[i] - from[voice]);
+      for (uint8_t mask = 0; mask < mask_count; mask++) {
+        if (best[mask] == UNREACHABLE) continue;
+        uint8_t reached = (uint8_t)(mask | bit);
+        int16_t total = (int16_t)(best[mask] + step);
+        if (total < cost[voice][i][reached]) {
+          cost[voice][i][reached] = total;
+          came_index[voice][i][reached] = best_index[mask];
+          came_mask[voice][i][reached] = mask;
+        }
+      }
+    }
+  }
+
+  int16_t best_total = UNREACHABLE;
+  uint8_t index = 0;
+  for (uint8_t i = 0; i < count; i++) {
+    if (cost[3][i][full_mask] < best_total) { best_total = cost[3][i][full_mask]; index = i; }
+  }
+  if (best_total == UNREACHABLE) return false;  // the chord will not fit in the range
+
+  uint8_t mask = full_mask;
+  for (int8_t voice = 3; voice >= 1; voice--) {
+    out[voice] = (uint8_t)pool[index];
+    uint8_t next_index = came_index[voice][index][mask];
+    uint8_t next_mask = came_mask[voice][index][mask];
+    index = next_index;
+    mask = next_mask;
+  }
+  out[0] = (uint8_t)pool[index];
+  return true;
+}
+
 // function to calculate the level of individual harp touch
 // Collapse the degree toggles into an ascending interval list. An empty scale
 // would leave the harp silent, so the root is kept in that case.
@@ -2139,6 +2292,15 @@ void update_chord_notes() {
     for (int i = 0; i < 7; i++) {
       current_chord_notes[i] = calculate_note_chord(i, slash_chord, sharp_active);
     }
+    // A slash chord names its own bass, so it is left as it was built; voice
+    // leading would move the note the player asked for.
+    if (voice_leading && !slash_chord) {
+      uint8_t led[4];
+      if (apply_voice_leading(sharp_active, led)) {
+        for (int i = 0; i < 4; i++) current_chord_notes[i] = led[i];
+      }
+    }
+    for (int i = 0; i < 4; i++) previous_voicing[i] = current_chord_notes[i];
     Serial.println("Updating frequencies");
     if (!rythm_mode && !trigger_chord && !retrigger_chord) {
       for (int i = 0; i < 4; i++) {
@@ -2542,6 +2704,9 @@ void apply_temperament(uint8_t t) {
   memcpy(old_chord_notes, current_chord_notes, sizeof(old_chord_notes));
   memcpy(old_harp_notes, current_harp_notes, sizeof(old_harp_notes));
   for (int i = 0; i < 7; i++) current_chord_notes[i] = calculate_note_chord(i, chord_context_slashed, chord_context_sharp);
+  // The remembered voicing is in steps of the division that just ended, so it
+  // would be nonsense to lead from it. Take the rebuilt chord instead.
+  for (int i = 0; i < 4; i++) previous_voicing[i] = current_chord_notes[i];
   for (int i = 0; i < 12; i++) current_harp_notes[i] = calculate_note_harp(i, chord_context_slashed, chord_context_sharp);
 
   auto remap = [](const uint8_t *from, const uint8_t *to, uint8_t n, uint16_t note, uint16_t &out) {

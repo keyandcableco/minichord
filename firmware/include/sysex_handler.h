@@ -51,6 +51,12 @@ void apply_audio_parameter(int adress, int value) {
       case 38:
         chord_spacing=value; for (int i = 0; i < 7; i++) { current_chord_notes[i]=calculate_note_chord(i,slash_chord,sharp_active); } for (int i = 0; i < 4; i++) { if (chord_envelope_array[i]->isActive()) { set_chord_voice_frequency(i, current_chord_notes[i]); } }
         break;
+      case 111:
+        voice_leading=value; for (int i = 0; i < 7; i++) { current_chord_notes[i]=calculate_note_chord(i,slash_chord,sharp_active); } if (voice_leading && !slash_chord) { uint8_t led[4]; if (apply_voice_leading(sharp_active, led)) { for (int i = 0; i < 4; i++) { current_chord_notes[i]=led[i]; } } } for (int i = 0; i < 4; i++) { previous_voicing[i]=current_chord_notes[i]; } for (int i = 0; i < 4; i++) { if (chord_envelope_array[i]->isActive()) { set_chord_voice_frequency(i, current_chord_notes[i]); } }
+        break;
+      case 112:
+        voice_leading_range=value; for (int i = 0; i < 7; i++) { current_chord_notes[i]=calculate_note_chord(i,slash_chord,sharp_active); } if (voice_leading && !slash_chord) { uint8_t led[4]; if (apply_voice_leading(sharp_active, led)) { for (int i = 0; i < 4; i++) { current_chord_notes[i]=led[i]; } } } for (int i = 0; i < 4; i++) { previous_voicing[i]=current_chord_notes[i]; } for (int i = 0; i < 4; i++) { if (chord_envelope_array[i]->isActive()) { set_chord_voice_frequency(i, current_chord_notes[i]); } }
+        break;
       case 109:
         { int tenths = (value == 0) ? 4400 : constrain(value, 4320, 4460); float tuned_c_frequency = 130.81 * (tenths / 4400.0); if (tuned_c_frequency != c_frequency) { c_frequency = tuned_c_frequency; retune_active_voices(); } }
         break;
