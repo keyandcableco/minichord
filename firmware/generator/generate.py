@@ -163,10 +163,15 @@ with open('parameters.json') as f: # Reserved adresses: 0 for system command and
                                                 a.dfn(title=parameter["tooltip"], _t=label)
                                             with a.div(klass=" bloc B7 M4 S7"):
                                                 if(parameter["data_type"]=="degrees"):
-                                                    # a row of twelve checkboxes, one per chromatic degree,
-                                                    # all writing bits of a single parameter
+                                                    # a row of checkboxes, one per bit of a single
+                                                    # parameter. The labels default to the twelve
+                                                    # chromatic degrees; bit_labels in the json gives
+                                                    # a different set, and its length sets how many
+                                                    # boxes there are -- the rythm steps use seven,
+                                                    # one per chord note.
+                                                    bit_labels = parameter.get("bit_labels", ["1","b2","2","b3","3","4","b5","5","b6","6","b7","7"])
                                                     with a.span(klass="degree_row", adress_field=parameter["sysex_adress"], id=id_iterator):
-                                                        for bit, degree_label in enumerate(["1","b2","2","b3","3","4","b5","5","b6","6","b7","7"]):
+                                                        for bit, degree_label in enumerate(bit_labels):
                                                             with a.label(klass="degree"):
                                                                 a.input(klass="degree_box inactive", adress_field=parameter["sysex_adress"],
                                                                         data_type="degrees", bit=bit, onchange='handledegree(this)', type='checkbox')
