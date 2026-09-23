@@ -599,6 +599,7 @@ const uint32_t KEY_CHANGE_BLINK_US = 150000; // LED blink half-period while wait
 const uint32_t SIMULTANEOUS_WINDOW = 400;  // both buttons must arrive within this
 const uint32_t PRESET_INHIBIT_DELAY = 400; // presets stay inhibited this long after
 int8_t key_change_reported = -1;   // last key signature reported to the host
+uint32_t key_button_was_down = 0;  // raw state of each chord button on the previous pass, for key selection edges
 elapsedMillis note_off_timing[4];
 elapsedMicros last_midi_clock_in;
 int midi_clock_current_step=0;
@@ -2225,6 +2226,7 @@ void handle_harp() {
 }
 
 
+bool rollover_pending = false; // a chord change by overlap: the new line is set, the chord follows next pass
 void handle_chord_type(bool button_maj, bool button_min, bool button_seventh) {
   static uint8_t previous_button_count = 0;
   static elapsedMillis shrink_timer;
@@ -2232,8 +2234,30 @@ void handle_chord_type(bool button_maj, bool button_min, bool button_seventh) {
 
   if (count == 0) {
     previous_button_count = 0;
+    // Releasing one chord while already pressing the next is a chord change,
+    // not a release. The new line's press transition fired while this line
+    // still owned the chord and was consumed doing nothing, so without this
+    // the old chord kept ringing and the new one could not be selected short
+    // of releasing everything and pressing again.
+    if (!inhibit_button) {
+      for (int i = 1; i < 22; i++) {
+        if (chord_matrix_array[i].read_value()) {
+          current_line = (i - 1) / 3;
+          rollover_pending = true; // pick the chord up next pass, once this line's type buttons are read
+          return;
+        }
+      }
+    }
+    rollover_pending = false;
     current_line = -1;
     return;
+  }
+  if (rollover_pending) {
+    rollover_pending = false;
+    button_pushed = true;
+    if (!continuous_chord) {
+      trigger_chord = true;
+    }
   }
 
   // The buttons of a combination do not release at the same instant, and
@@ -2278,16 +2302,50 @@ void handle_chord_type(bool button_maj, bool button_min, bool button_seventh) {
   }
 }
 
+// A second line held together with the chord selects a slash bass. Raw overlap
+// alone is not intent, though: releasing one chord while pressing the next
+// overlaps for a few tens of milliseconds in ordinary legato playing, and
+// believing it immediately swapped the bass on every crossover. So the overlap
+// has to persist for slash_grace before a slash engages. A crossover never gets
+// that far, because handle_chord_type() rolls the line over as soon as the old
+// line lets go.
+const uint16_t slash_grace = 60; // ms of overlap before a slash engages; tune on hardware
 void detect_slash() {
-  slash_chord = false;
+  static elapsedMillis overlap_timer;
+  static int8_t overlap_line = -1;
+  int8_t held_line = -1;
   for (int i = 1; i < 22; i++) {
     if (chord_matrix_array[i].read_value()) {
-      int slash_line = (i - 1) / 3;
-      if (slash_line != current_line) {
-        slash_chord = true;
-        slash_value = slash_line;
-      }
+      int8_t line = (i - 1) / 3;
+      if (line != current_line) held_line = line;
     }
+  }
+  if (held_line < 0) {
+    overlap_line = -1;
+    if (slash_chord) {
+      // The bass was let go while the chord is still held, so the plain chord
+      // has to be rebuilt. Nothing else recomputes here: button transitions
+      // only fire on presses.
+      slash_chord = false;
+      button_pushed = true;
+    }
+    return;
+  }
+  if (held_line != overlap_line) {
+    overlap_line = held_line;
+    overlap_timer = 0;
+    if (!slash_chord) return; // a new overlap starts its grace period
+  }
+  if (!slash_chord) {
+    if (overlap_timer >= slash_grace) {
+      slash_chord = true;
+      slash_value = held_line;
+      button_pushed = true;
+    }
+  } else if (slash_value != held_line) {
+    // already slashing and the bass moved to another line: deliberate, follow it
+    slash_value = held_line;
+    button_pushed = true;
   }
 }
 
@@ -2491,6 +2549,10 @@ void handle_key_change_mode(uint8_t up_transition, uint8_t down_transition, bool
   if (!key_change_mode && up_pressed && down_pressed &&
       up_press_time < SIMULTANEOUS_WINDOW && down_press_time < SIMULTANEOUS_WINDOW) {
     key_change_mode = true;
+    key_button_was_down = 0;
+    for (int i = 1; i <= 21; i++) {
+      if (chord_matrix_array[i].read_value()) key_button_was_down |= (1UL << i);
+    }
     preset_inhibit = true;
     preset_inhibit_timer = 0;
     chord_pressed = false;
@@ -2526,8 +2588,20 @@ void handle_key_change_mode(uint8_t up_transition, uint8_t down_transition, bool
   }
 
   if (key_change_mode) {
+    // Selection reads the raw pin edges rather than read_transition(). The
+    // transition only fires after ten milliseconds of continuously stable
+    // contact, which is why picking a key needed a squarer press than playing
+    // does: in normal play only the first press from silence goes through the
+    // debounced path, everything after responds to the raw value. Selecting a
+    // key is idempotent, so contact bounce is harmless here in a way it is not
+    // for starting notes. The transitions are still consumed, discarded, so a
+    // press in this mode cannot fall through and start the chord.
     for (int i = 1; i <= 21; i++) {
-      if (chord_matrix_array[i].read_transition() == 2) {
+      chord_matrix_array[i].read_transition();
+      bool now = chord_matrix_array[i].read_value();
+      bool was = key_button_was_down & (1UL << i);
+      if (now) key_button_was_down |= (1UL << i); else key_button_was_down &= ~(1UL << i);
+      if (now && !was) {
         chord_pressed = true;
         int user_row = 6 - ((i - 1) / 3); // hardware rows run B E A D G C F
         int col = (i - 1) % 3;            // 0 sharp, 1 natural, 2 flat
