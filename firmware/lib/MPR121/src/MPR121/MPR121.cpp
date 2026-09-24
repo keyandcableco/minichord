@@ -484,6 +484,23 @@ void MPR121::setDebounce(DeviceAddress device_address,
   resumeChannels(device_address);
 }
 
+void MPR121::setTouchedBaselineFilter(DeviceAddress device_address,
+  uint8_t noise_half_delta,
+  uint8_t noise_count_limit,
+  uint8_t filter_delay_limit)
+{
+  int device_index = deviceAddressToDeviceIndex(device_address);
+  if (device_index < 0)
+  {
+    return;
+  }
+  pauseChannels(device_address);
+  write(device_address,NHDT_REGISTER_ADDRESS,noise_half_delta);
+  write(device_address,NCLT_REGISTER_ADDRESS,noise_count_limit);
+  write(device_address,FDLT_REGISTER_ADDRESS,filter_delay_limit);
+  resumeChannels(device_address);
+}
+
 void MPR121::setChargeDischargeCurrent(DeviceAddress device_address,
   uint8_t charge_discharge_current)
 {

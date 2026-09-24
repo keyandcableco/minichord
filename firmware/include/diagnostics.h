@@ -46,15 +46,17 @@
 #define DIAG_PITCH_LOW_HZ       16.0f
 #define DIAG_GLIDE_LIMIT        0.95f   // the glide DC saturates at 1 with vibrato on top
 #define DIAG_STUCK_MS           400
-#define DIAG_TAIL_MS            3000
+#define DIAG_TAIL_MS            3000    // beyond the preset's own release time
+#define DIAG_LONG_TOUCH_MS      20000   // one pad held this long is probably stuck
 #define DIAG_HEARTBEAT_MS       10000
 #define DIAG_SETTLE_MS          4000    // boot spikes are forgotten after this
 
 //>>LOGGING
 volatile uint32_t diag_lines_dropped = 0;
 
-static void diag_log(const char *tag, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
-static void diag_log(const char *tag, const char *fmt, ...) {
+// Returns false when the line was dropped, for the few reports worth retrying.
+static bool diag_log(const char *tag, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+static bool diag_log(const char *tag, const char *fmt, ...) {
   char buf[240];
   uint32_t now = millis();
   int n = snprintf(buf, sizeof(buf), "DIAG %6lu.%03lu %-6s ",
@@ -71,9 +73,10 @@ static void diag_log(const char *tag, const char *fmt, ...) {
   // full, the line is counted and dropped.
   if (!Serial.dtr() || Serial.availableForWrite() < n) {
     diag_lines_dropped++;
-    return;
+    return false;
   }
   Serial.write((const uint8_t *)buf, n);
+  return true;
 }
 
 //>>INTERRUPT-SAFE RECORDERS
@@ -164,6 +167,7 @@ class DiagAudioWatch : public AudioStream {
     if (last_us != 0) {
       uint32_t gap = now - last_us;
       if (gap > worst_gap_us) worst_gap_us = gap;
+      if (gap > window_worst_us) window_worst_us = gap;
       if (gap > DIAG_AUDIO_LATE_US) {
         late++;
         last_late_gap_us = gap;
@@ -178,6 +182,7 @@ class DiagAudioWatch : public AudioStream {
   }
   volatile uint32_t last_us = 0;
   volatile uint32_t worst_gap_us = 0;
+  volatile uint32_t window_worst_us = 0;   // reset by whoever is timing something
   volatile uint32_t late = 0;
   volatile uint32_t dropouts = 0;
   volatile uint32_t last_late_gap_us = 0;
@@ -187,6 +192,56 @@ class DiagAudioWatch : public AudioStream {
   audio_block_t *inputQueueArray[1];
 };
 DiagAudioWatch diag_audio_watch;
+
+//>>PRESET TIMING
+// save_config() and load_config() are timed directly, with what the audio
+// interrupt went through meanwhile, so a click at a preset change can be put
+// on the save or the load. save_config() calls load_config() inside itself,
+// so the two nest. The firmware prints a lot during a save, which can fill the
+// serial buffer, so a report that could not be sent waits and is retried.
+struct diag_preset_frame_t {
+  uint32_t t0, late0, drop0;
+};
+diag_preset_frame_t diag_preset_stack[3];
+uint8_t diag_preset_depth = 0;
+struct diag_preset_report_t {
+  bool pending;
+  const char *what;
+  int bank;
+  uint32_t us, late, drops, worst;
+};
+diag_preset_report_t diag_preset_pending[3];
+
+static inline void diag_preset_begin() {
+  if (diag_preset_depth == 0) diag_audio_watch.window_worst_us = 0;
+  if (diag_preset_depth < 3) {
+    diag_preset_stack[diag_preset_depth].t0 = micros();
+    diag_preset_stack[diag_preset_depth].late0 = diag_audio_watch.late;
+    diag_preset_stack[diag_preset_depth].drop0 = diag_audio_watch.dropouts;
+  }
+  diag_preset_depth++;
+}
+static bool diag_preset_send(const diag_preset_report_t &r) {
+  return diag_log("PRESET", "%s bank %d took %luus; meanwhile %lu late audio updates, %lu dropouts, worst gap %luus%s",
+                  r.what, r.bank, (unsigned long)r.us, (unsigned long)r.late, (unsigned long)r.drops,
+                  (unsigned long)r.worst, r.drops ? " (audible)" : "");
+}
+static inline void diag_preset_end(const char *what, int bank) {
+  if (diag_preset_depth == 0) return;
+  diag_preset_depth--;
+  if (diag_preset_depth >= 3) return;
+  diag_preset_frame_t &f = diag_preset_stack[diag_preset_depth];
+  diag_preset_report_t r = {true, what, bank, micros() - f.t0, diag_audio_watch.late - f.late0,
+                            diag_audio_watch.dropouts - f.drop0, diag_audio_watch.window_worst_us};
+  if (!diag_preset_send(r)) diag_preset_pending[diag_preset_depth] = r;
+}
+static void diag_preset_retry() {
+  for (uint8_t k = 3; k-- > 0;) {   // outermost last, so a save prints after its own load
+    if (diag_preset_pending[k].pending && diag_preset_send(diag_preset_pending[k])) {
+      diag_preset_pending[k].pending = false;
+    }
+  }
+}
 
 #endif  // MINICHORD_DIAG
 #endif  // DIAGNOSTICS_H

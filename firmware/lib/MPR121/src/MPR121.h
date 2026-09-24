@@ -122,6 +122,12 @@ public:
   void setDebounce(DeviceAddress device_address,
     uint8_t touch_debounce,
     uint8_t release_debounce);
+  // Baseline filter used while an electrode is touched (NHDT, NCLT, FDLT).
+  // All zero holds the baseline still for as long as the touch lasts.
+  void setTouchedBaselineFilter(DeviceAddress device_address,
+    uint8_t noise_half_delta,
+    uint8_t noise_count_limit,
+    uint8_t filter_delay_limit);
 
   const static uint8_t CHARGE_DISCHARGE_CURRENT_MIN = 1;
   const static uint8_t CHARGE_DISCHARGE_CURRENT_MAX = 63;

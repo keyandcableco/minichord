@@ -73,6 +73,14 @@ harp::harp(){}
     release_debounce);
     touch_sensor.setBaselineTracking(MPR121::ADDRESS_5A,
     baseline_tracking);
+    // The library default lets the baseline follow a held touch (NHDT 1,
+    // NCLT 16, FDLT 255). On the harp that creeps toward a resting finger fast
+    // enough to release the pad in one to a few seconds with the finger still
+    // down: the string is cut short, and the slightest movement re-touches it
+    // and retriggers the voice, which is heard as a click. Holding the baseline
+    // still while touched, as NXP's own example configuration does, keeps a
+    // held string held. Tracking when untouched is unchanged.
+    touch_sensor.setTouchedBaselineFilter(MPR121::ADDRESS_5A, 0, 0, 0);
     touch_sensor.setChargeDischargeCurrent(MPR121::ADDRESS_5A,
     charge_discharge_current);
     touch_sensor.setChargeDischargeTime(MPR121::ADDRESS_5A,

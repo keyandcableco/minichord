@@ -31,10 +31,22 @@ uint32_t diag_last_hold_ms[12] = {0};
 int16_t diag_release_delta[12] = {0};
 int16_t diag_min_delta[12] = {0};
 bool diag_margin_warned[12] = {false};
+bool diag_long_touch_warned[12] = {false};
 uint8_t diag_margin_cursor = 0;
 uint32_t diag_harp_chatter = 0;
 uint32_t diag_harp_drift_releases = 0;
 uint32_t diag_harp_margin_warnings = 0;
+
+// The lowest margin seen during a hold, or "unsampled" when the pad released
+// before the round robin reached it.
+static const char *diag_min_text(int16_t v) {
+  static char buf[4][12];
+  static uint8_t slot = 0;
+  slot = (slot + 1) % 4;
+  if (v == 32767) return "unsampled";
+  snprintf(buf[slot], sizeof(buf[slot]), "%d", v);
+  return buf[slot];
+}
 
 static const char *diag_release_kind(int16_t delta) {
   if (delta < 0) return "unread";
@@ -57,6 +69,7 @@ void diag_harp_press(uint8_t i, bool was_sounding) {
   diag_touch_at[i] = now;
   diag_min_delta[i] = 32767;
   diag_margin_warned[i] = false;
+  diag_long_touch_warned[i] = false;
   if (diag_verbose) {
     int16_t d = -1;
     harp_sensor.diag_delta(i, d);
@@ -74,12 +87,11 @@ void diag_harp_release(uint8_t i) {
   diag_release_delta[i] = d;
   if (hold >= DIAG_LONG_HOLD_MS && d >= (int16_t)harp_sensor.diag_release_threshold() - 8) {
     diag_harp_drift_releases++;
-    diag_log("HARP", "release s=%u after %lums, delta=%d min_during_hold=%d: %s",
-             i, (unsigned long)hold, d, diag_min_delta[i], diag_release_kind(d));
+    diag_log("HARP", "release s=%u after %lums, delta=%d min_during_hold=%s: %s",
+             i, (unsigned long)hold, d, diag_min_text(diag_min_delta[i]), diag_release_kind(d));
   } else if (diag_verbose) {
-    diag_log("harp", "release s=%u after %lums, delta=%d min_during_hold=%d: %s",
-             i, (unsigned long)hold, d,
-             diag_min_delta[i] == 32767 ? -1 : diag_min_delta[i], diag_release_kind(d));
+    diag_log("harp", "release s=%u after %lums, delta=%d min_during_hold=%s: %s",
+             i, (unsigned long)hold, d, diag_min_text(diag_min_delta[i]), diag_release_kind(d));
   }
 }
 
@@ -95,6 +107,13 @@ void diag_harp_margin_step() {
     int16_t d;
     if (!harp_sensor.diag_delta(i, d)) return;
     if (d < diag_min_delta[i]) diag_min_delta[i] = d;
+    // With the baseline held still during a touch, a false touch would never
+    // release on its own. Nobody rests a finger on one pad this long.
+    if (now - diag_touch_at[i] > DIAG_LONG_TOUCH_MS && !diag_long_touch_warned[i]) {
+      diag_long_touch_warned[i] = true;
+      diag_log("HARP", "long touch s=%u held %lums, delta=%d: if no finger is on it, the pad is stuck",
+               i, (unsigned long)(now - diag_touch_at[i]), d);
+    }
     if (d < DIAG_MARGIN_WARN && !diag_margin_warned[i]) {
       diag_margin_warned[i] = true;
       diag_harp_margin_warnings++;
@@ -142,14 +161,16 @@ void diag_check_audio() {
     if (millis() - last_log > 200) {
       last_log = millis();
       uint8_t s = diag_audio_watch.last_late_section;
-      diag_log("AUDIO", "%s: update gap %luus (period %u), %lu late / %lu dropouts so far, loop was in %s; strings=%u chords=%u",
+      bool sent = diag_log("AUDIO", "%s: update gap %luus (period %u), %lu late / %lu dropouts so far, loop was in %s; strings=%u chords=%u",
                drops != diag_watch_dropouts_seen ? "DROPOUT" : "late update",
                (unsigned long)diag_audio_watch.last_late_gap_us, DIAG_AUDIO_PERIOD_US,
                (unsigned long)late, (unsigned long)drops,
                s < DIAG_SECTIONS ? diag_section_names[s] : "?",
                diag_strings_active(), diag_chords_active());
-      diag_watch_late_seen = late;
-      diag_watch_dropouts_seen = drops;
+      if (sent) {
+        diag_watch_late_seen = late;
+        diag_watch_dropouts_seen = drops;
+      }
     }
   }
 
@@ -196,21 +217,25 @@ uint32_t diag_loop_count = 0;
 uint32_t diag_loop_total_us = 0;
 uint32_t diag_loop_max_us = 0;
 uint32_t diag_stalls = 0;
+uint8_t diag_loop_max_section = 0;
 
 void diag_loop_end() {
   uint32_t total = micros() - diag_loop_start;
   diag_loop_count++;
   diag_loop_total_us += total;
-  if (total > diag_loop_max_us) diag_loop_max_us = total;
+  uint8_t worst = 0;
+  for (uint8_t s = 1; s < DIAG_SECTIONS; s++) {
+    if (diag_section_us[s] > diag_section_us[worst]) worst = s;
+  }
+  if (total > diag_loop_max_us) {
+    diag_loop_max_us = total;
+    diag_loop_max_section = worst;
+  }
   if (total > DIAG_LOOP_WARN_US && diag_settled) {
     diag_stalls++;
     static uint32_t last_log = 0;
     if (millis() - last_log > 200) {
       last_log = millis();
-      uint8_t worst = 0;
-      for (uint8_t s = 1; s < DIAG_SECTIONS; s++) {
-        if (diag_section_us[s] > diag_section_us[worst]) worst = s;
-      }
       diag_log("STALL", "loop took %luus, mostly %s (%luus); midi_in=%lu buttons=%lu presets=%lu pots=%lu chords=%lu harp=%lu midi_out=%lu diag=%lu",
                (unsigned long)total, diag_section_names[worst], (unsigned long)diag_section_us[worst],
                (unsigned long)diag_section_us[0], (unsigned long)diag_section_us[1],
@@ -278,9 +303,11 @@ void diag_check_stuck() {
   // stop_chord_notes() only releases voices already in sustain, so a voice let
   // go during its attack or decay plays that stage out before it starts to
   // release. With a long decay this is the note that will not stop.
-  if (up > DIAG_TAIL_MS && active && !diag_chord_tail_logged) {
+  // Only past the preset's own release time, which is the tail it asked for.
+  uint32_t allowed = (uint32_t)max((int16_t)0, current_sysex_parameters[141]) + DIAG_TAIL_MS;
+  if (up > allowed && active && !diag_chord_tail_logged) {
     diag_chord_tail_logged = true;
-    diag_log("TAIL", "chord: %u voices still sounding %lums after release (attack=%d hold=%d decay=%d sustain=%d release=%d)",
+    diag_log("TAIL", "chord: %u voices still sounding %lums after release, past its release time (attack=%d hold=%d decay=%d sustain=%d release=%d)",
              active, (unsigned long)up,
              current_sysex_parameters[137], current_sysex_parameters[138], current_sysex_parameters[139],
              current_sysex_parameters[140], current_sysex_parameters[141]);
@@ -371,21 +398,24 @@ void diag_reset_peaks() {
   diag_cpu_level_seen = 0;
   diag_mem_level_seen = 0;
   diag_loop_max_us = 0;
+  diag_loop_max_section = 0;
 }
 
 void diag_heartbeat() {
   uint32_t avg = diag_loop_count ? diag_loop_total_us / diag_loop_count : 0;
-  diag_log("BEAT", "cpu=%d/%d%% mem=%u/%u of %u gap_max=%luus late=%lu drop=%lu loop avg=%luus max=%luus stalls=%lu | peaks str=%u chd=%u L=%u R=%u clips=%lu | strings=%u chords=%u pads=%u | harp retouch=%lu drift=%lu margin=%lu stuck=%lu | midi_drop=%lu lines_dropped=%lu sensor=%s",
+  diag_log("BEAT", "cpu=%d/%d%% mem=%u/%u of %u gap_max=%luus late=%lu drop=%lu loop avg=%luus max=%luus (%s) stalls=%lu",
            (int)AudioProcessorUsage(), (int)AudioProcessorUsageMax(),
            (unsigned)AudioMemoryUsage(), (unsigned)AudioMemoryUsageMax(), DIAG_AUDIO_MEMORY,
            (unsigned long)diag_audio_watch.worst_gap_us, (unsigned long)diag_audio_watch.late,
            (unsigned long)diag_audio_watch.dropouts, (unsigned long)avg, (unsigned long)diag_loop_max_us,
-           (unsigned long)diag_stalls,
+           diag_section_names[diag_loop_max_section], (unsigned long)diag_stalls);
+  diag_log("BEAT", "peaks str=%u chd=%u L=%u R=%u clips=%lu | strings=%u chords=%u pads=%u | harp retouch=%lu drift=%lu margin=%lu stuck=%lu",
            diag_peak_window[0], diag_peak_window[1], diag_peak_window[2], diag_peak_window[3],
            (unsigned long)diag_clips,
            diag_strings_active(), diag_chords_active(), diag_pads_held(),
            (unsigned long)diag_harp_chatter, (unsigned long)diag_harp_drift_releases,
-           (unsigned long)diag_harp_margin_warnings, (unsigned long)diag_stuck_count,
+           (unsigned long)diag_harp_margin_warnings, (unsigned long)diag_stuck_count);
+  diag_log("BEAT", "midi_drop=%lu lines_dropped=%lu sensor=%s",
            (unsigned long)midi_queue_dropped, (unsigned long)diag_lines_dropped,
            harp_sensor.diag_communicating() ? "ok" : "NOT RESPONDING");
   diag_loop_count = 0;
@@ -444,6 +474,7 @@ void diag_tick() {
   diag_was_connected = connected;
 
   diag_commands();
+  diag_preset_retry();
   diag_report_events();
   if (diag_settled) diag_check_audio();
   if (now - last_margin >= 50) {
