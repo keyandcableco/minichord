@@ -2445,6 +2445,43 @@ void build_chord_notes() {
     }
   }
   for (int i = 0; i < 4; i++) previous_voicing[i] = current_chord_notes[i];
+  // Tripwire: the four voices must contain exactly the chord's pitch classes.
+  // If quality ever breaks, this names the moment and the state it broke in.
+  {
+    uint8_t expect[4];
+    uint8_t expect_count = collect_chord_tones(current_chord, expect);
+    int16_t root = get_root_button(key_signature_selection, chord_frame_shift, fundamental)
+                   + (chord_context_sharp ? (flat_button_modifier ? -sharp_step : sharp_step) : 0);
+    bool covered[4] = {false, false, false, false};
+    bool foreign = false;
+    for (uint8_t v = 0; v < 4; v++) {
+      int16_t pc = (((int16_t)current_chord_notes[v] - root) % EDO + EDO) % EDO;
+      bool known = false;
+      for (uint8_t k = 0; k < expect_count; k++) {
+        if (pc == expect[k]) { covered[k] = true; known = true; }
+      }
+      if (!known) foreign = true;
+    }
+    bool missing = false;
+    for (uint8_t k = 0; k < expect_count; k++) {
+      if (!covered[k]) missing = true;
+    }
+    if ((foreign || missing) && !chord_context_slashed) {
+      Serial.print("QUALITY BREAK: fund="); Serial.print(fundamental);
+      Serial.print(" line="); Serial.print(current_line);
+      Serial.print(" alt="); Serial.print(alt_chord_layout);
+      Serial.print(" sharpctx="); Serial.print(chord_context_sharp);
+      Serial.print(" vl="); Serial.print(voice_leading);
+      Serial.print(" EDO="); Serial.print(EDO);
+      Serial.print(" notes=");
+      for (uint8_t v = 0; v < 4; v++) { Serial.print(current_chord_notes[v]); Serial.print(" "); }
+      Serial.print(" tones=");
+      for (uint8_t k = 0; k < expect_count; k++) { Serial.print(expect[k]); Serial.print(" "); }
+      Serial.print(" prev=");
+      for (uint8_t v = 0; v < 4; v++) { Serial.print(previous_voicing[v]); Serial.print(" "); }
+      Serial.println();
+    }
+  }
 }
 
 // Rebuild what is sounding and retune the voices still active. This is what a
