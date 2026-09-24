@@ -156,9 +156,12 @@ uint8_t diag_mem_level_seen = 0;
 uint32_t diag_watch_late_seen = 0;
 uint32_t diag_watch_dropouts_seen = 0;
 uint32_t diag_clips = 0;
-uint16_t diag_peak_window[4] = {0, 0, 0, 0};   // per-mille, since the last heartbeat
-const char *const diag_peak_names[4] = {"strings", "chords", "out_L", "out_R"};
-AudioAnalyzePeak *const diag_peaks[4] = {&diag_peak_strings, &diag_peak_chords, &diag_peak_out_l, &diag_peak_out_r};
+#define DIAG_PEAKS 6
+uint16_t diag_peak_window[DIAG_PEAKS] = {0};   // per-mille, since the last heartbeat
+uint32_t diag_peak_clips[DIAG_PEAKS] = {0};
+const char *const diag_peak_names[DIAG_PEAKS] = {"string_sum", "strings", "chord_sum", "chords", "out_L", "out_R"};
+AudioAnalyzePeak *const diag_peaks[DIAG_PEAKS] = {&diag_peak_string_sum, &diag_peak_strings, &diag_peak_chord_sum,
+                                                  &diag_peak_chords, &diag_peak_out_l, &diag_peak_out_r};
 
 static uint8_t diag_strings_active() {
   uint8_t n = 0;
@@ -214,22 +217,29 @@ void diag_check_audio() {
     diag_mem_level_seen++;
   }
 
+  // available() clears the meter's flag, so it is asked once, of the first
+  // meter, and the rest are read directly (they update in the same cycle).
+  // The first two sessions asked every meter again, which left the first one
+  // -- the strings -- reading zero every time.
   if (diag_peaks[0]->available()) {
-    uint16_t pm[4];
+    uint16_t pm[DIAG_PEAKS];
     bool clip = false;
-    for (uint8_t k = 0; k < 4; k++) {
-      pm[k] = diag_peaks[k]->available() ? (uint16_t)(diag_peaks[k]->read() * 1000.0f) : 0;
+    for (uint8_t k = 0; k < DIAG_PEAKS; k++) {
+      pm[k] = (uint16_t)(diag_peaks[k]->read() * 1000.0f);
       if (pm[k] > diag_peak_window[k]) diag_peak_window[k] = pm[k];
-      if (pm[k] >= DIAG_CLIP_PERMILLE) clip = true;
+      if (pm[k] >= DIAG_CLIP_PERMILLE) {
+        clip = true;
+        diag_peak_clips[k]++;
+      }
     }
     if (clip) {
       diag_clips++;
       static uint32_t last_log = 0;
       if (millis() - last_log > 1000) {
         last_log = millis();
-        diag_log("CLIP", "peaks strings=%u chords=%u out_L=%u out_R=%u (per mille); strings=%u chords=%u, %lu clipping reads so far",
-                 pm[0], pm[1], pm[2], pm[3], diag_strings_active(), diag_chords_active(),
-                 (unsigned long)diag_clips);
+        diag_log("CLIP", "string_sum=%u strings=%u chord_sum=%u chords=%u out_L=%u out_R=%u (per mille); strings=%u pads=%u chords=%u, %lu clipping reads so far",
+                 pm[0], pm[1], pm[2], pm[3], pm[4], pm[5], diag_strings_active(), diag_pads_held(),
+                 diag_chords_active(), (unsigned long)diag_clips);
       }
     }
   }
@@ -432,9 +442,9 @@ void diag_heartbeat() {
            (unsigned long)diag_audio_watch.worst_gap_us, (unsigned long)diag_audio_watch.late,
            (unsigned long)diag_audio_watch.dropouts, (unsigned long)avg, (unsigned long)diag_loop_max_us,
            diag_section_names[diag_loop_max_section], (unsigned long)diag_stalls);
-  diag_log("BEAT", "peaks str=%u chd=%u L=%u R=%u clips=%lu | strings=%u chords=%u pads=%u | harp retouch=%lu long_releases=%lu margin=%lu stuck=%lu",
+  diag_log("BEAT", "peaks str_sum=%u str=%u chd_sum=%u chd=%u L=%u R=%u clips=%lu | strings=%u chords=%u pads=%u | harp retouch=%lu long_releases=%lu margin=%lu stuck=%lu",
            diag_peak_window[0], diag_peak_window[1], diag_peak_window[2], diag_peak_window[3],
-           (unsigned long)diag_clips,
+           diag_peak_window[4], diag_peak_window[5], (unsigned long)diag_clips,
            diag_strings_active(), diag_chords_active(), diag_pads_held(),
            (unsigned long)diag_harp_chatter, (unsigned long)diag_harp_long_releases,
            (unsigned long)diag_harp_margin_warnings, (unsigned long)diag_stuck_count);
@@ -443,7 +453,7 @@ void diag_heartbeat() {
            harp_sensor.diag_communicating() ? "ok" : "NOT RESPONDING");
   diag_loop_count = 0;
   diag_loop_total_us = 0;
-  for (uint8_t k = 0; k < 4; k++) diag_peak_window[k] = 0;
+  for (uint8_t k = 0; k < DIAG_PEAKS; k++) diag_peak_window[k] = 0;
 }
 
 void diag_banner() {

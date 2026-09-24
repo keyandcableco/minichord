@@ -451,9 +451,14 @@ AudioConnection          patchCord2025(stereo_l_mixer, 0, USB_out, 1);
 AudioConnection          patchCord2026(stereo_r_mixer, 0, USB_out, 0);
 #endif
 
-// Tripwire build: peak meters on the two instrument outputs and the final mix,
+// Tripwire build: peak meters where the twelve strings and the four chord
+// voices are first summed, on the two instrument outputs and on the final mix,
 // and the audio watchdog fed from the left output (any source keeps it running).
 #ifdef MINICHORD_DIAG
+AudioAnalyzePeak         diag_peak_string_sum;
+AudioAnalyzePeak         diag_peak_chord_sum;
+AudioConnection          patchCordDiag6(all_string_mix, 0, diag_peak_string_sum, 0);
+AudioConnection          patchCordDiag7(chord_voice_mixer, 0, diag_peak_chord_sum, 0);
 AudioAnalyzePeak         diag_peak_strings;
 AudioAnalyzePeak         diag_peak_chords;
 AudioAnalyzePeak         diag_peak_out_l;

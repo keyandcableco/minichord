@@ -77,14 +77,6 @@ harp::harp(){}
     release_debounce);
     touch_sensor.setBaselineTracking(MPR121::ADDRESS_5A,
     baseline_tracking);
-    // The library default lets the baseline follow a held touch (NHDT 1,
-    // NCLT 16, FDLT 255). This holds it still instead, as NXP's example
-    // configuration does. Suspected of releasing held strings, not yet shown:
-    // a session with it frozen looked the same, and at those settings the
-    // filter looks too slow to explain the drops. The tripwire build can
-    // switch it back (f) for an A/B.
-    touch_sensor.setTouchedBaselineFilter(MPR121::ADDRESS_5A, 0, 0, 0);
-    diag_touched_filter_frozen = true;
     touch_sensor.setChargeDischargeCurrent(MPR121::ADDRESS_5A,
     charge_discharge_current);
     touch_sensor.setChargeDischargeTime(MPR121::ADDRESS_5A,

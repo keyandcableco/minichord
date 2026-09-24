@@ -2920,6 +2920,8 @@ void handle_preset_change(uint8_t up_transition, uint8_t down_transition, bool u
   if (pending_preset_change && (released || (window_elapsed && only_one_held))) {
     pending_preset_change = false;
     Serial.println(pending_up ? "Switching to next preset" : "Switching to last preset");
+    DIAG(if (!(!sysex_controler_connected && flag_save_needed))
+           diag_log("PRESET", "switch without saving: %s", sysex_controler_connected ? "a remote editor is connected" : "nothing changed since the load"));
     if (!sysex_controler_connected && flag_save_needed) {
       save_config(current_bank_number, false);
     }

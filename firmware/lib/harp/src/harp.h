@@ -27,7 +27,9 @@ class harp{
   bool diag_communicating();
   uint8_t diag_touch_threshold();
   uint8_t diag_release_threshold();
-  // A/B switches for the stress test. Both stop and restart the electrodes,
+  // A/B switches for the stress test. The touched baseline filter is left at
+  // the library default: a 20 s trace showed the baseline did not move under a
+  // held finger with it at the default or frozen. Both stop and restart the electrodes,
   // which reloads every baseline from the current reading, so they are meant
   // to be used with no finger on the harp.
   void diag_set_touched_filter(bool frozen);
