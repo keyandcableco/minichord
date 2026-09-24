@@ -40,6 +40,14 @@ uint8_t debouncer::read_transition(){
     }
     return 0;
 }
+// The latest reading, before it has held for the debounce period. Almost
+// everything wants read_value(); this is for a caller that has to know a
+// contact closed now, not ten milliseconds from now -- the key change combo,
+// which must claim a button pressed in its last moments before the press
+// becomes a value the chords can see.
+bool debouncer::read_raw(){
+    return pending;
+}
 bool debouncer::read_value(){
     return value;
 }

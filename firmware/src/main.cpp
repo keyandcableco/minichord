@@ -2355,7 +2355,9 @@ void handle_chords_button() {
     // debounce, not at the first open reading: one pressed just as the preset
     // buttons are released can still be bouncing, open for a moment and then
     // closed, and would otherwise start its chord ten milliseconds later.
-    if (chord_matrix_array[i].read_value()) open_for[i] = 0;
+    // raw, like the claim: how long the contact has actually been open, not how
+    // long ago the held-back value last read closed
+    if (chord_matrix_array[i].read_raw()) open_for[i] = 0;
     if (key_selection_buttons & (1UL << i)) {
       if (!key_change_mode && open_for[i] > 20) key_selection_buttons &= ~(1UL << i);
       continue;
@@ -2828,7 +2830,10 @@ void handle_key_change_mode(uint8_t up_transition, uint8_t down_transition, bool
       bool now = chord_matrix_array[i].read_value();
       bool was = key_button_was_down & (1UL << i);
       if (now) key_button_was_down |= (1UL << i); else key_button_was_down &= ~(1UL << i);
-      if (now) key_selection_buttons |= (1UL << i);
+      // claimed from the raw contact: a button pressed in the gesture's last
+      // moments only becomes a value once it has held, after the mode may
+      // already have ended, and would then start its chord
+      if (chord_matrix_array[i].read_raw()) key_selection_buttons |= (1UL << i);
       if (now && !was) {
         chord_pressed = true;
         int user_row = 6 - ((i - 1) / 3); // hardware rows run B E A D G C F
