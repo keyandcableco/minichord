@@ -19,6 +19,15 @@ class harp{
   void recalibrate();
   void update(debouncer (&data_array)[12]);
 
+  // For the tripwire build (include/diagnostics_checks.h). Reading the sensor's
+  // own view of a pad is how a release from a lifted finger is told apart from
+  // one caused by the baseline creeping toward a finger still on the pad.
+  bool diag_delta(uint8_t string, int16_t &delta);   // baseline minus filtered, per string
+  bool diag_communicating();
+  uint8_t diag_touch_threshold();
+  uint8_t diag_release_threshold();
+  volatile uint32_t diag_overcurrent_count = 0;
+
   private:
   #if CAP_CHIP==1
     AT42QT2120 touch_sensor;

@@ -3,6 +3,9 @@
 #include <SPI.h>
 #include <SD.h>
 #include <SerialFlash.h>
+// Before any audio object: the tripwire build's audio watchdog has to be the
+// first object constructed so it runs first in every update. Empty otherwise.
+#include "diagnostics.h"
 
 // GUItool: begin automatically generated code
 AudioSynthWaveformDc     string_vibrato_dc; //xy=228.10000610351562,909.9999923706055
@@ -446,4 +449,18 @@ AudioConnection          patchCord2024(stereo_r_mixer, 0, DAC_out, 0);
 #ifdef AUDIO_INTERFACE
 AudioConnection          patchCord2025(stereo_l_mixer, 0, USB_out, 1);
 AudioConnection          patchCord2026(stereo_r_mixer, 0, USB_out, 0);
+#endif
+
+// Tripwire build: peak meters on the two instrument outputs and the final mix,
+// and the audio watchdog fed from the left output (any source keeps it running).
+#ifdef MINICHORD_DIAG
+AudioAnalyzePeak         diag_peak_strings;
+AudioAnalyzePeak         diag_peak_chords;
+AudioAnalyzePeak         diag_peak_out_l;
+AudioAnalyzePeak         diag_peak_out_r;
+AudioConnection          patchCordDiag1(string_amplifier, 0, diag_peak_strings, 0);
+AudioConnection          patchCordDiag2(chords_amplifier, 0, diag_peak_chords, 0);
+AudioConnection          patchCordDiag3(stereo_l_mixer, 0, diag_peak_out_l, 0);
+AudioConnection          patchCordDiag4(stereo_r_mixer, 0, diag_peak_out_r, 0);
+AudioConnection          patchCordDiag5(stereo_l_mixer, 0, diag_audio_watch, 0);
 #endif

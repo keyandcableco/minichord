@@ -11,6 +11,7 @@
 #include <debouncer.h>
 #include <harp.h>
 #include <potentiometer.h>
+#include "diagnostics.h"   // DIAG(...) hooks; empty unless MINICHORD_DIAG
 
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
@@ -749,6 +750,7 @@ void queue_midi_event(uint8_t kind, uint8_t a, uint8_t b, int16_t bend, uint8_t 
 }
 
 void queue_midi(bool note_on, uint8_t note, uint8_t velocity, uint8_t channel, uint8_t cable) {
+  DIAG(diag_check_midi_note(note, channel, cable));
   queue_midi_event(note_on ? MIDI_EVT_NOTE_ON : MIDI_EVT_NOTE_OFF, note, velocity, 0, channel, cable);
 }
 
@@ -1292,6 +1294,7 @@ void refresh_chord_filter() {
 void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
   chord_voice_current_note[i] = current_note;
   float note_freq = pow(2,chord_octave_change)*c_frequency/8 * temper_ratio(current_note+transpose_steps); //down one octave to let more possibilities with the shuffling array
+  DIAG(diag_check_pitch(0, i, current_note, note_freq * diag_max3(osc_1_freq_multiplier, osc_2_freq_multiplier, osc_3_freq_multiplier)));
   if(glide_length>0){
         //ok so first we need to set the "middle note". Keep in mind that the signal will be +/-1 and will go +/- 2 octaves (frequencyModulation(2), hence the /24.0 below)
     //let's do a trick to select a middle note: get the level (relative to the C) and the note and do a modulo 
@@ -1321,6 +1324,7 @@ void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
     float glide_offset = (temperament_selection == 0)
       ? note_delta/24.0
       : log2f(note_freq / middle_freq) / 2.0f;
+    DIAG(diag_check_glide(i, current_note, glide_offset));
     chord_freq_dc_array[i]->amplitude(glide_offset,glide_length);
     mpe_chord_note_change(i, 12.0f * log2f(note_freq), glide_length, current_note);
     // chord_voice_filter_array[i]->frequency(1*freq);
@@ -1359,6 +1363,8 @@ void set_harp_voice_frequency(uint8_t i, uint16_t current_note) {
   harp_voice_current_note[i] = current_note;
   float note_freq =  pow(2,harp_octave_change)*c_frequency/4 * temper_ratio(current_note+transpose_steps);
   float transient_freq =  64.0*c_frequency/4 *temper_ratio((current_note+transpose_steps)%EDO+transient_note_level);
+  DIAG(diag_check_pitch(1, i, current_note, note_freq));
+  DIAG(diag_check_pitch(2, i, current_note, transient_freq));
   AudioNoInterrupts();
   string_waveform_array[i]->frequency(note_freq);
   string_transient_waveform_array[i]->frequency(transient_freq);
@@ -2241,6 +2247,8 @@ void load_config(int bank_number) {
   //digitalWrite(_MUTE_PIN, HIGH); // unmuting the DAC
 }
 
+#include "diagnostics_checks.h"
+
 void setup() {
   Serial.begin(9600);
   Serial.println("Initialising audio parameters");
@@ -2324,6 +2332,7 @@ void setup() {
 
 
   Serial.println("Initialisation complete");
+  DIAG(diag_banner());
   digitalWrite(_MUTE_PIN, HIGH);
 }
 
@@ -2382,6 +2391,7 @@ void handle_harp() {
   for (int i = 0; i < 12; i++) {
     int value = harp_array[i].read_transition();
     if (value == 2) {
+      DIAG(diag_harp_press(i, string_enveloppe_array[i]->isActive()));
       set_harp_voice_frequency(i, current_harp_notes[i]);
       AudioNoInterrupts();
       envelope_string_vibrato_lfo.noteOn();
@@ -2397,6 +2407,7 @@ void handle_harp() {
       queue_midi(true, midi_base_note_transposed + midi_out_note(current_harp_notes[i]), harp_attack_velocity, mpe_harp_channel(i), harp_port);
       harp_started_notes[i] = midi_base_note_transposed + midi_out_note(current_harp_notes[i]);
     } else if (value == 1) {
+      DIAG(diag_harp_release(i));
       AudioNoInterrupts();
       string_enveloppe_array[i]->noteOff();
       string_transient_envelope_array[i]->noteOff();
@@ -2601,6 +2612,7 @@ void build_chord_notes() {
       for (int i = 0; i < 4; i++) current_chord_notes[i] = led[i];
     }
   }
+  DIAG(diag_check_chord_quality());
   for (int i = 0; i < 4; i++) previous_voicing[i] = current_chord_notes[i];
 }
 
@@ -3100,6 +3112,7 @@ void apply_temperament(uint8_t t) {
 }
 
 void loop() {
+  DIAG(diag_loop_begin());
   // Process incoming MIDI messages
   if (usbMIDI.read()) {
     processMIDI();
@@ -3108,6 +3121,7 @@ void loop() {
   if (sysex_controler_connected && bitRead(USB1_PORTSC1, 7)) {
     sysex_controler_connected = false;
   }
+  DIAG(diag_mark(0));   // midi_in
 
   // Update debouncers
   hold_button.set(digitalRead(HOLD_BUTTON_PIN));
@@ -3121,6 +3135,7 @@ void loop() {
 
   // Handle hold button for mode switching and rhythm
   handle_hold_button();
+  DIAG(diag_mark(1));   // buttons
 
   // Handle preset changes
   uint8_t up_transition = up_button.read_transition();
@@ -3134,6 +3149,7 @@ void loop() {
   if (rythm_mode) {
     handle_rhythm_mode();
   }
+  DIAG(diag_mark(2));   // presets (and key change, rhythm note-offs)
 
   // Handle potentiometer updates
   bool alternate = chord_matrix_array[0].read_value();
@@ -3180,6 +3196,7 @@ void loop() {
   }
 
   step_led_animation();
+  DIAG(diag_mark(3));   // pots (and the double tap, LEDs)
 
   // Handle continuous mode logic
   if (!continuous_chord && !rythm_mode) {
@@ -3201,12 +3218,18 @@ void loop() {
 
   // Handle chord button transitions
   handle_chords_button();
+  DIAG(diag_mark(4));   // chords
 
   // Handle harp functions
   handle_harp();
+  DIAG(diag_mark(5));   // harp
 
   // The only point at which this firmware transmits MIDI. Must stay last, and must
   // stay in loop() -- see the MIDI OUTPUT QUEUE comment above.
   mpe_update_glide();
   drain_midi_queue();
+  DIAG(diag_mark(6));   // midi_out
+  DIAG(diag_tick());
+  DIAG(diag_mark(7));   // diag
+  DIAG(diag_loop_end());
 }
