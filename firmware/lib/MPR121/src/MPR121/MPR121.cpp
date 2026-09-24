@@ -501,6 +501,16 @@ void MPR121::setTouchedBaselineFilter(DeviceAddress device_address,
   resumeChannels(device_address);
 }
 
+void MPR121::getTouchedBaselineFilter(DeviceAddress device_address,
+  uint8_t & noise_half_delta,
+  uint8_t & noise_count_limit,
+  uint8_t & filter_delay_limit)
+{
+  read(device_address,NHDT_REGISTER_ADDRESS,noise_half_delta);
+  read(device_address,NCLT_REGISTER_ADDRESS,noise_count_limit);
+  read(device_address,FDLT_REGISTER_ADDRESS,filter_delay_limit);
+}
+
 void MPR121::setChargeDischargeCurrent(DeviceAddress device_address,
   uint8_t charge_discharge_current)
 {

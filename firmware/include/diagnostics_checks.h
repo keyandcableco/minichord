@@ -6,9 +6,10 @@
 //   AUDIO   the audio interrupt started late or the output ran dry, CPU or
 //           block memory crossed a level
 //   CLIP    a stage hit full scale
-//   HARP    sensor behaviour on long holds: the touch margin shrinking while
-//           a finger stays down, a release that looks like drift, a re-touch
-//           right after one
+//   HARP    sensor readings on long holds: the touch margin shrinking, the
+//           raw baseline and filtered values at each release, re-touches
+//           right after one; TRACE prints held pads continuously (t)
+//   MARK    typed by the player (m) the moment a click is heard
 //   STALL   a loop pass slow enough to delay the harp and buttons
 //   STUCK   audio or MIDI still on for something nobody is holding
 //   TAIL    a chord voice ringing long after every chord button is up
@@ -25,16 +26,28 @@ bool diag_settled = false;
 bool diag_was_connected = false;
 
 //>>HARP TRACKING
+// The first two sessions could not tell a pad that drifts under a resting
+// finger from an ordinary lift: the chip's filtered reading is still settling
+// when the debounced release arrives, so both leave a delta just under the
+// threshold. So every harp line now carries the two raw readings, baseline
+// (b) and filtered (f), instead of a verdict, and trace mode (t) prints every
+// held pad ten times a second. A drifting baseline shows as b falling toward
+// a steady f; a finger lightening shows as f rising toward a steady b.
 uint32_t diag_touch_at[12] = {0};
 uint32_t diag_release_at[12] = {0};
 uint32_t diag_last_hold_ms[12] = {0};
-int16_t diag_release_delta[12] = {0};
+uint16_t diag_release_b[12] = {0};
+uint16_t diag_release_f[12] = {0};
+uint16_t diag_ref_b[12] = {0};   // first reading of a long hold, one second in
+uint16_t diag_ref_f[12] = {0};
 int16_t diag_min_delta[12] = {0};
 bool diag_margin_warned[12] = {false};
 bool diag_long_touch_warned[12] = {false};
 uint8_t diag_margin_cursor = 0;
+bool diag_trace = false;
+uint32_t diag_mark_count = 0;
 uint32_t diag_harp_chatter = 0;
-uint32_t diag_harp_drift_releases = 0;
+uint32_t diag_harp_long_releases = 0;
 uint32_t diag_harp_margin_warnings = 0;
 
 // The lowest margin seen during a hold, or "unsampled" when the pad released
@@ -48,32 +61,24 @@ static const char *diag_min_text(int16_t v) {
   return buf[slot];
 }
 
-static const char *diag_release_kind(int16_t delta) {
-  if (delta < 0) return "unread";
-  // A lifted finger leaves the delta near zero within a few milliseconds; a
-  // release caused by the baseline creeping toward a finger that is still
-  // there leaves it just under the release threshold.
-  return delta >= (int16_t)harp_sensor.diag_release_threshold() - 8 ? "DRIFT (finger likely still on)" : "lift";
-}
-
 void diag_harp_press(uint8_t i, bool was_sounding) {
   uint32_t now = millis();
   if (diag_release_at[i] != 0 && now - diag_release_at[i] < DIAG_CHATTER_MS &&
       diag_last_hold_ms[i] >= DIAG_LONG_HOLD_MS) {
     diag_harp_chatter++;
-    diag_log("HARP", "retouch s=%u %lums after a %lums hold, release delta=%d (%s)%s",
+    diag_log("HARP", "retouch s=%u %lums after a %lums hold (at release b=%u f=%u)%s",
              i, (unsigned long)(now - diag_release_at[i]), (unsigned long)diag_last_hold_ms[i],
-             diag_release_delta[i], diag_release_kind(diag_release_delta[i]),
+             diag_release_b[i], diag_release_f[i],
              was_sounding ? ", retriggered a sounding voice" : "");
   }
   diag_touch_at[i] = now;
   diag_min_delta[i] = 32767;
   diag_margin_warned[i] = false;
   diag_long_touch_warned[i] = false;
-  if (diag_verbose) {
-    int16_t d = -1;
-    harp_sensor.diag_delta(i, d);
-    diag_log("harp", "touch s=%u note=%u delta=%d", i, current_harp_notes[i], d);
+  if (diag_verbose || diag_trace) {
+    uint16_t f = 0, b = 0;
+    harp_sensor.diag_raw(i, f, b);
+    diag_log("harp", "touch s=%u note=%u b=%u f=%u d=%d", i, current_harp_notes[i], b, f, (int)b - (int)f);
   }
 }
 
@@ -82,16 +87,15 @@ void diag_harp_release(uint8_t i) {
   uint32_t hold = now - diag_touch_at[i];
   diag_last_hold_ms[i] = hold;
   diag_release_at[i] = now;
-  int16_t d = -1;
-  if (hold >= DIAG_LONG_HOLD_MS || diag_verbose) harp_sensor.diag_delta(i, d);
-  diag_release_delta[i] = d;
-  if (hold >= DIAG_LONG_HOLD_MS && d >= (int16_t)harp_sensor.diag_release_threshold() - 8) {
-    diag_harp_drift_releases++;
-    diag_log("HARP", "release s=%u after %lums, delta=%d min_during_hold=%s: %s",
-             i, (unsigned long)hold, d, diag_min_text(diag_min_delta[i]), diag_release_kind(d));
-  } else if (diag_verbose) {
-    diag_log("harp", "release s=%u after %lums, delta=%d min_during_hold=%s: %s",
-             i, (unsigned long)hold, d, diag_min_text(diag_min_delta[i]), diag_release_kind(d));
+  uint16_t f = 0, b = 0;
+  bool read = (hold >= DIAG_LONG_HOLD_MS || diag_verbose || diag_trace) && harp_sensor.diag_raw(i, f, b);
+  diag_release_b[i] = b;
+  diag_release_f[i] = f;
+  if (hold >= DIAG_LONG_HOLD_MS) diag_harp_long_releases++;
+  if (read && (hold >= DIAG_LONG_HOLD_MS || diag_verbose || diag_trace)) {
+    diag_log(hold >= DIAG_LONG_HOLD_MS ? "HARP" : "harp",
+             "release s=%u after %lums b=%u f=%u d=%d min_d_during_hold=%s",
+             i, (unsigned long)hold, b, f, (int)b - (int)f, diag_min_text(diag_min_delta[i]));
   }
 }
 
@@ -104,25 +108,44 @@ void diag_harp_margin_step() {
     if (!harp_array[i].read_value()) continue;
     if (now - diag_touch_at[i] < DIAG_LONG_HOLD_MS) continue;
     diag_margin_cursor = (i + 1) % 12;
-    int16_t d;
-    if (!harp_sensor.diag_delta(i, d)) return;
+    uint16_t f, b;
+    if (!harp_sensor.diag_raw(i, f, b)) return;
+    int16_t d = (int16_t)b - (int16_t)f;
+    if (diag_min_delta[i] == 32767) {
+      diag_ref_b[i] = b;
+      diag_ref_f[i] = f;
+    }
     if (d < diag_min_delta[i]) diag_min_delta[i] = d;
     // With the baseline held still during a touch, a false touch would never
     // release on its own. Nobody rests a finger on one pad this long.
     if (now - diag_touch_at[i] > DIAG_LONG_TOUCH_MS && !diag_long_touch_warned[i]) {
       diag_long_touch_warned[i] = true;
-      diag_log("HARP", "long touch s=%u held %lums, delta=%d: if no finger is on it, the pad is stuck",
-               i, (unsigned long)(now - diag_touch_at[i]), d);
+      diag_log("HARP", "long touch s=%u held %lums b=%u f=%u d=%d: if no finger is on it, the pad is stuck",
+               i, (unsigned long)(now - diag_touch_at[i]), b, f, d);
     }
     if (d < DIAG_MARGIN_WARN && !diag_margin_warned[i]) {
       diag_margin_warned[i] = true;
       diag_harp_margin_warnings++;
-      diag_log("HARP", "margin s=%u delta=%d after %lums held (touch at %u, release under %u): baseline creeping toward the finger",
-               i, d, (unsigned long)(now - diag_touch_at[i]),
-               harp_sensor.diag_touch_threshold(), harp_sensor.diag_release_threshold());
+      diag_log("HARP", "margin s=%u d=%d after %lums held: b=%u f=%u (since the first reading b moved %d, f moved %d)",
+               i, d, (unsigned long)(now - diag_touch_at[i]), b, f,
+               (int)b - (int)diag_ref_b[i], (int)f - (int)diag_ref_f[i]);
     }
     return;
   }
+}
+
+// Trace mode: every held pad, ten times a second, on one line.
+void diag_harp_trace_step() {
+  char line[200];
+  int n = 0;
+  line[0] = 0;
+  for (uint8_t i = 0; i < 12 && n < (int)sizeof(line) - 24; i++) {
+    if (!harp_array[i].read_value()) continue;
+    uint16_t f, b;
+    if (!harp_sensor.diag_raw(i, f, b)) return;
+    n += snprintf(line + n, sizeof(line) - n, "%ss%u b%u f%u", n ? " | " : "", i, b, f);
+  }
+  if (n) diag_log("TRACE", "%s", line);
 }
 
 //>>AUDIO LOAD AND CLIPPING
@@ -409,11 +432,11 @@ void diag_heartbeat() {
            (unsigned long)diag_audio_watch.worst_gap_us, (unsigned long)diag_audio_watch.late,
            (unsigned long)diag_audio_watch.dropouts, (unsigned long)avg, (unsigned long)diag_loop_max_us,
            diag_section_names[diag_loop_max_section], (unsigned long)diag_stalls);
-  diag_log("BEAT", "peaks str=%u chd=%u L=%u R=%u clips=%lu | strings=%u chords=%u pads=%u | harp retouch=%lu drift=%lu margin=%lu stuck=%lu",
+  diag_log("BEAT", "peaks str=%u chd=%u L=%u R=%u clips=%lu | strings=%u chords=%u pads=%u | harp retouch=%lu long_releases=%lu margin=%lu stuck=%lu",
            diag_peak_window[0], diag_peak_window[1], diag_peak_window[2], diag_peak_window[3],
            (unsigned long)diag_clips,
            diag_strings_active(), diag_chords_active(), diag_pads_held(),
-           (unsigned long)diag_harp_chatter, (unsigned long)diag_harp_drift_releases,
+           (unsigned long)diag_harp_chatter, (unsigned long)diag_harp_long_releases,
            (unsigned long)diag_harp_margin_warnings, (unsigned long)diag_stuck_count);
   diag_log("BEAT", "midi_drop=%lu lines_dropped=%lu sensor=%s",
            (unsigned long)midi_queue_dropped, (unsigned long)diag_lines_dropped,
@@ -426,14 +449,41 @@ void diag_heartbeat() {
 void diag_banner() {
   diag_log("INFO", "tripwire build, firmware version %d, bank %d, EDO %u, temperament %u, voice leading %u, mpe %u",
            version_ID, current_bank_number, EDO, temperament_selection, voice_leading, mpe_mode);
-  diag_log("INFO", "harp touch at %u, release under %u; commands: v verbose harp, r reset peaks, s summary, h help",
-           harp_sensor.diag_touch_threshold(), harp_sensor.diag_release_threshold());
+  uint8_t nhd = 0, ncl = 0, fdl = 0;
+  harp_sensor.diag_read_touched_filter(nhd, ncl, fdl);
+  diag_log("INFO", "harp touch at %u, release under %u; touched baseline filter NHDT=%u NCLT=%u FDLT=%u (%s)",
+           harp_sensor.diag_touch_threshold(), harp_sensor.diag_release_threshold(), nhd, ncl, fdl,
+           (nhd | ncl | fdl) == 0 ? "frozen" : "tracking");
+  diag_log("INFO", "commands: m mark, t trace, f filter A/B, l release threshold, v verbose, r reset, s summary, h help");
 }
 
 void diag_commands() {
   while (Serial.available()) {
     int c = Serial.read();
     switch (c) {
+      case 'm':
+        diag_log("MARK", "#%lu", (unsigned long)++diag_mark_count);
+        break;
+      case 't':
+        diag_trace = !diag_trace;
+        diag_log("INFO", "trace %s", diag_trace ? "on" : "off");
+        break;
+      case 'f': {
+        harp_sensor.diag_set_touched_filter(!harp_sensor.diag_touched_filter_frozen);
+        uint8_t nhd = 0, ncl = 0, fdl = 0;
+        harp_sensor.diag_read_touched_filter(nhd, ncl, fdl);
+        diag_log("INFO", "touched baseline filter now %s: NHDT=%u NCLT=%u FDLT=%u (baselines reloaded, keep hands off)",
+                 harp_sensor.diag_touched_filter_frozen ? "frozen" : "library default", nhd, ncl, fdl);
+        break;
+      }
+      case 'l': {
+        uint8_t r = harp_sensor.diag_release_threshold();
+        r = r > 14 ? 14 : (r > 10 ? 10 : 20);
+        harp_sensor.diag_set_release_threshold(r);
+        diag_log("INFO", "release threshold now %u (touch stays %u; baselines reloaded, keep hands off)",
+                 r, harp_sensor.diag_touch_threshold());
+        break;
+      }
       case 'v':
         diag_verbose = !diag_verbose;
         diag_log("INFO", "verbose harp %s", diag_verbose ? "on" : "off");
@@ -480,6 +530,11 @@ void diag_tick() {
   if (now - last_margin >= 50) {
     last_margin = now;
     diag_harp_margin_step();
+  }
+  static uint32_t last_trace = 0;
+  if (diag_trace && now - last_trace >= 100) {
+    last_trace = now;
+    diag_harp_trace_step();
   }
   if (now - last_stuck >= 100) {
     last_stuck = now;

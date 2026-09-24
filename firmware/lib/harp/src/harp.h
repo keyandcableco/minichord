@@ -23,9 +23,17 @@ class harp{
   // own view of a pad is how a release from a lifted finger is told apart from
   // one caused by the baseline creeping toward a finger still on the pad.
   bool diag_delta(uint8_t string, int16_t &delta);   // baseline minus filtered, per string
+  bool diag_raw(uint8_t string, uint16_t &filtered, uint16_t &baseline);
   bool diag_communicating();
   uint8_t diag_touch_threshold();
   uint8_t diag_release_threshold();
+  // A/B switches for the stress test. Both stop and restart the electrodes,
+  // which reloads every baseline from the current reading, so they are meant
+  // to be used with no finger on the harp.
+  void diag_set_touched_filter(bool frozen);
+  bool diag_touched_filter_frozen = false;
+  bool diag_read_touched_filter(uint8_t &nhd, uint8_t &ncl, uint8_t &fdl);
+  void diag_set_release_threshold(uint8_t release);
   volatile uint32_t diag_overcurrent_count = 0;
 
   private:
@@ -41,6 +49,7 @@ class harp{
     //int remap_array[12]={1,3,5,4,2,0,10,8,7,11,9,6};
     const uint8_t touch_threshold = 40;
     const uint8_t release_threshold = 20;
+    uint8_t diag_live_release = release_threshold;   // what the stress test last set
     const uint8_t touch_debounce = 1;
     const uint8_t release_debounce = 1;
     const MPR121::BaselineTracking baseline_tracking = MPR121::BASELINE_TRACKING_INIT_10BIT;

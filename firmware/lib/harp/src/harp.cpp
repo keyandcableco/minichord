@@ -51,9 +51,13 @@ harp::harp(){}
       }
   }
   bool harp::diag_delta(uint8_t string, int16_t &delta){ (void)string; (void)delta; return false; }
+  bool harp::diag_raw(uint8_t string, uint16_t &filtered, uint16_t &baseline){ (void)string; (void)filtered; (void)baseline; return false; }
   bool harp::diag_communicating(){ return touch_sensor.communicating(); }
   uint8_t harp::diag_touch_threshold(){ return threshold; }
   uint8_t harp::diag_release_threshold(){ return 0; }
+  void harp::diag_set_touched_filter(bool frozen){ (void)frozen; }
+  bool harp::diag_read_touched_filter(uint8_t &nhd, uint8_t &ncl, uint8_t &fdl){ (void)nhd; (void)ncl; (void)fdl; return false; }
+  void harp::diag_set_release_threshold(uint8_t release){ (void)release; }
 #else
   void harp::setup(){
     touch_sensor.setupSingleDevice(Wire,MPR121::ADDRESS_5A,true);
@@ -74,13 +78,13 @@ harp::harp(){}
     touch_sensor.setBaselineTracking(MPR121::ADDRESS_5A,
     baseline_tracking);
     // The library default lets the baseline follow a held touch (NHDT 1,
-    // NCLT 16, FDLT 255). On the harp that creeps toward a resting finger fast
-    // enough to release the pad in one to a few seconds with the finger still
-    // down: the string is cut short, and the slightest movement re-touches it
-    // and retriggers the voice, which is heard as a click. Holding the baseline
-    // still while touched, as NXP's own example configuration does, keeps a
-    // held string held. Tracking when untouched is unchanged.
+    // NCLT 16, FDLT 255). This holds it still instead, as NXP's example
+    // configuration does. Suspected of releasing held strings, not yet shown:
+    // a session with it frozen looked the same, and at those settings the
+    // filter looks too slow to explain the drops. The tripwire build can
+    // switch it back (f) for an A/B.
     touch_sensor.setTouchedBaselineFilter(MPR121::ADDRESS_5A, 0, 0, 0);
+    diag_touched_filter_frozen = true;
     touch_sensor.setChargeDischargeCurrent(MPR121::ADDRESS_5A,
     charge_discharge_current);
     touch_sensor.setChargeDischargeTime(MPR121::ADDRESS_5A,
@@ -109,18 +113,36 @@ harp::harp(){}
       }
   }
 
-  bool harp::diag_delta(uint8_t string, int16_t &delta){
+  bool harp::diag_raw(uint8_t string, uint16_t &filtered, uint16_t &baseline){
     for (uint8_t key=0; key < 12; key++){
       if (remap_array[key] == string){
-        uint16_t filtered = touch_sensor.getDeviceChannelFilteredData(MPR121::ADDRESS_5A, key);
-        uint16_t baseline = touch_sensor.getDeviceChannelBaselineData(MPR121::ADDRESS_5A, key);
-        delta = (int16_t)baseline - (int16_t)filtered;
+        filtered = touch_sensor.getDeviceChannelFilteredData(MPR121::ADDRESS_5A, key);
+        baseline = touch_sensor.getDeviceChannelBaselineData(MPR121::ADDRESS_5A, key);
         return true;
       }
     }
     return false;
   }
+  bool harp::diag_delta(uint8_t string, int16_t &delta){
+    uint16_t filtered, baseline;
+    if (!diag_raw(string, filtered, baseline)) return false;
+    delta = (int16_t)baseline - (int16_t)filtered;
+    return true;
+  }
   bool harp::diag_communicating(){ return touch_sensor.communicating(MPR121::ADDRESS_5A); }
   uint8_t harp::diag_touch_threshold(){ return touch_threshold; }
-  uint8_t harp::diag_release_threshold(){ return release_threshold; }
+  uint8_t harp::diag_release_threshold(){ return diag_live_release; }
+  void harp::diag_set_touched_filter(bool frozen){
+    if (frozen) touch_sensor.setTouchedBaselineFilter(MPR121::ADDRESS_5A, 0, 0, 0);
+    else touch_sensor.setTouchedBaselineFilter(MPR121::ADDRESS_5A, 0x01, 0x10, 0xFF);   // library default
+    diag_touched_filter_frozen = frozen;
+  }
+  bool harp::diag_read_touched_filter(uint8_t &nhd, uint8_t &ncl, uint8_t &fdl){
+    touch_sensor.getTouchedBaselineFilter(MPR121::ADDRESS_5A, nhd, ncl, fdl);
+    return true;
+  }
+  void harp::diag_set_release_threshold(uint8_t release){
+    diag_live_release = release;
+    touch_sensor.setAllChannelsThresholds(touch_threshold, release);
+  }
 #endif

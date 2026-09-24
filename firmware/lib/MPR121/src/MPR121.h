@@ -128,6 +128,10 @@ public:
     uint8_t noise_half_delta,
     uint8_t noise_count_limit,
     uint8_t filter_delay_limit);
+  void getTouchedBaselineFilter(DeviceAddress device_address,
+    uint8_t & noise_half_delta,
+    uint8_t & noise_count_limit,
+    uint8_t & filter_delay_limit);
 
   const static uint8_t CHARGE_DISCHARGE_CURRENT_MIN = 1;
   const static uint8_t CHARGE_DISCHARGE_CURRENT_MAX = 63;

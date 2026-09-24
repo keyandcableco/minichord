@@ -236,6 +236,9 @@ static inline void diag_preset_end(const char *what, int bank) {
   if (!diag_preset_send(r)) diag_preset_pending[diag_preset_depth] = r;
 }
 static void diag_preset_retry() {
+  // Nothing to do until a monitor is listening; trying anyway would count every
+  // loop pass as a dropped line (the 1.5 million in the second session).
+  if (!Serial.dtr()) return;
   for (uint8_t k = 3; k-- > 0;) {   // outermost last, so a save prints after its own load
     if (diag_preset_pending[k].pending && diag_preset_send(diag_preset_pending[k])) {
       diag_preset_pending[k].pending = false;
