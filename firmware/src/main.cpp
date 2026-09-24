@@ -2147,7 +2147,7 @@ void save_config(int bank_number, bool default_save) {
     Serial.printf("Error: Invalid bank_number %d in save_config\n", bank_number);
     return;
   }
-  DIAG(diag_preset_begin());
+  DIAG(diag_preset_begin(diag_count_active(string_enveloppe_array, 12)));
   digitalWrite(_MUTE_PIN, LOW); // muting the DAC
   current_bank_number=bank_number; //save to correctly write in the memory 
   AudioNoInterrupts();
@@ -2198,7 +2198,7 @@ void load_config(int bank_number) {
     Serial.printf("Error: Invalid bank_number %d in save_config\n", bank_number);
     return;
   }
-  DIAG(diag_preset_begin());
+  DIAG(diag_preset_begin(diag_count_active(string_enveloppe_array, 12)));
   //digitalWrite(_MUTE_PIN, LOW); // muting the DAC
   //Turn off chords notes
   for (int i = 0; i < 4; i++) {

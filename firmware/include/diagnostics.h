@@ -201,6 +201,7 @@ DiagAudioWatch diag_audio_watch;
 // serial buffer, so a report that could not be sent waits and is retried.
 struct diag_preset_frame_t {
   uint32_t t0, late0, drop0;
+  uint8_t sounding;
 };
 diag_preset_frame_t diag_preset_stack[3];
 uint8_t diag_preset_depth = 0;
@@ -209,21 +210,31 @@ struct diag_preset_report_t {
   const char *what;
   int bank;
   uint32_t us, late, drops, worst;
+  uint8_t sounding;
 };
 diag_preset_report_t diag_preset_pending[3];
 
-static inline void diag_preset_begin() {
+// Voices still sounding when a preset is loaded get every parameter re-applied
+// mid-note, so the count is part of the report.
+static inline uint8_t diag_count_active(AudioEffectEnvelope *const *envelopes, uint8_t n) {
+  uint8_t c = 0;
+  for (uint8_t i = 0; i < n; i++) c += envelopes[i]->isActive();
+  return c;
+}
+uint32_t diag_last_preset_ms = 0;
+static inline void diag_preset_begin(uint8_t sounding) {
   if (diag_preset_depth == 0) diag_audio_watch.window_worst_us = 0;
   if (diag_preset_depth < 3) {
     diag_preset_stack[diag_preset_depth].t0 = micros();
     diag_preset_stack[diag_preset_depth].late0 = diag_audio_watch.late;
     diag_preset_stack[diag_preset_depth].drop0 = diag_audio_watch.dropouts;
+    diag_preset_stack[diag_preset_depth].sounding = sounding;
   }
   diag_preset_depth++;
 }
 static bool diag_preset_send(const diag_preset_report_t &r) {
-  return diag_log("PRESET", "%s bank %d took %luus; meanwhile %lu late audio updates, %lu dropouts, worst gap %luus%s",
-                  r.what, r.bank, (unsigned long)r.us, (unsigned long)r.late, (unsigned long)r.drops,
+  return diag_log("PRESET", "%s bank %d took %luus with %u strings sounding; meanwhile %lu late audio updates, %lu dropouts, worst gap %luus%s",
+                  r.what, r.bank, (unsigned long)r.us, r.sounding, (unsigned long)r.late, (unsigned long)r.drops,
                   (unsigned long)r.worst, r.drops ? " (audible)" : "");
 }
 static inline void diag_preset_end(const char *what, int bank) {
@@ -232,7 +243,8 @@ static inline void diag_preset_end(const char *what, int bank) {
   if (diag_preset_depth >= 3) return;
   diag_preset_frame_t &f = diag_preset_stack[diag_preset_depth];
   diag_preset_report_t r = {true, what, bank, micros() - f.t0, diag_audio_watch.late - f.late0,
-                            diag_audio_watch.dropouts - f.drop0, diag_audio_watch.window_worst_us};
+                            diag_audio_watch.dropouts - f.drop0, diag_audio_watch.window_worst_us, f.sounding};
+  diag_last_preset_ms = millis();
   if (!diag_preset_send(r)) diag_preset_pending[diag_preset_depth] = r;
 }
 static void diag_preset_retry() {

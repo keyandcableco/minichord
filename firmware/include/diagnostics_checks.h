@@ -217,29 +217,34 @@ void diag_check_audio() {
     diag_mem_level_seen++;
   }
 
-  // available() clears the meter's flag, so it is asked once, of the first
-  // meter, and the rest are read directly (they update in the same cycle).
-  // The first two sessions asked every meter again, which left the first one
-  // -- the strings -- reading zero every time.
-  if (diag_peaks[0]->available()) {
-    uint16_t pm[DIAG_PEAKS];
-    bool clip = false;
-    for (uint8_t k = 0; k < DIAG_PEAKS; k++) {
-      pm[k] = (uint16_t)(diag_peaks[k]->read() * 1000.0f);
-      if (pm[k] > diag_peak_window[k]) diag_peak_window[k] = pm[k];
-      if (pm[k] >= DIAG_CLIP_PERMILLE) {
-        clip = true;
-        diag_peak_clips[k]++;
-      }
+  // Each meter is asked available() once and read only if it has new data.
+  // read() resets the meter to its extremes, so reading one that received no
+  // audio since -- a silent stream sends no blocks at all -- returns full
+  // scale. The fourth session's constant chord_sum=1000 was exactly that.
+  uint16_t pm[DIAG_PEAKS];
+  bool fresh = false, clip = false;
+  for (uint8_t k = 0; k < DIAG_PEAKS; k++) {
+    pm[k] = 0;
+    if (!diag_peaks[k]->available()) continue;
+    fresh = true;
+    pm[k] = (uint16_t)(diag_peaks[k]->read() * 1000.0f);
+    if (pm[k] > diag_peak_window[k]) diag_peak_window[k] = pm[k];
+    if (pm[k] >= DIAG_CLIP_PERMILLE) {
+      clip = true;
+      diag_peak_clips[k]++;
     }
+  }
+  if (fresh) {
     if (clip) {
       diag_clips++;
       static uint32_t last_log = 0;
       if (millis() - last_log > 1000) {
         last_log = millis();
-        diag_log("CLIP", "string_sum=%u strings=%u chord_sum=%u chords=%u out_L=%u out_R=%u (per mille); strings=%u pads=%u chords=%u, %lu clipping reads so far",
+        uint32_t since_load = millis() - diag_last_preset_ms;
+        diag_log("CLIP", "string_sum=%u strings=%u chord_sum=%u chords=%u out_L=%u out_R=%u (per mille); strings=%u pads=%u chords=%u, %lu clipping reads so far%s",
                  pm[0], pm[1], pm[2], pm[3], pm[4], pm[5], diag_strings_active(), diag_pads_held(),
-                 diag_chords_active(), (unsigned long)diag_clips);
+                 diag_chords_active(), (unsigned long)diag_clips,
+                 diag_last_preset_ms && since_load < 1000 ? ", within a second of a preset load" : "");
       }
     }
   }
@@ -318,7 +323,9 @@ void diag_check_stuck() {
     diag_chord_tail_logged = false;
     return;
   }
-  if (diag_chord_up_since == 0) diag_chord_up_since = now;
+  // A preset load releases the chord again with the new preset's envelope,
+  // so the tail is timed from the later of the two.
+  if (diag_chord_up_since == 0 || diag_chord_up_since < diag_last_preset_ms) diag_chord_up_since = max(now, diag_last_preset_ms);
   uint32_t up = now - diag_chord_up_since;
 
   uint8_t sustaining = 0, active = 0, midi = 0;
