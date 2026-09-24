@@ -34,13 +34,13 @@ static const ParameterInfo parameter_lookup[] = {
     { 112, 1, 0, 24 }, // voice leading range
     { 109, 1, 4320, 4460 }, // master tuning
     { 39, 1, 0, 1 }, // chord layout
-    { 202, 1, 0, 27 }, // alt layout maj
-    { 203, 1, 0, 27 }, // alt layout min
-    { 204, 1, 0, 27 }, // alt layout 7th
-    { 205, 1, 0, 27 }, // alt layout maj+7th
-    { 206, 1, 0, 27 }, // alt layout min+7th
-    { 207, 1, 0, 27 }, // alt layout maj+min
-    { 208, 1, 0, 27 }, // alt layout all three
+    { 202, 1, 0, 29 }, // alt layout maj
+    { 203, 1, 0, 29 }, // alt layout min
+    { 204, 1, 0, 29 }, // alt layout 7th
+    { 205, 1, 0, 29 }, // alt layout maj+7th
+    { 206, 1, 0, 29 }, // alt layout min+7th
+    { 207, 1, 0, 29 }, // alt layout maj+min
+    { 208, 1, 0, 29 }, // alt layout all three
     { 200, 1, 0, 219 }, // double tap control
     { 201, 1, 0, 4095 }, // double tap value
     { 36, 1, 0, 11 }, // scalar harp mode
