@@ -433,7 +433,10 @@ bool flat_button_modifier= false; //flag to set the modifier to flat instead of 
 // held modifier, the modifier is taken to mean "alternate" for the rest of that
 // hold, and the sharpening is dropped.
 bool modifier_claimed_by_pot = false;
-const uint16_t chord_release_settle = 20; // ms a shrinking button set must hold before it counts
+// ms a change to the set of chord type buttons held on the sounding line must
+// stand before it is believed, when the chord is already established. See
+// handle_chord_type().
+const uint16_t chord_type_grace = 60;
 bool continuous_chord = false; // wether the chord is held continuously. Controlled by the "hold" button
 bool rythm_mode = false;
 bool barry_harris_mode = false;
@@ -2423,12 +2426,18 @@ bool rollover_pending = false;      // a chord change by overlap: the new line i
 bool chord_release_pending = false; // the chord hand lifted while slashing; waiting to see if the bass follows
 const uint16_t slash_release_grace = 80; // ms to tell a full slash release from a deliberate exit
 void handle_chord_type(bool button_maj, bool button_min, bool button_seventh) {
-  static uint8_t previous_button_count = 0;
+  static uint8_t previous_button_count = 0;   // the set of type buttons currently believed
   static elapsedMillis shrink_timer;
+  static elapsedMillis believed_for;     // how long the believed set has stood
+  static bool growth_pending = false;    // a button added to an established set, not yet believed
+  static elapsedMillis growth_timer;
+  static bool press_held_back = false;   // a press's rebuild swallowed while waiting
   uint8_t count = (uint8_t)button_maj + (uint8_t)button_min + (uint8_t)button_seventh;
 
   if (count == 0) {
     previous_button_count = 0;
+    growth_pending = false;
+    press_held_back = false;
     // Releasing one chord while already pressing the next is a chord change,
     // not a release. The new line's press transition fired while this line
     // still owned the chord and was consumed doing nothing, so without this
@@ -2477,46 +2486,91 @@ void handle_chord_type(bool button_maj, bool button_min, bool button_seventh) {
     }
   }
 
-  // The buttons of a combination do not release at the same instant, and
-  // read_value() is the raw pin state: only read_transition() is debounced.
-  // Letting go of a major seventh is therefore seen as a plain major for a
-  // moment on the way out, which leaves current_chord wrong for anything that
-  // recalculates afterwards - a chord held by the hold button, most visibly.
-  // So a shrinking set of buttons has to settle before it is believed, while a
-  // growing one is taken immediately.
+  // Moving between chords on the same line overlaps the way moving between
+  // lines does: going from C to C7, the seventh goes down a moment before the
+  // major comes up. For those tens of milliseconds both are held, which is the
+  // combination for a major seventh. Believed at once, every C to C7 played
+  // legato sounded Cmaj7 for the overlap, and since nothing rebuilt the chord
+  // when the major then lifted, it stayed Cmaj7.
+  //
+  // So once a chord is established, a change to its set of type buttons has to
+  // stand for chord_type_grace before it is believed, the same way a slash has
+  // to (slash_grace, in detect_slash()):
+  //
+  // - A button added to an established set waits. If one of the held buttons
+  //   lets go within the grace, it was a change of chord (C to C7), and the new
+  //   set is taken as soon as the count is back where it was. If nothing lets
+  //   go, it was an addition (C, then add the seventh for Cmaj7), taken after
+  //   the grace.
+  // - A button taken away waits too. Letting go of a combination, the buttons
+  //   lift a few milliseconds apart, and the chord must not become the smaller
+  //   one on the way out; if the rest follow within the grace, it was a release.
+  //
+  // A chord pressed from silence is not established, so its buttons are taken
+  // as they land, the way they always were: a Cmaj7 played as one gesture
+  // sounds at once. And whenever the believed chord changes while a line is
+  // sounding, the sounding chord is rebuilt, which is what makes C to C7 arrive
+  // at C7 rather than stopping at whatever the overlap left behind.
+  bool resolved = false;
+
   if (count < previous_button_count) {
-    if (shrink_timer < chord_release_settle) return;
+    if (growth_pending) { growth_pending = false; resolved = true; }
+    if (shrink_timer < chord_type_grace) return;
   } else {
     shrink_timer = 0;
+    if (count > previous_button_count) {
+      if (!growth_pending && previous_button_count > 0 && believed_for >= chord_type_grace) {
+        growth_pending = true;
+        growth_timer = 0;
+      }
+      if (growth_pending) {
+        if (growth_timer < chord_type_grace) {
+          // The press that started this already asked for a rebuild. Hold it
+          // back: rebuilding now would sound the old chord again (a retrigger,
+          // with retrigger on), and the rebuild comes when this resolves.
+          if (button_pushed) { press_held_back = true; button_pushed = false; }
+          return;
+        }
+        growth_pending = false;
+        resolved = true;
+      }
+    } else if (growth_pending) {
+      // back to the believed count with a different button: a change of chord
+      growth_pending = false;
+      resolved = true;
+    }
   }
+  if (count != previous_button_count) believed_for = 0;
   previous_button_count = count;
 
+  uint8_t (*chosen)[7] = current_chord;
   if (alt_chord_layout) {
-    if (button_maj && !button_min && !button_seventh)            current_chord = alt_chord_for(0);
-    else if (!button_maj && button_min && !button_seventh)       current_chord = alt_chord_for(1);
-    else if (!button_maj && !button_min && button_seventh)       current_chord = alt_chord_for(2);
-    else if (button_maj && !button_min && button_seventh)        current_chord = alt_chord_for(3);
-    else if (!button_maj && button_min && button_seventh)        current_chord = alt_chord_for(4);
-    else if (button_maj && button_min && !button_seventh)        current_chord = alt_chord_for(5);
-    else if (button_maj && button_min && button_seventh)         current_chord = alt_chord_for(6);
-    return;
-  }
-
-  if (button_maj && !button_min && !button_seventh) {
-    current_chord = barry_harris_mode ? &maj_sixth : &major;
+    if (button_maj && !button_min && !button_seventh)            chosen = alt_chord_for(0);
+    else if (!button_maj && button_min && !button_seventh)       chosen = alt_chord_for(1);
+    else if (!button_maj && !button_min && button_seventh)       chosen = alt_chord_for(2);
+    else if (button_maj && !button_min && button_seventh)        chosen = alt_chord_for(3);
+    else if (!button_maj && button_min && button_seventh)        chosen = alt_chord_for(4);
+    else if (button_maj && button_min && !button_seventh)        chosen = alt_chord_for(5);
+    else if (button_maj && button_min && button_seventh)         chosen = alt_chord_for(6);
+  } else if (button_maj && !button_min && !button_seventh) {
+    chosen = barry_harris_mode ? &maj_sixth : &major;
   } else if (!button_maj && button_min && !button_seventh) {
-    current_chord = barry_harris_mode ? &min_sixth : &minor;
+    chosen = barry_harris_mode ? &min_sixth : &minor;
   } else if (!button_maj && !button_min && button_seventh) {
-    current_chord = &seventh;
+    chosen = &seventh;
   } else if (button_maj && !button_min && button_seventh) {
-    current_chord = &maj_seventh;
+    chosen = &maj_seventh;
   } else if (!button_maj && button_min && button_seventh) {
-    current_chord = &min_seventh;
+    chosen = &min_seventh;
   } else if (button_maj && button_min && !button_seventh) {
-    current_chord = barry_harris_mode ? &full_dim : &dim;
+    chosen = barry_harris_mode ? &full_dim : &dim;
   } else if (button_maj && button_min && button_seventh) {
-    current_chord = &aug;
+    chosen = &aug;
   }
+  bool changed = chosen != current_chord;
+  current_chord = chosen;
+  if (changed || (resolved && press_held_back)) button_pushed = true;
+  if (resolved || !growth_pending) press_held_back = false;
 }
 
 // A second line held together with the chord selects a slash bass. Raw overlap
