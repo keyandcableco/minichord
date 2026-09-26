@@ -1707,6 +1707,96 @@ static void sort4(int16_t *v, uint8_t n) {
   }
 }
 
+
+/* Strict voice leading (voice leading 2). Minimising movement alone happily
+ * moves two voices a perfect fifth or octave apart to the next fifth or octave
+ * in the same direction -- parallel fifths and octaves, which make the four
+ * voices sound like fewer -- and walks the outer voices into a fifth or octave
+ * by leap. Strict adds a cost for those, so the search will take a little more
+ * movement to avoid them, but will not jump across the range to do it; when
+ * nothing nearby avoids one, it accepts it rather than fail.
+ */
+static int16_t parallel_cost(const int16_t *prev, const int16_t *next) {
+  const int16_t fifth = (int16_t)((7 * EDO + 6) / 12);
+  const int16_t parallel = (int16_t)((4 * EDO + 6) / 12);    // a parallel costs as much as 4 semitones of movement
+  const int16_t direct = (int16_t)((2 * EDO + 6) / 12);      // a direct fifth or octave in the outer voices, 2
+  const int16_t whole_step = (int16_t)((2 * EDO + 6) / 12);
+  int16_t cost = 0;
+  for (uint8_t i = 0; i < 4; i++) {
+    for (uint8_t j = i + 1; j < 4; j++) {
+      int16_t mi = next[i] - prev[i], mj = next[j] - prev[j];
+      if (mi == 0 || mj == 0 || (mi > 0) != (mj > 0)) continue;   // only voices moving the same way
+      int16_t before = (int16_t)(((prev[j] - prev[i]) % EDO + EDO) % EDO);
+      int16_t after = (int16_t)(((next[j] - next[i]) % EDO + EDO) % EDO);
+      bool perfect = (after == fifth || after == 0);
+      if (perfect && before == after) cost += parallel;
+      else if (perfect && i == 0 && j == 3 && abs(mj) > whole_step) cost += direct;   // top voice leaps into it
+    }
+  }
+  return cost;
+}
+
+// The strict search: four notes, ascending so no voice crosses another, where
+// voice v is fixed[v] when that is not -1 and otherwise a pool note within an
+// octave of from[v] (the least movement never takes a voice further). The free
+// voices' pool bits must cover `need`. The cost is the movement from `from`,
+// plus parallel_cost() against `prev`, the voicing that is sounding. Every
+// combination is tried: a few thousand at most. Returns the cost, or
+// UNREACHABLE.
+static int16_t strict_search(const int16_t *pool, const uint8_t *pool_bits, uint8_t count, uint8_t need,
+                             const int16_t *fixed, const int16_t *from, const int16_t *prev, int16_t *out) {
+  int16_t cand[4][VOICE_POOL_MAX];
+  uint8_t cand_bits[4][VOICE_POOL_MAX];
+  uint8_t n[4];
+  for (uint8_t v = 0; v < 4; v++) {
+    n[v] = 0;
+    if (fixed[v] >= 0) { cand[v][0] = fixed[v]; cand_bits[v][0] = 0; n[v] = 1; continue; }
+    for (uint8_t i = 0; i < count; i++) {
+      if (abs(pool[i] - from[v]) <= EDO) { cand[v][n[v]] = pool[i]; cand_bits[v][n[v]] = pool_bits[i]; n[v]++; }
+    }
+    if (n[v] == 0) return UNREACHABLE;
+  }
+  int16_t best_total = UNREACHABLE;
+  int16_t v4[4];
+  for (uint8_t a = 0; a < n[0]; a++) {
+    v4[0] = cand[0][a];
+    for (uint8_t b = 0; b < n[1]; b++) {
+      v4[1] = cand[1][b];
+      if (v4[1] <= v4[0]) continue;
+      for (uint8_t c = 0; c < n[2]; c++) {
+        v4[2] = cand[2][c];
+        if (v4[2] <= v4[1]) continue;
+        for (uint8_t d = 0; d < n[3]; d++) {
+          v4[3] = cand[3][d];
+          if (v4[3] <= v4[2]) continue;
+          uint8_t bits = (uint8_t)(cand_bits[0][a] | cand_bits[1][b] | cand_bits[2][c] | cand_bits[3][d]);
+          if ((uint8_t)(bits & need) != need) continue;
+          int16_t total = 0;
+          for (uint8_t v = 0; v < 4; v++) total += (int16_t)abs(v4[v] - from[v]);
+          if (prev) total += parallel_cost(prev, v4);
+          if (total < best_total) {
+            best_total = total;
+            for (uint8_t v = 0; v < 4; v++) out[v] = v4[v];
+          }
+        }
+      }
+    }
+  }
+  return best_total;
+}
+
+// The voicing sounding now, bottom to top, or false when nothing is sounding.
+static bool sounding_voicing(int16_t *prev) {
+  bool sounding = false;
+  for (uint8_t i = 0; i < 4; i++) {
+    if (chord_envelope_array[i]->isActive()) sounding = true;
+  }
+  if (!sounding) return false;
+  for (uint8_t v = 0; v < 4; v++) prev[v] = previous_voicing[v];
+  sort4(prev, 4);
+  return true;
+}
+
 bool apply_voice_leading(bool sharp, uint8_t *out) {
   uint8_t tones[4];
   uint8_t tone_count = collect_chord_tones(current_chord, tones);
@@ -1768,6 +1858,16 @@ bool apply_voice_leading(bool sharp, uint8_t *out) {
   sort4(from, 4);
 
   int16_t chosen[4];
+  if (voice_leading == 2 && sounding) {
+    uint8_t bits[VOICE_POOL_MAX];
+    for (uint8_t i = 0; i < count; i++) bits[i] = (uint8_t)(1 << pool_tone[i]);
+    const int16_t free4[4] = {-1, -1, -1, -1};
+    if (strict_search(pool, bits, count, (uint8_t)((1 << tone_count) - 1), free4, from, from, chosen) != UNREACHABLE) {
+      for (uint8_t voice = 0; voice < 4; voice++) out[voice] = (uint8_t)chosen[voice];
+      return true;
+    }
+    // nothing within an octave of each voice: fall back to the plain search
+  }
   if (choose_voicing(pool, pool_tone, count, tone_count, from, 4, chosen) == UNREACHABLE) {
     return false;  // the chord will not fit in the range
   }
@@ -1854,9 +1954,20 @@ bool apply_slash_voice_leading(uint8_t *out) {
       }
     }
     int16_t upper[3];
-    int16_t moved = choose_voicing(pool, pool_tone, count, upper_count, from + 1, 3, upper);
-    if (moved == UNREACHABLE) continue;
-    int16_t total = (int16_t)(moved + abs(bass - from[0]));
+    int16_t total;
+    if (voice_leading == 2) {
+      uint8_t bits[VOICE_POOL_MAX];
+      for (uint8_t i = 0; i < count; i++) bits[i] = (uint8_t)(1 << pool_tone[i]);
+      const int16_t pinned[4] = {bass, -1, -1, -1};
+      int16_t four[4];
+      total = strict_search(pool, bits, count, (uint8_t)((1 << upper_count) - 1), pinned, from, from, four);
+      if (total == UNREACHABLE) continue;
+      upper[0] = four[1]; upper[1] = four[2]; upper[2] = four[3];
+    } else {
+      int16_t moved = choose_voicing(pool, pool_tone, count, upper_count, from + 1, 3, upper);
+      if (moved == UNREACHABLE) continue;
+      total = (int16_t)(moved + abs(bass - from[0]));
+    }
     if (total < best_total) {
       best_total = total;
       best[0] = bass;
@@ -1986,6 +2097,38 @@ void apply_slash_voice(bool sharp) {
         best[0] = bass; best[1] = upper[0]; best[2] = upper[1]; best[3] = upper[2];
       }
     }
+    // Strict voice leading: the same choice, with the cost of parallels
+    // against the chord sounding now.
+    int16_t sounding_now[4];
+    if (voice_leading == 2 && sounding_voicing(sounding_now)) {
+      int16_t plain4[4];
+      for (uint8_t i = 0; i < 4; i++) plain4[i] = current_chord_notes[order[i]];
+      int16_t strict_total = UNREACHABLE, strict_best[4] = {0, 0, 0, 0};
+      for (uint8_t c = 0; c < 2; c++) {
+        int16_t bass = candidates[c];
+        if (bass < 0 || bass > chord_note_ceiling) continue;
+        int16_t pool[VOICE_POOL_MAX];
+        uint8_t bits[VOICE_POOL_MAX];
+        uint8_t count = 0;
+        for (int16_t n = bass + 1; n <= hi && count < VOICE_POOL_MAX; n++) {
+          int16_t pc = ((n - root) % EDO + EDO) % EDO;
+          for (uint8_t t = 0; t < tone_count; t++) {
+            if (pc == tones[t]) { pool[count] = n; bits[count] = (uint8_t)(1 << t); count++; break; }
+          }
+        }
+        const int16_t pinned[4] = {bass, -1, -1, -1};
+        int16_t four[4];
+        int16_t total = strict_search(pool, bits, count, (uint8_t)((1 << tone_count) - 1), pinned, plain4, sounding_now, four);
+        if (total < strict_total) {
+          strict_total = total;
+          for (uint8_t i = 0; i < 4; i++) strict_best[i] = four[i];
+        }
+      }
+      if (strict_total != UNREACHABLE) {
+        best_total = strict_total;
+        for (uint8_t i = 0; i < 4; i++) best[i] = strict_best[i];
+      }
+    }
     if (best_total != UNREACHABLE) {
       for (uint8_t i = 0; i < 4; i++) current_chord_notes[i] = (uint8_t)best[i];
     } else {
@@ -2061,6 +2204,30 @@ void apply_slash_voice(bool sharp) {
             for (uint8_t i = 1; i < 4; i++) best[i] = (i == k) ? pin : fr[o++];
           }
         }
+    }
+    // Strict voice leading: the same choice, with the cost of parallels
+    // against the chord sounding now.
+    int16_t sounding_now[4];
+    if (voice_leading == 2 && sounding_voicing(sounding_now)) {
+      int16_t plain4[4];
+      for (uint8_t i = 0; i < 4; i++) plain4[i] = current_chord_notes[order[i]];
+      int16_t strict_total = UNREACHABLE, strict_best[4] = {0, 0, 0, 0};
+      for (uint8_t c = 0; c < 2; c++) {
+        int16_t pin = pins[c];
+        if (pin <= bass || pin > chord_note_ceiling) continue;
+        int16_t pinned[4] = {bass, -1, -1, -1};
+        pinned[k] = pin;
+        int16_t four[4];
+        int16_t total = strict_search(pool, pool_bit, count, need, pinned, plain4, sounding_now, four);
+        if (total < strict_total) {
+          strict_total = total;
+          for (uint8_t i = 0; i < 4; i++) strict_best[i] = four[i];
+        }
+      }
+      if (strict_total != UNREACHABLE) {
+        best_total = strict_total;
+        for (uint8_t i = 0; i < 4; i++) best[i] = strict_best[i];
+      }
     }
     if (best_total != UNREACHABLE) {
       for (uint8_t i = 0; i < 4; i++) current_chord_notes[i] = (uint8_t)best[i];
