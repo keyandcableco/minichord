@@ -24,6 +24,9 @@ void apply_audio_parameter(int adress, int value) {
       case 115:
         cantus_voice=value; if (!cantus_voice) cantus_pc=-1; refresh_chord_voicing();
         break;
+      case 116:
+        harp_rank=value; for (int i=0;i<12;i++){ current_harp_notes[i]=calculate_note_harp(i,slash_chord,sharp_active); }
+        break;
       case 30:
         transpose_semitones=value;transpose_steps=(transpose_semitones*EDO+6)/12;midi_base_note_transposed=midi_base_note+transpose_semitones;
         break;

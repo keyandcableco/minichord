@@ -21,6 +21,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 113, 1, 0, 4 }, // slash voice
     { 114, 1, 0, 1 }, // slash re-voice
     { 115, 1, 0, 5 }, // cantus
+    { 116, 1, 1, 3 }, // harp rank
     { 30, 1, 0, 12 }, // transpose
     { 106, 1, 1, 16 }, // chord channel
     { 107, 1, 1, 16 }, // harp channel
