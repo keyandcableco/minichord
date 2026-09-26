@@ -1243,7 +1243,9 @@ uint8_t calculate_chord_specific_note(uint8_t string, uint8_t root_note, int8_t 
 
 uint8_t calculate_note_harp(uint8_t string, bool slashed, bool sharp) {
   if (chromatic_harp_mode) {
-    return string + 24; // Chromatic mode
+    // Chromatic mode: one step a string from C two octaves up, in whatever
+    // division is live (24 steps in 12, 38 in 19, 62 in 31).
+    return 2 * EDO + string;
   }
 
   // Modes 1-7 ignore the chord entirely and run a fixed scale from the key
