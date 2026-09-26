@@ -20,6 +20,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 23, 1, 0, 2 }, // slash level
     { 113, 1, 0, 4 }, // slash voice
     { 114, 1, 0, 1 }, // slash re-voice
+    { 115, 1, 0, 5 }, // cantus
     { 30, 1, 0, 12 }, // transpose
     { 106, 1, 1, 16 }, // chord channel
     { 107, 1, 1, 16 }, // harp channel
@@ -32,7 +33,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 35, 1, 0, 20 }, // chord key signature
     { 37, 1, 0, 3 }, // chord inversion
     { 38, 1, 0, 4 }, // chord spacing
-    { 111, 1, 0, 1 }, // voice leading
+    { 111, 1, 0, 2 }, // voice leading
     { 112, 1, 0, 24 }, // voice leading range
     { 109, 0, 4320, 4460 }, // master tuning
     { 39, 1, 0, 1 }, // chord layout

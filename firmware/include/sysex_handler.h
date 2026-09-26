@@ -21,6 +21,9 @@ void apply_audio_parameter(int adress, int value) {
       case 114:
         slash_revoice=value; refresh_chord_voicing();
         break;
+      case 115:
+        cantus_voice=value; if (!cantus_voice) cantus_pc=-1; refresh_chord_voicing();
+        break;
       case 30:
         transpose_semitones=value;transpose_steps=(transpose_semitones*EDO+6)/12;midi_base_note_transposed=midi_base_note+transpose_semitones;
         break;
