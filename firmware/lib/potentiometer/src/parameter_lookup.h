@@ -15,40 +15,18 @@ struct ParameterInfo {
 static const ParameterInfo parameter_lookup[] = {
     { 20, 0, 0, 360 }, // bank color
     { 32, 0, 0, 1 }, // led attenuation
-    { 21, 1, 0, 1 }, // retrigger chords
-    { 22, 1, 0, 1 }, // change held strings
-    { 23, 1, 0, 2 }, // slash level
-    { 113, 1, 0, 4 }, // slash voice
-    { 114, 1, 0, 1 }, // slash re-voice
-    { 115, 1, 0, 5 }, // cantus
-    { 116, 1, 1, 3 }, // harp rank
+    { 35, 1, 0, 20 }, // chord key signature
+    { 31, 1, 0, 1 }, // sharp function
     { 30, 1, 0, 12 }, // transpose
+    { 34, 1, 0, 6 }, // chord frame shift
+    { 237, 1, 0, 11 }, // temperament
+    { 109, 0, 4320, 4460 }, // master tuning
     { 106, 1, 1, 16 }, // chord channel
     { 107, 1, 1, 16 }, // harp channel
     { 108, 1, 0, 1 }, // single port mode
     { 110, 1, 0, 1 }, // MPE output
-    { 31, 1, 0, 1 }, // sharp function
-    { 33, 1, 0, 1 }, // barry harris mode
-    { 34, 1, 0, 6 }, // chord frame shift
-    { 237, 1, 0, 11 }, // temperament
-    { 35, 1, 0, 20 }, // chord key signature
-    { 37, 1, 0, 3 }, // chord inversion
-    { 38, 1, 0, 4 }, // chord spacing
-    { 111, 1, 0, 2 }, // voice leading
-    { 112, 1, 0, 24 }, // voice leading range
-    { 109, 0, 4320, 4460 }, // master tuning
-    { 39, 1, 0, 1 }, // chord layout
-    { 202, 1, 0, 29 }, // alt layout maj
-    { 203, 1, 0, 29 }, // alt layout min
-    { 204, 1, 0, 29 }, // alt layout 7th
-    { 205, 1, 0, 29 }, // alt layout maj+7th
-    { 206, 1, 0, 29 }, // alt layout min+7th
-    { 207, 1, 0, 29 }, // alt layout maj+min
-    { 208, 1, 0, 29 }, // alt layout all three
     { 200, 0, 0, 219 }, // double tap control
     { 201, 0, 0, 4095 }, // double tap value
-    { 36, 1, 0, 11 }, // scalar harp mode
-    { 236, 0, 0, 4095 }, // custom scale
     { 24, 0, 0, 1 }, // reverb size
     { 25, 0, 0, 1 }, // reverb high damping
     { 26, 0, 0, 1 }, // reverb low damping
@@ -68,9 +46,13 @@ static const ParameterInfo parameter_lookup[] = {
     { 6, 0, 0, 1024 }, // mod alternate value
     { 7, 0, 0, 10 }, // firmware revision
     { 2, 0, 0, 1 }, // global gain
-    { 99, 1, 0, 4 }, // octave change
-    { 40, 1, 0, 6 }, // harp shuffling
+    { 36, 1, 0, 11 }, // scalar harp mode
+    { 236, 0, 0, 4095 }, // custom scale
     { 98, 1, 0, 1 }, // chromatic mode
+    { 116, 1, 1, 3 }, // harp rank
+    { 40, 1, 0, 6 }, // harp shuffling
+    { 99, 1, 0, 4 }, // octave change
+    { 22, 1, 0, 1 }, // change held strings
     { 41, 0, 0, 1 }, // amplitude
     { 42, 1, 0, 11 }, // waveform
     { 43, 0, 0, 5000 }, // attack
@@ -135,9 +117,27 @@ static const ParameterInfo parameter_lookup[] = {
     { 96, 0, 0, 5 }, // filter LFO sensitivity
     { 97, 0, 0, 2 }, // output amplifier
     { 3, 0, 0, 1 }, // global gain
+    { 33, 1, 0, 1 }, // barry harris mode
+    { 39, 1, 0, 1 }, // chord layout
+    { 21, 1, 0, 1 }, // retrigger chords
+    { 202, 1, 0, 29 }, // alt layout maj
+    { 203, 1, 0, 29 }, // alt layout min
+    { 204, 1, 0, 29 }, // alt layout 7th
+    { 205, 1, 0, 29 }, // alt layout maj+7th
+    { 206, 1, 0, 29 }, // alt layout min+7th
+    { 207, 1, 0, 29 }, // alt layout maj+min
+    { 208, 1, 0, 29 }, // alt layout all three
     { 120, 1, 0, 5 }, // chord shuffling
     { 198, 1, 0, 4 }, // octave change
     { 199, 0, 0, 1500 }, // glide chords
+    { 37, 1, 0, 3 }, // chord inversion
+    { 38, 1, 0, 4 }, // chord spacing
+    { 111, 1, 0, 2 }, // voice leading
+    { 112, 1, 0, 24 }, // voice leading range
+    { 23, 1, 0, 2 }, // slash level
+    { 113, 1, 0, 4 }, // slash voice
+    { 114, 1, 0, 1 }, // slash re-voice
+    { 115, 1, 0, 5 }, // cantus
     { 121, 0, 0, 1 }, // amplitude 1
     { 122, 1, 0, 11 }, // waveform 1
     { 123, 0, 0, 2 }, // frequency multiplier 1

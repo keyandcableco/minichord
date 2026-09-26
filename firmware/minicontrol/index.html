@@ -140,7 +140,7 @@
               <p></p>
             </div>
             <div class=" bloc B3 M2 S3">
-              <p>Settings</p>
+              <p>Device</p>
             </div>
             <div class=" bloc B1 M1 S1">
               <p>20</p>
@@ -175,27 +175,27 @@
               <p id="value_zone32" class="value_zone"></p>
             </div>
           </div>
-          <div name="2" version="2" class="line data_line content_line inactive">
+          <div name="2" version="6" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
             <div class=" bloc B3 M2 S3">
-              <p></p>
+              <p>Key and tuning</p>
             </div>
             <div class=" bloc B1 M1 S1">
-              <p>21</p>
+              <p>35</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="defines whether the chords will be retriggered when playing a modulation of the current chord or in continuous chord mode">retrigger chords</dfn>
+              <dfn title="automatically makes flat or sharp the chords for a particular key. 0=C, 1=G, 2=D, 3=A, 4=E, 5=B, 6=F, 7=Bb, 8=Eb, 9=Ab, 10=Db, 11=Gb, and the enharmonic keys 12=F#, 13=C#, 14=G#, 15=D#, 16=A#, 17=E#, 18=B#, 19=Fb, 20=Cb">chord key signature</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="21" curve="linear" data_type="int" id="2" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="35" curve="linear" data_type="int" id="2" max="20" min="0" onchange="handlechange(this)" step="1" target_max="20" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
-              <p id="value_zone21" class="value_zone"></p>
+              <p id="value_zone35" class="value_zone"></p>
             </div>
           </div>
-          <div name="3" version="2" class="line data_line content_line inactive">
+          <div name="3" version="3" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -203,119 +203,19 @@
               <p></p>
             </div>
             <div class=" bloc B1 M1 S1">
-              <p>22</p>
+              <p>31</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="defines whether a held harp note will change when changing chord">change held strings</dfn>
+              <dfn title="change the sharp button to a flat button">sharp function</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="22" curve="linear" data_type="int" id="3" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="31" curve="linear" data_type="int" id="3" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
-              <p id="value_zone22" class="value_zone"></p>
+              <p id="value_zone31" class="value_zone"></p>
             </div>
           </div>
           <div name="4" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>23</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="level of the scale which will be affected when using slash chords">slash level</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="23" curve="linear" data_type="int" id="4" max="2" min="0" onchange="handlechange(this)" step="1" target_max="2" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone23" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="5" version="13" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>113</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="which of the four chord voices a slash replaces, counted from the bottom: 1 bass, 2 tenor, 3 alto, 4 soprano. At 0 slash level decides, as before. Bass is a slash chord in the usual sense, with the whole chord above it; the others change only that voice, for a melody note on top or a suspension inside the chord">slash voice</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="113" curve="linear" data_type="int" id="5" max="4" min="0" onchange="handlechange(this)" step="1" target_max="4" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone113" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="6" version="13" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>114</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="with slash voice set to tenor, alto or soprano, the other three voices move to keep the chord whole around the slash note, as little as they can, instead of holding still. The bass always keeps the chord whole">slash re-voice</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="114" curve="linear" data_type="int" id="6" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone114" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="7" version="14" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>115</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="which chord voice the harp sets, the way slash voice lets a slash set one: 1 bass, 2 tenor, 3 alto, 4 soprano counted from the bottom, 5 whichever voice is nearest the note. The first string of each new harp gesture gives that voice its note (the rest of a strum does not). A chord tone keeps the chord whole around it; any other note is a passing tone that voice sings alone. It holds through a chord change when the new chord has the note, and lets go otherwise. A slash keeps any voice it holds. At 0 the harp leaves the chord alone, as before">cantus</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="115" curve="linear" data_type="int" id="7" max="5" min="0" onchange="handlechange(this)" step="1" target_max="5" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone115" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="8" version="15" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>116</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="which twelve steps the chromatic harp plays, like the rows of strings on a triple harp: 1 is steps 1 to 12 of the division, 2 is 13 to 24, 3 is 25 to 36, carrying on past the octave where the division ends. 31 has three ranks, 19 has two, and in 12 there is only one, so this changes nothing there. Only in chromatic mode">harp rank</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="116" curve="linear" data_type="int" id="8" max="3" min="1" onchange="handlechange(this)" step="1" target_max="3" target_min="1" type="range" value="1" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone116" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="9" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -329,133 +229,13 @@
               <dfn title="transpose all sounds by a number of semitones">transpose</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="30" curve="linear" data_type="int" id="9" max="12" min="0" onchange="handlechange(this)" step="1" target_max="12" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="30" curve="linear" data_type="int" id="4" max="12" min="0" onchange="handlechange(this)" step="1" target_max="12" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone30" class="value_zone"></p>
             </div>
           </div>
-          <div name="10" version="8" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p>MIDI</p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>106</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="set the midi channel for the chord section">chord channel</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="106" curve="linear" data_type="int" id="10" max="16" min="1" onchange="handlechange(this)" step="1" target_max="16" target_min="1" type="range" value="1" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone106" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="11" version="8" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>107</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="set the midi channel for the harp section">harp channel</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="107" curve="linear" data_type="int" id="11" max="16" min="1" onchange="handlechange(this)" step="1" target_max="16" target_min="1" type="range" value="1" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone107" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="12" version="8" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>108</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="puts both the chord and the harp on the same midi port">single port mode</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="108" curve="linear" data_type="int" id="12" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone108" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="13" version="11" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>110</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="gives every voice its own midi channel (MPE), so glide and the real pitch of a temperament or a divided octave survive the trip out; off is the usual single channel output">MPE output</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="110" curve="linear" data_type="int" id="13" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone110" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="14" version="3" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p>Settings</p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>31</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="change the sharp button to a flat button">sharp function</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="31" curve="linear" data_type="int" id="14" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone31" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="15" version="4" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>33</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="change major chords to major 6, the minor chords to minor 6, and the diminished chords to fully diminished. Recommanded to use the fourth harp shuffling array">barry harris mode</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="33" curve="linear" data_type="int" id="15" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone33" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="16" version="6" class="line data_line content_line inactive">
+          <div name="5" version="6" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -469,13 +249,13 @@
               <dfn title="shifts the register frame up (e.g. 1 makes D the lowest pitched, 2 makes E the lowest pitched, and so on)">chord frame shift</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="34" curve="linear" data_type="int" id="16" max="6" min="0" onchange="handlechange(this)" step="1" target_max="6" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="34" curve="linear" data_type="int" id="5" max="6" min="0" onchange="handlechange(this)" step="1" target_max="6" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone34" class="value_zone"></p>
             </div>
           </div>
-          <div name="17" version="10" class="line data_line content_line inactive">
+          <div name="6" version="10" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -489,113 +269,13 @@
               <dfn title="tuning of the notes: 0=equal, 1=quarter-comma meantone, 2=five-limit just (C major), 3=pythagorean, 4=werckmeister III, 5=kirnberger III, 6=vallotti, 7=young no. 2, 8=kellner, 9=sixth-comma meantone, 10=19-EDO, 11=31-EDO. A keeps the master tuning pitch in the twelve-note ones, which are fixed to the keyboard, sweetest around C, so far keys sound progressively rougher, as they did historically. 10 and 11 divide the octave differently instead">temperament</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="237" curve="linear" data_type="int" id="17" max="11" min="0" onchange="handlechange(this)" step="1" target_max="11" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="237" curve="linear" data_type="int" id="6" max="11" min="0" onchange="handlechange(this)" step="1" target_max="11" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone237" class="value_zone"></p>
             </div>
           </div>
-          <div name="18" version="6" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>35</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="automatically makes flat or sharp the chords for a particular key. 0=C, 1=G, 2=D, 3=A, 4=E, 5=B, 6=F, 7=Bb, 8=Eb, 9=Ab, 10=Db, 11=Gb, and the enharmonic keys 12=F#, 13=C#, 14=G#, 15=D#, 16=A#, 17=E#, 18=B#, 19=Fb, 20=Cb">chord key signature</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="35" curve="linear" data_type="int" id="18" max="20" min="0" onchange="handlechange(this)" step="1" target_max="20" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone35" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="19" version="9" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>37</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="voicing of the chord buttons. 0 is root position, 1 and 2 are the first and second inversions, 3 is the third inversion for seventh and sixth chords or the root position an octave up for triads">chord inversion</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="37" curve="linear" data_type="int" id="19" max="3" min="0" onchange="handlechange(this)" step="1" target_max="3" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone37" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="20" version="9" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>38</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="how far apart the chord voices sit. 0=close (adjacent tones), 1=drop 2, 2=drop 3, 3=drop 2 and 4 (the most evenly spread), 4=spread the outer voices. Drops move a voice down an octave; a move that would leave the usable range is not made">chord spacing</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="38" curve="linear" data_type="int" id="20" max="4" min="0" onchange="handlechange(this)" step="1" target_max="4" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone38" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="21" version="12" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>111</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="place the chord voices to move as little as possible from the chord already sounding, the way a choir does, instead of building every chord upward from its root. 1 is on; 2 is strict, which also avoids parallel fifths and octaves, and the outer voices leaping into a fifth or octave, at the cost of a little more movement. Overrides the inversion setting while it is on. A slash chord keeps its bass on the note it names, in the octave nearest the chord already sounding, and the voices above it are led">voice leading</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="111" curve="linear" data_type="int" id="21" max="2" min="0" onchange="handlechange(this)" step="1" target_max="2" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone111" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="22" version="12" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>112</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="how far, in semitones, a voice led chord may sit outside where root position would have put it, converted to steps of the live division so it means the same interval in 12, 19 and 31. Small keeps the chords anchored where the buttons say, large lets them follow the previous chord further. Only used when voice leading is on">voice leading range</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="112" curve="linear" data_type="int" id="22" max="24" min="0" onchange="handlechange(this)" step="1" target_max="24" target_min="0" type="range" value="12" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone112" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="23" version="10" class="line data_line content_line inactive">
+          <div name="7" version="10" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -609,53 +289,53 @@
               <dfn title="reference pitch for A4, in tenths of a Hz: 4400 = 440.0 Hz, 4420 = 442.0 Hz. Range 432.0-446.0 Hz. Retunes the synth only; MIDI note numbers are unchanged">master tuning</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="109" curve="linear" data_type="int" id="23" max="4460" min="4320" onchange="handlechange(this)" step="1" target_max="4460" target_min="4320" type="range" value="4400" />
+              <input class="slider inactive" adress_field="109" curve="linear" data_type="int" id="7" max="4460" min="4320" onchange="handlechange(this)" step="1" target_max="4460" target_min="4320" type="range" value="4400" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone109" class="value_zone"></p>
             </div>
           </div>
-          <div name="24" version="9" class="line data_line content_line inactive">
+          <div name="8" version="8" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
             <div class=" bloc B3 M2 S3">
-              <p></p>
+              <p>MIDI</p>
             </div>
             <div class=" bloc B1 M1 S1">
-              <p>39</p>
+              <p>106</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="which chords the buttons play. 0=the standard seven, 1=suspended and extended: sus4, sus2, 7sus4, maj9, min9, add9 and 6/9 on the same combinations">chord layout</dfn>
+              <dfn title="set the midi channel for the chord section">chord channel</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="39" curve="linear" data_type="int" id="24" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="106" curve="linear" data_type="int" id="8" max="16" min="1" onchange="handlechange(this)" step="1" target_max="16" target_min="1" type="range" value="1" />
             </div>
             <div class=" bloc B1 M1 S1">
-              <p id="value_zone39" class="value_zone"></p>
+              <p id="value_zone106" class="value_zone"></p>
             </div>
           </div>
-          <div name="25" version="9" class="line data_line content_line inactive">
+          <div name="9" version="8" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
             <div class=" bloc B3 M2 S3">
-              <p>Chord layout</p>
+              <p></p>
             </div>
             <div class=" bloc B1 M1 S1">
-              <p>202</p>
+              <p>107</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="which chord the major button plays in the alternate layout. 0=this slot's default, 1=major, 2=minor, 3=dominant 7, 4=major 7, 5=minor 7, 6=diminished, 7=augmented, 8=major 6, 9=minor 6, 10=full diminished, 11=m7b5, 12=sus4, 13=sus2, 14=7sus4, 15=maj9, 16=min9, 17=add9, 18=6/9, 19=supermajor triad, 20=subminor triad, 21=neutral triad, 22=harmonic 7th, 23=neutral 7th, 24=subminor 7th, 25=utonal tetrad, 26=harmonic 9th, 27=otonal hexad, 28=just augmented, 29=supermajor 7th. 19 and up are just sonorities meant for 19 and 31, listed in the order of their counterparts above; in 12 most of them land on chords already in the list">alt layout maj</dfn>
+              <dfn title="set the midi channel for the harp section">harp channel</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="202" curve="linear" data_type="int" id="25" max="29" min="0" onchange="handlechange(this)" step="1" target_max="29" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="107" curve="linear" data_type="int" id="9" max="16" min="1" onchange="handlechange(this)" step="1" target_max="16" target_min="1" type="range" value="1" />
             </div>
             <div class=" bloc B1 M1 S1">
-              <p id="value_zone202" class="value_zone"></p>
+              <p id="value_zone107" class="value_zone"></p>
             </div>
           </div>
-          <div name="26" version="9" class="line data_line content_line inactive">
+          <div name="10" version="8" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -663,19 +343,19 @@
               <p></p>
             </div>
             <div class=" bloc B1 M1 S1">
-              <p>203</p>
+              <p>108</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="which chord the minor button plays in the alternate layout. 0=this slot's default, 1=major, 2=minor, 3=dominant 7, 4=major 7, 5=minor 7, 6=diminished, 7=augmented, 8=major 6, 9=minor 6, 10=full diminished, 11=m7b5, 12=sus4, 13=sus2, 14=7sus4, 15=maj9, 16=min9, 17=add9, 18=6/9, 19=supermajor triad, 20=subminor triad, 21=neutral triad, 22=harmonic 7th, 23=neutral 7th, 24=subminor 7th, 25=utonal tetrad, 26=harmonic 9th, 27=otonal hexad, 28=just augmented, 29=supermajor 7th. 19 and up are just sonorities meant for 19 and 31, listed in the order of their counterparts above; in 12 most of them land on chords already in the list">alt layout min</dfn>
+              <dfn title="puts both the chord and the harp on the same midi port">single port mode</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="203" curve="linear" data_type="int" id="26" max="29" min="0" onchange="handlechange(this)" step="1" target_max="29" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="108" curve="linear" data_type="int" id="10" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
-              <p id="value_zone203" class="value_zone"></p>
+              <p id="value_zone108" class="value_zone"></p>
             </div>
           </div>
-          <div name="27" version="9" class="line data_line content_line inactive">
+          <div name="11" version="11" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -683,104 +363,24 @@
               <p></p>
             </div>
             <div class=" bloc B1 M1 S1">
-              <p>204</p>
+              <p>110</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="which chord the seventh button plays in the alternate layout. 0=this slot's default, 1=major, 2=minor, 3=dominant 7, 4=major 7, 5=minor 7, 6=diminished, 7=augmented, 8=major 6, 9=minor 6, 10=full diminished, 11=m7b5, 12=sus4, 13=sus2, 14=7sus4, 15=maj9, 16=min9, 17=add9, 18=6/9, 19=supermajor triad, 20=subminor triad, 21=neutral triad, 22=harmonic 7th, 23=neutral 7th, 24=subminor 7th, 25=utonal tetrad, 26=harmonic 9th, 27=otonal hexad, 28=just augmented, 29=supermajor 7th. 19 and up are just sonorities meant for 19 and 31, listed in the order of their counterparts above; in 12 most of them land on chords already in the list">alt layout 7th</dfn>
+              <dfn title="gives every voice its own midi channel (MPE), so glide and the real pitch of a temperament or a divided octave survive the trip out; off is the usual single channel output">MPE output</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="204" curve="linear" data_type="int" id="27" max="29" min="0" onchange="handlechange(this)" step="1" target_max="29" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="110" curve="linear" data_type="int" id="11" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
-              <p id="value_zone204" class="value_zone"></p>
+              <p id="value_zone110" class="value_zone"></p>
             </div>
           </div>
-          <div name="28" version="9" class="line data_line content_line inactive">
+          <div name="12" version="9" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
             <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>205</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="which chord the major and seventh plays in the alternate layout. 0=this slot's default, 1=major, 2=minor, 3=dominant 7, 4=major 7, 5=minor 7, 6=diminished, 7=augmented, 8=major 6, 9=minor 6, 10=full diminished, 11=m7b5, 12=sus4, 13=sus2, 14=7sus4, 15=maj9, 16=min9, 17=add9, 18=6/9, 19=supermajor triad, 20=subminor triad, 21=neutral triad, 22=harmonic 7th, 23=neutral 7th, 24=subminor 7th, 25=utonal tetrad, 26=harmonic 9th, 27=otonal hexad, 28=just augmented, 29=supermajor 7th. 19 and up are just sonorities meant for 19 and 31, listed in the order of their counterparts above; in 12 most of them land on chords already in the list">alt layout maj+7th</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="205" curve="linear" data_type="int" id="28" max="29" min="0" onchange="handlechange(this)" step="1" target_max="29" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone205" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="29" version="9" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>206</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="which chord the minor and seventh plays in the alternate layout. 0=this slot's default, 1=major, 2=minor, 3=dominant 7, 4=major 7, 5=minor 7, 6=diminished, 7=augmented, 8=major 6, 9=minor 6, 10=full diminished, 11=m7b5, 12=sus4, 13=sus2, 14=7sus4, 15=maj9, 16=min9, 17=add9, 18=6/9, 19=supermajor triad, 20=subminor triad, 21=neutral triad, 22=harmonic 7th, 23=neutral 7th, 24=subminor 7th, 25=utonal tetrad, 26=harmonic 9th, 27=otonal hexad, 28=just augmented, 29=supermajor 7th. 19 and up are just sonorities meant for 19 and 31, listed in the order of their counterparts above; in 12 most of them land on chords already in the list">alt layout min+7th</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="206" curve="linear" data_type="int" id="29" max="29" min="0" onchange="handlechange(this)" step="1" target_max="29" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone206" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="30" version="9" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>207</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="which chord the major and minor plays in the alternate layout. 0=this slot's default, 1=major, 2=minor, 3=dominant 7, 4=major 7, 5=minor 7, 6=diminished, 7=augmented, 8=major 6, 9=minor 6, 10=full diminished, 11=m7b5, 12=sus4, 13=sus2, 14=7sus4, 15=maj9, 16=min9, 17=add9, 18=6/9, 19=supermajor triad, 20=subminor triad, 21=neutral triad, 22=harmonic 7th, 23=neutral 7th, 24=subminor 7th, 25=utonal tetrad, 26=harmonic 9th, 27=otonal hexad, 28=just augmented, 29=supermajor 7th. 19 and up are just sonorities meant for 19 and 31, listed in the order of their counterparts above; in 12 most of them land on chords already in the list">alt layout maj+min</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="207" curve="linear" data_type="int" id="30" max="29" min="0" onchange="handlechange(this)" step="1" target_max="29" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone207" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="31" version="9" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>208</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="which chord the all three buttons plays in the alternate layout. 0=this slot's default, 1=major, 2=minor, 3=dominant 7, 4=major 7, 5=minor 7, 6=diminished, 7=augmented, 8=major 6, 9=minor 6, 10=full diminished, 11=m7b5, 12=sus4, 13=sus2, 14=7sus4, 15=maj9, 16=min9, 17=add9, 18=6/9, 19=supermajor triad, 20=subminor triad, 21=neutral triad, 22=harmonic 7th, 23=neutral 7th, 24=subminor 7th, 25=utonal tetrad, 26=harmonic 9th, 27=otonal hexad, 28=just augmented, 29=supermajor 7th. 19 and up are just sonorities meant for 19 and 31, listed in the order of their counterparts above; in 12 most of them land on chords already in the list">alt layout all three</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="208" curve="linear" data_type="int" id="31" max="29" min="0" onchange="handlechange(this)" step="1" target_max="29" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone208" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="32" version="9" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p>Settings</p>
+              <p>Double tap</p>
             </div>
             <div class=" bloc B1 M1 S1">
               <p>200</p>
@@ -789,13 +389,13 @@
               <dfn title="which setting two quick taps of the modifier button toggle. 0 leaves the gesture unassigned. Set it to 39 to switch chord layouts, or to any other setting you want under a tap">double tap control</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="200" curve="linear" data_type="int" id="32" max="219" min="0" onchange="handlechange(this)" step="1" target_max="219" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="200" curve="linear" data_type="int" id="12" max="219" min="0" onchange="handlechange(this)" step="1" target_max="219" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone200" class="value_zone"></p>
             </div>
           </div>
-          <div name="33" version="9" class="line data_line content_line inactive">
+          <div name="13" version="9" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -809,18 +409,423 @@
               <dfn title="the value the double tap applies. Tapping again puts back whatever was there before">double tap value</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="201" curve="linear" data_type="int" id="33" max="4095" min="0" onchange="handlechange(this)" step="1" target_max="4095" target_min="0" type="range" value="1" />
+              <input class="slider inactive" adress_field="201" curve="linear" data_type="int" id="13" max="4095" min="0" onchange="handlechange(this)" step="1" target_max="4095" target_min="0" type="range" value="1" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone201" class="value_zone"></p>
             </div>
           </div>
-          <div name="34" version="9" class="line data_line content_line inactive">
+          <div name="14" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
             <div class=" bloc B3 M2 S3">
-              <p>General</p>
+              <p>Effects</p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>24</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="size of the reverb room">reverb size</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="24" curve="linear" data_type="float" id="14" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.5" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone24" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="15" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>25</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="damping of high frequencies in the reverb room">reverb high damping</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="25" curve="linear" data_type="float" id="15" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone25" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="16" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>26</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="damping of low frequencies in the reverb room">reverb low damping</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="26" curve="linear" data_type="float" id="16" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.5" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone26" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="17" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>27</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="additional low pass in the reverb room">reverb low pass</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="27" curve="linear" data_type="float" id="17" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.3" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone27" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="18" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>28</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="diffusion within the reverb room">reverb diffusion</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="28" curve="linear" data_type="float" id="18" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.3" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone28" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="19" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>29</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="pans the chord and harp sound, from fully separated to both in the middle ">pan</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="29" curve="linear" data_type="float" id="19" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.75" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone29" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="20" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p>Potentiometer</p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>10</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="defines the adress targeted by the chord potentiometer alternate function">chord alternate control</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="10" curve="linear" data_type="int" id="20" max="219" min="21" onchange="handlechange(this)" step="1" target_max="219" target_min="21" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone10" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="21" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>11</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="defines the control range of the chord potentiometer alternate function">chord alternate range</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="11" curve="linear" data_type="int" id="21" max="100" min="0" onchange="handlechange(this)" step="1" target_max="100" target_min="0" type="range" value="100" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone11" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="22" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>12</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="defines the adress targeted by the harp potentiometer alternate function">harp alternate control</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="12" curve="linear" data_type="int" id="22" max="219" min="21" onchange="handlechange(this)" step="1" target_max="219" target_min="21" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone12" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="23" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>13</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="defines the control range of the harp potentiometer alternate function">harp alternate percent range</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="13" curve="linear" data_type="int" id="23" max="100" min="0" onchange="handlechange(this)" step="1" target_max="100" target_min="0" type="range" value="100" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone13" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="24" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>14</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="defines the adress targeted by the modulation potentiometer main function">mod main control</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="14" curve="linear" data_type="int" id="24" max="219" min="21" onchange="handlechange(this)" step="1" target_max="219" target_min="21" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone14" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="25" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>15</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="defines the control range of the modulation potentiometer main function">mod main percent range</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="15" curve="linear" data_type="int" id="25" max="100" min="0" onchange="handlechange(this)" step="1" target_max="100" target_min="0" type="range" value="100" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone15" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="26" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>16</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="defines the adress targeted by the modulation potentiometer alternate function">mod alternate control</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="16" curve="linear" data_type="int" id="26" max="219" min="21" onchange="handlechange(this)" step="1" target_max="219" target_min="21" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone16" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="27" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>17</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="defines the control range of the modulation potentiometer alternate function">mod alternate percent range </dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="17" curve="linear" data_type="int" id="27" max="100" min="0" onchange="handlechange(this)" step="1" target_max="100" target_min="0" type="range" value="100" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone17" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="28" version="2" class="line data_line content_line inactive hidden">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p>hidden</p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>4</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="nothing yet">chord alternate value</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="4" curve="linear" data_type="int" id="28" max="1024" min="0" onchange="handlechange(this)" step="1" target_max="1024" target_min="0" type="range" value="512" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone4" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="29" version="2" class="line data_line content_line inactive hidden">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>5</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="nothing yet">harp alternate value</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="5" curve="linear" data_type="int" id="29" max="1024" min="0" onchange="handlechange(this)" step="1" target_max="1024" target_min="0" type="range" value="512" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone5" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="30" version="2" class="line data_line content_line inactive hidden">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>6</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="nothing yet">mod alternate value</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="6" curve="linear" data_type="int" id="30" max="1024" min="0" onchange="handlechange(this)" step="1" target_max="1024" target_min="0" type="range" value="512" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone6" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="31" version="2" class="line data_line content_line inactive hidden">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>7</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="nothing yet">firmware revision</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="7" curve="linear" data_type="float" id="31" max="10" min="0" onchange="handlechange(this)" step="0.01" target_max="10" target_min="0" type="range" value="0.0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone7" class="value_zone"></p>
+            </div>
+          </div>
+        </div>
+        <div class="array_content">
+          <div name="32" class="line header_data data_line inactive">
+            <div class=" bloc B4 M9 S9">
+              <p class="row_title">Harp parameters</p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p>Subcategory</p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>ID</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <p>Name</p>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <p>Control</p>
+            </div>
+            <div class=" bloc B1 M1 S1 right_aligned">
+              <p>Value</p>
+            </div>
+          </div>
+          <div name="32" class="line data_line">
+            <hr />
+          </div>
+          <div name="32" version="2" class="line data_line content_line inactive hidden">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p>hidden</p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>2</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="global gain of the harp section">global gain</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="2" curve="linear" data_type="float" id="32" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.5" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone2" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="33" version="9" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p>Notes</p>
             </div>
             <div class=" bloc B1 M1 S1">
               <p>36</p>
@@ -829,18 +834,18 @@
               <dfn title="what the harp strings play. 0=follows the chord (default), 1=Major, 2=Major Pentatonic, 3=Minor Pentatonic, 4=Diminished 6th, 5=Relative Natural Minor, 6=Relative Harmonic Minor, 7=Relative Minor Pentatonic, 8=scale chosen per chord, 9=as 8 but pentatonic, 10=your own scale rooted on the key, 11=your own scale rooted on the chord">scalar harp mode</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="36" curve="linear" data_type="int" id="34" max="11" min="0" onchange="handlechange(this)" step="1" target_max="11" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="36" curve="linear" data_type="int" id="33" max="11" min="0" onchange="handlechange(this)" step="1" target_max="11" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone36" class="value_zone"></p>
             </div>
           </div>
-          <div name="35" version="9" class="line data_line content_line inactive">
+          <div name="34" version="9" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
             <div class=" bloc B3 M2 S3">
-              <p>Scale</p>
+              <p></p>
             </div>
             <div class=" bloc B1 M1 S1">
               <p>236</p>
@@ -849,7 +854,7 @@
               <dfn title="the scale used by scalar harp modes 10 and 11: tick the degrees you want">custom scale</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <span class="degree_row" adress_field="236" id="35">
+              <span class="degree_row" adress_field="236" id="34">
                 <label class="degree">
                   <input class="degree_box inactive" adress_field="236" data_type="degrees" bit="0" onchange="handledegree(this)" type="checkbox" />
                   <span>1</span>
@@ -904,452 +909,7 @@
               <p id="value_zone236" class="value_zone"></p>
             </div>
           </div>
-          <div name="36" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p>Effects</p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>24</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="size of the reverb room">reverb size</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="24" curve="linear" data_type="float" id="36" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.5" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone24" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="37" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>25</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="damping of high frequencies in the reverb room">reverb high damping</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="25" curve="linear" data_type="float" id="37" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone25" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="38" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>26</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="damping of low frequencies in the reverb room">reverb low damping</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="26" curve="linear" data_type="float" id="38" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.5" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone26" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="39" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>27</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="additional low pass in the reverb room">reverb low pass</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="27" curve="linear" data_type="float" id="39" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.3" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone27" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="40" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>28</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="diffusion within the reverb room">reverb diffusion</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="28" curve="linear" data_type="float" id="40" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.3" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone28" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="41" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>29</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="pans the chord and harp sound, from fully separated to both in the middle ">pan</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="29" curve="linear" data_type="float" id="41" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.75" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone29" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="42" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p>Potentiometer</p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>10</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="defines the adress targeted by the chord potentiometer alternate function">chord alternate control</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="10" curve="linear" data_type="int" id="42" max="219" min="21" onchange="handlechange(this)" step="1" target_max="219" target_min="21" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone10" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="43" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>11</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="defines the control range of the chord potentiometer alternate function">chord alternate range</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="11" curve="linear" data_type="int" id="43" max="100" min="0" onchange="handlechange(this)" step="1" target_max="100" target_min="0" type="range" value="100" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone11" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="44" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>12</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="defines the adress targeted by the harp potentiometer alternate function">harp alternate control</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="12" curve="linear" data_type="int" id="44" max="219" min="21" onchange="handlechange(this)" step="1" target_max="219" target_min="21" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone12" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="45" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>13</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="defines the control range of the harp potentiometer alternate function">harp alternate percent range</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="13" curve="linear" data_type="int" id="45" max="100" min="0" onchange="handlechange(this)" step="1" target_max="100" target_min="0" type="range" value="100" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone13" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="46" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>14</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="defines the adress targeted by the modulation potentiometer main function">mod main control</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="14" curve="linear" data_type="int" id="46" max="219" min="21" onchange="handlechange(this)" step="1" target_max="219" target_min="21" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone14" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="47" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>15</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="defines the control range of the modulation potentiometer main function">mod main percent range</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="15" curve="linear" data_type="int" id="47" max="100" min="0" onchange="handlechange(this)" step="1" target_max="100" target_min="0" type="range" value="100" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone15" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="48" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>16</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="defines the adress targeted by the modulation potentiometer alternate function">mod alternate control</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="16" curve="linear" data_type="int" id="48" max="219" min="21" onchange="handlechange(this)" step="1" target_max="219" target_min="21" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone16" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="49" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>17</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="defines the control range of the modulation potentiometer alternate function">mod alternate percent range </dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="17" curve="linear" data_type="int" id="49" max="100" min="0" onchange="handlechange(this)" step="1" target_max="100" target_min="0" type="range" value="100" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone17" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="50" version="2" class="line data_line content_line inactive hidden">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p>hidden</p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>4</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="nothing yet">chord alternate value</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="4" curve="linear" data_type="int" id="50" max="1024" min="0" onchange="handlechange(this)" step="1" target_max="1024" target_min="0" type="range" value="512" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone4" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="51" version="2" class="line data_line content_line inactive hidden">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>5</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="nothing yet">harp alternate value</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="5" curve="linear" data_type="int" id="51" max="1024" min="0" onchange="handlechange(this)" step="1" target_max="1024" target_min="0" type="range" value="512" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone5" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="52" version="2" class="line data_line content_line inactive hidden">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>6</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="nothing yet">mod alternate value</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="6" curve="linear" data_type="int" id="52" max="1024" min="0" onchange="handlechange(this)" step="1" target_max="1024" target_min="0" type="range" value="512" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone6" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="53" version="2" class="line data_line content_line inactive hidden">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>7</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="nothing yet">firmware revision</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="7" curve="linear" data_type="float" id="53" max="10" min="0" onchange="handlechange(this)" step="0.01" target_max="10" target_min="0" type="range" value="0.0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone7" class="value_zone"></p>
-            </div>
-          </div>
-        </div>
-        <div class="array_content">
-          <div name="54" class="line header_data data_line inactive">
-            <div class=" bloc B4 M9 S9">
-              <p class="row_title">Harp parameters</p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p>Subcategory</p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>ID</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <p>Name</p>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <p>Control</p>
-            </div>
-            <div class=" bloc B1 M1 S1 right_aligned">
-              <p>Value</p>
-            </div>
-          </div>
-          <div name="54" class="line data_line">
-            <hr />
-          </div>
-          <div name="54" version="2" class="line data_line content_line inactive hidden">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p>hidden</p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>2</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="global gain of the harp section">global gain</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="2" curve="linear" data_type="float" id="54" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.5" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone2" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="55" version="3" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p>General</p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>99</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="changes the octave of the harp section up or down">octave change</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="99" curve="linear" data_type="int" id="55" max="4" min="0" onchange="handlechange(this)" step="1" target_max="4" target_min="0" type="range" value="2" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone99" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="56" version="2" class="line data_line content_line inactive">
-            <div class=" bloc B4 M0 S0">
-              <p></p>
-            </div>
-            <div class=" bloc B3 M2 S3">
-              <p></p>
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p>40</p>
-            </div>
-            <div class=" bloc B6 M4 S6">
-              <dfn title="defines different harp patterns. 0 is normal, 1 i with second, 2 is with fourth, 3 with sixth, 4 octaves, 5 chromatics and 6 useful when using a keymaster touchplate in Barry Harris mode">harp shuffling</dfn>
-            </div>
-            <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="40" curve="linear" data_type="int" id="56" max="6" min="0" onchange="handlechange(this)" step="1" target_max="6" target_min="0" type="range" value="0" />
-            </div>
-            <div class=" bloc B1 M1 S1">
-              <p id="value_zone40" class="value_zone"></p>
-            </div>
-          </div>
-          <div name="57" version="3" class="line data_line content_line inactive">
+          <div name="35" version="3" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1363,13 +923,93 @@
               <dfn title="puts the harp in chromatic mode, with static notes not dependant on chord selection">chromatic mode</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="98" curve="linear" data_type="int" id="57" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="98" curve="linear" data_type="int" id="35" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone98" class="value_zone"></p>
             </div>
           </div>
-          <div name="58" version="2" class="line data_line content_line inactive">
+          <div name="36" version="15" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>116</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="which twelve steps the chromatic harp plays, like the rows of strings on a triple harp: 1 is steps 1 to 12 of the division, 2 is 13 to 24, 3 is 25 to 36, carrying on past the octave where the division ends. 31 has three ranks, 19 has two, and in 12 there is only one, so this changes nothing there. Only in chromatic mode">harp rank</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="116" curve="linear" data_type="int" id="36" max="3" min="1" onchange="handlechange(this)" step="1" target_max="3" target_min="1" type="range" value="1" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone116" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="37" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>40</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="defines different harp patterns. 0 is normal, 1 i with second, 2 is with fourth, 3 with sixth, 4 octaves, 5 chromatics and 6 useful when using a keymaster touchplate in Barry Harris mode">harp shuffling</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="40" curve="linear" data_type="int" id="37" max="6" min="0" onchange="handlechange(this)" step="1" target_max="6" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone40" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="38" version="3" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>99</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="changes the octave of the harp section up or down">octave change</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="99" curve="linear" data_type="int" id="38" max="4" min="0" onchange="handlechange(this)" step="1" target_max="4" target_min="0" type="range" value="2" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone99" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="39" version="2" class="line data_line content_line inactive">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>22</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="defines whether a held harp note will change when changing chord">change held strings</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="22" curve="linear" data_type="int" id="39" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone22" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="40" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1383,13 +1023,13 @@
               <dfn title="amplitude of the 12 initial oscillators">amplitude</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="41" curve="linear" data_type="float" id="58" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.15" />
+              <input class="slider inactive" adress_field="41" curve="linear" data_type="float" id="40" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.15" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone41" class="value_zone"></p>
             </div>
           </div>
-          <div name="59" version="2" class="line data_line content_line inactive">
+          <div name="41" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1403,13 +1043,13 @@
               <dfn title="defines the waveform amongst 12 oscillators. In order: sine, sawtooth, square, triangle, bandlimited pulse, pulse, reverse sawtooth, sample and hold, variable triangle, bandlimited sawtooth, reverse bandlimited sawtooth, bandlimited square.">waveform</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="42" curve="linear" data_type="int" id="59" max="11" min="0" onchange="handlechange(this)" step="1" target_max="11" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="42" curve="linear" data_type="int" id="41" max="11" min="0" onchange="handlechange(this)" step="1" target_max="11" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone42" class="value_zone"></p>
             </div>
           </div>
-          <div name="60" version="2" class="line data_line content_line inactive">
+          <div name="42" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1423,13 +1063,13 @@
               <dfn title="attack time of the envelope">attack</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="43" curve="exponential" data_type="int" id="60" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="8" />
+              <input class="slider inactive" adress_field="43" curve="exponential" data_type="int" id="42" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="8" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone43" class="value_zone"></p>
             </div>
           </div>
-          <div name="61" version="2" class="line data_line content_line inactive">
+          <div name="43" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1443,13 +1083,13 @@
               <dfn title="hold time of the envelope">hold</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="44" curve="exponential" data_type="int" id="61" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="8" />
+              <input class="slider inactive" adress_field="44" curve="exponential" data_type="int" id="43" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="8" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone44" class="value_zone"></p>
             </div>
           </div>
-          <div name="62" version="2" class="line data_line content_line inactive">
+          <div name="44" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1463,13 +1103,13 @@
               <dfn title="decay time of the envelope">decay</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="45" curve="exponential" data_type="int" id="62" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="12" />
+              <input class="slider inactive" adress_field="45" curve="exponential" data_type="int" id="44" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="12" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone45" class="value_zone"></p>
             </div>
           </div>
-          <div name="63" version="2" class="line data_line content_line inactive">
+          <div name="45" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1483,13 +1123,13 @@
               <dfn title="sustain level of the envelope">sustain</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="46" curve="linear" data_type="float" id="63" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.5" />
+              <input class="slider inactive" adress_field="46" curve="linear" data_type="float" id="45" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.5" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone46" class="value_zone"></p>
             </div>
           </div>
-          <div name="64" version="2" class="line data_line content_line inactive">
+          <div name="46" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1503,13 +1143,13 @@
               <dfn title="release time of the envelope">release</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="47" curve="exponential" data_type="int" id="64" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1000" />
+              <input class="slider inactive" adress_field="47" curve="exponential" data_type="int" id="46" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1000" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone47" class="value_zone"></p>
             </div>
           </div>
-          <div name="65" version="2" class="line data_line content_line inactive">
+          <div name="47" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1523,13 +1163,13 @@
               <dfn title="retrigger time of the envelope">retrigger release</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="48" curve="exponential" data_type="int" id="65" max="10" min="0" onchange="handlechange(this)" step="1" target_max="10" target_min="0" type="range" value="1" />
+              <input class="slider inactive" adress_field="48" curve="exponential" data_type="int" id="47" max="10" min="0" onchange="handlechange(this)" step="1" target_max="10" target_min="0" type="range" value="1" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone48" class="value_zone"></p>
             </div>
           </div>
-          <div name="66" version="2" class="line data_line content_line inactive">
+          <div name="48" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1543,13 +1183,13 @@
               <dfn title="corner frequency of the filter in the absence of control signal">base frequency</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="49" curve="exponential" data_type="int" id="66" max="2000" min="0" onchange="handlechange(this)" step="1" target_max="2000" target_min="0" type="range" value="500" />
+              <input class="slider inactive" adress_field="49" curve="exponential" data_type="int" id="48" max="2000" min="0" onchange="handlechange(this)" step="1" target_max="2000" target_min="0" type="range" value="500" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone49" class="value_zone"></p>
             </div>
           </div>
-          <div name="67" version="2" class="line data_line content_line inactive">
+          <div name="49" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1563,13 +1203,13 @@
               <dfn title="value that is multiplied by the note frequency and added to the base corner frequency to allow for keytracking">keytrack value</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="50" curve="linear" data_type="float" id="67" max="3" min="0" onchange="handlechange(this)" step="0.01" target_max="3" target_min="0" type="range" value="0.4" />
+              <input class="slider inactive" adress_field="50" curve="linear" data_type="float" id="49" max="3" min="0" onchange="handlechange(this)" step="0.01" target_max="3" target_min="0" type="range" value="0.4" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone50" class="value_zone"></p>
             </div>
           </div>
-          <div name="68" version="2" class="line data_line content_line inactive">
+          <div name="50" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1583,13 +1223,13 @@
               <dfn title="resonance of the filter">resonance</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="51" curve="linear" data_type="float" id="68" max="5" min="0.7" onchange="handlechange(this)" step="0.01" target_max="5" target_min="0.7" type="range" value="0.7" />
+              <input class="slider inactive" adress_field="51" curve="linear" data_type="float" id="50" max="5" min="0.7" onchange="handlechange(this)" step="0.01" target_max="5" target_min="0.7" type="range" value="0.7" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone51" class="value_zone"></p>
             </div>
           </div>
-          <div name="69" version="2" class="line data_line content_line inactive">
+          <div name="51" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1603,13 +1243,13 @@
               <dfn title="attack time of the envelope filter">attack</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="52" curve="exponential" data_type="int" id="69" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="3" />
+              <input class="slider inactive" adress_field="52" curve="exponential" data_type="int" id="51" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="3" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone52" class="value_zone"></p>
             </div>
           </div>
-          <div name="70" version="2" class="line data_line content_line inactive">
+          <div name="52" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1623,13 +1263,13 @@
               <dfn title="hold time of the envelope filter">hold</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="53" curve="exponential" data_type="int" id="70" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="35" />
+              <input class="slider inactive" adress_field="53" curve="exponential" data_type="int" id="52" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="35" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone53" class="value_zone"></p>
             </div>
           </div>
-          <div name="71" version="2" class="line data_line content_line inactive">
+          <div name="53" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1643,13 +1283,13 @@
               <dfn title="decay time of the envelope filter">decay</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="54" curve="exponential" data_type="int" id="71" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="90" />
+              <input class="slider inactive" adress_field="54" curve="exponential" data_type="int" id="53" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="90" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone54" class="value_zone"></p>
             </div>
           </div>
-          <div name="72" version="2" class="line data_line content_line inactive">
+          <div name="54" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1663,13 +1303,13 @@
               <dfn title="sustain level of the envelope filter">sustain</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="55" curve="linear" data_type="float" id="72" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.5" />
+              <input class="slider inactive" adress_field="55" curve="linear" data_type="float" id="54" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.5" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone55" class="value_zone"></p>
             </div>
           </div>
-          <div name="73" version="2" class="line data_line content_line inactive">
+          <div name="55" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1683,13 +1323,13 @@
               <dfn title="release time of the envelope filter">release</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="56" curve="exponential" data_type="int" id="73" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="2500" />
+              <input class="slider inactive" adress_field="56" curve="exponential" data_type="int" id="55" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="2500" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone56" class="value_zone"></p>
             </div>
           </div>
-          <div name="74" version="2" class="line data_line content_line inactive">
+          <div name="56" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1703,13 +1343,13 @@
               <dfn title="retrigger time of the envelope filter">retrigger release</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="57" curve="exponential" data_type="int" id="74" max="100" min="0" onchange="handlechange(this)" step="1" target_max="100" target_min="0" type="range" value="1" />
+              <input class="slider inactive" adress_field="57" curve="exponential" data_type="int" id="56" max="100" min="0" onchange="handlechange(this)" step="1" target_max="100" target_min="0" type="range" value="1" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone57" class="value_zone"></p>
             </div>
           </div>
-          <div name="75" version="2" class="line data_line content_line inactive">
+          <div name="57" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1723,13 +1363,13 @@
               <dfn title="sensitivity of the filter to the control envelope">filter sensitivity</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="58" curve="linear" data_type="float" id="75" max="5" min="0" onchange="handlechange(this)" step="0.01" target_max="5" target_min="0" type="range" value="0.0" />
+              <input class="slider inactive" adress_field="58" curve="linear" data_type="float" id="57" max="5" min="0" onchange="handlechange(this)" step="0.01" target_max="5" target_min="0" type="range" value="0.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone58" class="value_zone"></p>
             </div>
           </div>
-          <div name="76" version="6" class="line data_line content_line inactive">
+          <div name="58" version="6" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1743,13 +1383,13 @@
               <dfn title="defines the waveform of the transient. In order: sine, sawtooth, square, triangle, bandlimited pulse, pulse, reverse sawtooth, sample and hold, variable triangle, bandlimited sawtooth, reverse bandlimited sawtooth, bandlimited square.">waveform</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="100" curve="linear" data_type="int" id="76" max="11" min="0" onchange="handlechange(this)" step="1" target_max="11" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="100" curve="linear" data_type="int" id="58" max="11" min="0" onchange="handlechange(this)" step="1" target_max="11" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone100" class="value_zone"></p>
             </div>
           </div>
-          <div name="77" version="5" class="line data_line content_line inactive">
+          <div name="59" version="5" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1763,13 +1403,13 @@
               <dfn title="amplitude of the transient">amplitude</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="101" curve="linear" data_type="float" id="77" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.1" />
+              <input class="slider inactive" adress_field="101" curve="linear" data_type="float" id="59" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.1" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone101" class="value_zone"></p>
             </div>
           </div>
-          <div name="78" version="5" class="line data_line content_line inactive">
+          <div name="60" version="5" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1783,13 +1423,13 @@
               <dfn title="attack time of the transient">attack</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="102" curve="exponential" data_type="int" id="78" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="10" />
+              <input class="slider inactive" adress_field="102" curve="exponential" data_type="int" id="60" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="10" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone102" class="value_zone"></p>
             </div>
           </div>
-          <div name="79" version="5" class="line data_line content_line inactive">
+          <div name="61" version="5" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1803,13 +1443,13 @@
               <dfn title="hold time of the transient">hold</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="103" curve="exponential" data_type="int" id="79" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="10" />
+              <input class="slider inactive" adress_field="103" curve="exponential" data_type="int" id="61" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="10" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone103" class="value_zone"></p>
             </div>
           </div>
-          <div name="80" version="5" class="line data_line content_line inactive">
+          <div name="62" version="5" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1823,13 +1463,13 @@
               <dfn title="decay time of the transient">decay</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="104" curve="exponential" data_type="int" id="80" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="40" />
+              <input class="slider inactive" adress_field="104" curve="exponential" data_type="int" id="62" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="40" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone104" class="value_zone"></p>
             </div>
           </div>
-          <div name="81" version="5" class="line data_line content_line inactive">
+          <div name="63" version="5" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1843,13 +1483,13 @@
               <dfn title="level in the scale of the transient">note level</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="105" curve="linear" data_type="int" id="81" max="24" min="0" onchange="handlechange(this)" step="1" target_max="24" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="105" curve="linear" data_type="int" id="63" max="24" min="0" onchange="handlechange(this)" step="1" target_max="24" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone105" class="value_zone"></p>
             </div>
           </div>
-          <div name="82" version="2" class="line data_line content_line inactive">
+          <div name="64" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1863,13 +1503,13 @@
               <dfn title="defines the waveform amongst 12 oscillators for the tremolo (amplitude variation). In order: sine, sawtooth, square, triangle, bandlimited pulse, pulse, reverse sawtooth, sample and hold, variable triangle, bandlimited sawtooth, reverse bandlimited sawtooth, bandlimited square.. Discontinuous signal will cause clicks">waveform</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="59" curve="linear" data_type="int" id="82" max="11" min="0" onchange="handlechange(this)" step="1" target_max="11" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="59" curve="linear" data_type="int" id="64" max="11" min="0" onchange="handlechange(this)" step="1" target_max="11" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone59" class="value_zone"></p>
             </div>
           </div>
-          <div name="83" version="2" class="line data_line content_line inactive">
+          <div name="65" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1883,13 +1523,13 @@
               <dfn title="frequency of the tremolo">frequency</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="60" curve="linear" data_type="float" id="83" max="20" min="0" onchange="handlechange(this)" step="0.01" target_max="20" target_min="0" type="range" value="0.0" />
+              <input class="slider inactive" adress_field="60" curve="linear" data_type="float" id="65" max="20" min="0" onchange="handlechange(this)" step="0.01" target_max="20" target_min="0" type="range" value="0.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone60" class="value_zone"></p>
             </div>
           </div>
-          <div name="84" version="2" class="line data_line content_line inactive">
+          <div name="66" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1903,13 +1543,13 @@
               <dfn title="amplitude of the tremolo.">amplitude</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="61" curve="linear" data_type="float" id="84" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
+              <input class="slider inactive" adress_field="61" curve="linear" data_type="float" id="66" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone61" class="value_zone"></p>
             </div>
           </div>
-          <div name="85" version="2" class="line data_line content_line inactive">
+          <div name="67" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1923,13 +1563,13 @@
               <dfn title="defines the waveform amongst 12 oscillators for the vibrato (pitch variation). In order: sine, sawtooth, square, triangle, bandlimited pulse, pulse, reverse sawtooth, sample and hold, variable triangle, bandlimited sawtooth, reverse bandlimited sawtooth, bandlimited square..">waveform</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="62" curve="linear" data_type="int" id="85" max="11" min="0" onchange="handlechange(this)" step="1" target_max="11" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="62" curve="linear" data_type="int" id="67" max="11" min="0" onchange="handlechange(this)" step="1" target_max="11" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone62" class="value_zone"></p>
             </div>
           </div>
-          <div name="86" version="2" class="line data_line content_line inactive">
+          <div name="68" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1943,13 +1583,13 @@
               <dfn title="frequency of the vibrato oscillation">frequency</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="63" curve="linear" data_type="float" id="86" max="20" min="0" onchange="handlechange(this)" step="0.01" target_max="20" target_min="0" type="range" value="0.0" />
+              <input class="slider inactive" adress_field="63" curve="linear" data_type="float" id="68" max="20" min="0" onchange="handlechange(this)" step="0.01" target_max="20" target_min="0" type="range" value="0.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone63" class="value_zone"></p>
             </div>
           </div>
-          <div name="87" version="2" class="line data_line content_line inactive">
+          <div name="69" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1963,13 +1603,13 @@
               <dfn title="amplitude of the vibrato oscillation">amplitude</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="64" curve="linear" data_type="float" id="87" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
+              <input class="slider inactive" adress_field="64" curve="linear" data_type="float" id="69" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone64" class="value_zone"></p>
             </div>
           </div>
-          <div name="88" version="2" class="line data_line content_line inactive">
+          <div name="70" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -1983,13 +1623,13 @@
               <dfn title="attack time of the vibrato envelope">attack</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="65" curve="exponential" data_type="int" id="88" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
+              <input class="slider inactive" adress_field="65" curve="exponential" data_type="int" id="70" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone65" class="value_zone"></p>
             </div>
           </div>
-          <div name="89" version="2" class="line data_line content_line inactive">
+          <div name="71" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2003,13 +1643,13 @@
               <dfn title="hold time of the vibrato envelope">hold</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="66" curve="exponential" data_type="int" id="89" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
+              <input class="slider inactive" adress_field="66" curve="exponential" data_type="int" id="71" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone66" class="value_zone"></p>
             </div>
           </div>
-          <div name="90" version="2" class="line data_line content_line inactive">
+          <div name="72" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2023,13 +1663,13 @@
               <dfn title="decay time of the vibrato envelope">decay</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="67" curve="exponential" data_type="int" id="90" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
+              <input class="slider inactive" adress_field="67" curve="exponential" data_type="int" id="72" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone67" class="value_zone"></p>
             </div>
           </div>
-          <div name="91" version="2" class="line data_line content_line inactive">
+          <div name="73" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2043,13 +1683,13 @@
               <dfn title="sustain level of the vibrato envelope.">sustain</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="68" curve="linear" data_type="float" id="91" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="1.0" />
+              <input class="slider inactive" adress_field="68" curve="linear" data_type="float" id="73" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="1.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone68" class="value_zone"></p>
             </div>
           </div>
-          <div name="92" version="2" class="line data_line content_line inactive">
+          <div name="74" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2063,13 +1703,13 @@
               <dfn title="release time of the vibrato envelope">release</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="69" curve="exponential" data_type="int" id="92" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
+              <input class="slider inactive" adress_field="69" curve="exponential" data_type="int" id="74" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone69" class="value_zone"></p>
             </div>
           </div>
-          <div name="93" version="2" class="line data_line content_line inactive">
+          <div name="75" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2083,13 +1723,13 @@
               <dfn title="retrigger time of the vibrato envelope">retrigger release</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="70" curve="exponential" data_type="int" id="93" max="100" min="0" onchange="handlechange(this)" step="1" target_max="100" target_min="0" type="range" value="1" />
+              <input class="slider inactive" adress_field="70" curve="exponential" data_type="int" id="75" max="100" min="0" onchange="handlechange(this)" step="1" target_max="100" target_min="0" type="range" value="1" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone70" class="value_zone"></p>
             </div>
           </div>
-          <div name="94" version="2" class="line data_line content_line inactive">
+          <div name="76" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2103,13 +1743,13 @@
               <dfn title="continuous signal added to the envelope for pitch variation. 1 is the center, before will be negative pitch bending, after positive pitch bending">pitch bend</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="71" curve="linear" data_type="float" id="94" max="2" min="0" onchange="handlechange(this)" step="0.01" target_max="2" target_min="0" type="range" value="0.0" />
+              <input class="slider inactive" adress_field="71" curve="linear" data_type="float" id="76" max="2" min="0" onchange="handlechange(this)" step="0.01" target_max="2" target_min="0" type="range" value="0.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone71" class="value_zone"></p>
             </div>
           </div>
-          <div name="95" version="2" class="line data_line content_line inactive">
+          <div name="77" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2123,13 +1763,13 @@
               <dfn title="attack time of the pitch bend envelope">attack bend</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="72" curve="exponential" data_type="int" id="95" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
+              <input class="slider inactive" adress_field="72" curve="exponential" data_type="int" id="77" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone72" class="value_zone"></p>
             </div>
           </div>
-          <div name="96" version="2" class="line data_line content_line inactive">
+          <div name="78" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2143,13 +1783,13 @@
               <dfn title="hold time of the pitch bend envelope">hold bend</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="73" curve="exponential" data_type="int" id="96" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
+              <input class="slider inactive" adress_field="73" curve="exponential" data_type="int" id="78" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone73" class="value_zone"></p>
             </div>
           </div>
-          <div name="97" version="2" class="line data_line content_line inactive">
+          <div name="79" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2163,13 +1803,13 @@
               <dfn title="decay time of the pitch bend envelope">decay bend</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="74" curve="exponential" data_type="int" id="97" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
+              <input class="slider inactive" adress_field="74" curve="exponential" data_type="int" id="79" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone74" class="value_zone"></p>
             </div>
           </div>
-          <div name="98" version="2" class="line data_line content_line inactive">
+          <div name="80" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2183,13 +1823,13 @@
               <dfn title="retrigger time of the pitch bend envelope">retrigger release bend</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="75" curve="exponential" data_type="int" id="98" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
+              <input class="slider inactive" adress_field="75" curve="exponential" data_type="int" id="80" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone75" class="value_zone"></p>
             </div>
           </div>
-          <div name="99" version="2" class="line data_line content_line inactive">
+          <div name="81" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2203,13 +1843,13 @@
               <dfn title="intensity of the vibrato and bend effect">intensity</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="76" curve="linear" data_type="float" id="99" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.15" />
+              <input class="slider inactive" adress_field="76" curve="linear" data_type="float" id="81" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.15" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone76" class="value_zone"></p>
             </div>
           </div>
-          <div name="100" version="2" class="line data_line content_line inactive">
+          <div name="82" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2223,13 +1863,13 @@
               <dfn title="length in ms of the delay">delay length</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="77" curve="linear" data_type="int" id="100" max="600" min="0" onchange="handlechange(this)" step="1" target_max="600" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="77" curve="linear" data_type="int" id="82" max="600" min="0" onchange="handlechange(this)" step="1" target_max="600" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone77" class="value_zone"></p>
             </div>
           </div>
-          <div name="101" version="2" class="line data_line content_line inactive">
+          <div name="83" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2243,13 +1883,13 @@
               <dfn title="corner frequency of the filter in the delay loop">delay filter frequency</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="78" curve="linear" data_type="int" id="101" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="78" curve="linear" data_type="int" id="83" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone78" class="value_zone"></p>
             </div>
           </div>
-          <div name="102" version="2" class="line data_line content_line inactive">
+          <div name="84" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2263,13 +1903,13 @@
               <dfn title="resonance of the filter in the delay loop">delay filter resonance</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="79" curve="linear" data_type="float" id="102" max="5" min="0.7" onchange="handlechange(this)" step="0.01" target_max="5" target_min="0.7" type="range" value="0.7" />
+              <input class="slider inactive" adress_field="79" curve="linear" data_type="float" id="84" max="5" min="0.7" onchange="handlechange(this)" step="0.01" target_max="5" target_min="0.7" type="range" value="0.7" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone79" class="value_zone"></p>
             </div>
           </div>
-          <div name="103" version="2" class="line data_line content_line inactive">
+          <div name="85" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2283,13 +1923,13 @@
               <dfn title="lowpass component feedback into the delay">delay lowpass</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="80" curve="linear" data_type="float" id="103" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
+              <input class="slider inactive" adress_field="80" curve="linear" data_type="float" id="85" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone80" class="value_zone"></p>
             </div>
           </div>
-          <div name="104" version="2" class="line data_line content_line inactive">
+          <div name="86" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2303,13 +1943,13 @@
               <dfn title="bandpass component feedback into the delay">delay bandpass</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="81" curve="linear" data_type="float" id="104" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
+              <input class="slider inactive" adress_field="81" curve="linear" data_type="float" id="86" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone81" class="value_zone"></p>
             </div>
           </div>
-          <div name="105" version="2" class="line data_line content_line inactive">
+          <div name="87" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2323,13 +1963,13 @@
               <dfn title="highpass component feedback into the delay">delay highpass</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="82" curve="linear" data_type="float" id="105" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
+              <input class="slider inactive" adress_field="82" curve="linear" data_type="float" id="87" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone82" class="value_zone"></p>
             </div>
           </div>
-          <div name="106" version="2" class="line data_line content_line inactive">
+          <div name="88" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2343,13 +1983,13 @@
               <dfn title="intensity of the dry signal in the output">dry mix</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="83" curve="linear" data_type="float" id="106" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="1.0" />
+              <input class="slider inactive" adress_field="83" curve="linear" data_type="float" id="88" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="1.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone83" class="value_zone"></p>
             </div>
           </div>
-          <div name="107" version="2" class="line data_line content_line inactive">
+          <div name="89" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2363,13 +2003,13 @@
               <dfn title="intensity of the delayed signal in the output">delay mix</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="84" curve="linear" data_type="float" id="107" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
+              <input class="slider inactive" adress_field="84" curve="linear" data_type="float" id="89" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone84" class="value_zone"></p>
             </div>
           </div>
-          <div name="108" version="2" class="line data_line content_line inactive">
+          <div name="90" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2383,13 +2023,13 @@
               <dfn title="level of the reverb applied to the harp signal">reverb level</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="85" curve="linear" data_type="float" id="108" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.05" />
+              <input class="slider inactive" adress_field="85" curve="linear" data_type="float" id="90" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.05" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone85" class="value_zone"></p>
             </div>
           </div>
-          <div name="109" version="2" class="line data_line content_line inactive">
+          <div name="91" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2403,13 +2043,13 @@
               <dfn title="level of crunch applied to the harp signal">crunch level</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="86" curve="linear" data_type="float" id="109" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
+              <input class="slider inactive" adress_field="86" curve="linear" data_type="float" id="91" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone86" class="value_zone"></p>
             </div>
           </div>
-          <div name="110" version="2" class="line data_line content_line inactive">
+          <div name="92" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2423,13 +2063,13 @@
               <dfn title="selects the waveshaper transfert function, with more and more distorted shape">crunch type</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="87" curve="linear" data_type="int" id="110" max="2" min="0" onchange="handlechange(this)" step="1" target_max="2" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="87" curve="linear" data_type="int" id="92" max="2" min="0" onchange="handlechange(this)" step="1" target_max="2" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone87" class="value_zone"></p>
             </div>
           </div>
-          <div name="111" version="2" class="line data_line content_line inactive">
+          <div name="93" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2443,13 +2083,13 @@
               <dfn title="corner frequency of the output filter">frequency</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="88" curve="linear" data_type="int" id="111" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1400" />
+              <input class="slider inactive" adress_field="88" curve="linear" data_type="int" id="93" max="5000" min="0" onchange="handlechange(this)" step="1" target_max="5000" target_min="0" type="range" value="1400" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone88" class="value_zone"></p>
             </div>
           </div>
-          <div name="112" version="2" class="line data_line content_line inactive">
+          <div name="94" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2463,13 +2103,13 @@
               <dfn title="resonance of the output filter">resonance</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="89" curve="linear" data_type="float" id="112" max="5" min="0.7" onchange="handlechange(this)" step="0.01" target_max="5" target_min="0.7" type="range" value="2" />
+              <input class="slider inactive" adress_field="89" curve="linear" data_type="float" id="94" max="5" min="0.7" onchange="handlechange(this)" step="0.01" target_max="5" target_min="0.7" type="range" value="2" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone89" class="value_zone"></p>
             </div>
           </div>
-          <div name="113" version="2" class="line data_line content_line inactive">
+          <div name="95" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2483,13 +2123,13 @@
               <dfn title="output lowpass component">lowpass</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="90" curve="linear" data_type="float" id="113" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.25" />
+              <input class="slider inactive" adress_field="90" curve="linear" data_type="float" id="95" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.25" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone90" class="value_zone"></p>
             </div>
           </div>
-          <div name="114" version="2" class="line data_line content_line inactive">
+          <div name="96" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2503,13 +2143,13 @@
               <dfn title="output bandpass component">bandpass</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="91" curve="linear" data_type="float" id="114" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.75" />
+              <input class="slider inactive" adress_field="91" curve="linear" data_type="float" id="96" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.75" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone91" class="value_zone"></p>
             </div>
           </div>
-          <div name="115" version="2" class="line data_line content_line inactive">
+          <div name="97" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2523,13 +2163,13 @@
               <dfn title="output highpass component">highpass</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="92" curve="linear" data_type="float" id="115" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.3" />
+              <input class="slider inactive" adress_field="92" curve="linear" data_type="float" id="97" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.3" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone92" class="value_zone"></p>
             </div>
           </div>
-          <div name="116" version="2" class="line data_line content_line inactive">
+          <div name="98" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2543,13 +2183,13 @@
               <dfn title="defines the waveform amongst 12 oscillators for the output filter control LFO. In order: sine, sawtooth, square, triangle, bandlimited pulse, pulse, reverse sawtooth, sample and hold, variable triangle, bandlimited sawtooth, reverse bandlimited sawtooth, bandlimited square.">LFO waveform</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="93" curve="linear" data_type="int" id="116" max="11" min="0" onchange="handlechange(this)" step="1" target_max="11" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="93" curve="linear" data_type="int" id="98" max="11" min="0" onchange="handlechange(this)" step="1" target_max="11" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone93" class="value_zone"></p>
             </div>
           </div>
-          <div name="117" version="2" class="line data_line content_line inactive">
+          <div name="99" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2563,13 +2203,13 @@
               <dfn title="frequency of the output filter control LFO">LFO frequency</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="94" curve="linear" data_type="float" id="117" max="20" min="0" onchange="handlechange(this)" step="0.01" target_max="20" target_min="0" type="range" value="0.0" />
+              <input class="slider inactive" adress_field="94" curve="linear" data_type="float" id="99" max="20" min="0" onchange="handlechange(this)" step="0.01" target_max="20" target_min="0" type="range" value="0.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone94" class="value_zone"></p>
             </div>
           </div>
-          <div name="118" version="2" class="line data_line content_line inactive">
+          <div name="100" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2583,13 +2223,13 @@
               <dfn title="amplitude of the output filter control LFO">LFO amplitude</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="95" curve="linear" data_type="float" id="118" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
+              <input class="slider inactive" adress_field="95" curve="linear" data_type="float" id="100" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone95" class="value_zone"></p>
             </div>
           </div>
-          <div name="119" version="2" class="line data_line content_line inactive">
+          <div name="101" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2603,13 +2243,13 @@
               <dfn title="sensitivity of the output filter to the control LFO">filter LFO sensitivity</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="96" curve="linear" data_type="float" id="119" max="5" min="0" onchange="handlechange(this)" step="0.01" target_max="5" target_min="0" type="range" value="0.0" />
+              <input class="slider inactive" adress_field="96" curve="linear" data_type="float" id="101" max="5" min="0" onchange="handlechange(this)" step="0.01" target_max="5" target_min="0" type="range" value="0.0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone96" class="value_zone"></p>
             </div>
           </div>
-          <div name="120" version="2" class="line data_line content_line inactive">
+          <div name="102" version="2" class="line data_line content_line inactive">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2623,7 +2263,7 @@
               <dfn title="amplifies the volume of the harp">output amplifier</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="97" curve="linear" data_type="float" id="120" max="2" min="0" onchange="handlechange(this)" step="0.01" target_max="2" target_min="0" type="range" value="1.5" />
+              <input class="slider inactive" adress_field="97" curve="linear" data_type="float" id="102" max="2" min="0" onchange="handlechange(this)" step="0.01" target_max="2" target_min="0" type="range" value="1.5" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone97" class="value_zone"></p>
@@ -2631,7 +2271,7 @@
           </div>
         </div>
         <div class="array_content">
-          <div name="121" class="line header_data data_line inactive">
+          <div name="103" class="line header_data data_line inactive">
             <div class=" bloc B4 M9 S9">
               <p class="row_title">Chord parameters</p>
             </div>
@@ -2651,10 +2291,10 @@
               <p>Value</p>
             </div>
           </div>
-          <div name="121" class="line data_line">
+          <div name="103" class="line data_line">
             <hr />
           </div>
-          <div name="121" class="line data_line content_line inactive hidden" version="2" id="3">
+          <div name="103" class="line data_line content_line inactive hidden" version="2" id="3">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2668,13 +2308,213 @@
               <dfn title="global gain of the chord section">global gain</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="3" curve="linear" data_type="float" id="121" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.5" />
+              <input class="slider inactive" adress_field="3" curve="linear" data_type="float" id="103" max="1" min="0" onchange="handlechange(this)" step="0.01" target_max="1" target_min="0" type="range" value="0.5" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone3" class="value_zone"></p>
             </div>
           </div>
-          <div name="122" class="line data_line content_line inactive" version="2" id="120">
+          <div name="104" class="line data_line content_line inactive" version="4" id="33">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p>Buttons</p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>33</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="change major chords to major 6, the minor chords to minor 6, and the diminished chords to fully diminished. Recommanded to use the fourth harp shuffling array">barry harris mode</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="33" curve="linear" data_type="int" id="104" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone33" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="105" class="line data_line content_line inactive" version="9" id="39">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>39</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="which chords the buttons play. 0=the standard seven, 1=suspended and extended: sus4, sus2, 7sus4, maj9, min9, add9 and 6/9 on the same combinations">chord layout</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="39" curve="linear" data_type="int" id="105" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone39" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="106" class="line data_line content_line inactive" version="2" id="21">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>21</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="defines whether the chords will be retriggered when playing a modulation of the current chord or in continuous chord mode">retrigger chords</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="21" curve="linear" data_type="int" id="106" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone21" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="107" class="line data_line content_line inactive" version="9" id="202">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p>Alternate layout</p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>202</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="which chord the major button plays in the alternate layout. 0=this slot's default, 1=major, 2=minor, 3=dominant 7, 4=major 7, 5=minor 7, 6=diminished, 7=augmented, 8=major 6, 9=minor 6, 10=full diminished, 11=m7b5, 12=sus4, 13=sus2, 14=7sus4, 15=maj9, 16=min9, 17=add9, 18=6/9, 19=supermajor triad, 20=subminor triad, 21=neutral triad, 22=harmonic 7th, 23=neutral 7th, 24=subminor 7th, 25=utonal tetrad, 26=harmonic 9th, 27=otonal hexad, 28=just augmented, 29=supermajor 7th. 19 and up are just sonorities meant for 19 and 31, listed in the order of their counterparts above; in 12 most of them land on chords already in the list">alt layout maj</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="202" curve="linear" data_type="int" id="107" max="29" min="0" onchange="handlechange(this)" step="1" target_max="29" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone202" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="108" class="line data_line content_line inactive" version="9" id="203">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>203</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="which chord the minor button plays in the alternate layout. 0=this slot's default, 1=major, 2=minor, 3=dominant 7, 4=major 7, 5=minor 7, 6=diminished, 7=augmented, 8=major 6, 9=minor 6, 10=full diminished, 11=m7b5, 12=sus4, 13=sus2, 14=7sus4, 15=maj9, 16=min9, 17=add9, 18=6/9, 19=supermajor triad, 20=subminor triad, 21=neutral triad, 22=harmonic 7th, 23=neutral 7th, 24=subminor 7th, 25=utonal tetrad, 26=harmonic 9th, 27=otonal hexad, 28=just augmented, 29=supermajor 7th. 19 and up are just sonorities meant for 19 and 31, listed in the order of their counterparts above; in 12 most of them land on chords already in the list">alt layout min</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="203" curve="linear" data_type="int" id="108" max="29" min="0" onchange="handlechange(this)" step="1" target_max="29" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone203" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="109" class="line data_line content_line inactive" version="9" id="204">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>204</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="which chord the seventh button plays in the alternate layout. 0=this slot's default, 1=major, 2=minor, 3=dominant 7, 4=major 7, 5=minor 7, 6=diminished, 7=augmented, 8=major 6, 9=minor 6, 10=full diminished, 11=m7b5, 12=sus4, 13=sus2, 14=7sus4, 15=maj9, 16=min9, 17=add9, 18=6/9, 19=supermajor triad, 20=subminor triad, 21=neutral triad, 22=harmonic 7th, 23=neutral 7th, 24=subminor 7th, 25=utonal tetrad, 26=harmonic 9th, 27=otonal hexad, 28=just augmented, 29=supermajor 7th. 19 and up are just sonorities meant for 19 and 31, listed in the order of their counterparts above; in 12 most of them land on chords already in the list">alt layout 7th</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="204" curve="linear" data_type="int" id="109" max="29" min="0" onchange="handlechange(this)" step="1" target_max="29" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone204" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="110" class="line data_line content_line inactive" version="9" id="205">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>205</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="which chord the major and seventh plays in the alternate layout. 0=this slot's default, 1=major, 2=minor, 3=dominant 7, 4=major 7, 5=minor 7, 6=diminished, 7=augmented, 8=major 6, 9=minor 6, 10=full diminished, 11=m7b5, 12=sus4, 13=sus2, 14=7sus4, 15=maj9, 16=min9, 17=add9, 18=6/9, 19=supermajor triad, 20=subminor triad, 21=neutral triad, 22=harmonic 7th, 23=neutral 7th, 24=subminor 7th, 25=utonal tetrad, 26=harmonic 9th, 27=otonal hexad, 28=just augmented, 29=supermajor 7th. 19 and up are just sonorities meant for 19 and 31, listed in the order of their counterparts above; in 12 most of them land on chords already in the list">alt layout maj+7th</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="205" curve="linear" data_type="int" id="110" max="29" min="0" onchange="handlechange(this)" step="1" target_max="29" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone205" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="111" class="line data_line content_line inactive" version="9" id="206">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>206</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="which chord the minor and seventh plays in the alternate layout. 0=this slot's default, 1=major, 2=minor, 3=dominant 7, 4=major 7, 5=minor 7, 6=diminished, 7=augmented, 8=major 6, 9=minor 6, 10=full diminished, 11=m7b5, 12=sus4, 13=sus2, 14=7sus4, 15=maj9, 16=min9, 17=add9, 18=6/9, 19=supermajor triad, 20=subminor triad, 21=neutral triad, 22=harmonic 7th, 23=neutral 7th, 24=subminor 7th, 25=utonal tetrad, 26=harmonic 9th, 27=otonal hexad, 28=just augmented, 29=supermajor 7th. 19 and up are just sonorities meant for 19 and 31, listed in the order of their counterparts above; in 12 most of them land on chords already in the list">alt layout min+7th</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="206" curve="linear" data_type="int" id="111" max="29" min="0" onchange="handlechange(this)" step="1" target_max="29" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone206" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="112" class="line data_line content_line inactive" version="9" id="207">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>207</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="which chord the major and minor plays in the alternate layout. 0=this slot's default, 1=major, 2=minor, 3=dominant 7, 4=major 7, 5=minor 7, 6=diminished, 7=augmented, 8=major 6, 9=minor 6, 10=full diminished, 11=m7b5, 12=sus4, 13=sus2, 14=7sus4, 15=maj9, 16=min9, 17=add9, 18=6/9, 19=supermajor triad, 20=subminor triad, 21=neutral triad, 22=harmonic 7th, 23=neutral 7th, 24=subminor 7th, 25=utonal tetrad, 26=harmonic 9th, 27=otonal hexad, 28=just augmented, 29=supermajor 7th. 19 and up are just sonorities meant for 19 and 31, listed in the order of their counterparts above; in 12 most of them land on chords already in the list">alt layout maj+min</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="207" curve="linear" data_type="int" id="112" max="29" min="0" onchange="handlechange(this)" step="1" target_max="29" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone207" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="113" class="line data_line content_line inactive" version="9" id="208">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>208</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="which chord the all three buttons plays in the alternate layout. 0=this slot's default, 1=major, 2=minor, 3=dominant 7, 4=major 7, 5=minor 7, 6=diminished, 7=augmented, 8=major 6, 9=minor 6, 10=full diminished, 11=m7b5, 12=sus4, 13=sus2, 14=7sus4, 15=maj9, 16=min9, 17=add9, 18=6/9, 19=supermajor triad, 20=subminor triad, 21=neutral triad, 22=harmonic 7th, 23=neutral 7th, 24=subminor 7th, 25=utonal tetrad, 26=harmonic 9th, 27=otonal hexad, 28=just augmented, 29=supermajor 7th. 19 and up are just sonorities meant for 19 and 31, listed in the order of their counterparts above; in 12 most of them land on chords already in the list">alt layout all three</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="208" curve="linear" data_type="int" id="113" max="29" min="0" onchange="handlechange(this)" step="1" target_max="29" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone208" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="114" class="line data_line content_line inactive" version="2" id="120">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2688,13 +2528,13 @@
               <dfn title="defines different chord patterns. 0 is normal, 1 to 4 is one octave up with different additional notes, 5 is two octave up">chord shuffling</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="120" curve="linear" data_type="int" id="122" max="5" min="0" onchange="handlechange(this)" step="1" target_max="5" target_min="0" type="range" value="2" />
+              <input class="slider inactive" adress_field="120" curve="linear" data_type="int" id="114" max="5" min="0" onchange="handlechange(this)" step="1" target_max="5" target_min="0" type="range" value="2" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone120" class="value_zone"></p>
             </div>
           </div>
-          <div name="123" class="line data_line content_line inactive" version="3" id="198">
+          <div name="115" class="line data_line content_line inactive" version="3" id="198">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2708,13 +2548,13 @@
               <dfn title="changes the octave of the chord section up or down">octave change</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="198" curve="linear" data_type="int" id="123" max="4" min="0" onchange="handlechange(this)" step="1" target_max="4" target_min="0" type="range" value="2" />
+              <input class="slider inactive" adress_field="198" curve="linear" data_type="int" id="115" max="4" min="0" onchange="handlechange(this)" step="1" target_max="4" target_min="0" type="range" value="2" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone198" class="value_zone"></p>
             </div>
           </div>
-          <div name="124" class="line data_line content_line inactive" version="7" id="199">
+          <div name="116" class="line data_line content_line inactive" version="7" id="199">
             <div class=" bloc B4 M0 S0">
               <p></p>
             </div>
@@ -2728,10 +2568,170 @@
               <dfn title="changes the glide lenght between chords">glide chords</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="199" curve="linear" data_type="int" id="124" max="1500" min="0" onchange="handlechange(this)" step="1" target_max="1500" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="199" curve="linear" data_type="int" id="116" max="1500" min="0" onchange="handlechange(this)" step="1" target_max="1500" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone199" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="117" class="line data_line content_line inactive" version="9" id="37">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p>Voicing</p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>37</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="voicing of the chord buttons. 0 is root position, 1 and 2 are the first and second inversions, 3 is the third inversion for seventh and sixth chords or the root position an octave up for triads">chord inversion</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="37" curve="linear" data_type="int" id="117" max="3" min="0" onchange="handlechange(this)" step="1" target_max="3" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone37" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="118" class="line data_line content_line inactive" version="9" id="38">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>38</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="how far apart the chord voices sit. 0=close (adjacent tones), 1=drop 2, 2=drop 3, 3=drop 2 and 4 (the most evenly spread), 4=spread the outer voices. Drops move a voice down an octave; a move that would leave the usable range is not made">chord spacing</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="38" curve="linear" data_type="int" id="118" max="4" min="0" onchange="handlechange(this)" step="1" target_max="4" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone38" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="119" class="line data_line content_line inactive" version="12" id="111">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>111</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="place the chord voices to move as little as possible from the chord already sounding, the way a choir does, instead of building every chord upward from its root. 1 is on; 2 is strict, which also avoids parallel fifths and octaves, and the outer voices leaping into a fifth or octave, at the cost of a little more movement. Overrides the inversion setting while it is on. A slash chord keeps its bass on the note it names, in the octave nearest the chord already sounding, and the voices above it are led">voice leading</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="111" curve="linear" data_type="int" id="119" max="2" min="0" onchange="handlechange(this)" step="1" target_max="2" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone111" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="120" class="line data_line content_line inactive" version="12" id="112">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>112</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="how far, in semitones, a voice led chord may sit outside where root position would have put it, converted to steps of the live division so it means the same interval in 12, 19 and 31. Small keeps the chords anchored where the buttons say, large lets them follow the previous chord further. Only used when voice leading is on">voice leading range</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="112" curve="linear" data_type="int" id="120" max="24" min="0" onchange="handlechange(this)" step="1" target_max="24" target_min="0" type="range" value="12" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone112" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="121" class="line data_line content_line inactive" version="2" id="23">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p>Slash chords and cantus</p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>23</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="level of the scale which will be affected when using slash chords">slash level</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="23" curve="linear" data_type="int" id="121" max="2" min="0" onchange="handlechange(this)" step="1" target_max="2" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone23" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="122" class="line data_line content_line inactive" version="13" id="113">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>113</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="which of the four chord voices a slash replaces, counted from the bottom: 1 bass, 2 tenor, 3 alto, 4 soprano. At 0 slash level decides, as before. Bass is a slash chord in the usual sense, with the whole chord above it; the others change only that voice, for a melody note on top or a suspension inside the chord">slash voice</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="113" curve="linear" data_type="int" id="122" max="4" min="0" onchange="handlechange(this)" step="1" target_max="4" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone113" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="123" class="line data_line content_line inactive" version="13" id="114">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>114</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="with slash voice set to tenor, alto or soprano, the other three voices move to keep the chord whole around the slash note, as little as they can, instead of holding still. The bass always keeps the chord whole">slash re-voice</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="114" curve="linear" data_type="int" id="123" max="1" min="0" onchange="handlechange(this)" step="1" target_max="1" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone114" class="value_zone"></p>
+            </div>
+          </div>
+          <div name="124" class="line data_line content_line inactive" version="14" id="115">
+            <div class=" bloc B4 M0 S0">
+              <p></p>
+            </div>
+            <div class=" bloc B3 M2 S3">
+              <p></p>
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p>115</p>
+            </div>
+            <div class=" bloc B6 M4 S6">
+              <dfn title="which chord voice the harp sets, the way slash voice lets a slash set one: 1 bass, 2 tenor, 3 alto, 4 soprano counted from the bottom, 5 whichever voice is nearest the note. The first string of each new harp gesture gives that voice its note (the rest of a strum does not). A chord tone keeps the chord whole around it; any other note is a passing tone that voice sings alone. It holds through a chord change when the new chord has the note, and lets go otherwise. A slash keeps any voice it holds. At 0 the harp leaves the chord alone, as before">cantus</dfn>
+            </div>
+            <div class=" bloc B2 M2 S4">
+              <input class="slider inactive" adress_field="115" curve="linear" data_type="int" id="124" max="5" min="0" onchange="handlechange(this)" step="1" target_max="5" target_min="0" type="range" value="0" />
+            </div>
+            <div class=" bloc B1 M1 S1">
+              <p id="value_zone115" class="value_zone"></p>
             </div>
           </div>
           <div name="125" class="line data_line content_line inactive" version="2" id="121">
