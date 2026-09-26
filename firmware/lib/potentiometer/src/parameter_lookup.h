@@ -18,21 +18,20 @@ static const ParameterInfo parameter_lookup[] = {
     { 35, 1, 0, 20 }, // chord key signature
     { 31, 1, 0, 1 }, // sharp function
     { 30, 1, 0, 12 }, // transpose
-    { 34, 1, 0, 6 }, // chord frame shift
     { 237, 1, 0, 11 }, // temperament
     { 109, 0, 4320, 4460 }, // master tuning
     { 106, 1, 1, 16 }, // chord channel
     { 107, 1, 1, 16 }, // harp channel
     { 108, 1, 0, 1 }, // single port mode
     { 110, 1, 0, 1 }, // MPE output
-    { 200, 0, 0, 219 }, // double tap control
-    { 201, 0, 0, 4095 }, // double tap value
     { 24, 0, 0, 1 }, // reverb size
     { 25, 0, 0, 1 }, // reverb high damping
     { 26, 0, 0, 1 }, // reverb low damping
     { 27, 0, 0, 1 }, // reverb low pass
     { 28, 0, 0, 1 }, // reverb diffusion
     { 29, 0, 0, 1 }, // pan
+    { 200, 0, 0, 219 }, // double tap control
+    { 201, 0, 0, 4095 }, // double tap value
     { 10, 0, 21, 219 }, // chord alternate control
     { 11, 0, 0, 100 }, // chord alternate range
     { 12, 0, 21, 219 }, // harp alternate control
@@ -119,6 +118,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 3, 0, 0, 1 }, // global gain
     { 33, 1, 0, 1 }, // barry harris mode
     { 39, 1, 0, 1 }, // chord layout
+    { 34, 1, 0, 6 }, // chord frame shift
     { 21, 1, 0, 1 }, // retrigger chords
     { 202, 1, 0, 29 }, // alt layout maj
     { 203, 1, 0, 29 }, // alt layout min

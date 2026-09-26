@@ -612,11 +612,21 @@ body.dark-mode #theme-toggle::before {
 }
 /* A row of chromatic degrees, used by the custom scale. Styled to sit with the
    sliders: same text colour, same accent, same inactive treatment. */
+/* The twelve degrees wrap into two rows of six, and the cell holding them may
+   shrink like any other, so the custom scale's control stays in its column and
+   the value column lines up with the rows around it. */
+.bloc:has(> .degree_row) {
+  min-width: 0;
+}
 .degree_row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   width: 100%;
-  gap: 2px;
+  row-gap: 3px;
+}
+.degree_row > .degree {
+  flex: 0 0 16.66%;
 }
 
 .degree {

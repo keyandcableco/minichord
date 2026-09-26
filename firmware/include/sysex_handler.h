@@ -15,9 +15,6 @@ void apply_audio_parameter(int adress, int value) {
       case 30:
         transpose_semitones=value;transpose_steps=(transpose_semitones*EDO+6)/12;midi_base_note_transposed=midi_base_note+transpose_semitones;
         break;
-      case 34:
-        chord_frame_shift=value;
-        break;
       case 237:
         apply_temperament(value);
         break;
@@ -36,12 +33,6 @@ void apply_audio_parameter(int adress, int value) {
       case 110:
         mpe_set_mode(value);
         break;
-      case 200:
-        
-        break;
-      case 201:
-        
-        break;
       case 24:
         main_reverb.size(value/100.0);
         break;
@@ -59,6 +50,12 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 29:
         pan=value/100.0;apply_audio_parameter(85, current_sysex_parameters[85]);apply_audio_parameter(184, current_sysex_parameters[184]);
+        break;
+      case 200:
+        
+        break;
+      case 201:
+        
         break;
       case 10:
         chord_pot.set_alternate(constrain(value,0,parameter_size-1));
@@ -365,6 +362,9 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 39:
         alt_chord_layout=value;
+        break;
+      case 34:
+        chord_frame_shift=value;
         break;
       case 21:
         retrigger_chord=value;
