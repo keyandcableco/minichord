@@ -15,7 +15,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=12; //to be read 00.03, stored at adress 7 in memory
+int version_ID=13; //to be read 00.03, stored at adress 7 in memory
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -450,6 +450,17 @@ bool inhibit_button=false;
 
 //>>SWITCHING LOGIC PARAMETERS<<
 uint8_t note_slash_level = 0;     // the level we are replacing in the chord when slashing (usually the fundamental)
+// Slash voice: which of the four chord voices, counted from the bottom (1 bass,
+// 2 tenor, 3 alto, 4 soprano), a slash replaces. 0 leaves slashes to slash
+// level, exactly as before; see apply_slash_voice().
+uint8_t slash_voice = 0;
+// Slash re-voice: with a tenor, alto or soprano slash, the other three voices
+// re-voice around it to keep the chord whole, instead of holding still.
+uint8_t slash_revoice = 0;
+// The chord slot the harp and rhythm mode's extra voices replace while slashed.
+// Slash level itself when slash voice is off; otherwise the slot of whichever
+// tone the chosen voice gave up, so they follow the chord as it sounds.
+uint8_t slash_slot_effective = 0;
 bool retrigger_chord = true;      // wether or not to retrigger the enveloppe when the chord is switched within current line (including when selecting slash chord)
 bool change_held_strings = false; // to control wether hold strings change with chord:
 bool chromatic_harp_mode = false; // to switch the harp to chromatic mode
@@ -1002,6 +1013,7 @@ uint8_t calculate_note_harp(uint8_t string, bool slashed, bool sharp);
 uint8_t calculate_note_chord(uint8_t voice, bool slashed, bool sharp);
 bool apply_voice_leading(bool sharp, uint8_t *out);
 bool apply_slash_voice_leading(uint8_t *out);
+void apply_slash_voice(bool sharp);
 void refresh_chord_voicing();
 void set_chord_voice_frequency(uint8_t i, uint16_t current_note);
 void retune_active_voices();
@@ -1569,7 +1581,7 @@ int16_t chord_tone_offset(uint8_t level, uint8_t voice) {
 uint8_t calculate_note_chord(uint8_t voice, bool slashed, bool sharp) {
   uint8_t note = 0;
   uint8_t level = chord_shuffling_array[chord_shuffling_selection][voice];
-  if (slashed && level % 10 == note_slash_level) {
+  if (slashed && level % 10 == slash_slot_effective) {
     if (!flat_button_modifier) {
       note = (EDO * int(level / 10) + get_root_button(key_signature_selection, chord_frame_shift, slash_value) + sharp * sharp_step);
     } else {
@@ -1858,6 +1870,231 @@ bool apply_slash_voice_leading(uint8_t *out) {
   return true;
 }
 
+/* Slash voice: the slash replaces one of the four chord voices, chosen by its
+ * place in the chord counted from the bottom, whatever chord tone it happens to
+ * be holding in this voicing. Slash level instead replaces a slot of the
+ * chord's recipe (root, third, and then the fifth or the seventh depending on
+ * the chord type), which lands in a different voice with every inversion,
+ * spacing and voice leading choice.
+ *
+ * - Bass: a slash chord in the usual sense. The bass takes the slash note, in
+ *   the octave nearest where the bass was, and the three voices above it hold
+ *   the whole chord, moving as little as they can from where they were: a
+ *   triad's three tones, or a four-note chord without its fifth (or, lacking
+ *   a fifth, without its last tone).
+ * - Tenor, alto, soprano: that voice alone takes the slash note, in the octave
+ *   nearest where it was, kept between the voices either side of it; the other
+ *   three stay exactly where they were. A melody note over the chord in the
+ *   soprano, a suspension or passing tone in the inner voices.
+ *
+ * Rhythm mode's extra voices and the harp then replace the slot of the tone
+ * the chosen voice gave up (slash_slot_effective), so they follow the chord as
+ * it sounds. For the bass that is the root slot, as at slash level 0.
+ */
+// The chord tones three voices can hold: all of a triad's, or a four-note
+// chord's without its fifth (the tone that adds least), or without its last
+// tone if it has no fifth. Leaves out `skip` first if it is a chord tone,
+// since the pinned voice already sounds it. Returns how many.
+static uint8_t tones_for_three(int16_t skip, uint8_t *tones) {
+  uint8_t n = collect_chord_tones(current_chord, tones);
+  for (uint8_t t = 0; t < n; t++) {
+    if (tones[t] == skip) { for (uint8_t u = t; u + 1 < n; u++) tones[u] = tones[u + 1]; n--; break; }
+  }
+  if (n == 4) {
+    int16_t fifth = (int16_t)((7 * EDO + 6) / 12);
+    int8_t drop = 3, best_d = 127;
+    for (uint8_t t = 1; t < 4; t++) {
+      int16_t d = (int16_t)abs((int16_t)tones[t] - fifth);
+      if (d <= (EDO + 6) / 12 && d < best_d) { best_d = d; drop = t; }
+    }
+    for (uint8_t t = drop; t < 3; t++) tones[t] = tones[t + 1];
+    n = 3;
+  }
+  return n;
+}
+
+static int16_t nearest_with_pc(int16_t near, int16_t pc, int16_t lo, int16_t hi) {
+  // The note with pitch class pc nearest `near`, inside [lo, hi] if possible.
+  int16_t best = -1, best_d = 32767;
+  for (int16_t n = (lo < 0 ? 0 : lo); n <= hi && n <= chord_note_ceiling; n++) {
+    if (n % EDO != pc) continue;
+    int16_t d = (int16_t)abs(n - near);
+    if (d < best_d) { best_d = d; best = n; }
+  }
+  if (best >= 0) return best;
+  // Nothing in range: the nearest anywhere.
+  int16_t base = near - ((near % EDO - pc + EDO) % EDO);
+  int16_t up = base + EDO;
+  best = (abs(near - base) <= abs(up - near)) ? base : up;
+  if (best < 0) best += EDO;
+  return best;
+}
+
+void apply_slash_voice(bool sharp) {
+  int8_t sharp_offset = sharp ? (flat_button_modifier ? -sharp_step : sharp_step) : 0;
+  int16_t root = get_root_button(key_signature_selection, chord_frame_shift, fundamental) + sharp_offset;
+  int16_t slash_pc = ((get_root_button(key_signature_selection, chord_frame_shift, slash_value) + sharp_offset) % EDO + EDO) % EDO;
+
+  // The voices from the bottom up. Voice leading already delivers them in
+  // order; without it, inversion and spacing can leave them out of order.
+  uint8_t order[4] = {0, 1, 2, 3};
+  for (uint8_t i = 1; i < 4; i++) {
+    uint8_t v = order[i];
+    int8_t j = i - 1;
+    while (j >= 0 && current_chord_notes[order[j]] > current_chord_notes[v]) { order[j + 1] = order[j]; j--; }
+    order[j + 1] = v;
+  }
+  uint8_t k = slash_voice - 1;           // 0 bass .. 3 soprano
+  if (k > 3) return;
+  uint8_t target = order[k];
+  int16_t was = current_chord_notes[target];
+
+  if (k == 0) {
+    // The tones the three voices above have to hold.
+    uint8_t tones[4];
+    uint8_t tone_count = tones_for_three(-1, tones);   // the whole chord above the bass, even its root
+    int16_t from[3];
+    for (uint8_t i = 0; i < 3; i++) from[i] = current_chord_notes[order[i + 1]];
+    int16_t hi = from[2] + EDO;
+    if (hi > chord_note_ceiling) hi = chord_note_ceiling;
+
+    // The slash note just below the bass and just above it, whichever lets the
+    // whole chord move least: going down usually leaves the voices above
+    // exactly where they are.
+    int16_t best_total = UNREACHABLE;
+    int16_t best[4] = {0, 0, 0, 0};
+    int16_t down = was - ((was % EDO - slash_pc + EDO) % EDO);
+    int16_t candidates[2] = {down, (int16_t)(down + EDO)};
+    for (uint8_t c = 0; c < 2; c++) {
+      int16_t bass = candidates[c];
+      if (bass < 0 || bass > chord_note_ceiling) continue;
+      int16_t pool[VOICE_POOL_MAX];
+      uint8_t pool_tone[VOICE_POOL_MAX];
+      uint8_t count = 0;
+      for (int16_t n = bass + 1; n <= hi && count < VOICE_POOL_MAX; n++) {
+        int16_t pc = ((n - root) % EDO + EDO) % EDO;
+        for (uint8_t t = 0; t < tone_count; t++) {
+          if (pc == tones[t]) { pool[count] = n; pool_tone[count] = t; count++; break; }
+        }
+      }
+      int16_t upper[3];
+      int16_t moved = choose_voicing(pool, pool_tone, count, tone_count, from, 3, upper);
+      if (moved == UNREACHABLE) continue;
+      int16_t total = (int16_t)(moved + abs(bass - was));
+      if (total < best_total) {
+        best_total = total;
+        best[0] = bass; best[1] = upper[0]; best[2] = upper[1]; best[3] = upper[2];
+      }
+    }
+    if (best_total != UNREACHABLE) {
+      for (uint8_t i = 0; i < 4; i++) current_chord_notes[i] = (uint8_t)best[i];
+    } else {
+      current_chord_notes[target] = (uint8_t)nearest_with_pc(was, slash_pc, was - EDO, was + EDO);   // no room above: just the bass
+    }
+    slash_slot_effective = 0;   // the root slot, as slash level 0 always did
+    return;
+  }
+
+  if (slash_revoice) {
+    // The chosen voice takes the slash note and the two voices that are
+    // neither it nor the bass re-voice around it, keeping the chord whole:
+    // between them and the bass, every tone three voices can hold (see
+    // tones_for_three), moving as little as they can. The bass holds, since
+    // moving it would change what the chord stands on. The slash note's octave
+    // is chosen with them: just below or just above where the voice was,
+    // whichever moves the chord least, and never below the bass.
+    int16_t bass = current_chord_notes[order[0]];
+    int16_t bass_rel = ((bass - root) % EDO + EDO) % EDO;
+    int16_t slash_rel = ((slash_pc - root) % EDO + EDO) % EDO;
+    uint8_t tones[4];
+    uint8_t tone_count = tones_for_three(slash_rel, tones);   // the slash note, if a chord tone, is already sounding
+    uint8_t need = 0;                                          // the tones the two free voices must add
+    for (uint8_t t = 0; t < tone_count; t++) if (tones[t] != bass_rel) need |= (uint8_t)(1 << t);
+
+    // Every chord tone may be used, required or not: doubling one that is
+    // already sounding is often the smallest move.
+    uint8_t all[4];
+    uint8_t all_count = collect_chord_tones(current_chord, all);
+    int16_t free_from[2];
+    uint8_t f = 0;
+    for (uint8_t i = 1; i < 4; i++) if (i != k) free_from[f++] = current_chord_notes[order[i]];
+    int16_t hi = free_from[1] + EDO;
+    if (hi > chord_note_ceiling) hi = chord_note_ceiling;
+    int16_t pool[VOICE_POOL_MAX];
+    uint8_t pool_bit[VOICE_POOL_MAX];   // which of `tones` it is, as a bit, or 0 for an unrequired tone
+    uint8_t count = 0;
+    for (int16_t n = bass + 1; n <= hi && count < VOICE_POOL_MAX; n++) {
+      int16_t pc = ((n - root) % EDO + EDO) % EDO;
+      bool chord_tone = false;
+      for (uint8_t t = 0; t < all_count; t++) if (pc == all[t]) chord_tone = true;
+      if (!chord_tone) continue;
+      uint8_t bit = 0;
+      for (uint8_t t = 0; t < tone_count; t++) if (pc == tones[t]) bit = (uint8_t)(1 << t);
+      pool[count] = n; pool_bit[count] = bit; count++;
+    }
+    int16_t down = was - ((was % EDO - slash_pc + EDO) % EDO);
+    int16_t pins[2] = {down, (int16_t)(down + EDO)};
+    int16_t best_total = UNREACHABLE;
+    int16_t best_widest = UNREACHABLE;   // on a tie, the choice whose biggest single move is smallest
+    int16_t best[4] = {0, 0, 0, 0};
+    for (uint8_t c = 0; c < 2; c++) {
+      int16_t pin = pins[c];
+      if (pin <= bass || pin > chord_note_ceiling) continue;
+      // The two free voices, ascending, with k - 1 of them below the pin and
+      // the rest above, adding every tone still needed. The pool is a few
+      // dozen notes at most, so every pair is simply tried.
+      for (uint8_t a = 0; a < count; a++)
+        for (uint8_t b = a + 1; b < count; b++) {
+          if (pool[a] == pin || pool[b] == pin) continue;
+          uint8_t below_pin = (pool[a] < pin) + (pool[b] < pin);
+          if (below_pin != k - 1) continue;
+          if ((uint8_t)((pool_bit[a] | pool_bit[b]) & need) != need) continue;
+          int16_t m0 = (int16_t)abs(pin - was), m1 = (int16_t)abs(pool[a] - free_from[0]), m2 = (int16_t)abs(pool[b] - free_from[1]);
+          int16_t total = (int16_t)(m0 + m1 + m2);
+          int16_t widest = m0 > m1 ? (m0 > m2 ? m0 : m2) : (m1 > m2 ? m1 : m2);
+          if (total < best_total || (total == best_total && widest < best_widest)) {
+            best_total = total;
+            best_widest = widest;
+            int16_t fr[2] = {pool[a], pool[b]};
+            uint8_t o = 0;
+            best[0] = bass;
+            for (uint8_t i = 1; i < 4; i++) best[i] = (i == k) ? pin : fr[o++];
+          }
+        }
+    }
+    if (best_total != UNREACHABLE) {
+      for (uint8_t i = 0; i < 4; i++) current_chord_notes[i] = (uint8_t)best[i];
+      // The chord is whole, so the harp and rhythm mode's extra voices play it
+      // as it is, unless a four-note chord had to give up a tone to make room:
+      // then the slash note takes that tone's slot there too.
+      slash_slot_effective = 255;   // no slot: nothing replaced
+      for (uint8_t t = 0; t < all_count; t++) {
+        bool kept = (all[t] == slash_rel);
+        for (uint8_t u = 0; u < tone_count; u++) if (tones[u] == all[t]) kept = true;
+        if (kept) continue;
+        for (uint8_t slot = 0; slot < 7; slot++) {
+          if ((*current_chord)[slot] % EDO == all[t]) { slash_slot_effective = slot; break; }
+        }
+        break;
+      }
+      return;
+    }
+    // no way to keep it whole in this range: fall through and change the one voice
+  }
+
+  // Tenor, alto, soprano: between the neighbours, nearest where it was.
+  int16_t below = current_chord_notes[order[k - 1]];
+  int16_t above = (k < 3) ? current_chord_notes[order[k + 1]] : (int16_t)chord_note_ceiling;
+  current_chord_notes[target] = (uint8_t)nearest_with_pc(was, slash_pc, below + 1, above - 1);
+
+  // The slot of the tone it gave up, the first slot holding that pitch class.
+  int16_t gave_up = ((was - root) % EDO + EDO) % EDO;
+  slash_slot_effective = note_slash_level;
+  for (uint8_t slot = 0; slot < 7; slot++) {
+    if ((*current_chord)[slot] % EDO == gave_up) { slash_slot_effective = slot; break; }
+  }
+}
+
 // function to calculate the level of individual harp touch
 // Collapse the degree toggles into an ascending interval list. An empty scale
 // would leave the harp silent, so the root is kept in that case.
@@ -2137,7 +2374,7 @@ uint8_t calculate_note_harp(uint8_t string, bool slashed, bool sharp) {
   // Mode 0, the existing chord-following behaviour, unchanged
   uint8_t note = 0;
   uint8_t level = harp_shuffling_array[harp_shuffling_selection][string];
-  if (slashed && level % 10 == note_slash_level) {
+  if (slashed && level % 10 == slash_slot_effective) {
     if (!flat_button_modifier) {
       note = (EDO * int(level / 10) + get_root_button(key_signature_selection, chord_frame_shift, slash_value) + sharp * sharp_step);
     } else {
@@ -2782,18 +3019,29 @@ void detect_slash() {
 // because a chord can be sounding with nothing held: under the hold button the
 // live flags say no sharp and no slash, and a rebuild from those strips both.
 void build_chord_notes() {
-  for (int i = 0; i < 7; i++) {
-    current_chord_notes[i] = calculate_note_chord(i, chord_context_slashed, chord_context_sharp);
+  // With slash voice on, the four chord voices are built as the plain chord and
+  // the slash is applied to one of them afterwards (apply_slash_voice()), which
+  // also decides the slot rhythm mode's extra voices and the harp replace. So
+  // those are built after it.
+  const bool by_voice = chord_context_slashed && slash_voice != 0;
+  slash_slot_effective = note_slash_level;
+  for (int i = 0; i < 4; i++) {
+    current_chord_notes[i] = calculate_note_chord(i, chord_context_slashed && !by_voice, chord_context_sharp);
   }
   // A slash chord names its own bass: it is led too, but with the bass kept on
-  // the note the player asked for (apply_slash_voice_leading()).
+  // the note the player asked for (apply_slash_voice_leading()). With slash
+  // voice on, the plain chord is led and the slash applied to it after.
   if (voice_leading) {
     uint8_t led[4];
-    bool ok = chord_context_slashed ? apply_slash_voice_leading(led)
-                                    : apply_voice_leading(chord_context_sharp, led);
+    bool ok = (chord_context_slashed && !by_voice) ? apply_slash_voice_leading(led)
+                                                   : apply_voice_leading(chord_context_sharp, led);
     if (ok) {
       for (int i = 0; i < 4; i++) current_chord_notes[i] = led[i];
     }
+  }
+  if (by_voice) apply_slash_voice(chord_context_sharp);
+  for (int i = 4; i < 7; i++) {
+    current_chord_notes[i] = calculate_note_chord(i, chord_context_slashed, chord_context_sharp);
   }
   for (int i = 0; i < 4; i++) previous_voicing[i] = current_chord_notes[i];
 }

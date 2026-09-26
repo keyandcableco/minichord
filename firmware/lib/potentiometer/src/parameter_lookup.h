@@ -18,6 +18,8 @@ static const ParameterInfo parameter_lookup[] = {
     { 21, 1, 0, 1 }, // retrigger chords
     { 22, 1, 0, 1 }, // change held strings
     { 23, 1, 0, 2 }, // slash level
+    { 113, 1, 0, 4 }, // slash voice
+    { 114, 1, 0, 1 }, // slash re-voice
     { 30, 1, 0, 12 }, // transpose
     { 106, 1, 1, 16 }, // chord channel
     { 107, 1, 1, 16 }, // harp channel
