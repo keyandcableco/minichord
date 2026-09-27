@@ -15,7 +15,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=16; //to be read 00.03, stored at adress 7 in memory
+int version_ID=17; //to be read 00.03, stored at adress 7 in memory
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -797,6 +797,35 @@ void queue_midi_bend(int16_t bend, uint8_t channel, uint8_t cable) {
 
 void queue_midi_cc(uint8_t controller, uint8_t value, uint8_t channel, uint8_t cable) {
   queue_midi_event(MIDI_EVT_CC, controller, value, 0, channel, cable);
+}
+
+// The knobs as MIDI controllers. With "knobs send MIDI" on, each knob's position goes out as a
+// control change as it turns: CC 20 the chord knob, 21 the harp knob, 22 the modulation knob, on
+// channel 16, 0 to 127 across the knob's travel, so a program on the computer can follow them (the
+// Minichord Lab's games use the knobs as paddles and dials). The knobs keep doing their usual jobs;
+// this only reports where they are. Read on its own, lightly smoothed, with a little hysteresis so
+// a knob resting between two values doesn't chatter.
+bool knob_midi = false;        // the knobs' positions sent out as control changes (address 238)
+bool knob_midi_resend = false; // send every knob's position again, e.g. just after it's switched on
+void send_knob_ccs() {
+  static const uint8_t pins[3] = {POT_CHORD_PIN, POT_HARP_PIN, POT_MOD_PIN};
+  static float smoothed[3] = {-1, -1, -1};
+  static int16_t sent[3] = {-1, -1, -1};
+  static elapsedMillis since;
+  if (since < 8) return;
+  since = 0;
+  for (uint8_t k = 0; k < 3; k++) {
+    float reading = 1024 - analogRead(pins[k]);
+    smoothed[k] = smoothed[k] < 0 ? reading : smoothed[k] * 0.75f + reading * 0.25f;
+    float scaled = constrain((smoothed[k] - 12.0f) * 127.0f / 1000.0f, 0.0f, 127.0f);
+    bool moved = sent[k] < 0 || fabsf(scaled - sent[k]) > 0.7f;
+    if (moved || knob_midi_resend) {
+      int16_t value = (int16_t)(scaled + 0.5f);
+      if (value != sent[k] || knob_midi_resend) queue_midi_cc(20 + k, value, 16, 0);
+      sent[k] = value;
+    }
+  }
+  knob_midi_resend = false;
 }
 
 // Called from loop() only. The single point at which this firmware talks to usbMIDI.
@@ -3919,6 +3948,7 @@ void loop() {
   pot_moved |= harp_pot.update_parameter(alternate);
   pot_moved |= mod_pot.update_parameter(alternate);
   flag_save_needed |= pot_moved;
+  if (knob_midi) send_knob_ccs();
 
   if (!alternate) {
     modifier_claimed_by_pot = false;

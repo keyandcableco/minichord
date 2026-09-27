@@ -24,6 +24,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 107, 1, 1, 16 }, // harp channel
     { 108, 1, 0, 1 }, // single port mode
     { 110, 1, 0, 1 }, // MPE output
+    { 238, 1, 0, 1 }, // knobs send MIDI
     { 24, 0, 0, 1 }, // reverb size
     { 25, 0, 0, 1 }, // reverb high damping
     { 26, 0, 0, 1 }, // reverb low damping

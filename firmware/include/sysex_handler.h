@@ -33,6 +33,9 @@ void apply_audio_parameter(int adress, int value) {
       case 110:
         mpe_set_mode(value);
         break;
+      case 238:
+        knob_midi=value; knob_midi_resend=true;
+        break;
       case 24:
         main_reverb.size(value/100.0);
         break;
