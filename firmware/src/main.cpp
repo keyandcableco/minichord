@@ -3605,7 +3605,10 @@ void handle_key_change_mode(uint8_t up_transition, uint8_t down_transition, bool
     // chord is byte-identical over MIDI to a different chord already on the
     // grid, so a remote cannot infer it. Report the settled value once, on the
     // way out, rather than on every selection while the player auditions keys.
-    if (key_change_reported != key_signature_selection) {
+    // Report it too when a key was picked that the minichord was already in: to
+    // a host that set the key itself, choosing it again is still an answer (a
+    // game asking the player to name a key, say, where the answer is C).
+    if (selected_key != -1 || key_change_reported != key_signature_selection) {
       key_change_reported = key_signature_selection;
       if (sysex_controler_connected) control_command(0, 0);
     }
