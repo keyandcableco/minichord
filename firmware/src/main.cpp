@@ -801,7 +801,8 @@ void queue_midi_cc(uint8_t controller, uint8_t value, uint8_t channel, uint8_t c
 
 // The knobs as MIDI controllers. With "knobs send MIDI" on, each knob's position goes out as a
 // control change as it turns: CC 20 the chord knob, 21 the harp knob, 22 the modulation knob, on
-// channel 16, 0 to 127 across the knob's travel, so a program on the computer can follow them (the
+// the chord channel and port, 0 to 127 across the knob's travel, so they can be MIDI-learnt in a DAW
+// or read by a program on the computer (the
 // Minichord Lab's games use the knobs as paddles and dials). The knobs keep doing their usual jobs;
 // this only reports where they are. Read on its own, lightly smoothed, with a little hysteresis so
 // a knob resting between two values doesn't chatter.
@@ -821,7 +822,7 @@ void send_knob_ccs() {
     bool moved = sent[k] < 0 || fabsf(scaled - sent[k]) > 0.7f;
     if (moved || knob_midi_resend) {
       int16_t value = (int16_t)(scaled + 0.5f);
-      if (value != sent[k] || knob_midi_resend) queue_midi_cc(20 + k, value, 16, 0);
+      if (value != sent[k] || knob_midi_resend) queue_midi_cc(20 + k, value, chord_channel, chord_port);
       sent[k] = value;
     }
   }
