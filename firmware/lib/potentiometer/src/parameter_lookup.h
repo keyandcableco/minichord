@@ -18,7 +18,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 35, 1, 0, 20 }, // chord key signature
     { 31, 1, 0, 1 }, // sharp function
     { 30, 1, 0, 12 }, // transpose
-    { 237, 1, 0, 11 }, // temperament
+    { 237, 1, 0, 12 }, // temperament
     { 109, 0, 4320, 4460 }, // master tuning
     { 106, 1, 1, 16 }, // chord channel
     { 107, 1, 1, 16 }, // harp channel
