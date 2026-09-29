@@ -1,10 +1,10 @@
 void apply_audio_parameter(int adress, int value) {
     switch(adress){
       case 20:
-        bank_led_hue=value; set_led_color(bank_led_hue, 1.0, 1-led_attenuation);
+        bank_led_hue=value; set_led_color(bank_led_hue, bank_led_saturation(), 1-led_attenuation);
         break;
       case 32:
-        led_attenuation=value/100.0; set_led_color(bank_led_hue, 1.0, 1-led_attenuation);
+        led_attenuation=value/100.0; set_led_color(bank_led_hue, bank_led_saturation(), 1-led_attenuation);
         break;
       case 35:
         key_signature_selection=constrain(value,0,20);
@@ -60,6 +60,18 @@ void apply_audio_parameter(int adress, int value) {
       case 201:
         
         break;
+      case 209:
+        
+        break;
+      case 210:
+        
+        break;
+      case 211:
+        
+        break;
+      case 212:
+        
+        break;
       case 10:
         chord_pot.set_alternate(constrain(value,0,parameter_size-1));
         break;
@@ -83,6 +95,9 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 17:
         mod_pot.set_alternate_range(value);
+        break;
+      case 117:
+        knob_layer=value; set_led_color(bank_led_hue, bank_led_saturation(), 1-led_attenuation);
         break;
       case 4:
         chord_pot.set_alternate_default(value);chord_pot.force_update();

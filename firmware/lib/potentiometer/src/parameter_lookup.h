@@ -33,6 +33,10 @@ static const ParameterInfo parameter_lookup[] = {
     { 29, 0, 0, 1 }, // pan
     { 200, 0, 0, 219 }, // double tap control
     { 201, 0, 0, 4095 }, // double tap value
+    { 209, 0, 0, 219 }, // double tap control 2
+    { 210, 0, 0, 4095 }, // double tap value 2
+    { 211, 0, 0, 219 }, // double tap control 3
+    { 212, 0, 0, 4095 }, // double tap value 3
     { 10, 0, 21, 219 }, // chord alternate control
     { 11, 0, 0, 100 }, // chord alternate range
     { 12, 0, 21, 219 }, // harp alternate control
@@ -41,6 +45,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 15, 0, 0, 100 }, // mod main percent range
     { 16, 0, 21, 219 }, // mod alternate control
     { 17, 0, 0, 100 }, // mod alternate percent range 
+    { 117, 1, 0, 1 }, // knob layer
     { 4, 0, 0, 1024 }, // chord alternate value
     { 5, 0, 0, 1024 }, // harp alternate value
     { 6, 0, 0, 1024 }, // mod alternate value

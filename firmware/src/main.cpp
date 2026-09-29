@@ -15,7 +15,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=18; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier)
+int version_ID=19; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -208,17 +208,20 @@ uint8_t neutral_seventh[7]  = {0, 3, 7, 10, 2, 6, 9};    // 1 11/9 3/2 11/6
 uint8_t otonal_hexad[7]     = {0, 4, 7, 10, 2, 6, 12};   // 4:5:6:7:9:11
 uint8_t just_augmented[7]   = {0, 4, 8, 12, 2, 6, 12};   // 16:20:25
 uint8_t supermajor_seventh[7] = {0, 4, 7, 11, 2, 5, 9};  // 14:18:21:27
-// Double-tapping the modifier toggles one parameter between its stored value
-// and a chosen one, and back. Which parameter and which value are up to the
-// player, so the gesture is not tied to the chord layout: it can just as well
-// toggle Barry Harris mode, an inversion, or a scale.
+// Double-tapping the modifier toggles up to three parameters between their
+// stored values and chosen ones, and back: a preset's other side, say the
+// alternate chord layout, a different harp mode and the knobs' alternates, all
+// at once. Which parameters and which values are up to the player, so the
+// gesture is not tied to any one feature. Each pair is a control (which
+// parameter) and a value; a control of 0 leaves that pair unused.
 const uint16_t modifier_tap_max = 250;  // ms: a press longer than this is a hold, not a tap
 const uint16_t modifier_tap_gap = 400;  // ms: the second tap must land within this of the first
 bool double_tap_engaged = false;
-int16_t double_tap_saved = 0;
-int16_t double_tap_engaged_adress = -1; // the parameter the engaged toggle is holding, latched at engage time
-const uint8_t double_tap_control_adress = 200;
-const uint8_t double_tap_value_adress = 201;
+const uint8_t double_tap_pairs = 3;
+const uint8_t double_tap_control_adress[double_tap_pairs] = {200, 209, 211};
+const uint8_t double_tap_value_adress[double_tap_pairs] = {201, 210, 212};
+int16_t double_tap_saved[double_tap_pairs] = {0, 0, 0};
+int16_t double_tap_engaged_adress[double_tap_pairs] = {-1, -1, -1}; // what each pair is holding, latched at engage time; -1 if nothing
 
 uint8_t dim[7] = {0, 3, 6, 12, 2, 5, 9};
 uint8_t full_dim[7] = {0, 3, 6, 9, 2, 5, 12};
@@ -443,12 +446,6 @@ bool sharp_active = false;     // flag for when the sharp is active
 bool chord_context_sharp = false;
 bool chord_context_slashed = false;
 bool flat_button_modifier= false; //flag to set the modifier to flat instead of sharp
-// The modifier button both sharpens the chord and selects the potentiometers'
-// alternate targets, so reaching for an alternate setting while playing would
-// sharpen whatever is sounding. Once a potentiometer actually moves under the
-// held modifier, the modifier is taken to mean "alternate" for the rest of that
-// hold, and the sharpening is dropped.
-bool modifier_claimed_by_pot = false;
 // ms a change to the set of chord type buttons held on the sounding line must
 // stand before it is believed, when the chord is already established. See
 // handle_chord_type().
@@ -579,6 +576,15 @@ int8_t mod_pot_main_control = 14;
 int8_t mod_pot_main_range = 15;
 int8_t mod_pot_alternate_control = 16;
 int8_t mod_pot_alternate_range = 17;
+
+// Knob layer (address 117). At 0 the potentiometers play their main functions, and holding the
+// modifier selects their alternates, as it always has, sharpening any chord played meanwhile. At 1
+// they play their alternates and the modifier only sharpens, so an alternate can be turned while
+// chords are sounding. It is a preset parameter like any other, and the double tap can be assigned
+// to it (double tap control 117, value 1) to switch layers while playing. While it is 1 the LED shows
+// the preset's colour pale, so the layer is never a hidden state.
+bool knob_layer = false;
+static inline float bank_led_saturation() { return knob_layer ? 0.45 : 1.0; }
 // 21-39 are global parameters (switching logic, global reverb etc.)
 // 40-119 are harp parameters
 // 120-219 are chord parameters
@@ -1194,7 +1200,7 @@ void control_command(uint8_t command, uint8_t parameter) {
       Serial.println(parameter);
       current_bank_number = parameter;
       load_config(current_bank_number);
-      set_led_color(bank_led_hue, 1.0, 1 - led_attenuation);
+      set_led_color(bank_led_hue, bank_led_saturation(), 1 - led_attenuation);
     }
     break;
 
@@ -1333,12 +1339,12 @@ void step_led_animation() {
     if (led_anim_timer < 150) return;
     led_anim_timer = 0;
     key_change_led_on = !key_change_led_on;
-    set_led_color(bank_led_hue, 1.0, key_change_led_on ? 1.0 : 0.12);
+    set_led_color(bank_led_hue, bank_led_saturation(), key_change_led_on ? 1.0 : 0.12);
   } else if (double_tap_engaged) {
     if (led_anim_timer < 60) return;
     led_anim_timer = 0;
     double_tap_led_step = (double_tap_led_step + 1) % 20;
-    set_led_color(bank_led_hue, 1.0, (double_tap_led_step < 10 ? 1.0 : 0.45) * (1 - led_attenuation));
+    set_led_color(bank_led_hue, bank_led_saturation(), (double_tap_led_step < 10 ? 1.0 : 0.45) * (1 - led_attenuation));
   }
 }
 
@@ -2905,18 +2911,22 @@ void save_config(int bank_number, bool default_save) {
     // its value were written here the preset would come back already holding it,
     // and the gesture would then toggle between two identical values and appear
     // to do nothing. So the underlying value is what gets saved.
-    int16_t held_adress = double_tap_engaged_adress;
-    int16_t held_value = 0;
-    bool restore_held = double_tap_engaged && held_adress >= 21 && held_adress <= 219;
-    if (restore_held) {
-      held_value = current_sysex_parameters[held_adress];
-      current_sysex_parameters[held_adress] = double_tap_saved;
+    int16_t held_value[double_tap_pairs] = {0, 0, 0};
+    for (uint8_t k = 0; k < double_tap_pairs; k++) {
+      int16_t a = double_tap_engaged_adress[k];
+      if (double_tap_engaged && a >= 21 && a <= 219) {
+        held_value[k] = current_sysex_parameters[a];
+        current_sysex_parameters[a] = double_tap_saved[k];
+      }
     }
     for (u_int16_t i = 0; i < parameter_size; i++) {
           Serial.println(current_sysex_parameters[i]);
     }
     dataFile.println(serialize(current_sysex_parameters, parameter_size));
-    if (restore_held) current_sysex_parameters[held_adress] = held_value;
+    for (uint8_t k = 0; k < double_tap_pairs; k++) {
+      int16_t a = double_tap_engaged_adress[k];
+      if (double_tap_engaged && a >= 21 && a <= 219) current_sysex_parameters[a] = held_value[k];
+    }
   }
   Serial.print("Saved preset: ");
   Serial.println(dataFile.name());
@@ -2980,7 +2990,7 @@ void load_config(int bank_number) {
   // gesture ends here rather than claiming to still hold something it does not.
   if (double_tap_engaged) {
     double_tap_engaged = false;
-    if (!key_change_mode) set_led_color(bank_led_hue, 1.0, 1 - led_attenuation);
+    if (!key_change_mode) set_led_color(bank_led_hue, bank_led_saturation(), 1 - led_attenuation);
   }
   flag_save_needed=false;
   //digitalWrite(_MUTE_PIN, HIGH); // unmuting the DAC
@@ -3077,7 +3087,7 @@ void handle_chords_button() {
   if (sharp_transition > 1 && current_line != -1) {
     button_pushed = true;
   }
-  sharp_active = chord_matrix_array[0].read_value() && !modifier_claimed_by_pot && !alt_chord_layout;
+  sharp_active = chord_matrix_array[0].read_value() && !alt_chord_layout;
 
   static elapsedMillis open_for[22];   // how long each chord button has read open
   for (int i = 1; i < 22; i++) {
@@ -3622,7 +3632,7 @@ void handle_key_change_mode(uint8_t up_transition, uint8_t down_transition, bool
   // timeout: holding both buttons is an explicit, sustained request.
   if (key_change_mode && (!up_state || !down_state)) {
     key_change_mode = false;
-    set_led_color(bank_led_hue, 1.0, 1 - led_attenuation);
+    set_led_color(bank_led_hue, bank_led_saturation(), 1 - led_attenuation);
     // The combo changes address 35 without the host seeing anything: a re-keyed
     // chord is byte-identical over MIDI to a different chord already on the
     // grid, so a remote cannot infer it. Report the settled value once, on the
@@ -3742,7 +3752,7 @@ void handle_preset_change(uint8_t up_transition, uint8_t down_transition, bool u
     current_bank_number = pending_up ? (current_bank_number + 1) % 12
                                      : (current_bank_number - 1 + 12) % 12;
     load_config(current_bank_number);
-    set_led_color(bank_led_hue, 1.0, 1 - led_attenuation);
+    set_led_color(bank_led_hue, bank_led_saturation(), 1 - led_attenuation);
   }
 }
 
@@ -3752,10 +3762,10 @@ void handle_low_battery() {
     led_blinking_flag = true;
   } else if (LBO_transition == 2) {
     led_blinking_flag = false;
-    set_led_color(bank_led_hue, 1.0, 1 - led_attenuation);
+    set_led_color(bank_led_hue, bank_led_saturation(), 1 - led_attenuation);
   }
   if (led_blinking_flag) {
-    set_led_color(bank_led_hue, 1.0, 0.6 + 0.4 * sin(color_led_blink_val));
+    set_led_color(bank_led_hue, bank_led_saturation(), 0.6 + 0.4 * sin(color_led_blink_val));
     color_led_blink_val += 0.005;
   }
 }
@@ -3775,25 +3785,46 @@ void trigger_chord_notes() {
   button_pushed = false;
 }
 
-// Applies the chosen value, or puts back what was there before.
+// true if an address is one of the double tap's own settings, which it must never toggle
+static bool is_double_tap_setting(int16_t adress) {
+  for (uint8_t k = 0; k < double_tap_pairs; k++)
+    if (adress == double_tap_control_adress[k] || adress == double_tap_value_adress[k]) return true;
+  return false;
+}
+
+// Applies the chosen values, or puts back what was there before.
 void toggle_double_tap_target() {
   if (double_tap_engaged) {
-    // Restore to the address latched at engage time: the assignment at address
-    // 200 can be rewritten while the toggle is held, and the restore belongs to
-    // the parameter that was actually toggled, not to the new target.
-    current_sysex_parameters[double_tap_engaged_adress] = double_tap_saved;
-    apply_audio_parameter(double_tap_engaged_adress, double_tap_saved);
+    // Restore to the addresses latched at engage time, last applied first: the
+    // assignments can be rewritten while the toggle is held, and each restore
+    // belongs to the parameter that was actually toggled, not to a new target.
+    for (int8_t k = double_tap_pairs - 1; k >= 0; k--) {
+      int16_t a = double_tap_engaged_adress[k];
+      if (a < 0) continue;
+      current_sysex_parameters[a] = double_tap_saved[k];
+      apply_audio_parameter(a, double_tap_saved[k]);
+      double_tap_engaged_adress[k] = -1;
+    }
     double_tap_engaged = false;
-    set_led_color(bank_led_hue, 1.0, 1 - led_attenuation);
+    set_led_color(bank_led_hue, bank_led_saturation(), 1 - led_attenuation);
   } else {
-    int16_t adress = current_sysex_parameters[double_tap_control_adress];
-    if (adress < 21 || adress > 219) return;   // 0 means the gesture is unassigned
-    if (adress == double_tap_control_adress || adress == double_tap_value_adress) return;
-    double_tap_saved = current_sysex_parameters[adress];
-    double_tap_engaged_adress = adress;
-    int16_t value = current_sysex_parameters[double_tap_value_adress];
-    current_sysex_parameters[adress] = value;
-    apply_audio_parameter(adress, value);
+    bool any = false;
+    for (uint8_t k = 0; k < double_tap_pairs; k++) {
+      int16_t adress = current_sysex_parameters[double_tap_control_adress[k]];
+      double_tap_engaged_adress[k] = -1;
+      if (adress < 21 || adress > 219) continue;   // 0 means this pair is unassigned
+      if (is_double_tap_setting(adress)) continue;
+      bool repeat = false;                          // two pairs on one parameter: the first one wins
+      for (uint8_t j = 0; j < k; j++) if (double_tap_engaged_adress[j] == adress) repeat = true;
+      if (repeat) continue;
+      double_tap_saved[k] = current_sysex_parameters[adress];
+      double_tap_engaged_adress[k] = adress;
+      int16_t value = current_sysex_parameters[double_tap_value_adress[k]];
+      current_sysex_parameters[adress] = value;
+      apply_audio_parameter(adress, value);
+      any = true;
+    }
+    if (!any) return;                               // nothing assigned: the gesture does nothing
     double_tap_engaged = true;
   }
   // The gesture changes a parameter with nothing on the wire to show it, so a
@@ -3969,21 +4000,11 @@ void loop() {
   }
 
   // Handle potentiometer updates
-  bool alternate = chord_matrix_array[0].read_value();
-  bool pot_moved = false;
-  pot_moved |= chord_pot.update_parameter(alternate);
-  pot_moved |= harp_pot.update_parameter(alternate);
-  pot_moved |= mod_pot.update_parameter(alternate);
-  flag_save_needed |= pot_moved;
+  bool alternate = knob_layer || chord_matrix_array[0].read_value();   // on knob layer 1 the alternates, whatever the modifier does
+  flag_save_needed |= chord_pot.update_parameter(alternate);
+  flag_save_needed |= harp_pot.update_parameter(alternate);
+  flag_save_needed |= mod_pot.update_parameter(alternate);
   if (knob_midi) send_knob_ccs();
-
-  if (!alternate) {
-    modifier_claimed_by_pot = false;
-  } else if (pot_moved && !modifier_claimed_by_pot) {
-    modifier_claimed_by_pot = true;
-    // a chord is already sounding sharpened, so recalculate it without
-    if (current_line != -1) button_pushed = true;
-  }
 
   // Two quick taps of the modifier toggle whatever the player has assigned to
   // the gesture. Only when no chord button is down, so it never competes with
