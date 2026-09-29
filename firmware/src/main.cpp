@@ -494,7 +494,7 @@ bool chromatic_harp_mode = false; // to switch the harp to chromatic mode
 // Harp rank: which set of twelve steps the chromatic harp plays, 1 for steps
 // 0-11 of the division, 2 for 12-23, 3 for 24-35, like the rows of strings on a
 // triple harp. A division has as many ranks as it takes twelve strings to cover
-// it: one in 12, two in 19, three in 31. A higher rank than the division has
+// it: one in 12, two in 19 and 24, three in 31. A higher rank than the division has
 // plays its last, so in 12 the setting changes nothing.
 uint8_t harp_rank = 1;
 //>>SYSEX PARAMETERS<<
