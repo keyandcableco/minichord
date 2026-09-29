@@ -179,6 +179,10 @@ static const ParameterInfo parameter_lookup[] = {
     { 153, 0, 0, 20 }, // LFO frequency
     { 154, 0, 0, 1 }, // LFO amplitude
     { 155, 0, 0, 5 }, // filter sensitivity
+    { 118, 0, 0, 100 }, // formant vowel
+    { 119, 0, 0, 100 }, // formant amount
+    { 239, 0, 0, 100 }, // formant voice size
+    { 240, 0, 0, 100 }, // formant resonance
     { 156, 1, 0, 11 }, // waveform
     { 157, 0, 0, 20 }, // frequency
     { 158, 0, 0, 5 }, // keytrack value
