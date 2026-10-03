@@ -80,6 +80,17 @@
               <button onclick="open_bank_sheet()" title="Read all twelve banks, then move them or set a setting in every one" class="inactive" version="8">reorder and bulk edit</button>
             </div>
           </div>
+          <div class="line" style="margin-top: 0.3em;">
+            <div class="bloc B3 M3 S3 button_div">
+              <button onclick="backup_all_banks()" title="Read all twelve banks into one file" class="inactive" version="8">back up all banks</button>
+            </div>
+            <div class="bloc B3 M3 S3 button_div">
+              <button onclick="restore_all_banks()" title="Write a backup file back to the banks, replacing what is there" class="inactive" version="8">restore from backup</button>
+            </div>
+          </div>
+          <div class="line">
+            <p id="banks_status" role="status"></p>
+          </div>
           <div class="line">
             <h5 class="inactive">resetting:</h5>
           </div>

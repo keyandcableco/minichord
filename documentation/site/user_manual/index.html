@@ -471,7 +471,9 @@ However, if there is an issue, you can always restore the default presets, so fe
 <li><strong>"save as profile"</strong> keeps the staged settings as a named set. Applying a profile later stages the same settings again. <strong>"export"</strong> saves a profile to a file and <strong>"import"</strong> loads one, so you can share a profile (for example a set of knob assignments) without sharing whole presets. Profiles only change the settings they list, and they use the same file format as Sound Lab;</li>
 <li>nothing is written until you press <strong>"apply"</strong>, and then only the banks that changed are written. <strong>"discard"</strong> throws the staged changes away.</li>
 </ul>
-<p>This needs a firmware that can load a bank on request.</p>
+<p>This needs a firmware that can load a bank on request.
+  * <strong>"Back up all banks"</strong>: reads all twelve banks into one file, with your bank names and the firmware version it came from.
+  * <strong>"Restore from backup"</strong>: writes a backup file back to the banks it holds, replacing what is there. The file is checked first and refused if any of it is damaged. If it was made on a different firmware version you are warned before anything is written. Backups use the same format as Sound Lab, so a backup made in either can be restored in the other.</p>
 </li>
 </ul>
 <p>It also allows you to share your presets and to load presets made by other users, with two additional buttons:</p>

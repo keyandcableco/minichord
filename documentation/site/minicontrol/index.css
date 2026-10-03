@@ -845,3 +845,8 @@ body.dark-mode #theme-toggle::before {
   gap: 0.5em;
   margin-top: 1em;
 }
+
+#banks_status {
+  margin: 0.3em 0.5em 0 0.5em;
+  line-height: 1.2em;
+}
