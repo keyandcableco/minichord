@@ -147,11 +147,26 @@ async function returnToBank(bank) {
   miniChordController.requestCurrentData();
 }
 
-// Write back the slots that changed. Each one is loaded first and its report
-// awaited, so the page's pot re-centring for that load has already gone out
-// before the bank's own values are written over it, then saved. The short wait
-// after the load lets a second report (one asked for while the load was still
-// going) arrive and be re-centred before the writes rather than after them.
+// Write one bank. It is loaded first and its report awaited, so the page's pot
+// re-centring for that load has already gone out before the bank's own values
+// are written over it, then saved. The short wait after the load lets a second
+// report (one asked for while the load was still going) arrive and be
+// re-centred before the writes rather than after them.
+async function writeBank(bank, values) {
+  await miniChordController.readBank(bank, 3000, true);
+  await new Promise(r => setTimeout(r, 150));
+  // 0 is the command address, 1 the bank number, 7 the firmware's own version
+  for (let a = 2; a < values.length; a++) {
+    if (a === miniChordController.firmware_adress || values[a] == null) continue;
+    miniChordController.sendParameter(a, values[a]);
+    if ((a & 31) === 0) await new Promise(r => setTimeout(r, 1));
+  }
+  await new Promise(r => setTimeout(r, 40));
+  miniChordController.saveCurrentSettings(bank);
+  await new Promise(r => setTimeout(r, 120));   // the write is to flash
+}
+
+// Write back the slots that changed, and only those: each write is a flash erase.
 async function applyBankChanges(onProgress) {
   if (!miniChordController.isConnected()) throw new Error("no minichord connected");
   if (!bankState.slots) return 0;
@@ -163,17 +178,7 @@ async function applyBankChanges(onProgress) {
     const i = dirty[n];
     if (onProgress) onProgress(n, dirty.length);
     const slot = bankState.slots[i];
-    await miniChordController.readBank(i, 3000, true);
-    await new Promise(r => setTimeout(r, 150));
-    // 0 is the command address, 1 the bank number, 7 the firmware's own version
-    for (let a = 2; a < slot.values.length; a++) {
-      if (a === miniChordController.firmware_adress || slot.values[a] == null) continue;
-      miniChordController.sendParameter(a, slot.values[a]);
-      if ((a & 31) === 0) await new Promise(r => setTimeout(r, 1));
-    }
-    await new Promise(r => setTimeout(r, 40));
-    miniChordController.saveCurrentSettings(i);
-    await new Promise(r => setTimeout(r, 120));
+    await writeBank(i, slot.values);
     slot.dirty = false;
     bankState.original[i] = slot.values.slice();
     bankState.originalNames[i] = slot.name || "";
@@ -184,6 +189,127 @@ async function applyBankChanges(onProgress) {
   bulkStaged = [];
   await returnToBank(startingBank);
   return dirty.length;
+}
+
+//-->>whole-device backup and restore
+// Every bank in one file, so an instrument can be restored or swapped
+// wholesale. The device has no bulk transfer, so this walks the banks with the
+// load bank command. The file records the firmware it came from, since a
+// restore into different firmware may be reading addresses that have since
+// moved, and names each address once at the top so it stays readable. The
+// format is Sound Lab's, so a backup made in either restores in the other.
+const BACKUP_FORMAT = 1;
+
+async function backupAllBanks(onProgress) {
+  if (!miniChordController.isConnected()) throw new Error("no minichord connected");
+  await loadBankParams();
+  const startingBank = miniChordController.active_bank_number;
+  const names = bankNamesGet();
+  const banks = [];
+  for (let b = 0; b < BANK_COUNT; b++) {
+    if (onProgress) onProgress(b, BANK_COUNT);
+    const values = await miniChordController.readBank(b, 3000, true);
+    banks.push({ bank: b, name: names[b] || "", values: Array.from(values, v => (v == null ? 0 : v)) });
+  }
+  await returnToBank(startingBank);
+  const address_names = {};
+  bankParamOrder.forEach(p => { address_names[p.sysex_adress] = paramLabel(p); });
+  return {
+    minichord_backup: BACKUP_FORMAT,
+    created: new Date().toISOString(),
+    firmware_version: banks[0].values[miniChordController.firmware_adress],
+    parameter_size: miniChordController.parameter_size,
+    address_names,
+    banks,
+  };
+}
+
+// A backup file is untrusted: every bank is checked before anything is written,
+// so a damaged file is refused rather than half restored.
+function backupProblem(data) {
+  if (!data || !data.minichord_backup) return "That isn't a minichord backup file";
+  if (!Array.isArray(data.banks) || !data.banks.length || data.banks.length > BANK_COUNT) return "That backup has no banks in it";
+  const seen = new Set();
+  for (const entry of data.banks) {
+    if (!entry || !Number.isInteger(entry.bank) || entry.bank < 0 || entry.bank >= BANK_COUNT || seen.has(entry.bank)) return "That backup's bank numbers don't make sense";
+    seen.add(entry.bank);
+    if (!Array.isArray(entry.values) || entry.values.length > miniChordController.parameter_size
+      || !entry.values.every(v => v == null || (Number.isInteger(v) && v >= 0 && v < 16384))) return "Bank " + (entry.bank + 1) + " in that backup is damaged";
+    if (entry.name != null && typeof entry.name !== "string") return "That backup's bank names are damaged";
+  }
+  return null;
+}
+
+async function restoreAllBanks(data, onProgress) {
+  if (!miniChordController.isConnected()) throw new Error("no minichord connected");
+  const startingBank = miniChordController.active_bank_number;
+  const names = bankNamesGet();
+  for (let i = 0; i < data.banks.length; i++) {
+    const entry = data.banks[i];
+    if (onProgress) onProgress(i, data.banks.length);
+    const values = entry.values.slice();
+    // Backups from Sound Lab test firmware that kept master tuning as device
+    // state, at address 255, carry the tuning in every bank and nothing at 109.
+    // Give each such bank that tuning, so a tuned device stays tuned.
+    const legacyTuning = values[255];
+    if (!values[109] && legacyTuning >= 4320 && legacyTuning <= 4460) values[109] = legacyTuning;
+    await writeBank(entry.bank, values);
+    if (typeof entry.name === "string") names[entry.bank] = entry.name.slice(0, 24);
+  }
+  bankNamesSet(names);
+  bankCacheStale();
+  await returnToBank(startingBank);
+}
+
+function bankStatus(text) {
+  const el = document.getElementById("banks_status");
+  if (el) el.textContent = text;
+}
+
+async function backup_all_banks() {
+  if (!miniChordController.isConnected()) { document.getElementById("information_zone").focus(); return; }
+  if (bankState.busy) return;
+  bankState.busy = true;
+  try {
+    const data = await backupAllBanks((i, n) => bankStatus("Reading bank " + (i + 1) + " of " + n + "\u2026"));
+    downloadJson(data, "minichord-backup-" + data.created.slice(0, 10) + ".json");
+    bankStatus("Backed up all twelve banks");
+  } catch (e) {
+    bankStatus("Backup failed: " + e.message);
+  }
+  bankState.busy = false;
+}
+
+function restore_all_banks() {
+  if (!miniChordController.isConnected()) { document.getElementById("information_zone").focus(); return; }
+  if (bankState.busy) return;
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = "application/json,.json";
+  inp.addEventListener("change", async () => {
+    const f = inp.files && inp.files[0];
+    if (!f) return;
+    let data;
+    try { data = JSON.parse(await f.text()); } catch (e) { bankStatus("That file isn't valid JSON"); return; }
+    const problem = backupProblem(data);
+    if (problem) { bankStatus(problem); return; }
+    const count = data.banks.length;
+    const fw = miniChordController.firmware_version;
+    const note = (data.firmware_version != null && fw != null && data.firmware_version !== fw)
+      ? "\n\nThe backup was made on firmware " + data.firmware_version +
+        " and this minichord has firmware " + fw + ". Settings may have moved between versions."
+      : "";
+    if (!confirm("Replace " + (count === BANK_COUNT ? "all twelve banks" : count + (count === 1 ? " bank" : " banks")) +
+      " on the minichord with this backup?" + note)) return;
+    bankState.busy = true;
+    try {
+      await restoreAllBanks(data, (i, n) => bankStatus("Writing bank " + (i + 1) + " of " + n + "\u2026"));
+      bankStatus("Restored " + count + (count === 1 ? " bank" : " banks"));
+    } catch (e) {
+      bankStatus("Restore failed: " + e.message + ". Some banks may already have been written.");
+    }
+    bankState.busy = false;
+  });
+  inp.click();
 }
 
 //-->>staging

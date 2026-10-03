@@ -9,6 +9,7 @@ class MiniChordController {
       this.modulation_adress = [14, 10, 12,16];
       this.volume_memory_adress = [2, 3];
       this.active_bank_number = -1;
+      this.firmware_version = null;
       this.min_firmware_accepted = 0.02;
       this.firmware_adress = 7;
       this.float_multiplier = 100.0;
@@ -129,6 +130,7 @@ class MiniChordController {
         }
         
         this.active_bank_number = processedData.bankNumber;
+        this.firmware_version = processedData.firmwareVersion;
 
         // A faithful copy of the dump, rhythm included, taken before the pot and
         // volume re-centring below overwrites addresses 2-6. Reading a bank to

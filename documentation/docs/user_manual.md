@@ -275,6 +275,8 @@ You can start experimenting by modifying settings and seeing how it impacts the 
     * nothing is written until you press **"apply"**, and then only the banks that changed are written. **"discard"** throws the staged changes away.
 
     This needs a firmware that can load a bank on request.
+  * **"Back up all banks"**: reads all twelve banks into one file, with your bank names and the firmware version it came from.
+  * **"Restore from backup"**: writes a backup file back to the banks it holds, replacing what is there. The file is checked first and refused if any of it is damaged. If it was made on a different firmware version you are warned before anything is written. Backups use the same format as Sound Lab, so a backup made in either can be restored in the other.
 
 It also allows you to share your presets and to load presets made by other users, with two additional buttons:
 
