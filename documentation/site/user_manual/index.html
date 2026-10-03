@@ -463,6 +463,16 @@ However, if there is an issue, you can always restore the default presets, so fe
 <li><strong>"Save current settings to selected bank"</strong>: by using the dropdown to choose a bank number, you can save the current parameters to the selected bank slot. This can be used to copy presets from one bank to another;</li>
 <li><strong>"Reset selected bank"</strong>: by using the dropdown to choose a bank number, you can reset the parameters of the selected bank slot to factory settings</li>
 <li><strong>"Reset all banks"</strong>: this button simply puts the minichord to factory settings by resetting all bank slots</li>
+<li>
+<p><strong>"Reorder and bulk edit"</strong>: reads all twelve banks off the minichord (it steps through each preset to do so), then lets you rearrange them and change settings in all of them at once:</p>
+<ul>
+<li>drag a bank onto another slot to move it;</li>
+<li>pick a setting and a value, then use <strong>"set in all banks"</strong> to stage that value in every bank. You can stage several settings. Use × on a row to put that setting back to what each bank had before;</li>
+<li><strong>"save as profile"</strong> keeps the staged settings as a named set. Applying a profile later stages the same settings again. <strong>"export"</strong> saves a profile to a file and <strong>"import"</strong> loads one, so you can share a profile (for example a set of knob assignments) without sharing whole presets. Profiles only change the settings they list, and they use the same file format as Sound Lab;</li>
+<li>nothing is written until you press <strong>"apply"</strong>, and then only the banks that changed are written. <strong>"discard"</strong> throws the staged changes away.</li>
+</ul>
+<p>This needs a firmware that can load a bank on request.</p>
+</li>
 </ul>
 <p>It also allows you to share your presets and to load presets made by other users, with two additional buttons:</p>
 <ul>
