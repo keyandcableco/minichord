@@ -66,6 +66,12 @@ with open('parameters.json') as f: # Reserved adresses: 0 for system command and
                             with a.div(klass="bloc B3 M3 S3 button_div"):
                                 a.button(onclick='load_settings()', _t='load settings',klass="inactive")
                         with a.div(klass="line"):
+                            a.h5(_t='all banks:',klass="inactive",version=8)
+                        with a.div(klass="line"):
+                            with a.div(klass="bloc B3 M3 S3 button_div"):
+                                # reads every bank, so it needs the load bank command (firmware 8)
+                                a.button(onclick='open_bank_sheet()', _t='reorder and bulk edit', title='Read all twelve banks, then move them or set a setting in every one', klass="inactive", version=8)
+                        with a.div(klass="line"):
                             a.h5(_t='resetting:',klass="inactive")
                         with a.div(klass="line"):
                             with a.div(klass="bloc B3 M3 S3 button_div"):
@@ -295,6 +301,7 @@ with open('parameters.json') as f: # Reserved adresses: 0 for system command and
                         
             a.script(src='javascript/minichordcontroller.js')
             a.script(src='javascript/index.js')
+            a.script(src='javascript/banks.js')
             a.p(id="output_zone")
 
 Html_file= open("../minicontrol/index.html","w")

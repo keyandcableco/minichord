@@ -314,6 +314,7 @@ function set_slider_to_value(slider_num, sysex_value) {
 //-->>COMMUNICATION HANDLERS 
 function reset_memory() {
   if (miniChordController.isConnected()) {
+    bankCacheStale();
     return miniChordController.resetMemory();
   } else {
     document.getElementById("information_zone").focus();
@@ -323,6 +324,7 @@ function reset_memory() {
 
 function save_current_settings() {
   if (miniChordController.isConnected()) {
+    bankCacheStale();
     var e = document.getElementById("bank_number_selection");
     var bank_number = e.value;
     console.log(bank_number);
@@ -335,6 +337,7 @@ function save_current_settings() {
 
 function reset_current_bank() {
   if (miniChordController.isConnected()) {
+    bankCacheStale();
     console.log(miniChordController.active_bank_number);
     return miniChordController.resetCurrentBank();
   } else {
