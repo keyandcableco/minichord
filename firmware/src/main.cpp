@@ -517,9 +517,10 @@ const uint8_t palm_spread_ms = 40;   // plucking on lift, a palm's pads land wit
 bool string_palmed[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
 // Harp plate: which plate is fitted, for the plates read between their zones
 // as well as on them. 0 is the stock strip and any plate of twelve separate
-// zones; 1 the zipper strip, whose neighbouring zones interlock so a finger
-// between two touches both, for 23 positions; 2 zipper 24, which adds a band
-// above the top zone where it meets an island of the bottom zone, for 24.
+// zones. 1 is zipper 24, whose neighbouring zones interlock so a finger between
+// two touches both, with one more band above the top zone where it meets an
+// island of the bottom zone: 24 positions. 2 is the arcade wheel, which plays
+// its twelve zones as they are and sends where a finger is round its ring.
 uint8_t harp_plate = 0;
 uint8_t harp_touch_threshold = 0;     // 0 for the stock thresholds, see harp::set_thresholds()
 uint8_t harp_release_threshold = 0;
@@ -3357,12 +3358,10 @@ const float harp_lift_ratio = 0.7;           // a touch reading under this much 
 const float harp_peak_relax_ms = 80;         // how fast the peak follows a lighter touch, so a strum that eases off still moves
 const uint8_t harp_landing_ms = 4;           // a finger pressing down reads weak and uncertain at first; it sounds once it has settled
 
-bool harp_positions_active() {
-  return harp_plate != 0 && (chromatic_harp_mode || scalar_harp_selection != 0);
-}
+const uint8_t harp_position_count = 24;
 
-uint8_t harp_position_count() {
-  return harp_plate == 2 ? 24 : 23;
+bool harp_positions_active() {
+  return harp_plate == 1 && (chromatic_harp_mode || scalar_harp_selection != 0);
 }
 
 // Whether voice i has a finger on it: on a zipper plate a touch sounding it,
@@ -3420,10 +3419,10 @@ void harp_positions_reset() {
 }
 
 void handle_harp_positions() {
-  // Zone i of the line is zone i of the harp, and on zipper 24 the line has a
-  // thirteenth, the bottom zone's island above the top zone. The bottom zone is
-  // read as the island when the top zone is touched with it and its own upper
-  // neighbour isn't.
+  // Zone i of the line is zone i of the harp, and the line has a thirteenth,
+  // the bottom zone's island above the top zone. The bottom zone is read as the
+  // island when the top zone is touched with it and its own upper neighbour
+  // isn't.
   bool zone_down[12];
   bool any_down = false;
   for (uint8_t z = 0; z < 12; z++) {
@@ -3436,11 +3435,11 @@ void handle_harp_positions() {
   for (uint8_t t = 0; t < harp_touch_max; t++) any_touch |= harp_touches[t].active;
   if (!any_down && !any_touch) return;   // nothing to read: spare the bus
 
-  const uint8_t line_length = harp_plate == 2 ? 13 : 12;
+  const uint8_t line_length = 13;
   bool line_down[13];
   for (uint8_t k = 0; k < 12; k++) line_down[k] = zone_down[k];
   line_down[12] = false;
-  if (harp_plate == 2 && zone_down[0] && zone_down[11] && !zone_down[1]) {
+  if (zone_down[0] && zone_down[11] && !zone_down[1]) {
     line_down[0] = false;
     line_down[12] = true;
   }
@@ -3474,7 +3473,7 @@ void handle_harp_positions() {
   }
 
   uint32_t now = millis();
-  const float last = harp_position_count() - 1;
+  const float last = harp_position_count - 1;
   auto settle = [last](float x) -> uint8_t {
     if (x < 0) x = 0;
     if (x > last) x = last;
@@ -3558,6 +3557,66 @@ void handle_harp_positions() {
   }
 }
 
+// ---- the arcade wheel: where a finger is round the ring ----
+// The ring's ten zones, clockwise from the top: each one's harp zone (zone i is
+// T(12 - i)), the compass bearing of its middle in degrees, 0 at the top, and
+// its width. The arrows' outer zones are 30 degrees wide, the side arrows' 45.
+struct wheel_segment { uint8_t zone; float bearing; float width; };
+const wheel_segment wheel_ring[10] = {
+  {10, 0, 30}, {9, 30, 30}, {4, 67.5, 45}, {3, 112.5, 45}, {2, 150, 30},
+  {1, 180, 30}, {0, 210, 30}, {7, 247.5, 45}, {8, 292.5, 45}, {11, 330, 30},
+};
+const uint8_t wheel_angle_cc = 23;   // the bearing, 0-127 clockwise from the top, while the ring is touched
+const uint8_t wheel_touch_cc = 24;   // 127 as a finger lands on the ring, 0 as it leaves
+
+// The ring sends its bearing on the harp channel as a control change, for a
+// game to steer or aim with; the zones still play their notes as they always
+// have. The bearing comes from the zone reading strongest and its stronger
+// neighbour: on that zone's middle the neighbour reads nothing, and on the
+// zipper between them the two read alike.
+void handle_wheel() {
+  static bool was_touched = false;
+  static int16_t sent = -1;
+  static elapsedMillis since;
+  bool touched = false;
+  for (uint8_t k = 0; k < 10; k++) touched |= harp_array[wheel_ring[k].zone].read_value();
+  if (!touched) {
+    if (was_touched) queue_midi_cc(wheel_touch_cc, 0, harp_channel, harp_port);
+    was_touched = false;
+    sent = -1;
+    return;
+  }
+  if (since < 5) return;   // as often as anything steering needs, and no more
+  since = 0;
+  int16_t strength[12];
+  harp_sensor.read_strength(strength);
+  uint8_t peak = 0;
+  for (uint8_t k = 1; k < 10; k++) {
+    if (strength[wheel_ring[k].zone] > strength[wheel_ring[peak].zone]) peak = k;
+  }
+  const wheel_segment &p = wheel_ring[peak];
+  const wheel_segment &before = wheel_ring[(peak + 9) % 10];
+  const wheel_segment &after = wheel_ring[(peak + 1) % 10];
+  float s_peak = strength[p.zone];
+  if (s_peak <= 0) return;
+  bool toward_after = strength[after.zone] >= strength[before.zone];
+  float s_near = strength[(toward_after ? after : before).zone];
+  float lean = min(s_near / s_peak, 1.0f) * p.width / 2;
+  float bearing = p.bearing + (toward_after ? lean : -lean);
+  float steps = bearing * 128 / 360;
+  if (!was_touched) queue_midi_cc(wheel_touch_cc, 127, harp_channel, harp_port);
+  was_touched = true;
+  // as the knobs do, a step past the last value sent before sending, so a
+  // finger resting on a boundary doesn't flicker between two
+  if (sent >= 0) {
+    float moved = fmodf(steps - sent + 128 + 64, 128) - 64;   // the short way round
+    if (fabsf(moved) <= 0.7f) return;
+  }
+  int16_t value = ((int16_t)lroundf(steps) % 128 + 128) % 128;
+  if (value != sent) queue_midi_cc(wheel_angle_cc, value, harp_channel, harp_port);
+  sent = value;
+}
+
 void handle_harp() {
   harp_sensor.update(harp_array);
   if (harp_sensor.thresholds_pending()) {
@@ -3622,6 +3681,7 @@ void handle_harp() {
     }
   }
   if (positions) handle_harp_positions();
+  if (harp_plate == 2) handle_wheel();
   for (int i = 0; i < 12 && !positions; i++) {
     int value = harp_array[i].read_transition();
     if (value == 2 && string_palmed[i]) {
