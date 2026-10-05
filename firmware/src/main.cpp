@@ -506,7 +506,14 @@ uint16_t string_release = 1000;    // the strings' own release, put back after a
 // harpist's finger does. 0 plucks on touch, as before.
 bool harp_pluck_on_lift = false;
 bool string_plucked[12] = {false, false, false, false, false, false, false, false, false, false, false, false};   // plucked on lift, not yet ringing out
-const uint8_t palm_landing_ms = 30;  // pads arriving this soon after a palm mute are part of the palm
+// Pads arriving this soon after a palm mute are part of the palm. A slap's
+// last finger or the heel of the hand can trail the rest by a hundred ms or
+// more; plucking on touch the window is kept short so a strum can follow the
+// mute at once, but plucking on lift a straggler would be plucked as the palm
+// lifts, and a touch there sounds nothing anyway.
+const uint8_t palm_landing_ms = 30;
+const uint8_t palm_landing_lift_ms = 150;
+const uint8_t palm_spread_ms = 40;   // plucking on lift, a palm's pads land within this of one another
 bool string_palmed[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
 //>>SYSEX PARAMETERS<<
 // SYSEX midi message are used to control up to 256 synthesis parameters.
@@ -3308,21 +3315,40 @@ void handle_harp() {
   // can hold the mute while the rest of the hand strums. The palm is over once
   // all of its pads have lifted, and only then can another one land, so
   // strumming beside a held palm never mutes again.
+  // When each pad last landed, for the palm when plucking on lift.
+  static uint32_t pad_landed[12] = {0};
+  static bool pad_was_down[12] = {false};
+  uint32_t now = millis();
+  for (int i = 0; i < 12; i++) {
+    bool down = harp_array[i].read_value();
+    if (down && !pad_was_down[i]) pad_landed[i] = now;
+    pad_was_down[i] = down;
+  }
   if (palm_mute_pads) {
     static bool palm_down = false;
-    static elapsedMillis since_palm;
+    static uint32_t palm_landed = 0;
+    // Plucking on lift, fingers placed on strings are a chord waiting to be
+    // played, and a chord of four placed pads looks like a palm by count alone.
+    // A palm lands all at once and placed fingers one by one, so only pads that
+    // landed together count, and only they are silenced: strings placed before
+    // the palm keep their pluck.
     uint8_t held = 0;
-    for (int i = 0; i < 12; i++) held += harp_array[i].read_value();
+    for (int i = 0; i < 12; i++) {
+      if (!harp_array[i].read_value()) continue;
+      if (!harp_pluck_on_lift || now - pad_landed[i] <= palm_spread_ms) held++;
+    }
     if (!palm_down && held >= palm_mute_pads) {
       palm_mute();
       palm_down = true;
-      since_palm = 0;
+      palm_landed = now;
     }
     if (palm_down) {
       bool palm_held = false;
       for (int i = 0; i < 12; i++) {
         if (!harp_array[i].read_value()) continue;
-        if (since_palm < palm_landing_ms) string_palmed[i] = true;
+        bool landed_with_palm = !harp_pluck_on_lift || pad_landed[i] + palm_spread_ms >= palm_landed;
+        uint8_t landing = harp_pluck_on_lift ? palm_landing_lift_ms : palm_landing_ms;
+        if (now - palm_landed < landing && landed_with_palm) string_palmed[i] = true;
         if (string_palmed[i]) palm_held = true;
       }
       if (!palm_held) palm_down = false;
