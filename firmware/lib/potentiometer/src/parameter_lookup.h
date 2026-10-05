@@ -24,6 +24,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 107, 1, 1, 16 }, // harp channel
     { 108, 1, 0, 1 }, // single port mode
     { 110, 1, 0, 1 }, // MPE output
+    { 215, 1, 0, 1 }, // harp note-off on lift
     { 238, 1, 0, 1 }, // knobs send MIDI
     { 24, 0, 0, 1 }, // reverb size
     { 25, 0, 0, 1 }, // reverb high damping
@@ -66,6 +67,8 @@ static const ParameterInfo parameter_lookup[] = {
     { 46, 0, 0, 1 }, // sustain
     { 47, 0, 0, 5000 }, // release
     { 48, 1, 0, 10 }, // retrigger release
+    { 213, 1, 0, 12 }, // palm mute
+    { 214, 0, 1, 250 }, // palm mute release
     { 49, 0, 0, 2000 }, // base frequency
     { 50, 0, 0, 3 }, // keytrack value
     { 51, 0, 1, 5 }, // resonance

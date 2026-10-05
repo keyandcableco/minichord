@@ -33,6 +33,9 @@ void apply_audio_parameter(int adress, int value) {
       case 110:
         mpe_set_mode(value);
         break;
+      case 215:
+        harp_note_off_on_lift=value;
+        break;
       case 238:
         knob_midi=value; knob_midi_resend=true;
         break;
@@ -171,13 +174,19 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 47:
         for (int i=0;i<12;i++){
-          string_enveloppe_array[i]->release(value);
+          string_enveloppe_array[i]->release(value); string_release=value;
         }
         break;
       case 48:
         for (int i=0;i<12;i++){
           string_enveloppe_array[i]->releaseNoteOn(value);
         }
+        break;
+      case 213:
+        palm_mute_pads=value ? max(value,2) : 0;
+        break;
+      case 214:
+        palm_mute_release=max(value,1);
         break;
       case 49:
         string_filter_base_freq=value;
@@ -819,6 +828,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 107: lo=1; hi=16; return true;
       case 108: lo=0; hi=1; return true;
       case 110: lo=0; hi=1; return true;
+      case 215: lo=0; hi=1; return true;
       case 238: lo=0; hi=1; return true;
       case 24: lo=0; hi=100; return true;
       case 25: lo=0; hi=100; return true;
@@ -861,6 +871,8 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 46: lo=0; hi=100; return true;
       case 47: lo=0; hi=5000; return true;
       case 48: lo=0; hi=10; return true;
+      case 213: lo=0; hi=12; return true;
+      case 214: lo=1; hi=250; return true;
       case 49: lo=0; hi=2000; return true;
       case 50: lo=0; hi=300; return true;
       case 51: lo=70; hi=500; return true;
