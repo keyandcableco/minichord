@@ -6,6 +6,15 @@ void apply_audio_parameter(int adress, int value) {
       case 32:
         led_attenuation=value/100.0; set_led_color(bank_led_hue, bank_led_saturation(), 1-led_attenuation);
         break;
+      case 243:
+        harp_plate=value;
+        break;
+      case 241:
+        harp_touch_threshold=value; harp_sensor.set_thresholds(harp_touch_threshold, harp_release_threshold);
+        break;
+      case 242:
+        harp_release_threshold=value; harp_sensor.set_thresholds(harp_touch_threshold, harp_release_threshold);
+        break;
       case 35:
         key_signature_selection=constrain(value,0,20);
         break;
@@ -822,6 +831,9 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
     switch(adress){
       case 20: lo=0; hi=360; return true;
       case 32: lo=0; hi=100; return true;
+      case 243: lo=0; hi=2; return true;
+      case 241: lo=0; hi=120; return true;
+      case 242: lo=0; hi=119; return true;
       case 35: lo=0; hi=20; return true;
       case 31: lo=0; hi=1; return true;
       case 30: lo=0; hi=12; return true;

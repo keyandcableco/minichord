@@ -15,6 +15,9 @@ struct ParameterInfo {
 static const ParameterInfo parameter_lookup[] = {
     { 20, 0, 0, 360 }, // bank color
     { 32, 0, 0, 1 }, // led attenuation
+    { 243, 1, 0, 2 }, // harp plate
+    { 241, 0, 0, 120 }, // harp touch threshold
+    { 242, 0, 0, 119 }, // harp release threshold
     { 35, 1, 0, 20 }, // chord key signature
     { 31, 1, 0, 1 }, // sharp function
     { 30, 1, 0, 12 }, // transpose

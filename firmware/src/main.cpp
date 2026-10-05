@@ -15,7 +15,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=23; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift)
+int version_ID=24; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: harp plate, touch thresholds)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -422,7 +422,7 @@ const uint8_t chord_scale_degrees[19][8] = {
 uint16_t custom_scale_mask = 0b101010110101;
 uint8_t custom_scale_intervals[12] = {0, 2, 4, 5, 7, 9, 11, 0, 0, 0, 0, 0};
 uint8_t custom_scale_length = 7;
-const uint8_t custom_scale_max_octave = 3; // how far the harp may climb, in octaves
+const uint8_t custom_scale_max_octave = 3; // how far the harp may climb, in octaves, in any scale mode
 uint8_t chord_octave_change=4;
 uint8_t harp_octave_change=4;
 uint8_t chord_frame_shift=0;
@@ -515,6 +515,37 @@ const uint8_t palm_landing_ms = 30;
 const uint8_t palm_landing_lift_ms = 150;
 const uint8_t palm_spread_ms = 40;   // plucking on lift, a palm's pads land within this of one another
 bool string_palmed[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
+// Harp plate: which plate is fitted, for the plates read between their zones
+// as well as on them. 0 is the stock strip and any plate of twelve separate
+// zones; 1 the zipper strip, whose neighbouring zones interlock so a finger
+// between two touches both, for 23 positions; 2 zipper 24, which adds a band
+// above the top zone where it meets an island of the bottom zone, for 24.
+uint8_t harp_plate = 0;
+uint8_t harp_touch_threshold = 0;     // 0 for the stock thresholds, see harp::set_thresholds()
+uint8_t harp_release_threshold = 0;
+// On a zipper plate each zone's core and each band between two zones is a
+// position, a string of its own: 2i is zone i's core (in harp order, 0 the
+// lowest) and 2i+1 the band above it. The scales carry on up through all of
+// them. Position p sounds on voice p % 12, so a voice's envelope, its midi note
+// and the palm mute work as they always have. Chord mode plays the chord's
+// tones across twelve strings with nothing between them, so in that mode the
+// plate is read as twelve zones, as the stock one is. See handle_harp_positions().
+uint8_t harp_voice_position[12] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};   // the position each voice last sounded
+bool harp_voice_held[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
+struct harp_touch {
+  bool active;
+  uint8_t position;
+  float centre;      // where it read last, in positions, which it is followed by
+  float peak;        // the strongest the touch has read lately, to tell a finger lifting from one moving
+  uint32_t peak_at;  // ms, when the peak was last relaxed
+  bool palmed;       // part of a palm mute: silent until lifted
+  bool landing;      // still pressing down, where it is not yet settled
+  uint32_t landed_at;
+  float centre_sum;  // the centres read while landing, weighted by how firmly
+  float weight_sum;
+};
+const uint8_t harp_touch_max = 6;
+harp_touch harp_touches[harp_touch_max];
 //>>SYSEX PARAMETERS<<
 // SYSEX midi message are used to control up to 256 synthesis parameters.
 const uint16_t parameter_size = 256;
@@ -1136,6 +1167,7 @@ void save_config(int bank_number, bool default_save);
 void load_config(int bank_number);
 void recalculate_timer();
 uint8_t calculate_note_harp(uint8_t string, bool slashed, bool sharp);
+uint8_t harp_string_note(uint8_t i, bool slashed, bool sharp);
 uint8_t calculate_note_chord(uint8_t voice, bool slashed, bool sharp);
 bool apply_voice_leading(bool sharp, uint8_t *out);
 bool apply_slash_voice_leading(uint8_t *out);
@@ -2728,6 +2760,9 @@ uint8_t calculate_static_scale_note(uint8_t string, uint8_t mode, uint8_t key) {
   uint8_t scale_length = scale_lengths[scale_index];
   uint8_t octave = string / scale_length;
   uint8_t scale_degree = string % scale_length;
+  // Twelve strings never get this far; a zipper plate's 24 positions through
+  // a pentatonic scale would, and the upper ones repeat the top octave instead.
+  if (octave > custom_scale_max_octave) octave = custom_scale_max_octave;
   uint8_t scale_root = scale_root_offsets[key];
   if (mode >= 5 && mode <= 7) {
     scale_root = (scale_root + EDO - minor_third_steps()) % EDO; // relative minor, a minor third down
@@ -2815,6 +2850,7 @@ uint8_t calculate_chord_specific_note(uint8_t string, uint8_t root_note, int8_t 
   uint8_t scale_length = chord_scale_lengths[scale_index];
   uint8_t octave = string / scale_length;
   uint8_t scale_degree = string % scale_length;
+  if (octave > custom_scale_max_octave) octave = custom_scale_max_octave;   // as in the static scales
   if (is_ratio_chord(chord_type)) {
     uint8_t scale[8];
     memcpy(scale, chord_scale_intervals[scale_index], 8); // work on a copy, never the live table
@@ -2880,6 +2916,12 @@ uint8_t calculate_note_harp(uint8_t string, bool slashed, bool sharp) {
     }
   }
   return note;
+}
+
+// The note voice i plays: its own string's, or on a zipper plate the position
+// it last sounded.
+uint8_t harp_string_note(uint8_t i, bool slashed, bool sharp) {
+  return calculate_note_harp(harp_voice_position[i], slashed, sharp);
 }
 //-->>RYTHM MODE UTILITIES
 void rythm_tick_function() {
@@ -3194,7 +3236,7 @@ void setup() {
   load_config(current_bank_number);
   // initializing the strings
   for (int i = 0; i < 12; i++) {
-    current_harp_notes[i] = calculate_note_harp(i, slash_chord, sharp_active);
+    current_harp_notes[i] = harp_string_note(i, slash_chord, sharp_active);
   }
   //Checking the battery 
   LBO_flag.set(digitalRead(BATT_LBO_PIN));
@@ -3304,8 +3346,233 @@ void palm_mute() {
   for (uint8_t i = 0; i < 12; i++) damp_string(i);
 }
 
+// ---- the zipper plates: a finger between zones ----
+// A finger on a band touches both its zones, and the balance between their
+// readings says where it is, so a touch is found as the centre of the readings
+// across the zones it touches, not from which zones count as touched. That
+// matters at this spacing: a fingertip on a core often reads on both
+// neighbours too.
+const float harp_position_hysteresis = 0.2;  // positions past the halfway mark before a touch moves on, so it doesn't flicker
+const float harp_lift_ratio = 0.7;           // a touch reading under this much of its peak is lifting, and stays where it was
+const float harp_peak_relax_ms = 80;         // how fast the peak follows a lighter touch, so a strum that eases off still moves
+const uint8_t harp_landing_ms = 4;           // a finger pressing down reads weak and uncertain at first; it sounds once it has settled
+
+bool harp_positions_active() {
+  return harp_plate != 0 && (chromatic_harp_mode || scalar_harp_selection != 0);
+}
+
+uint8_t harp_position_count() {
+  return harp_plate == 2 ? 24 : 23;
+}
+
+// Whether voice i has a finger on it: on a zipper plate a touch sounding it,
+// otherwise its own pad.
+bool string_held(uint8_t i) {
+  return harp_positions_active() ? harp_voice_held[i] : harp_array[i].read_value();
+}
+
+// Tune voice p % 12 to position p, as it plays now.
+uint8_t harp_position_voice(uint8_t p) {
+  uint8_t v = p % 12;
+  harp_voice_position[v] = p;
+  current_harp_notes[v] = calculate_note_harp(p, chord_context_slashed, chord_context_sharp);
+  return v;
+}
+
+// Sounding positions, as the zone transitions do on the stock plate: plucking
+// on touch, landing on a position plucks it and leaving it lets it ring;
+// plucking on lift, landing on one stops it and leaving it plucks it, whether
+// the finger leaves by lifting or by moving on to the next.
+void harp_position_land(uint8_t p) {
+  uint8_t v = harp_position_voice(p);
+  if (harp_pluck_on_lift) {
+    damp_string(v);
+  } else {
+    string_plucked[v] = false;
+    pluck_string(v);
+  }
+}
+
+void harp_position_leave(uint8_t p) {
+  uint8_t v = harp_position_voice(p);
+  if (harp_pluck_on_lift) {
+    pluck_string(v);
+    string_plucked[v] = true;
+  } else {
+    release_string(v);
+  }
+}
+
+// Leave all touches without sounding them and give each voice its own string
+// back, for a change of plate or of harp mode.
+void harp_positions_reset() {
+  for (uint8_t t = 0; t < harp_touch_max; t++) {
+    if (harp_touches[t].active && !harp_touches[t].palmed && !harp_touches[t].landing && !harp_pluck_on_lift) {
+      release_string(harp_touches[t].position % 12);
+    }
+    harp_touches[t].active = false;
+  }
+  for (uint8_t i = 0; i < 12; i++) {
+    harp_voice_position[i] = i;
+    harp_voice_held[i] = false;
+    current_harp_notes[i] = calculate_note_harp(i, chord_context_slashed, chord_context_sharp);
+  }
+}
+
+void handle_harp_positions() {
+  // Zone i of the line is zone i of the harp, and on zipper 24 the line has a
+  // thirteenth, the bottom zone's island above the top zone. The bottom zone is
+  // read as the island when the top zone is touched with it and its own upper
+  // neighbour isn't.
+  bool zone_down[12];
+  bool any_down = false;
+  for (uint8_t z = 0; z < 12; z++) {
+    zone_down[z] = harp_array[z].read_value();
+    any_down |= zone_down[z];
+    // the palm's zones are free once lifted, as on the stock plate
+    if (harp_array[z].read_transition() == 1) string_palmed[z] = false;
+  }
+  bool any_touch = false;
+  for (uint8_t t = 0; t < harp_touch_max; t++) any_touch |= harp_touches[t].active;
+  if (!any_down && !any_touch) return;   // nothing to read: spare the bus
+
+  const uint8_t line_length = harp_plate == 2 ? 13 : 12;
+  bool line_down[13];
+  for (uint8_t k = 0; k < 12; k++) line_down[k] = zone_down[k];
+  line_down[12] = false;
+  if (harp_plate == 2 && zone_down[0] && zone_down[11] && !zone_down[1]) {
+    line_down[0] = false;
+    line_down[12] = true;
+  }
+  int16_t strength[12];
+  harp_sensor.read_strength(strength);
+
+  // Each run of touched zones is a finger. Its centre takes in one zone more
+  // either side, which reads a little before it counts as touched, so a finger
+  // nearing a band starts to move before the far zone crosses its threshold.
+  struct harp_run { float centre; float total; bool palmed; bool matched; };
+  harp_run runs[7];
+  uint8_t run_count = 0;
+  for (uint8_t k = 0; k < line_length && run_count < 7; k++) {
+    if (!line_down[k]) continue;
+    uint8_t lo = k;
+    while (k + 1 < line_length && line_down[k + 1]) k++;
+    uint8_t hi = k;
+    float total = 0, moment = 0;
+    bool palmed = false;
+    for (int8_t m = (int8_t)lo - 1; m <= (int8_t)hi + 1; m++) {
+      if (m < 0 || m >= line_length) continue;
+      uint8_t zone = m % 12;
+      bool inside = m >= lo && m <= hi;
+      if (!inside && zone_down[zone]) continue;   // a neighbour another finger is on
+      if (inside) palmed |= string_palmed[zone];
+      total += strength[zone];
+      moment += strength[zone] * m;
+    }
+    float centre = total > 0 ? moment / total : (lo + hi) / 2.0;
+    runs[run_count++] = harp_run{2 * centre, total, palmed, false};
+  }
+
+  uint32_t now = millis();
+  const float last = harp_position_count() - 1;
+  auto settle = [last](float x) -> uint8_t {
+    if (x < 0) x = 0;
+    if (x > last) x = last;
+    return (uint8_t)lroundf(x);
+  };
+  // Each touch follows the nearest run within reach; a touch with none has
+  // lifted, and a run with none is a finger landing.
+  for (uint8_t t = 0; t < harp_touch_max; t++) {
+    harp_touch &touch = harp_touches[t];
+    if (!touch.active) continue;
+    int8_t best = -1;
+    float best_distance = 3;
+    for (uint8_t r = 0; r < run_count; r++) {
+      if (runs[r].matched) continue;
+      float distance = fabsf(runs[r].centre - touch.centre);
+      if (distance < best_distance) { best_distance = distance; best = r; }
+    }
+    if (best < 0) {
+      touch.active = false;
+      if (touch.palmed) continue;
+      // a tap too quick to settle still sounds, where it was read
+      if (touch.landing) {
+        touch.position = settle(touch.weight_sum > 0 ? touch.centre_sum / touch.weight_sum : touch.position);
+        harp_position_land(touch.position);
+      }
+      harp_position_leave(touch.position);
+      continue;
+    }
+    harp_run &found = runs[best];
+    found.matched = true;
+    touch.centre = found.centre;
+    touch.palmed |= found.palmed;
+    if (touch.landing) {
+      touch.centre_sum += found.centre * found.total;
+      touch.weight_sum += found.total;
+      touch.peak = max(touch.peak, found.total);
+      touch.peak_at = now;
+      if (now - touch.landed_at < harp_landing_ms) {
+        touch.position = settle(found.centre);
+        continue;
+      }
+      touch.landing = false;
+      touch.position = settle(touch.weight_sum > 0 ? touch.centre_sum / touch.weight_sum : found.centre);
+      if (!touch.palmed) harp_position_land(touch.position);
+      continue;
+    }
+    float relaxed = touch.peak - touch.peak * (now - touch.peak_at) / harp_peak_relax_ms;
+    touch.peak = max(found.total, relaxed);
+    touch.peak_at = now;
+    // A finger rising off a band lets go of one zone before the other, which
+    // looks like a move onto the one it still touches. Lifting, its readings
+    // fall away; moving, they hold. So a touch only moves while it reads firm.
+    if (found.total < harp_lift_ratio * touch.peak) continue;
+    if (fabsf(found.centre - touch.position) < 0.5 + harp_position_hysteresis) continue;
+    uint8_t to = settle(found.centre);
+    if (to == touch.position) continue;
+    // through every position on the way, as a strum faster than a reading
+    // still crosses each string
+    if (!touch.palmed) {
+      int8_t step = to > touch.position ? 1 : -1;
+      for (uint8_t p = touch.position; p != to; p += step) {
+        harp_position_leave(p);
+        harp_position_land(p + step);
+      }
+    }
+    touch.position = to;
+  }
+  for (uint8_t r = 0; r < run_count; r++) {
+    if (runs[r].matched) continue;
+    for (uint8_t t = 0; t < harp_touch_max; t++) {
+      harp_touch &touch = harp_touches[t];
+      if (touch.active) continue;
+      touch = harp_touch{true, settle(runs[r].centre), runs[r].centre, runs[r].total, now, runs[r].palmed,
+                         true, now, runs[r].centre * runs[r].total, runs[r].total};
+      break;
+    }
+  }
+  for (uint8_t i = 0; i < 12; i++) harp_voice_held[i] = false;
+  for (uint8_t t = 0; t < harp_touch_max; t++) {
+    if (harp_touches[t].active && !harp_touches[t].landing) harp_voice_held[harp_touches[t].position % 12] = true;
+  }
+}
+
 void handle_harp() {
   harp_sensor.update(harp_array);
+  if (harp_sensor.thresholds_pending()) {
+    bool clear = true;
+    for (int i = 0; i < 12; i++) clear &= !harp_array[i].read_value();
+    if (clear) harp_sensor.apply_thresholds();
+  }
+  static bool positions_were_active = false;
+  static uint8_t plate_was = 0;
+  bool positions = harp_positions_active();
+  if (positions != positions_were_active || (positions && harp_plate != plate_was)) {
+    harp_positions_reset();
+    positions_were_active = positions;
+    plate_was = harp_plate;
+  }
   // A fingertip strum holds two or three pads at a time and moves on; a hand
   // laid flat holds many at once. The pads the hand landed on before the count
   // was reached have already sounded, and are stopped with the rest, which is
@@ -3354,7 +3621,8 @@ void handle_harp() {
       if (!palm_held) palm_down = false;
     }
   }
-  for (int i = 0; i < 12; i++) {
+  if (positions) handle_harp_positions();
+  for (int i = 0; i < 12 && !positions; i++) {
     int value = harp_array[i].read_transition();
     if (value == 2 && string_palmed[i]) {
       // landed under the palm: silent until lifted
@@ -3377,6 +3645,8 @@ void handle_harp() {
     } else if (value == 1) {
       release_string(i);
     }
+  }
+  for (int i = 0; i < 12; i++) {
     // A string plucked on lift has no finger on it to hold it at sustain: once
     // it has come through its decay it rings out through its release, as a
     // quick touch does when plucking on touch.
@@ -3386,7 +3656,7 @@ void handle_harp() {
     }
     // A string let go of keeps its midi note until its release has run out, so
     // the far end hears the ring the strings here make.
-    if (harp_started_notes[i] != 0 && !harp_array[i].read_value() && !string_enveloppe_array[i]->isActive()) {
+    if (harp_started_notes[i] != 0 && !string_held(i) && !string_enveloppe_array[i]->isActive()) {
       harp_midi_off(i);
     }
   }
@@ -3688,10 +3958,10 @@ void update_harp_notes() {
     chord_context_sharp = sharp_active;
     chord_context_slashed = slash_chord;
     for (int i = 0; i < 12; i++) {
-      current_harp_notes[i] = calculate_note_harp(i, slash_chord, sharp_active);
+      current_harp_notes[i] = harp_string_note(i, slash_chord, sharp_active);
       // Only strings still held: one ringing out after the finger has lifted
       // keeps the note it was struck on.
-      if (change_held_strings && harp_started_notes[i] != 0 && harp_array[i].read_value()) {
+      if (change_held_strings && harp_started_notes[i] != 0 && string_held(i)) {
         harp_midi_on(i);
         if (string_enveloppe_array[i]->isSustain()) {
           set_harp_voice_frequency(i, current_harp_notes[i]);
@@ -4148,7 +4418,7 @@ void apply_temperament(uint8_t t) {
   // The remembered voicing is in steps of the division that just ended, so it
   // would be nonsense to lead from it. Take the rebuilt chord instead.
   for (int i = 0; i < 4; i++) previous_voicing[i] = current_chord_notes[i];
-  for (int i = 0; i < 12; i++) current_harp_notes[i] = calculate_note_harp(i, chord_context_slashed, chord_context_sharp);
+  for (int i = 0; i < 12; i++) current_harp_notes[i] = harp_string_note(i, chord_context_slashed, chord_context_sharp);
 
   auto remap = [](const uint8_t *from, const uint8_t *to, uint8_t n, uint16_t note, uint16_t &out) {
     for (uint8_t j = 0; j < n; j++) {
