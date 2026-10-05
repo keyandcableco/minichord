@@ -188,6 +188,9 @@ void apply_audio_parameter(int adress, int value) {
       case 214:
         palm_mute_release=max(value,1);
         break;
+      case 216:
+        harp_pluck_on_lift=value;
+        break;
       case 49:
         string_filter_base_freq=value;
         break;
@@ -873,6 +876,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 48: lo=0; hi=10; return true;
       case 213: lo=0; hi=12; return true;
       case 214: lo=1; hi=250; return true;
+      case 216: lo=0; hi=1; return true;
       case 49: lo=0; hi=2000; return true;
       case 50: lo=0; hi=300; return true;
       case 51: lo=70; hi=500; return true;
