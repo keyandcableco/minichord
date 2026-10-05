@@ -177,13 +177,19 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 47:
         for (int i=0;i<12;i++){
-          string_enveloppe_array[i]->release(value);
+          string_enveloppe_array[i]->release(value); string_release=value;
         }
         break;
       case 48:
         for (int i=0;i<12;i++){
           string_enveloppe_array[i]->releaseNoteOn(value);
         }
+        break;
+      case 213:
+        palm_mute_pads=value ? max(value,2) : 0;
+        break;
+      case 214:
+        palm_mute_release=value ? value : 15;
         break;
       case 49:
         string_filter_base_freq=value;

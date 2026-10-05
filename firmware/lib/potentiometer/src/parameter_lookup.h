@@ -57,6 +57,8 @@ static const ParameterInfo parameter_lookup[] = {
     { 46, 0, 0, 1 }, // sustain
     { 47, 0, 0, 5000 }, // release
     { 48, 1, 0, 10 }, // retrigger release
+    { 213, 1, 0, 12 }, // palm mute
+    { 214, 0, 1, 250 }, // palm mute release
     { 49, 0, 0, 2000 }, // base frequency
     { 50, 0, 0, 3 }, // keytrack value
     { 51, 0, 1, 5 }, // resonance
