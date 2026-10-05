@@ -199,7 +199,18 @@ bool chromatic_harp_mode = false; // to switch the harp to chromatic mode
 uint8_t palm_mute_pads = 0;
 uint16_t palm_mute_release = 15;   // ms, how fast a palm stops the strings
 uint16_t string_release = 1000;    // the strings' own release, put back after a palm mute
-const uint8_t palm_landing_ms = 30;  // pads arriving this soon after a palm mute are part of the palm
+// Pads arriving this soon after a palm mute are part of the palm. A slap's
+// last finger or the heel of the hand can trail the rest by a hundred ms or
+// more; plucking on touch the window is kept short so a strum can follow the
+// mute at once, but plucking on lift a straggler would be plucked as the palm
+// lifts, and a touch there sounds nothing anyway.
+const uint8_t palm_landing_ms = 30;
+const uint8_t palm_landing_lift_ms = 150;
+const uint8_t palm_spread_ms = 40;   // plucking on lift, a palm's pads land within this of one another
+// Harp pluck on lift: a touch stops the string and the lift plucks it, as a
+// harpist's finger does. 0 plucks on touch, as before.
+bool harp_pluck_on_lift = false;
+bool string_plucked[12] = {false, false, false, false, false, false, false, false, false, false, false, false};   // plucked on lift, not yet ringing out
 bool string_palmed[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
 //>>SYSEX PARAMETERS<<
 // SYSEX midi message are used to control up to 256 synthesis parameters.
@@ -1315,11 +1326,37 @@ void harp_midi_on(uint8_t i) {
   harp_started_port[i] = harp_port;
 }
 
-// A string is stopped with the palm mute release rather than its own, which is
-// put back for the next pluck. noteOff on a string already in its release
-// restarts it from where it is, so a ringing string is cut short as well as a
-// held one.
+// A string sounds: tuned to the note its pad plays now, its envelopes started,
+// its midi note sent.
+void pluck_string(uint8_t i) {
+  set_harp_voice_frequency(i, current_harp_notes[i]);
+  AudioNoInterrupts();
+  envelope_string_vibrato_lfo.noteOn();
+  envelope_string_vibrato_dc.noteOn();
+  string_enveloppe_filter_array[i]->noteOn();
+  string_enveloppe_array[i]->noteOn();
+  string_transient_envelope_array[i]->noteOn();
+  AudioInterrupts();
+  harp_midi_on(i);
+}
+
+// A string is let go to ring out through its release. With note-off on lift
+// its midi note ends here; otherwise it ends with the sound.
+void release_string(uint8_t i) {
+  AudioNoInterrupts();
+  string_enveloppe_array[i]->noteOff();
+  string_transient_envelope_array[i]->noteOff();
+  string_enveloppe_filter_array[i]->noteOff();
+  AudioInterrupts();
+  if (harp_note_off_on_lift) harp_midi_off(i);
+}
+
+// A string is stopped, by a palm or a finger, with the palm mute release
+// rather than its own, which is put back for the next pluck. noteOff on a
+// string already in its release restarts it from where it is, so a ringing
+// string is cut short as well as a held one.
 void damp_string(uint8_t i) {
+  string_plucked[i] = false;
   AudioNoInterrupts();
   if (string_enveloppe_array[i]->isActive()) {
     string_enveloppe_array[i]->release(palm_mute_release);
@@ -1336,6 +1373,15 @@ void palm_mute() {
 
 void handle_harp() {
   harp_sensor.update(harp_array);
+  // When each pad last landed, for the palm when plucking on lift.
+  static uint32_t pad_landed[12] = {0};
+  static bool pad_was_down[12] = {false};
+  uint32_t now = millis();
+  for (int i = 0; i < 12; i++) {
+    bool down = harp_array[i].read_value();
+    if (down && !pad_was_down[i]) pad_landed[i] = now;
+    pad_was_down[i] = down;
+  }
   // A fingertip strum holds two or three pads at a time and moves on; a hand
   // laid flat holds many at once. The pads the hand landed on before the count
   // was reached have already sounded, and are stopped with the rest, which is
@@ -1347,19 +1393,29 @@ void handle_harp() {
   // strumming beside a held palm never mutes again.
   if (palm_mute_pads) {
     static bool palm_down = false;
-    static elapsedMillis since_palm;
+    static uint32_t palm_landed = 0;
+    // Plucking on lift, fingers placed on strings are a chord waiting to be
+    // played, and a chord of four placed pads looks like a palm by count alone.
+    // A palm lands all at once and placed fingers one by one, so only pads that
+    // landed together count, and only they are silenced: strings placed before
+    // the palm keep their pluck.
     uint8_t held = 0;
-    for (int i = 0; i < 12; i++) held += harp_array[i].read_value();
+    for (int i = 0; i < 12; i++) {
+      if (!harp_array[i].read_value()) continue;
+      if (!harp_pluck_on_lift || now - pad_landed[i] <= palm_spread_ms) held++;
+    }
     if (!palm_down && held >= palm_mute_pads) {
       palm_mute();
       palm_down = true;
-      since_palm = 0;
+      palm_landed = now;
     }
     if (palm_down) {
       bool palm_held = false;
       for (int i = 0; i < 12; i++) {
         if (!harp_array[i].read_value()) continue;
-        if (since_palm < palm_landing_ms) string_palmed[i] = true;
+        bool landed_with_palm = !harp_pluck_on_lift || pad_landed[i] + palm_spread_ms >= palm_landed;
+        uint8_t landing = harp_pluck_on_lift ? palm_landing_lift_ms : palm_landing_ms;
+        if (now - palm_landed < landing && landed_with_palm) string_palmed[i] = true;
         if (string_palmed[i]) palm_held = true;
       }
       if (!palm_held) palm_down = false;
@@ -1371,23 +1427,29 @@ void handle_harp() {
       // landed under the palm: silent until lifted
     } else if (value == 1 && string_palmed[i]) {
       string_palmed[i] = false;   // the palm already stopped it
+    } else if (harp_pluck_on_lift) {
+      // As on a harp, the finger on a string stops it and the string sounds as
+      // the finger leaves it. Nothing sounds while a pad is held, so strings can
+      // be placed ahead of time, under a chord yet to come, and lifted together
+      // or one by one.
+      if (value == 2) {
+        damp_string(i);
+      } else if (value == 1) {
+        pluck_string(i);
+        string_plucked[i] = true;
+      }
     } else if (value == 2) {
-      set_harp_voice_frequency(i, current_harp_notes[i]);
-      AudioNoInterrupts();
-      envelope_string_vibrato_lfo.noteOn();
-      envelope_string_vibrato_dc.noteOn();
-      string_enveloppe_filter_array[i]->noteOn();
-      string_enveloppe_array[i]->noteOn();
-      string_transient_envelope_array[i]->noteOn();
-      AudioInterrupts();
-      harp_midi_on(i);
+      string_plucked[i] = false;
+      pluck_string(i);
     } else if (value == 1) {
-      AudioNoInterrupts();
-      string_enveloppe_array[i]->noteOff();
-      string_transient_envelope_array[i]->noteOff();
-      string_enveloppe_filter_array[i]->noteOff();
-      AudioInterrupts();
-      if (harp_note_off_on_lift) harp_midi_off(i);
+      release_string(i);
+    }
+    // A string plucked on lift has no finger on it to hold it at sustain: once
+    // it has come through its decay it rings out through its release, as a
+    // quick touch does when plucking on touch.
+    if (string_plucked[i] && string_enveloppe_array[i]->isSustain()) {
+      string_plucked[i] = false;
+      release_string(i);
     }
     // A string let go of keeps its midi note until its release has run out, so
     // the far end hears the ring the strings here make.
