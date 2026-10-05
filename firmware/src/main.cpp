@@ -12,7 +12,7 @@
 #include <potentiometer.h>
 
 //>>SOFWTARE VERSION 
-int version_ID=9; //to be read 00.03, stored at adress 7 in memory
+int version_ID=10; //to be read 00.03, stored at adress 7 in memory
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -371,6 +371,14 @@ uint8_t harp_channel=1;
 uint8_t harp_attack_velocity=127; 
 uint8_t harp_release_velocity=20;
 uint8_t harp_started_notes[12]={0,0,0,0,0,0,0,0,0,0,0,0};    
+// Where each harp note went, so its note-off follows it there even if the
+// channel or port changes while it rings.
+uint8_t harp_started_channel[12]={0,0,0,0,0,0,0,0,0,0,0,0};
+uint8_t harp_started_port[12]={0,0,0,0,0,0,0,0,0,0,0,0};
+// A string's midi note lasts as long as the string sounds, so a strum arrives
+// at the far end as ringing strings, not a row of finger-length blips. 1 ends
+// it when the finger lifts, as before.
+bool harp_note_off_on_lift = false;
 uint8_t midi_base_note=48; // for C3
 uint8_t midi_base_note_transposed=midi_base_note; //to handle note transposition
 uint midi_buffer_delay=300; //in microseconds, helps compatibility with some hardware devices
@@ -1275,6 +1283,29 @@ void handle_chords_button() {
   }
 }
 
+void harp_midi_off(uint8_t i) {
+  if (harp_started_notes[i] == 0) return;
+  queue_midi(false, harp_started_notes[i], harp_release_velocity, harp_started_channel[i], harp_started_port[i]);
+  harp_started_notes[i] = 0;
+}
+
+// A string still sounding the note another is about to start, on the same
+// channel, is ended first. Its own note-off would otherwise arrive later and cut
+// the new note short at the far end.
+void harp_midi_on(uint8_t i) {
+  harp_midi_off(i);
+  uint8_t note = midi_base_note_transposed + current_harp_notes[i];
+  for (uint8_t j = 0; j < 12; j++) {
+    if (j != i && harp_started_notes[j] == note && harp_started_channel[j] == harp_channel && harp_started_port[j] == harp_port) {
+      harp_midi_off(j);
+    }
+  }
+  queue_midi(true, note, harp_attack_velocity, harp_channel, harp_port);
+  harp_started_notes[i] = note;
+  harp_started_channel[i] = harp_channel;
+  harp_started_port[i] = harp_port;
+}
+
 void handle_harp() {
   harp_sensor.update(harp_array);
   for (int i = 0; i < 12; i++) {
@@ -1288,21 +1319,19 @@ void handle_harp() {
       string_enveloppe_array[i]->noteOn();
       string_transient_envelope_array[i]->noteOn();
       AudioInterrupts();
-      if (harp_started_notes[i] != 0) {
-        queue_midi(false, harp_started_notes[i], harp_release_velocity, harp_channel, harp_port);
-      }
-      queue_midi(true, midi_base_note_transposed + current_harp_notes[i], harp_attack_velocity, harp_channel, harp_port);
-      harp_started_notes[i] = midi_base_note_transposed + current_harp_notes[i];
+      harp_midi_on(i);
     } else if (value == 1) {
       AudioNoInterrupts();
       string_enveloppe_array[i]->noteOff();
       string_transient_envelope_array[i]->noteOff();
       string_enveloppe_filter_array[i]->noteOff();
       AudioInterrupts();
-      if (harp_started_notes[i] != 0) {
-        queue_midi(false, harp_started_notes[i], harp_release_velocity, harp_channel, harp_port);
-        harp_started_notes[i] = 0;
-      }
+      if (harp_note_off_on_lift) harp_midi_off(i);
+    }
+    // A string let go of keeps its midi note until its release has run out, so
+    // the far end hears the ring the strings here make.
+    if (harp_started_notes[i] != 0 && !harp_array[i].read_value() && !string_enveloppe_array[i]->isActive()) {
+      harp_midi_off(i);
     }
   }
 }
@@ -1382,10 +1411,10 @@ void update_harp_notes() {
   if (button_pushed) {
     for (int i = 0; i < 12; i++) {
       current_harp_notes[i] = calculate_note_harp(i, slash_chord, sharp_active);
-      if (change_held_strings && harp_started_notes[i] != 0) {
-        queue_midi(false, harp_started_notes[i], harp_release_velocity, harp_channel, harp_port);
-        queue_midi(true, midi_base_note_transposed + current_harp_notes[i], harp_attack_velocity, harp_channel, harp_port);
-        harp_started_notes[i] = midi_base_note_transposed + current_harp_notes[i];
+      // Only strings still held: one ringing out after the finger has lifted
+      // keeps the note it was struck on.
+      if (change_held_strings && harp_started_notes[i] != 0 && harp_array[i].read_value()) {
+        harp_midi_on(i);
         if (string_enveloppe_array[i]->isSustain()) {
           set_harp_voice_frequency(i, current_harp_notes[i]);
         }
