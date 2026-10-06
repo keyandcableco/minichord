@@ -15,7 +15,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=23; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift)
+int version_ID=24; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -1223,6 +1223,69 @@ void set_led_color(float h, float s, float v) {
 // have everything put back exactly, including anything it forgot or couldn't reach. It is the live
 // parameters only: nothing is written to a preset, so a saved bank is never touched. A second push
 // while one is held is ignored, so a remote that pushes twice can't lose the original.
+// ---------- USB audio (address 244), a setting of the instrument, not of a preset ----------
+// The minichord sends its sound to the phone or computer it's plugged into (the recording tap,
+// audio_definition.h USB_out). The Teensy's USB type that gives it that also offers the host a USB
+// speaker, which nothing ever played: a phone sends all its sound there and goes quiet. Now:
+//   0  as it always was: the speaker offered, what's sent to it not played
+//   1  play along: what's sent to it played through the minichord, beside the instrument
+//   2  no speaker offered, so the host keeps its own sound
+// The host reads what a device offers once, when it connects, so the choice is kept in the Teensy's
+// EEPROM (not in the presets, whose every address a preset load replaces) and read before USB starts
+// (startup_middle_hook); changing to or from 2 saves it and restarts the minichord, once the
+// settings have stopped arriving for a moment, so a whole backup sent from an editor isn't cut off.
+// The descriptors for both arrangements are in the core's usb_desc.c, as scripts/usb_audio_choice.py
+// builds it.
+const int usb_audio_adress = 244;
+const int usb_audio_eeprom = 0;                  // EEPROM byte; erased (0xFF) reads as 0, stock
+const uint32_t usb_audio_restart_ms = 1500;      // quiet before the restart
+uint8_t usb_audio_mode = 0;                      // as it works now
+uint8_t usb_audio_booted = 0;                    // as the host was told when it connected
+bool usb_audio_restart_pending = false;
+elapsedMillis usb_audio_since;
+extern "C" uint8_t eeprom_read_byte(const uint8_t *addr);
+extern "C" void eeprom_write_byte(uint8_t *addr, uint8_t value);
+extern "C" void usb_desc_pick(int speaker);      // the core's usb_desc.c, as usb_audio_choice.py builds it
+static uint8_t usb_audio_stored() { uint8_t v = eeprom_read_byte((const uint8_t *)usb_audio_eeprom); return v <= 2 ? v : 0; }
+static bool usb_audio_speaker(uint8_t mode) { return mode != 2; }
+// before USB starts: the host is told of a speaker or not, as last chosen
+extern "C" void startup_middle_hook(void) {
+  usb_audio_booted = usb_audio_mode = usb_audio_stored();
+  usb_desc_pick(usb_audio_speaker(usb_audio_booted));
+}
+// the host's sound through the minichord only when playing along, at the host's volume where the host
+// sets the minichord's (most computers, some phones), and as it comes where it never does
+void usb_audio_gain() {
+#ifdef AUDIO_INTERFACE
+  static float last = -1;
+  float v = usb_audio_mode != 1 ? 0.0f : (AudioInputUSB::features.change ? USB_in.volume() : 1.0f);
+  if (v == last) return;
+  last = v;
+  DAC_l_mixer.gain(1, v);
+  DAC_r_mixer.gain(1, v);
+#endif
+}
+// a value written to 244 (by an editor or a page): kept, and a restart scheduled if the host must be told
+void usb_audio_request(int value) {
+  uint8_t mode = constrain(value, 0, 2);
+  current_sysex_parameters[usb_audio_adress] = mode;
+  if (mode == usb_audio_mode && !usb_audio_restart_pending) return;
+  usb_audio_mode = mode;
+  if (usb_audio_stored() != mode) eeprom_write_byte((uint8_t *)usb_audio_eeprom, mode);
+  usb_audio_restart_pending = usb_audio_speaker(mode) != usb_audio_speaker(usb_audio_booted);
+  usb_audio_since = 0;
+  usb_audio_gain();
+}
+// in the loop: the restart, once nothing's been sent for a moment
+void usb_audio_update() {
+  usb_audio_gain();
+  if (!usb_audio_restart_pending || usb_audio_since < usb_audio_restart_ms) return;
+  Serial.println("USB audio changed: restarting so the host sees it");
+  digitalWrite(_MUTE_PIN, LOW);                  // no click on the way down
+  delay(20);
+  SCB_AIRCR = 0x05FA0004;                        // a system reset: the program starts again, USB with it
+}
+
 int16_t pushed_sysex_parameters[parameter_size];
 bool sysex_pushed = false;
 void apply_audio_parameter(int adress, int value);      // defined in the generated sysex_handler.h, included below
@@ -1230,7 +1293,7 @@ void pop_sysex_parameters() {
   if (!sysex_pushed) return;
   sysex_pushed = false;
   for (int i = 0; i < parameter_size; i++) {
-    if (i == 7) continue;                                  // the firmware version isn't a parameter
+    if (i == 7 || i == usb_audio_adress) continue;        // the firmware version isn't a parameter, and USB audio is the instrument's
     if (current_sysex_parameters[i] == pushed_sysex_parameters[i]) continue;
     current_sysex_parameters[i] = pushed_sysex_parameters[i];
     apply_audio_parameter(i, pushed_sysex_parameters[i]);
@@ -1359,6 +1422,7 @@ void processMIDI(void) {
           current_sysex_parameters[adress] = value;
           apply_audio_parameter(adress, value);
         }
+        usb_audio_since = 0;                           // a restart waits till the settings stop coming
       }
     }
   }
@@ -3088,6 +3152,7 @@ void load_config(int bank_number) {
     }
     deserialize(data_string, current_sysex_parameters);
     apply_preset_version(bank_number);
+    current_sysex_parameters[usb_audio_adress] = usb_audio_mode;   // the instrument's, whatever the preset holds
     Serial.print("Loaded preset: ");
     Serial.println(entry.name());
     entry.close();
@@ -4195,6 +4260,7 @@ void apply_temperament(uint8_t t) {
 }
 
 void loop() {
+  usb_audio_update();
   // Process incoming MIDI messages
   if (usbMIDI.read()) {
     processMIDI();

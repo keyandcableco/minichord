@@ -15,6 +15,7 @@ struct ParameterInfo {
 static const ParameterInfo parameter_lookup[] = {
     { 20, 0, 0, 360 }, // bank color
     { 32, 0, 0, 1 }, // led attenuation
+    { 244, 1, 0, 2 }, // usb audio
     { 35, 1, 0, 20 }, // chord key signature
     { 31, 1, 0, 1 }, // sharp function
     { 30, 1, 0, 12 }, // transpose
