@@ -410,6 +410,12 @@ AudioMixer4              stereo_r_mixer;
 AudioOutputI2S           DAC_out;
 #ifdef AUDIO_INTERFACE
 AudioOutputUSB           USB_out;
+// What the host plays to the minichord, into the speaker and headphones when the usb audio setting
+// (244) is 1, play along; silent otherwise, as it always was (main.cpp usb_audio_gain). Mixed in
+// after the recording tap, so the host never hears itself back.
+AudioInputUSB            USB_in;
+AudioMixer4              DAC_l_mixer;
+AudioMixer4              DAC_r_mixer;
 #endif
 
 AudioConnection          patchCord2000(string_filter_mixer, 0, string_multiplier, 0);
@@ -438,12 +444,21 @@ AudioConnection          patchCord2020(reverb_mixer, 0, main_reverb, 0);
 AudioConnection          patchCord2021(main_reverb, 0, stereo_r_mixer, 2);
 AudioConnection          patchCord2022(main_reverb, 1, stereo_l_mixer, 2);
 
+#ifndef AUDIO_INTERFACE
 AudioConnection          patchCord2023(stereo_l_mixer, 0, DAC_out, 1);
 AudioConnection          patchCord2024(stereo_r_mixer, 0, DAC_out, 0);
+#endif
 
 // USB audio recording tap; absent when the USB type has no audio interfaces.
-// The headphone/speaker path (patchCord2023/2024 into DAC_out) is unaffected.
 #ifdef AUDIO_INTERFACE
 AudioConnection          patchCord2025(stereo_l_mixer, 0, USB_out, 1);
 AudioConnection          patchCord2026(stereo_r_mixer, 0, USB_out, 0);
+// the headphone/speaker path: the minichord, and the host's sound beside it, each USB channel to the
+// DAC channel its recording channel comes from (0 to 0, 1 to 1)
+AudioConnection          patchCord2023(stereo_l_mixer, 0, DAC_l_mixer, 0);
+AudioConnection          patchCord2024(stereo_r_mixer, 0, DAC_r_mixer, 0);
+AudioConnection          patchCord2027(USB_in, 1, DAC_l_mixer, 1);
+AudioConnection          patchCord2028(USB_in, 0, DAC_r_mixer, 1);
+AudioConnection          patchCord2029(DAC_l_mixer, 0, DAC_out, 1);
+AudioConnection          patchCord2030(DAC_r_mixer, 0, DAC_out, 0);
 #endif
