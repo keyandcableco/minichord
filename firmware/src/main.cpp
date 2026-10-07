@@ -32,6 +32,9 @@ LittleFS_Program myfs; // to save the settings
 float color_led_blink_val = 1.0;
 bool led_blinking_flag = false;
 float led_attenuation = 0.0; 
+
+
+
 //>>CHORD DEFINITION<<
 //for each chord, we first have the 4 notes of the chord, then decoration that might be used in specific modes
 uint8_t major[7] = {0, 4, 7, 12, 2, 5, 9};  // After the four notes of the chord (fundamental, third, fifth of seven, and octave of fifth, the next notes are the second fourth and sixth)
@@ -44,6 +47,38 @@ uint8_t min_seventh[7] = {0, 3, 10, 7, 1, 5, 8};
 uint8_t aug[7] = {0, 4, 8, 12, 2, 5, 9};
 uint8_t dim[7] = {0, 3, 6, 12, 2, 5, 9};
 uint8_t full_dim[7] = {0, 3, 6, 9, 2, 5, 12};
+//now the chords used for the alternate layout
+uint8_t sus_fourth[7]   = {0, 5, 7, 12, 2, 9, 10};  // sus4
+uint8_t sus_second[7]   = {0, 2, 7, 12, 5, 9, 4};   // sus2
+uint8_t seventh_sus[7]  = {0, 5, 10, 7, 2, 9, 4};   // 7sus4
+uint8_t major_ninth[7]  = {0, 4, 11, 2, 7, 5, 9};   // maj9, no fifth
+uint8_t minor_ninth[7]  = {0, 3, 10, 2, 7, 5, 8};   // min9, no fifth
+uint8_t added_ninth[7]  = {0, 4, 7, 2, 5, 9, 11};   // add9
+uint8_t six_nine[7]     = {0, 4, 9, 2, 7, 5, 11};   // 6/9
+uint8_t half_dim[7]     = {0, 3, 6, 10, 2, 5, 8};   // m7b5
+
+uint8_t alt_chord_layout = 0;   // 0 = standard chords, 1 = the assignable layout
+
+
+// Every chord the instrument can make, in one list, so a button combination can
+// be pointed at any of them rather than at a fixed table.
+uint8_t (*chord_catalogue[18])[7] = {
+  &major, &minor, &seventh, &maj_seventh, &min_seventh, &dim, &aug,
+  &maj_sixth, &min_sixth, &full_dim, &half_dim,
+  &sus_fourth, &sus_second, &seventh_sus,
+  &major_ninth, &minor_ninth, &added_ninth, &six_nine
+};
+const uint8_t chord_catalogue_size = 18;
+
+// One parameter per button combination, so a layout is part of the preset.
+const uint8_t alt_slot_adress[7] = {202, 203, 204, 205, 206, 207, 208};
+
+// What each slot plays when its parameter is 0. That matters for compatibility:
+// a preset saved before these addresses existed holds 0 in all of them, and
+// should still give the suspended and extended set rather than seven majors.
+const uint8_t alt_slot_default[7] = {11, 12, 13, 14, 15, 16, 17};
+
+uint8_t (*alt_chord_for(uint8_t slot))[7];
 uint8_t key_signature_selection = 0; // 0=C, 1=G, 2=D, 3=A, 4=E, 5=B, 6=F, 7=Bb, 8=Eb, 9=Ab, 10=Db, 11=Gb
 enum KeySig { // Enums for KeySigs
   KEY_SIG_C, KEY_SIG_G, KEY_SIG_D, KEY_SIG_A, KEY_SIG_E, KEY_SIG_B,
@@ -163,6 +198,11 @@ bool continuous_chord = false; // wether the chord is held continuously. Control
 bool rythm_mode = false;
 bool barry_harris_mode = false;
 IntervalTimer note_timer[4]; // timers for delayed chord enveloppe
+// Whether each chord voice has been released since its last note on. A release
+// has to reach a voice in whatever stage it is in, not only once it has
+// settled into sustain, and remembering that it was sent lets the loop, which
+// runs the check every pass, send it once.
+volatile bool chord_voice_released[4] = {true, true, true, true};
 bool inhibit_button=false;
 
 //>>SWITCHING LOGIC PARAMETERS<<
@@ -502,12 +542,13 @@ void control_command(uint8_t command, uint8_t parameter) {
   switch (command) {
   case 0: // SIGNAL TO SEND BACK ALL DATA
     Serial.println("Reporting all data");
-    int8_t midi_data_array[parameter_size * 2];
+    uint8_t midi_data_array[parameter_size * 2];
     for (int i = 0; i < parameter_size; i++) {
-      midi_data_array[2 * i] = current_sysex_parameters[i] % 128;
-      midi_data_array[2 * i + 1] = current_sysex_parameters[i] / 128;
+      int16_t parameter_value = constrain(current_sysex_parameters[i], 0, 16383); // a sysex byte only carries 7 bits
+      midi_data_array[2 * i] = parameter_value % 128;
+      midi_data_array[2 * i + 1] = parameter_value / 128;
     }
-    usbMIDI.sendSysEx(parameter_size * 2, (const uint8_t *)&midi_data_array,0);
+    usbMIDI.sendSysEx(parameter_size * 2, midi_data_array,0);
     break;
   case 1: // SIGNAL TO WIPE MEMORY
     Serial.println("Wiping memory");
@@ -548,19 +589,26 @@ void processMIDI(void) {
   byte type;
   type = usbMIDI.getType();
   if (type == usbMIDI.SystemExclusive && usbMIDI.getSysExArrayLength() == 6) {
-    sysex_controler_connected=true; //we can say for sure a controller is connected
     const byte *data = usbMIDI.getSysExArray();
-    int adress = data[1] + 128 * data[2];
-    if (adress == 0) { // it is a control command
-      control_command(data[3], data[4]);
-    } else {
-      Serial.print("Received instruction on adress:");
-      Serial.print(adress);
-      int value = data[3] + 128 * data[4];
-      Serial.print(" with value:");
-      Serial.println(value);
-      current_sysex_parameters[adress] = value;
-      apply_audio_parameter(adress, value);
+    // Universal system exclusive messages (identity request, GM on/off, master volume...) start
+    // with 0x7E or 0x7F and are six bytes long too. Hosts and DAWs send them unprompted, so they
+    // must not be read as a parameter write.
+    if (data[1] != 0x7E && data[1] != 0x7F) {
+      int adress = data[1] + 128 * data[2];
+      if (adress < parameter_size) { // an adress can reach 16383, the parameter array holds 256
+        sysex_controler_connected=true; //the message was meant for us, so a controller is connected
+        if (adress == 0) { // it is a control command
+          control_command(data[3], data[4]);
+        } else {
+          Serial.print("Received instruction on adress:");
+          Serial.print(adress);
+          int value = data[3] + 128 * data[4];
+          Serial.print(" with value:");
+          Serial.println(value);
+          current_sysex_parameters[adress] = value;
+          apply_audio_parameter(adress, value);
+        }
+      }
     }
   }
   if(type==usbMIDI.Start && rythm_mode){
@@ -608,6 +656,7 @@ void play_single_note(int i, IntervalTimer *timer) {
   chord_vibrato_dc_envelope_array[i]->noteOn();
   chord_envelope_array[i]->noteOn();
   chord_envelope_filter_array[i]->noteOn();
+  chord_voice_released[i] = false;
   // ISR context: queue only, never touch usbMIDI here.
   if(chord_started_notes[i]!=0){
     queue_midi(false, chord_started_notes[i],chord_release_velocity,chord_channel, chord_port);
@@ -621,6 +670,7 @@ void play_note_selected_duration(int i,int current_note){
   chord_vibrato_dc_envelope_array[i]->noteOn();
   chord_envelope_array[i]->noteOn();
   chord_envelope_filter_array[i]->noteOn();
+  chord_voice_released[i] = false;
   note_off_timing[i]=0;
   // ISR context: queue only, never touch usbMIDI here.
   if(chord_started_notes[i]!=0){
@@ -996,7 +1046,7 @@ void rythm_tick_function() {
   }
   // handling the led pattern
   uint8_t active_modulus = 1;
-  uint8_t possible_pattern[4] = {3, 2};
+  uint8_t possible_pattern[2] = {3, 2};
   for (uint8_t i = 0; i < sizeof(possible_pattern) / sizeof(uint8_t); i++) {
     if (rythm_loop_length % possible_pattern[i] == 0) {
       active_modulus = possible_pattern[i];
@@ -1125,6 +1175,7 @@ void load_config(int bank_number) {
     chord_vibrato_dc_envelope_array[i]->noteOff();
     chord_envelope_array[i]->noteOff();
     chord_envelope_filter_array[i]->noteOff();
+    chord_voice_released[i] = true;
   }
   trigger_chord = true; //to be ready to retrigger if needed
 
@@ -1151,7 +1202,9 @@ void load_config(int bank_number) {
   for (int i = 1; i < parameter_size; i++) {
     apply_audio_parameter(i, current_sysex_parameters[i]);
   }
-  control_command(0, 0); // tell itself to update the remote controller if present
+  if (sysex_controler_connected) {
+    control_command(0, 0); // push state to a connected remote controller
+  }
   chord_pot.force_update();
   harp_pot.force_update();
   mod_pot.force_update();
@@ -1307,11 +1360,29 @@ void handle_harp() {
   }
 }
 
+uint8_t (*alt_chord_for(uint8_t slot))[7] {
+  int16_t index = current_sysex_parameters[alt_slot_adress[slot]];
+  if (index <= 0 || index > chord_catalogue_size) index = alt_slot_default[slot];
+  else index -= 1;   // 1 selects the first catalogue entry, so 0 stays free for the default
+  return chord_catalogue[index];
+}
+
 void handle_chord_type(bool button_maj, bool button_min, bool button_seventh) {
   if (!(button_maj || button_min || button_seventh)) {
     current_line = -1;
     return;
   }
+  if (alt_chord_layout) {
+    if (button_maj && !button_min && !button_seventh)            current_chord = alt_chord_for(0);
+    else if (!button_maj && button_min && !button_seventh)       current_chord = alt_chord_for(1);
+    else if (!button_maj && !button_min && button_seventh)       current_chord = alt_chord_for(2);
+    else if (button_maj && !button_min && button_seventh)        current_chord = alt_chord_for(3);
+    else if (!button_maj && button_min && button_seventh)        current_chord = alt_chord_for(4);
+    else if (button_maj && button_min && !button_seventh)        current_chord = alt_chord_for(5);
+    else if (button_maj && button_min && button_seventh)         current_chord = alt_chord_for(6);
+    return;
+  }
+
   if (button_maj && !button_min && !button_seventh) {
     current_chord = barry_harris_mode ? &maj_sixth : &major;
   } else if (!button_maj && button_min && !button_seventh) {
@@ -1381,12 +1452,20 @@ void stop_chord_notes() {
   for (int i = 0; i < 4; i++) note_timer[i].end();
   AudioNoInterrupts();
   for (int i = 0; i < 4; i++) {
-    if (chord_envelope_array[i]->isSustain()) {
+    // Released in any stage, not only sustain: a chord let go during a long
+    // attack, hold or decay used to play that stage out before it started to
+    // release, so the release came seconds after the hand did. The sustain
+    // test stays as the safety net it always was: a voice caught in its
+    // retrigger ramp ignores a note off, and it is released once it settles.
+    noInterrupts();
+    if (chord_envelope_array[i]->isSustain() || (chord_envelope_array[i]->isActive() && !chord_voice_released[i])) {
       chord_vibrato_envelope_array[i]->noteOff();
       chord_vibrato_dc_envelope_array[i]->noteOff();
       chord_envelope_array[i]->noteOff();
       chord_envelope_filter_array[i]->noteOff();
+      chord_voice_released[i] = true;
     }
+    interrupts();
     // Sent regardless of the internal envelope: an external synth holds the note
     // until it receives the Note Off.
     if (chord_started_notes[i] != 0) {
@@ -1400,12 +1479,18 @@ void stop_chord_notes() {
 void handle_rhythm_mode() {
   for (int i = 0; i < 4; i++) {
     if (note_off_timing[i] > note_pushed_duration) {
-      if (chord_envelope_array[i]->isSustain()) {
+      // As in stop_chord_notes(). The rhythm timer starts notes from an
+      // interrupt, so the check and the flag are one step: a note starting in
+      // between would otherwise be marked released without ever being.
+      noInterrupts();
+      if (chord_envelope_array[i]->isSustain() || (chord_envelope_array[i]->isActive() && !chord_voice_released[i])) {
         chord_vibrato_envelope_array[i]->noteOff();
         chord_vibrato_dc_envelope_array[i]->noteOff();
         chord_envelope_array[i]->noteOff();
         chord_envelope_filter_array[i]->noteOff();
+        chord_voice_released[i] = true;
       }
+      interrupts();
       // See stop_chord_notes().
       if (chord_started_notes[i] != 0) {
         queue_midi(false, chord_started_notes[i], chord_release_velocity, chord_channel, chord_port);
@@ -1591,7 +1676,7 @@ void loop() {
     processMIDI();
   }
   // Check sysex controller connection
-  if (sysex_controler_connected && (USB1_PORTSC1, 7)) {
+  if (sysex_controler_connected && bitRead(USB1_PORTSC1, 7)) {
     sysex_controler_connected = false;
   }
 

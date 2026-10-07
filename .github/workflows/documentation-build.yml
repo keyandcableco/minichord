@@ -1,0 +1,80 @@
+name: Documentation build
+
+# Builds the documentation site on every push and pull request that touches
+# it, so a change that breaks the mkdocs build is visible on the pull request
+# itself rather than needing a reviewer to check out the branch and build it
+# by hand. Also keeps the committed documentation/site/ in sync with docs/
+# and firmware/minicontrol, the way running build_site.sh by hand would.
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'documentation/**'
+      - 'firmware/minicontrol/**'
+      - '.github/workflows/documentation-build.yml'
+  pull_request:
+    paths:
+      - 'documentation/**'
+      - 'firmware/minicontrol/**'
+      - '.github/workflows/documentation-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build the docs site
+    runs-on: ubuntu-latest
+    # Skip only the run this workflow's own auto-commit would trigger on
+    # itself — not a blanket [skip ci], which would also stop unrelated
+    # workflows (e.g. the Pages deploy) from running on the same push.
+    if: "!startsWith(github.event.head_commit.message, 'Rebuild documentation site')"
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          # The actual branch tip, not the ephemeral PR merge ref, so the
+          # rebuilt-site commit below can be pushed straight to it.
+          ref: ${{ github.head_ref || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: documentation
+        run: pip install -r requirements.txt
+
+      # Mirrors documentation/build_site.sh, minus the local venv activation.
+      - name: Build the site
+        working-directory: documentation
+        run: |
+          python3 -m mkdocs build
+          cp docs/index.html site/
+          cp docs/mk25.html site/
+          cp -R ../firmware/minicontrol site/
+
+      # Puts the repo back in the state build_site.sh would have left it in
+      # locally, so nobody has to run it by hand after editing the docs or
+      # the minicontrol page. The job `if:` above stops this specific commit
+      # from re-triggering this job — but it still triggers static.yml,
+      # which deploys documentation/site/ to GitHub Pages on every push.
+      - name: Commit the rebuilt site
+        if: success()
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Rebuild documentation site"
+          file_pattern: 'documentation/site'
+
+      # Handy for previewing a pull request's docs without building them locally.
+      - name: Keep the built site
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-site
+          path: documentation/site
+          if-no-files-found: warn
