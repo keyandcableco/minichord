@@ -522,7 +522,9 @@ bool string_palmed[12] = {false, false, false, false, false, false, false, false
 // island of the bottom zone: 24 positions. 2 is the arcade wheel, which plays
 // its twelve zones as they are and sends where a finger is round its ring.
 // The fretless plate is twelve zones in a line, so it is 0 too: it is made for
-// the harp ribbon, below, and plays twelve strings without it.
+// the harp ribbon, below, and plays twelve strings without it. 3 is the
+// fretless wrap, which adds an island of the bottom zone above the top one:
+// twelve strings as the stock strip, and a thirteenth place for the ribbon.
 uint8_t harp_plate = 0;
 uint8_t harp_touch_threshold = 0;     // 0 for the stock thresholds, see harp::set_thresholds()
 uint8_t harp_release_threshold = 0;
@@ -3682,8 +3684,15 @@ const float ribbon_string_hysteresis = 0.15;   // strings past halfway before th
 
 // How many strings the strip covers, bottom to top. Chord mode has only the
 // twelve it spreads the chord over.
+// The fretless wrap plate (3), like zipper 24 (1), has an island of the bottom
+// zone above the top one, so the ribbon has thirteen places: a whole octave in
+// chromatic mode.
+bool ribbon_wrapped() {
+  return harp_plate == 1 || harp_plate == 3;
+}
+
 uint8_t ribbon_strings() {
-  uint8_t n = ribbon_span ? ribbon_span : 12;
+  uint8_t n = ribbon_span ? ribbon_span : (ribbon_wrapped() ? 13 : 12);
   if (n < 2) n = 2;
   if (!chromatic_harp_mode && scalar_harp_selection == 0 && n > 12) n = 12;
   return n;
@@ -3694,7 +3703,7 @@ uint8_t ribbon_strings() {
 // that much of each string's width plays its note, and the rest of the way
 // between two strings the pitch slides at the rate it makes up.
 float ribbon_string_at(float place) {
-  float s = place * (ribbon_strings() - 1) / 11.0f;
+  float s = place * (ribbon_strings() - 1) / (ribbon_wrapped() ? 12.0f : 11.0f);
   float last = ribbon_strings() - 1;
   if (s < 0) s = 0;
   if (s > last) s = last;
@@ -3801,14 +3810,36 @@ void handle_harp_ribbon() {
   if (!any_down && !any_touch) return;
   int16_t strength[12];
   harp_sensor.read_strength(strength);
-  // Zipper 24's top band touches the bottom zone's island along with the top
-  // zone; the ribbon ends at the top zone, so the island is left out.
-  if (harp_plate == 1 && zone_down[0] && zone_down[11] && !zone_down[1]) {
-    zone_down[0] = false;
-    strength[0] = 0;
+  // With the island above the top zone the line has a thirteenth place. The
+  // bottom zone is the island when it is touched with the top zone and not
+  // with its own upper neighbour. Touched alone it could be either end: it is
+  // the end a touch is already at, or failing that the end whose neighbour
+  // reads more, since a finger at one end leans a little on the zone beside it.
+  bool wrapped = ribbon_wrapped();
+  uint8_t line_length = wrapped ? 13 : 12;
+  bool line_down[13];
+  for (uint8_t k = 0; k < 12; k++) line_down[k] = zone_down[k];
+  line_down[12] = false;
+  if (wrapped && zone_down[0] && !zone_down[1]) {
+    bool island = zone_down[11] || strength[11] > strength[1];
+    if (!zone_down[11]) {
+      float nearest = 13;
+      for (uint8_t t = 0; t < harp_touch_max; t++) {
+        const ribbon_touch &touch = ribbon_touches[t];
+        if (!touch.active) continue;
+        float to_bottom = touch.centre, to_island = 12 - touch.centre;
+        if (min(to_bottom, to_island) >= nearest) continue;
+        nearest = min(to_bottom, to_island);
+        island = to_island < to_bottom;
+      }
+    }
+    if (island) {
+      line_down[0] = false;
+      line_down[12] = true;
+    }
   }
   harp_run runs[7];
-  uint8_t run_count = harp_find_runs(zone_down, 12, zone_down, strength, runs, 7);
+  uint8_t run_count = harp_find_runs(line_down, line_length, zone_down, strength, runs, 7);
 
   uint32_t now = millis();
   uint32_t now_us = micros();

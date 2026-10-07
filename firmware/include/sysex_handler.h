@@ -847,7 +847,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 20: lo=0; hi=360; return true;
       case 32: lo=0; hi=100; return true;
       case 244: lo=0; hi=2; return true;
-      case 243: lo=0; hi=2; return true;
+      case 243: lo=0; hi=3; return true;
       case 241: lo=0; hi=120; return true;
       case 242: lo=0; hi=119; return true;
       case 35: lo=0; hi=20; return true;
