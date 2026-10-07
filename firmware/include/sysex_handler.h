@@ -138,6 +138,18 @@ void apply_audio_parameter(int adress, int value) {
       case 116:
         harp_rank=value; for (int i=0;i<12;i++){ current_harp_notes[i]=calculate_note_harp(i,slash_chord,sharp_active); }
         break;
+      case 245:
+        harp_ribbon=value;
+        break;
+      case 246:
+        ribbon_span=value;
+        break;
+      case 247:
+        ribbon_snap=value;
+        break;
+      case 248:
+        ribbon_glide_ms=value;
+        break;
       case 40:
         for (int i=0;i<12;i++){
           harp_shuffling_selection=constrain(value,0,6); current_harp_notes[i]=calculate_note_harp(i,slash_chord,sharp_active);
@@ -875,6 +887,10 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 236: lo=0; hi=4095; return true;
       case 98: lo=0; hi=1; return true;
       case 116: lo=1; hi=3; return true;
+      case 245: lo=0; hi=1; return true;
+      case 246: lo=0; hi=24; return true;
+      case 247: lo=0; hi=100; return true;
+      case 248: lo=0; hi=250; return true;
       case 40: lo=0; hi=6; return true;
       case 99: lo=0; hi=4; return true;
       case 22: lo=0; hi=1; return true;

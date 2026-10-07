@@ -59,6 +59,10 @@ static const ParameterInfo parameter_lookup[] = {
     { 236, 0, 0, 4095 }, // custom scale
     { 98, 1, 0, 1 }, // chromatic mode
     { 116, 1, 1, 3 }, // harp rank
+    { 245, 1, 0, 1 }, // harp ribbon
+    { 246, 1, 0, 24 }, // ribbon span
+    { 247, 0, 0, 100 }, // ribbon snap
+    { 248, 0, 0, 250 }, // ribbon glide
     { 40, 1, 0, 6 }, // harp shuffling
     { 99, 1, 0, 4 }, // octave change
     { 22, 1, 0, 1 }, // change held strings
