@@ -9,6 +9,15 @@ void apply_audio_parameter(int adress, int value) {
       case 244:
         usb_audio_request(value);
         break;
+      case 243:
+        harp_plate=value;
+        break;
+      case 241:
+        harp_touch_threshold=value; harp_sensor.set_thresholds(harp_touch_threshold, harp_release_threshold);
+        break;
+      case 242:
+        harp_release_threshold=value; harp_sensor.set_thresholds(harp_touch_threshold, harp_release_threshold);
+        break;
       case 35:
         key_signature_selection=constrain(value,0,20);
         break;
@@ -131,6 +140,18 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 116:
         harp_rank=value; for (int i=0;i<12;i++){ current_harp_notes[i]=calculate_note_harp(i,slash_chord,sharp_active); }
+        break;
+      case 245:
+        harp_ribbon=value;
+        break;
+      case 246:
+        ribbon_span=value;
+        break;
+      case 247:
+        ribbon_snap=value;
+        break;
+      case 248:
+        ribbon_glide_ms=value;
         break;
       case 40:
         for (int i=0;i<12;i++){
@@ -826,6 +847,9 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 20: lo=0; hi=360; return true;
       case 32: lo=0; hi=100; return true;
       case 244: lo=0; hi=2; return true;
+      case 243: lo=0; hi=2; return true;
+      case 241: lo=0; hi=120; return true;
+      case 242: lo=0; hi=119; return true;
       case 35: lo=0; hi=20; return true;
       case 31: lo=0; hi=1; return true;
       case 30: lo=0; hi=12; return true;
@@ -867,6 +891,10 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 236: lo=0; hi=4095; return true;
       case 98: lo=0; hi=1; return true;
       case 116: lo=1; hi=3; return true;
+      case 245: lo=0; hi=1; return true;
+      case 246: lo=0; hi=24; return true;
+      case 247: lo=0; hi=100; return true;
+      case 248: lo=0; hi=250; return true;
       case 40: lo=0; hi=6; return true;
       case 99: lo=0; hi=4; return true;
       case 22: lo=0; hi=1; return true;
