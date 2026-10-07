@@ -15,7 +15,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=25; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon)
+int version_ID=26; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -681,6 +681,11 @@ static inline float bank_led_saturation() { return knob_layer ? 0.45 : 1.0; }
 // 40-119 are harp parameters
 // 120-219 are chord parameters
 // 220-235 are rythm patterns
+// 236-255 are the parameters added since, when 21-219 had filled up
+// What a knob or the double tap can be pointed at: any parameter from 21 on but the rythm patterns
+static inline bool is_target_adress(int16_t adress) {
+  return (adress >= 21 && adress <= 219) || (adress >= 236 && adress < (int16_t)parameter_size);
+}
 bool sysex_controler_connected=false; //bool to remember if there is a controller that is connected to avoid saving any change
 
 //>>AUDIO OBJECT ARRAYS<<
@@ -3183,7 +3188,7 @@ void save_config(int bank_number, bool default_save) {
     int16_t held_value[double_tap_pairs] = {0, 0, 0};
     for (uint8_t k = 0; k < double_tap_pairs; k++) {
       int16_t a = double_tap_engaged_adress[k];
-      if (double_tap_engaged && a >= 21 && a <= 219 && current_sysex_parameters[a] == double_tap_applied[k]) {
+      if (double_tap_engaged && is_target_adress(a) && current_sysex_parameters[a] == double_tap_applied[k]) {
         held_value[k] = current_sysex_parameters[a];
         current_sysex_parameters[a] = double_tap_saved[k];
       } else held_value[k] = -32768;              // untouched by the double tap, or changed since: saved as it is
@@ -3194,7 +3199,7 @@ void save_config(int bank_number, bool default_save) {
     dataFile.println(serialize(current_sysex_parameters, parameter_size));
     for (uint8_t k = 0; k < double_tap_pairs; k++) {
       int16_t a = double_tap_engaged_adress[k];
-      if (double_tap_engaged && a >= 21 && a <= 219 && held_value[k] != -32768) current_sysex_parameters[a] = held_value[k];
+      if (double_tap_engaged && is_target_adress(a) && held_value[k] != -32768) current_sysex_parameters[a] = held_value[k];
     }
   }
   Serial.print("Saved preset: ");
@@ -4732,7 +4737,7 @@ void toggle_double_tap_target() {
     for (uint8_t k = 0; k < double_tap_pairs; k++) {
       int16_t adress = current_sysex_parameters[double_tap_control_adress[k]];
       double_tap_engaged_adress[k] = -1;
-      if (adress < 21 || adress > 219) continue;   // 0 means this pair is unassigned
+      if (!is_target_adress(adress)) continue;     // 0 means this pair is unassigned
       if (is_double_tap_setting(adress)) continue;
       bool repeat = false;                          // two pairs on one parameter: the first one wins
       for (uint8_t j = 0; j < k; j++) if (double_tap_engaged_adress[j] == adress) repeat = true;

@@ -36,19 +36,19 @@ static const ParameterInfo parameter_lookup[] = {
     { 27, 0, 0, 1 }, // reverb low pass
     { 28, 0, 0, 1 }, // reverb diffusion
     { 29, 0, 0, 1 }, // pan
-    { 200, 0, 0, 219 }, // double tap control
+    { 200, 0, 0, 255 }, // double tap control
     { 201, 0, 0, 4095 }, // double tap value
-    { 209, 0, 0, 219 }, // double tap control 2
+    { 209, 0, 0, 255 }, // double tap control 2
     { 210, 0, 0, 4095 }, // double tap value 2
-    { 211, 0, 0, 219 }, // double tap control 3
+    { 211, 0, 0, 255 }, // double tap control 3
     { 212, 0, 0, 4095 }, // double tap value 3
-    { 10, 0, 21, 219 }, // chord alternate control
+    { 10, 0, 21, 255 }, // chord alternate control
     { 11, 0, 0, 100 }, // chord alternate range
-    { 12, 0, 21, 219 }, // harp alternate control
+    { 12, 0, 21, 255 }, // harp alternate control
     { 13, 0, 0, 100 }, // harp alternate percent range
-    { 14, 0, 21, 219 }, // mod main control
+    { 14, 0, 21, 255 }, // mod main control
     { 15, 0, 0, 100 }, // mod main percent range
-    { 16, 0, 21, 219 }, // mod alternate control
+    { 16, 0, 21, 255 }, // mod alternate control
     { 17, 0, 0, 100 }, // mod alternate percent range 
     { 117, 1, 0, 1 }, // knob layer
     { 4, 0, 0, 1024 }, // chord alternate value
