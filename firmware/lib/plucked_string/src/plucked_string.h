@@ -26,7 +26,8 @@ public:
   void blend(float b) { mix = constrain(b, 0.0f, 1.0f); }
   // how long a note takes to die away by 60 dB, whatever its pitch
   void decay(float seconds) { t60 = max(seconds, 0.02f); tuned_freq = -1; }
-  // 0-1: how much faster the highs die away than the lows
+  // 0-1: how much faster the highs die away than the lows. On the high notes it
+  // gives way, so their fundamental still rings as long as decay() says.
   void damping(float d) { damp = constrain(d, 0.0f, 1.0f) * 0.9f; tuned_freq = -1; }
   // 0-1: how bright the pluck is, from a muffled thump to a bright twang
   void pluck(float brightness);
@@ -42,7 +43,8 @@ private:
   float amp = 0;
   float mix = 0;
   float t60 = 3;
-  float damp = 0.27;
+  float damp = 0.27;       // the damping asked for
+  float loop_damp = 0.27;  // the damping this pitch takes (tune)
   float lowpass = 0;
   bool ringing = false;
   uint32_t seed = 22222;
