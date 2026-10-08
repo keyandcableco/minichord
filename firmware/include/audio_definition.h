@@ -39,6 +39,33 @@ AudioSynthWaveformModulated waveform_string_11; //xy=783.1000061035156,1351.9999
 // The plucked strings (see PLUCKED STRINGS below), declared between the oscillators they follow and
 // the envelopes they feed: the library updates objects in the order they are declared, and declared
 // after the envelopes they made every harp note a block (2.9 ms) late.
+// SAMPLED HARP: each harp voice's source, its oscillator or a sampled instrument (harp voice, 264;
+// set_harp_source), mixed ahead of the plucked string: declared between the oscillators and the
+// plucked strings, so neither path loses a block (see the plucked strings below)
+AudioSynthWavetable      harp_sample_1;
+AudioSynthWavetable      harp_sample_2;
+AudioSynthWavetable      harp_sample_3;
+AudioSynthWavetable      harp_sample_4;
+AudioSynthWavetable      harp_sample_5;
+AudioSynthWavetable      harp_sample_6;
+AudioSynthWavetable      harp_sample_7;
+AudioSynthWavetable      harp_sample_8;
+AudioSynthWavetable      harp_sample_9;
+AudioSynthWavetable      harp_sample_10;
+AudioSynthWavetable      harp_sample_11;
+AudioSynthWavetable      harp_sample_12;
+AudioMixer4              harp_source_mix_1;
+AudioMixer4              harp_source_mix_2;
+AudioMixer4              harp_source_mix_3;
+AudioMixer4              harp_source_mix_4;
+AudioMixer4              harp_source_mix_5;
+AudioMixer4              harp_source_mix_6;
+AudioMixer4              harp_source_mix_7;
+AudioMixer4              harp_source_mix_8;
+AudioMixer4              harp_source_mix_9;
+AudioMixer4              harp_source_mix_10;
+AudioMixer4              harp_source_mix_11;
+AudioMixer4              harp_source_mix_12;
 #include "plucked_string.h"
 AudioSynthPluckedString  pluck_string_1;
 AudioSynthPluckedString  pluck_string_2;
@@ -145,6 +172,16 @@ AudioEffectEnvelope      voice3_envelope_filter; //xy=1312.1000061035156,2197.99
 AudioEffectEnvelope      voice2_envelope_filter; //xy=1328.1000061035156,1924.9999923706055
 AudioEffectEnvelope      voice1_envelope_filter; //xy=1330.1000061035156,1693.9999923706055
 AudioMixer4              voice1_mixer;   //xy=1332.1000061035156,1536.9999923706055
+// SAMPLED CHORDS: each chord voice's source, its oscillators or a sampled instrument (chord voice,
+// 265; set_chord_source), mixed ahead of its filter, declared between the two for its block
+AudioSynthWavetable      chord_sample_1;
+AudioSynthWavetable      chord_sample_2;
+AudioSynthWavetable      chord_sample_3;
+AudioSynthWavetable      chord_sample_4;
+AudioMixer4              chord_source_mix_1;
+AudioMixer4              chord_source_mix_2;
+AudioMixer4              chord_source_mix_3;
+AudioMixer4              chord_source_mix_4;
 AudioMixer4              transient_full_mix; //xy=1502.1000061035156,244.99999237060547
 AudioMixer4              string_mix_3;   //xy=1498.1000061035156,1326.9999923706055
 AudioMixer4              string_mix_1;   //xy=1501.1000061035156,1014.9999923706055
@@ -351,13 +388,13 @@ AudioConnection          patchCord153(transient_mix_2, 0, transient_full_mix, 1)
 AudioConnection          patchCord154(transient_mix_1, 0, transient_full_mix, 0);
 AudioConnection          patchCord155(transient_mix_3, 0, transient_full_mix, 2);
 AudioConnection          patchCord156(voice4_envelope_filter, 0, voice4_filter, 1);
-AudioConnection          patchCord157(voice3_mixer, 0, voice3_filter, 0);
-AudioConnection          patchCord158(voice4_mixer, 0, voice4_filter, 0);
-AudioConnection          patchCord159(voice2_mixer, 0, voice2_filter, 0);
+AudioConnection          patchCord157(chord_source_mix_3, 0, voice3_filter, 0);
+AudioConnection          patchCord158(chord_source_mix_4, 0, voice4_filter, 0);
+AudioConnection          patchCord159(chord_source_mix_2, 0, voice2_filter, 0);
 AudioConnection          patchCord160(voice3_envelope_filter, 0, voice3_filter, 1);
 AudioConnection          patchCord161(voice2_envelope_filter, 0, voice2_filter, 1);
 AudioConnection          patchCord162(voice1_envelope_filter, 0, voice1_filter, 1);
-AudioConnection          patchCord163(voice1_mixer, 0, voice1_filter, 0);
+AudioConnection          patchCord163(chord_source_mix_1, 0, voice1_filter, 0);
 AudioConnection          patchCord164(transient_full_mix, 0, all_string_mix, 3);
 AudioConnection          patchCord165(string_mix_3, 0, all_string_mix, 2);
 AudioConnection          patchCord166(string_mix_1, 0, all_string_mix, 0);
@@ -426,40 +463,40 @@ AudioConnection          patchCord216(chords_main_filter, 2, chords_main_filter_
 // the same vibrato as the oscillators.
 // (declared up with the oscillators: see there)
 AudioConnection          pluckCord1a(string_vibrato_mixer, 0, pluck_string_1, 0);
-AudioConnection          pluckCord1b(waveform_string_1, 0, pluck_string_1, 1);
+AudioConnection          pluckCord1b(harp_source_mix_1, 0, pluck_string_1, 1);
 AudioConnection          pluckCord1c(pluck_string_1, 0, envelope_string_1, 0);
 AudioConnection          pluckCord2a(string_vibrato_mixer, 0, pluck_string_2, 0);
-AudioConnection          pluckCord2b(waveform_string_2, 0, pluck_string_2, 1);
+AudioConnection          pluckCord2b(harp_source_mix_2, 0, pluck_string_2, 1);
 AudioConnection          pluckCord2c(pluck_string_2, 0, envelope_string_2, 0);
 AudioConnection          pluckCord3a(string_vibrato_mixer, 0, pluck_string_3, 0);
-AudioConnection          pluckCord3b(waveform_string_3, 0, pluck_string_3, 1);
+AudioConnection          pluckCord3b(harp_source_mix_3, 0, pluck_string_3, 1);
 AudioConnection          pluckCord3c(pluck_string_3, 0, envelope_string_3, 0);
 AudioConnection          pluckCord4a(string_vibrato_mixer, 0, pluck_string_4, 0);
-AudioConnection          pluckCord4b(waveform_string_4, 0, pluck_string_4, 1);
+AudioConnection          pluckCord4b(harp_source_mix_4, 0, pluck_string_4, 1);
 AudioConnection          pluckCord4c(pluck_string_4, 0, envelope_string_4, 0);
 AudioConnection          pluckCord5a(string_vibrato_mixer, 0, pluck_string_5, 0);
-AudioConnection          pluckCord5b(waveform_string_5, 0, pluck_string_5, 1);
+AudioConnection          pluckCord5b(harp_source_mix_5, 0, pluck_string_5, 1);
 AudioConnection          pluckCord5c(pluck_string_5, 0, envelope_string_5, 0);
 AudioConnection          pluckCord6a(string_vibrato_mixer, 0, pluck_string_6, 0);
-AudioConnection          pluckCord6b(waveform_string_6, 0, pluck_string_6, 1);
+AudioConnection          pluckCord6b(harp_source_mix_6, 0, pluck_string_6, 1);
 AudioConnection          pluckCord6c(pluck_string_6, 0, envelope_string_6, 0);
 AudioConnection          pluckCord7a(string_vibrato_mixer, 0, pluck_string_7, 0);
-AudioConnection          pluckCord7b(waveform_string_7, 0, pluck_string_7, 1);
+AudioConnection          pluckCord7b(harp_source_mix_7, 0, pluck_string_7, 1);
 AudioConnection          pluckCord7c(pluck_string_7, 0, envelope_string_7, 0);
 AudioConnection          pluckCord8a(string_vibrato_mixer, 0, pluck_string_8, 0);
-AudioConnection          pluckCord8b(waveform_string_8, 0, pluck_string_8, 1);
+AudioConnection          pluckCord8b(harp_source_mix_8, 0, pluck_string_8, 1);
 AudioConnection          pluckCord8c(pluck_string_8, 0, envelope_string_8, 0);
 AudioConnection          pluckCord9a(string_vibrato_mixer, 0, pluck_string_9, 0);
-AudioConnection          pluckCord9b(waveform_string_9, 0, pluck_string_9, 1);
+AudioConnection          pluckCord9b(harp_source_mix_9, 0, pluck_string_9, 1);
 AudioConnection          pluckCord9c(pluck_string_9, 0, envelope_string_9, 0);
 AudioConnection          pluckCord10a(string_vibrato_mixer, 0, pluck_string_10, 0);
-AudioConnection          pluckCord10b(waveform_string_10, 0, pluck_string_10, 1);
+AudioConnection          pluckCord10b(harp_source_mix_10, 0, pluck_string_10, 1);
 AudioConnection          pluckCord10c(pluck_string_10, 0, envelope_string_10, 0);
 AudioConnection          pluckCord11a(string_vibrato_mixer, 0, pluck_string_11, 0);
-AudioConnection          pluckCord11b(waveform_string_11, 0, pluck_string_11, 1);
+AudioConnection          pluckCord11b(harp_source_mix_11, 0, pluck_string_11, 1);
 AudioConnection          pluckCord11c(pluck_string_11, 0, envelope_string_11, 0);
 AudioConnection          pluckCord12a(string_vibrato_mixer, 0, pluck_string_12, 0);
-AudioConnection          pluckCord12b(waveform_string_12, 0, pluck_string_12, 1);
+AudioConnection          pluckCord12b(harp_source_mix_12, 0, pluck_string_12, 1);
 AudioConnection          pluckCord12c(pluck_string_12, 0, envelope_string_12, 0);
 
 //DELAY LOOP GATES
@@ -719,3 +756,37 @@ AudioConnection          vocoderCord11(vocoder_out, 0, vocoder_string_return_r, 
 // the right side's delay loop through its gate, as the left's (gateCord1a, gateCord1b)
 AudioConnection          gateCord1a_r(delay_strings_r, 0, delay_strings_gate_r, 0);
 AudioConnection          gateCord1b_r(delay_strings_gate_r, 0, filter_delay_strings_r, 0);
+
+// the sampled voices (see SAMPLED HARP, SAMPLED CHORDS)
+AudioConnection          sampleCordH1a(waveform_string_1, 0, harp_source_mix_1, 0);
+AudioConnection          sampleCordH1b(harp_sample_1, 0, harp_source_mix_1, 1);
+AudioConnection          sampleCordH2a(waveform_string_2, 0, harp_source_mix_2, 0);
+AudioConnection          sampleCordH2b(harp_sample_2, 0, harp_source_mix_2, 1);
+AudioConnection          sampleCordH3a(waveform_string_3, 0, harp_source_mix_3, 0);
+AudioConnection          sampleCordH3b(harp_sample_3, 0, harp_source_mix_3, 1);
+AudioConnection          sampleCordH4a(waveform_string_4, 0, harp_source_mix_4, 0);
+AudioConnection          sampleCordH4b(harp_sample_4, 0, harp_source_mix_4, 1);
+AudioConnection          sampleCordH5a(waveform_string_5, 0, harp_source_mix_5, 0);
+AudioConnection          sampleCordH5b(harp_sample_5, 0, harp_source_mix_5, 1);
+AudioConnection          sampleCordH6a(waveform_string_6, 0, harp_source_mix_6, 0);
+AudioConnection          sampleCordH6b(harp_sample_6, 0, harp_source_mix_6, 1);
+AudioConnection          sampleCordH7a(waveform_string_7, 0, harp_source_mix_7, 0);
+AudioConnection          sampleCordH7b(harp_sample_7, 0, harp_source_mix_7, 1);
+AudioConnection          sampleCordH8a(waveform_string_8, 0, harp_source_mix_8, 0);
+AudioConnection          sampleCordH8b(harp_sample_8, 0, harp_source_mix_8, 1);
+AudioConnection          sampleCordH9a(waveform_string_9, 0, harp_source_mix_9, 0);
+AudioConnection          sampleCordH9b(harp_sample_9, 0, harp_source_mix_9, 1);
+AudioConnection          sampleCordH10a(waveform_string_10, 0, harp_source_mix_10, 0);
+AudioConnection          sampleCordH10b(harp_sample_10, 0, harp_source_mix_10, 1);
+AudioConnection          sampleCordH11a(waveform_string_11, 0, harp_source_mix_11, 0);
+AudioConnection          sampleCordH11b(harp_sample_11, 0, harp_source_mix_11, 1);
+AudioConnection          sampleCordH12a(waveform_string_12, 0, harp_source_mix_12, 0);
+AudioConnection          sampleCordH12b(harp_sample_12, 0, harp_source_mix_12, 1);
+AudioConnection          sampleCordC1a(voice1_mixer, 0, chord_source_mix_1, 0);
+AudioConnection          sampleCordC1b(chord_sample_1, 0, chord_source_mix_1, 1);
+AudioConnection          sampleCordC2a(voice2_mixer, 0, chord_source_mix_2, 0);
+AudioConnection          sampleCordC2b(chord_sample_2, 0, chord_source_mix_2, 1);
+AudioConnection          sampleCordC3a(voice3_mixer, 0, chord_source_mix_3, 0);
+AudioConnection          sampleCordC3b(chord_sample_3, 0, chord_source_mix_3, 1);
+AudioConnection          sampleCordC4a(voice4_mixer, 0, chord_source_mix_4, 0);
+AudioConnection          sampleCordC4b(chord_sample_4, 0, chord_source_mix_4, 1);

@@ -11,11 +11,12 @@
 #include <debouncer.h>
 #include <harp.h>
 #include <potentiometer.h>
+#include "minichord_samples.h"
 
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=35; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263)
+int version_ID=36; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -711,6 +712,10 @@ bool sysex_controler_connected=false; //bool to remember if there is a controlle
 
 //>>AUDIO OBJECT ARRAYS<<
 // for the strings
+AudioSynthWavetable *harp_sample_array[12] = {&harp_sample_1, &harp_sample_2, &harp_sample_3, &harp_sample_4, &harp_sample_5, &harp_sample_6, &harp_sample_7, &harp_sample_8, &harp_sample_9, &harp_sample_10, &harp_sample_11, &harp_sample_12};
+AudioMixer4 *harp_source_mix_array[12] = {&harp_source_mix_1, &harp_source_mix_2, &harp_source_mix_3, &harp_source_mix_4, &harp_source_mix_5, &harp_source_mix_6, &harp_source_mix_7, &harp_source_mix_8, &harp_source_mix_9, &harp_source_mix_10, &harp_source_mix_11, &harp_source_mix_12};
+AudioSynthWavetable *chord_sample_array[4] = {&chord_sample_1, &chord_sample_2, &chord_sample_3, &chord_sample_4};
+AudioMixer4 *chord_source_mix_array[4] = {&chord_source_mix_1, &chord_source_mix_2, &chord_source_mix_3, &chord_source_mix_4};
 AudioSynthPluckedString *string_pluck_array[12] = {&pluck_string_1, &pluck_string_2, &pluck_string_3, &pluck_string_4, &pluck_string_5, &pluck_string_6, &pluck_string_7, &pluck_string_8, &pluck_string_9, &pluck_string_10, &pluck_string_11, &pluck_string_12};
 AudioSynthWaveformModulated *string_waveform_array[12] = {&waveform_string_1, &waveform_string_2, &waveform_string_3, &waveform_string_4, &waveform_string_5, &waveform_string_6, &waveform_string_7, &waveform_string_8, &waveform_string_9, &waveform_string_10, &waveform_string_11, &waveform_string_12};
 AudioEffectEnvelope *string_enveloppe_array[12] = {&envelope_string_1, &envelope_string_2, &envelope_string_3, &envelope_string_4, &envelope_string_5, &envelope_string_6, &envelope_string_7, &envelope_string_8, &envelope_string_9, &envelope_string_10, &envelope_string_11, &envelope_string_12};
@@ -924,6 +929,16 @@ void vocoder_setup();
 // Strum velocity (address 263), see strum_softness
 uint8_t strum_velocity = 0;      // 0-100: how much softer a slow strum plays than a fast one, 0 off
 float pluck_strum = -1;          // strum velocity's say on the plucks made now, -1 none (as pluck_strength)
+
+// Sampled voices (addresses 264, 265), see SAMPLES
+uint8_t harp_voice_source = 0;    // 0 the harp's own synth, 1 piano, 2 pizzicato, 3 choir, 4 strings
+uint8_t chord_voice_source = 0;   // the same, for the chords
+void set_harp_source(uint8_t source);
+void set_chord_source(uint8_t source);
+void harp_sample_start(uint8_t i);
+void chord_sample_start(uint8_t i);
+const float harp_sample_level = 3.0f;    // a sample's loudness (0.2 RMS) against the strings' (string_level, 0.15 of a saw)
+const float chord_sample_level = 1.0f;   // and the chords'
 
 // Touch velocity and pressure (addresses 252, 253): how firmly a string is plucked, and how hard
 // it is pressed while held, read from its pad's strength (see touch_firmness)
@@ -1734,6 +1749,7 @@ void play_single_note(int i, IntervalTimer *timer) {
   chord_envelope_array[i]->noteOn();
   chord_envelope_filter_array[i]->noteOn();
   chord_voice_released[i] = false;
+  chord_sample_start(i);
   // ISR context: queue only, never touch usbMIDI here.
   if(chord_started_notes[i]!=0){
     queue_midi(false, chord_started_notes[i],chord_release_velocity,mpe_chord_channel(i), chord_port);
@@ -1751,6 +1767,7 @@ void play_note_selected_duration(int i,int current_note){
   chord_envelope_array[i]->noteOn();
   chord_envelope_filter_array[i]->noteOn();
   chord_voice_released[i] = false;
+  chord_sample_start(i);
   note_off_timing[i]=0;
   // ISR context: queue only, never touch usbMIDI here.
   if(chord_started_notes[i]!=0){
@@ -1912,6 +1929,7 @@ void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
     queue_midi(true, midi_base_note_transposed+midi_out_note(current_note),chord_attack_velocity,mpe_chord_channel(i), chord_port);
     chord_started_notes[i]=midi_base_note_transposed+ midi_out_note(current_note);
   }
+  if (chord_voice_source && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(chord_voice_note_freq[i]);
   if (chord_envelope_array[i]->isActive() && !chord_voice_released[i]) {   // a chord change under a held chord
     looper_capture(LOOP_RETUNE, 12 + i, chord_voice_note_freq[i], 1, chord_started_notes[i], chord_attack_velocity);
   }
@@ -1929,6 +1947,7 @@ void apply_string_firmness(uint8_t i) {
   AudioNoInterrupts();
   string_waveform_array[i]->amplitude(string_level * gain);
   string_pluck_array[i]->amplitude(string_level * gain);
+  harp_sample_array[i]->amplitude(fminf(1, string_level * gain * harp_sample_level));
   string_transient_waveform_array[i]->amplitude(transient_level * gain);
   string_filter_array[i]->frequency(string_filter_freq(i));
   AudioInterrupts();
@@ -1944,6 +1963,7 @@ void set_harp_voice_frequency(uint8_t i, uint16_t current_note) {
   AudioNoInterrupts();
   string_waveform_array[i]->frequency(note_freq);
   string_pluck_array[i]->frequency(note_freq);
+  if (harp_voice_source && harp_sample_array[i]->isPlaying()) harp_sample_array[i]->setFrequency(note_freq);
   string_transient_waveform_array[i]->frequency(transient_freq);
   string_filter_array[i]->frequency(string_filter_freq(i));
   // string_vibrato_1.offset(0);
@@ -2001,6 +2021,68 @@ void apply_chord_voice_level(uint8_t i) {
   chord_voice_mixer_array[i]->gain(1, g);
   chord_voice_mixer_array[i]->gain(2, g);
   chord_voice_mixer_array[i]->gain(3, chord_noise_level * g);
+  chord_sample_array[i]->amplitude(fminf(1, g * chord_sample_level));
+}
+
+//>>SAMPLES<<
+// A section's voices can sound a sampled instrument in place of their oscillators (harp voice,
+// chord voice): piano, pizzicato strings, choir or a string quartet (lib/minichord_samples, made
+// by generator/samples.py). The sample runs through the voice's own envelope, filter and level, so
+// the preset shapes it as it does the synth, and the voice's pitch (the ribbon, a retune, a chord
+// change) moves it. Its own envelope only passes it on; once the voice's envelope is done it stops,
+// so a voice not sounding costs nothing.
+static const AudioSynthWavetable::instrument_data *sampled_instrument(uint8_t source) {
+  switch (source) {
+    case 1: return &piano_instrument;
+    case 2: return &pizzicato_instrument;
+    case 3: return &choir_instrument;
+    case 4: return &strings_instrument;
+  }
+  return nullptr;
+}
+
+void set_harp_source(uint8_t source) {
+  const AudioSynthWavetable::instrument_data *instrument = sampled_instrument(source);
+  harp_voice_source = instrument ? source : 0;
+  for (uint8_t i = 0; i < 12; i++) {
+    harp_sample_array[i]->stop();
+    if (instrument) harp_sample_array[i]->setInstrument(*instrument);
+    harp_source_mix_array[i]->gain(0, instrument ? 0 : 1);
+    harp_source_mix_array[i]->gain(1, instrument ? 1 : 0);
+  }
+}
+
+void set_chord_source(uint8_t source) {
+  const AudioSynthWavetable::instrument_data *instrument = sampled_instrument(source);
+  chord_voice_source = instrument ? source : 0;
+  for (uint8_t i = 0; i < 4; i++) {
+    chord_sample_array[i]->stop();
+    if (instrument) chord_sample_array[i]->setInstrument(*instrument);
+    chord_source_mix_array[i]->gain(0, instrument ? 0 : 1);
+    chord_source_mix_array[i]->gain(1, instrument ? 1 : 0);
+  }
+}
+
+// Starts harp voice i's sample at the frequency it sounds; its level follows (apply_string_firmness)
+void harp_sample_start(uint8_t i) {
+  if (!harp_voice_source) return;
+  harp_sample_array[i]->playFrequency(string_note_freq[i], 127);
+}
+
+void chord_sample_start(uint8_t i) {
+  if (!chord_voice_source) return;
+  chord_sample_array[i]->playFrequency(chord_voice_note_freq[i], 127);
+  chord_sample_array[i]->amplitude(fminf(1, chord_voice_level[i] * chord_sample_level));
+}
+
+// Called from loop(): a sample whose voice's envelope is done stops
+void samples_update() {
+  if (harp_voice_source) {
+    for (uint8_t i = 0; i < 12; i++) if (harp_sample_array[i]->isPlaying() && !string_enveloppe_array[i]->isActive()) harp_sample_array[i]->stop();
+  }
+  if (chord_voice_source) {
+    for (uint8_t i = 0; i < 4; i++) if (chord_sample_array[i]->isPlaying() && !chord_envelope_array[i]->isActive()) chord_sample_array[i]->stop();
+  }
 }
 
 void midi_in_tune_harp(uint8_t i) {
@@ -2011,6 +2093,7 @@ void midi_in_tune_harp(uint8_t i) {
   AudioNoInterrupts();
   string_waveform_array[i]->frequency(f);
   string_pluck_array[i]->frequency(f);
+  if (harp_voice_source && harp_sample_array[i]->isPlaying()) harp_sample_array[i]->setFrequency(f);
   string_transient_waveform_array[i]->frequency(transient_freq);
   string_filter_array[i]->frequency(string_filter_freq(i));
   AudioInterrupts();
@@ -2025,6 +2108,7 @@ void midi_in_tune_chord(uint8_t i) {
   chord_osc_2_array[i]->frequency(osc_2_freq_multiplier * f);
   chord_osc_3_array[i]->frequency(osc_3_freq_multiplier * f);
   chord_freq_dc_array[i]->amplitude(0, 0);
+  if (chord_voice_source && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(f);
   AudioInterrupts();
 }
 
@@ -2063,6 +2147,7 @@ void owned_harp_on(uint8_t i, float firmness) {
   string_plucked[i] = false;
   string_pluck_firmness[i] = string_firmness[i] = firmness;
   midi_in_tune_harp(i);
+  harp_sample_start(i);
   apply_string_firmness(i);
   apply_string_spread(i);
   AudioNoInterrupts();
@@ -2099,6 +2184,7 @@ void owned_chord_on(uint8_t i, float firmness) {
   chord_voice_level[i] = powf(10.0f, -1.2f * (1 - firmness) * (1 - firmness));   // down to 24 dB, as a string
   apply_chord_voice_level(i);
   midi_in_tune_chord(i);
+  chord_sample_start(i);
   noInterrupts();
   chord_vibrato_envelope_array[i]->noteOn();
   chord_vibrato_dc_envelope_array[i]->noteOn();
@@ -4276,6 +4362,7 @@ void pluck_string(uint8_t i) {
   string_firmness[i] = string_pluck_firmness[i];
   for (uint8_t k = 0; k < press_slots; k++) press_recent[i][k] = string_pluck_firmness[i];
   set_harp_voice_frequency(i, current_harp_notes[i]);
+  harp_sample_start(i);
   apply_string_firmness(i);
   apply_string_spread(i);
   AudioNoInterrupts();
@@ -6106,6 +6193,7 @@ void loop() {
   handle_harp();
   looper_update();
   vocoder_update();
+  samples_update();
   // The only point at which this firmware transmits MIDI. Must stay last, and must
   // stay in loop() -- see the MIDI OUTPUT QUEUE comment above.
   mpe_update_glide();

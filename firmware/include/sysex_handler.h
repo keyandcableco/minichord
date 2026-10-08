@@ -205,6 +205,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 217:
         for (int s=0;s<12;s++) string_pluck_array[s]->blend(value/100.0);
         break;
+      case 264:
+        set_harp_source(value);
+        break;
       case 218:
         for (int s=0;s<12;s++) string_pluck_array[s]->decay(value/100.0 > 0 ? value/100.0 : 3.0);
         break;
@@ -523,6 +526,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         break;
       case 115:
         cantus_voice=value; if (!cantus_voice) cantus_pc=-1; refresh_chord_voicing();
+        break;
+      case 265:
+        set_chord_source(value);
         break;
       case 121:
         for (int i=0;i<4;i++){
@@ -956,6 +962,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 22: lo=0; hi=1; return true;
       case 41: lo=0; hi=100; return true;
       case 217: lo=0; hi=100; return true;
+      case 264: lo=0; hi=4; return true;
       case 218: lo=10; hi=2000; return true;
       case 219: lo=0; hi=100; return true;
       case 42: lo=0; hi=11; return true;
@@ -1049,6 +1056,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 113: lo=0; hi=4; return true;
       case 114: lo=0; hi=1; return true;
       case 115: lo=0; hi=5; return true;
+      case 265: lo=0; hi=4; return true;
       case 121: lo=0; hi=100; return true;
       case 122: lo=0; hi=11; return true;
       case 123: lo=50; hi=200; return true;
