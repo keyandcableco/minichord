@@ -14,14 +14,20 @@ void AudioSynthPluckedString::tune(float freq) {
 }
 
 // Fills one period behind the write point with noise, lowpassed as dark as the
-// pluck is soft, without its average (which would only thump), and levelled to the
-// loudness of a full-scale sawtooth (RMS 0.58), so it sits beside the oscillator at
-// the same amplitude however bright, and loudness is amplitude()'s alone. Levelled
-// to its peak instead, it played well below the oscillator.
+// pluck is soft, without its average (which would only thump), and levelled so its
+// body sits beside a full-scale sawtooth's, so loudness is amplitude()'s alone.
+// The lowpass is set from the note, from its own pitch (a soft pluck) to two
+// octaves above (a firm one): its harmonics fall away as a sawtooth's do, where
+// a fixed lowpass left the low notes' plucks white noise. The body is what a
+// lowpass at the note keeps, the part the string's damping and the harp's filter
+// leave: levelled to its whole RMS, a pluck spent most of its level on highs
+// that died within a few periods or never got past the filter, and turning up
+// string model lost the harp 16-20 dB.
 void AudioSynthPluckedString::pluck(float brightness) {
   tune(base_freq);
   uint16_t n = (uint16_t)ceilf(delay_samples) + 1;
-  float alpha = 0.08f + 0.92f * constrain(brightness, 0.0f, 1.0f);
+  const float w = 2.0f * (float)M_PI * tuned_freq / AUDIO_SAMPLE_RATE_EXACT;
+  float alpha = min(1.0f - expf(-w * powf(4.0f, constrain(brightness, 0.0f, 1.0f))), 1.0f);
   float y = 0, mean = 0;
   for (uint16_t k = 0; k < n; k++) {
     seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5;
@@ -31,13 +37,19 @@ void AudioSynthPluckedString::pluck(float brightness) {
     mean += y;
   }
   mean /= n;
-  float power = 1e-12f;
-  for (uint16_t k = 0; k < n; k++) {
-    float &v = buffer[(write_index + length - n + k) % length];
-    v -= mean;
-    power += v * v;
+  for (uint16_t k = 0; k < n; k++) buffer[(write_index + length - n + k) % length] -= mean;
+  // The body: through a lowpass at the note, round the period twice, measured the
+  // second time, once the filter has settled as it would on the ringing string.
+  // A 0.58-RMS sawtooth's body through the same lowpass is 0.34.
+  const float body_alpha = 1.0f - expf(-w);
+  float body = 0, power = 1e-12f;
+  for (uint8_t pass = 0; pass < 2; pass++) {
+    for (uint16_t k = 0; k < n; k++) {
+      body += body_alpha * (buffer[(write_index + length - n + k) % length] - body);
+      if (pass) power += body * body;
+    }
   }
-  float level = 0.58f / sqrtf(power / n);
+  float level = 0.34f / sqrtf(power / n);
   for (uint16_t k = 0; k < n; k++) buffer[(write_index + length - n + k) % length] *= level;
   lowpass = 0;
   ringing = true;
