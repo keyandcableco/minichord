@@ -15,7 +15,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=28; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253)
+int version_ID=29; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -854,6 +854,25 @@ uint8_t chord_started_notes[4]={0,0,0,0};
 uint8_t harp_port=1;
 uint8_t harp_channel=1;
 uint8_t harp_attack_velocity=127; 
+// MIDI in plays (address 8): notes sent to the minichord play its voices (see MIDI IN)
+bool midi_in_plays = false;
+struct midi_in_voice {
+  bool owned;       // sounding a note that came in, which the minichord's own playing leaves alone
+  bool key_down;
+  bool sustained;   // let go of with the pedal down: it rings until the pedal lifts
+  uint8_t note;
+  uint32_t since;
+};
+midi_in_voice midi_in_harp[12] = {};
+midi_in_voice midi_in_chord[4] = {};
+float chord_voice_level[4] = {1, 1, 1, 1};   // each chord voice's loudness, from an incoming note's velocity
+float chord_noise_level = 0;                // the chord voices' noise (130), before that
+void apply_chord_voice_level(uint8_t i);
+void midi_in_message(uint8_t type, uint8_t cable, uint8_t channel, uint8_t data1, uint8_t data2);
+void midi_in_set(bool on);
+void midi_in_retune();
+bool string_held(uint8_t i);
+
 // Touch velocity and pressure (addresses 252, 253): how firmly a string is plucked, and how hard
 // it is pressed while held, read from its pad's strength (see touch_firmness)
 uint8_t touch_velocity = 0;      // 0-100: how much softer and darker a light touch plays than a firm one
@@ -875,6 +894,12 @@ float string_note_freq[12] = {0};   // the frequency each string sounds, for its
 float pluck_strength = -1;          // the strength the plucks made now are made with; below 0, full
 void apply_string_firmness(uint8_t i);
 float touch_softness(float firmness);
+// How much softer than full string i plays: an incoming note by its velocity always, a plucked one as
+// far as touch velocity says
+static inline float string_softness(uint8_t i) {
+  float f = string_firmness[i];
+  return midi_in_harp[i].owned ? (1 - f) * (1 - f) : touch_softness(f);
+}
 uint8_t harp_release_velocity=20;
 uint8_t harp_started_notes[12]={0,0,0,0,0,0,0,0,0,0,0,0};
 // Where each harp note went, so its note-off follows it there even if the
@@ -1510,6 +1535,10 @@ void update_formants() {
 void processMIDI(void) {
   byte type;
   type = usbMIDI.getType();
+  if (midi_in_plays && (type == usbMIDI.NoteOn || type == usbMIDI.NoteOff || type == usbMIDI.ControlChange)) {
+    midi_in_message(type, usbMIDI.getCable(), usbMIDI.getChannel(), usbMIDI.getData1(), usbMIDI.getData2());
+    return;
+  }
   if (type == usbMIDI.SystemExclusive && usbMIDI.getSysExArrayLength() == 6) {
     const byte *data = usbMIDI.getSysExArray();
     // Universal system exclusive messages (identity request, GM on/off, master volume...) start
@@ -1572,8 +1601,17 @@ void processMIDI(void) {
 
 //-->>TIMER FUNCTIONS
 // function to handle the delayed chord activation
+// The chords start a note on voice i, taking it back from an incoming note if it had it.
+void chords_take_voice(int i) {
+  if (!midi_in_chord[i].owned) return;
+  midi_in_chord[i].owned = false;
+  chord_voice_level[i] = 1;
+  apply_chord_voice_level(i);
+}
+
 void play_single_note(int i, IntervalTimer *timer) {
   timer->end();
+  chords_take_voice(i);
   set_chord_voice_frequency(i, current_applied_chord_notes[i]);
   chord_vibrato_envelope_array[i]->noteOn();
   chord_vibrato_dc_envelope_array[i]->noteOn();
@@ -1590,6 +1628,7 @@ void play_single_note(int i, IntervalTimer *timer) {
 }
 
 void play_note_selected_duration(int i,int current_note){
+  chords_take_voice(i);
   chord_vibrato_envelope_array[i]->noteOn();
   chord_vibrato_dc_envelope_array[i]->noteOn();
   chord_envelope_array[i]->noteOn();
@@ -1681,6 +1720,7 @@ void refresh_chord_filter() {
 }
 
 void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
+  if (midi_in_chord[i].owned) return;   // sounding an incoming note, until the chords start one on it
   chord_voice_current_note[i] = current_note;
   float note_freq = pow(2,chord_octave_change)*c_frequency/8 * temper_ratio(current_note+transpose_steps); //down one octave to let more possibilities with the shuffling array
   if(glide_length>0){
@@ -1748,13 +1788,13 @@ void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
 // setting the harp
 // A light touch plays darker, by up to two octaves of the string's filter at full touch velocity
 float string_filter_freq(uint8_t i) {
-  float darker = powf(2.0f, -2.0f * touch_softness(string_firmness[i]));
+  float darker = powf(2.0f, -2.0f * string_softness(i));
   return (string_filter_base_freq + string_note_freq[i] * string_filter_keytrack) * darker;
 }
 
 // and quieter, by up to 24 dB
 void apply_string_firmness(uint8_t i) {
-  float gain = powf(10.0f, -1.2f * touch_softness(string_firmness[i]));
+  float gain = powf(10.0f, -1.2f * string_softness(i));
   AudioNoInterrupts();
   string_waveform_array[i]->amplitude(string_level * gain);
   string_transient_waveform_array[i]->amplitude(transient_level * gain);
@@ -1763,6 +1803,7 @@ void apply_string_firmness(uint8_t i) {
 }
 
 void set_harp_voice_frequency(uint8_t i, uint16_t current_note) {
+  if (midi_in_harp[i].owned) return;    // sounding an incoming note, until the harp plucks it
   harp_voice_current_note[i] = current_note;
   float note_freq =  pow(2,harp_octave_change)*c_frequency/4 * temper_ratio(current_note+transpose_steps);
   if (harp_voice_glide[i] != 0) note_freq *= powf(2.0f, harp_voice_glide[i] / 12.0f);   // a ribbon touch's slide
@@ -1797,7 +1838,177 @@ void retune_active_voices() {
     }
     interrupts();
   }
+  midi_in_retune();
 }
+//>>MIDI IN<<
+// With MIDI in plays on, notes sent to the minichord play its voices, as a sound module: on the
+// harp's port and channel the harp strings (twelve voices), on the chords' port and channel the
+// chord voices (four), the same ones it sends its own notes on (by default the chords on port 1 and
+// the harp on port 2, both on channel 1). A note sounds at its true pitch, middle C as middle C
+// whatever the preset's octaves and transpose, in the minichord's master tuning and temperament; in
+// 19, 24 and 31 steps on the nearest step. Velocity sets its loudness, and a string's brightness as
+// touch velocity does; the sustain pedal (64) holds notes let go of. Nothing goes back out.
+//
+// An incoming note takes a voice nothing is playing, else one ringing out, else the oldest
+// incoming one; a harp string under a finger is never taken. The voice is then the note's: the
+// minichord's own playing leaves it alone (set_chord_voice_frequency, set_harp_voice_frequency,
+// stop_chord_notes) until it starts a note on it itself, which takes it back (pluck_string,
+// chords_take_voice).
+
+// the frequency an incoming note sounds at
+float midi_in_frequency(uint8_t note) {
+  float semitones = (float)note - midi_base_note;   // from C3
+  if (edo_index == 0) return c_frequency * temper_ratio(semitones);
+  return c_frequency * powf(2.0f, lroundf(semitones * EDO / 12.0f) / (float)EDO);
+}
+
+void apply_chord_voice_level(uint8_t i) {
+  float g = chord_voice_level[i];
+  chord_voice_mixer_array[i]->gain(0, g);
+  chord_voice_mixer_array[i]->gain(1, g);
+  chord_voice_mixer_array[i]->gain(2, g);
+  chord_voice_mixer_array[i]->gain(3, chord_noise_level * g);
+}
+
+void midi_in_tune_harp(uint8_t i) {
+  uint8_t note = midi_in_harp[i].note;
+  float f = midi_in_frequency(note);
+  int16_t step = edo_index == 0 ? note - midi_base_note : (int16_t)lroundf((note - midi_base_note) * EDO / 12.0f);
+  float transient_freq = 64.0 * c_frequency / 4 * temper_ratio((step % EDO + EDO) % EDO + transient_note_level);
+  string_note_freq[i] = f;
+  AudioNoInterrupts();
+  string_waveform_array[i]->frequency(f);
+  string_transient_waveform_array[i]->frequency(transient_freq);
+  string_filter_array[i]->frequency(string_filter_freq(i));
+  AudioInterrupts();
+}
+
+void midi_in_tune_chord(uint8_t i) {
+  float f = midi_in_frequency(midi_in_chord[i].note);
+  AudioNoInterrupts();
+  chord_voice_note_freq[i] = f;
+  chord_voice_filter_array[i]->frequency(f * chord_filter_keytrack + chord_filter_base_freq);
+  chord_osc_1_array[i]->frequency(osc_1_freq_multiplier * f);
+  chord_osc_2_array[i]->frequency(osc_2_freq_multiplier * f);
+  chord_osc_3_array[i]->frequency(osc_3_freq_multiplier * f);
+  chord_freq_dc_array[i]->amplitude(0, 0);
+  AudioInterrupts();
+}
+
+// A tuning change reaches the incoming notes too
+void midi_in_retune() {
+  for (uint8_t i = 0; i < 12; i++) if (midi_in_harp[i].owned) midi_in_tune_harp(i);
+  for (uint8_t i = 0; i < 4; i++) if (midi_in_chord[i].owned) midi_in_tune_chord(i);
+}
+
+// The voice for a note among count: the one already sounding it, else the best free one; -1 if all
+// are under fingers.
+int8_t midi_in_pick(midi_in_voice *voices, uint8_t count, uint8_t note, bool harp) {
+  for (uint8_t i = 0; i < count; i++) if (voices[i].owned && voices[i].note == note) return i;
+  int8_t best = -1;
+  int8_t best_rank = -1;
+  uint32_t best_since = 0;
+  for (uint8_t i = 0; i < count; i++) {
+    if (harp && string_held(i)) continue;
+    bool active = harp ? string_enveloppe_array[i]->isActive() : chord_envelope_array[i]->isActive();
+    int8_t rank = !active ? 3 : (voices[i].owned && !voices[i].key_down && !voices[i].sustained) ? 2 : !voices[i].owned ? 1 : 0;
+    uint32_t since = voices[i].owned ? voices[i].since : 0;
+    if (rank > best_rank || (rank == best_rank && since < best_since)) { best = i; best_rank = rank; best_since = since; }
+  }
+  return best;
+}
+
+void midi_in_harp_on(uint8_t note, uint8_t velocity) {
+  int8_t i = midi_in_pick(midi_in_harp, 12, note, true);
+  if (i < 0) return;
+  harp_midi_off(i);   // the harp's own midi note on it, if it had one, ends with its sound
+  midi_in_harp[i] = midi_in_voice{true, true, false, note, millis()};
+  harp_voice_glide[i] = 0;
+  string_plucked[i] = false;
+  string_pluck_firmness[i] = string_firmness[i] = velocity / 127.0f;
+  midi_in_tune_harp(i);
+  apply_string_firmness(i);
+  AudioNoInterrupts();
+  envelope_string_vibrato_lfo.noteOn();
+  envelope_string_vibrato_dc.noteOn();
+  string_enveloppe_filter_array[i]->noteOn();
+  string_enveloppe_array[i]->noteOn();
+  string_transient_envelope_array[i]->noteOn();
+  AudioInterrupts();
+}
+
+void midi_in_chord_on(uint8_t note, uint8_t velocity) {
+  int8_t i = midi_in_pick(midi_in_chord, 4, note, false);
+  if (i < 0) return;
+  note_timer[i].end();   // a chord note waiting to start on it
+  if (chord_started_notes[i] != 0) {   // the chords' midi note on it ends with its sound
+    queue_midi(false, chord_started_notes[i], chord_release_velocity, mpe_chord_channel(i), chord_port);
+    chord_started_notes[i] = 0;
+  }
+  midi_in_chord[i] = midi_in_voice{true, true, false, note, millis()};
+  float softness = (1 - velocity / 127.0f) * (1 - velocity / 127.0f);
+  chord_voice_level[i] = powf(10.0f, -1.2f * softness);   // down to 24 dB, as a string
+  apply_chord_voice_level(i);
+  midi_in_tune_chord(i);
+  noInterrupts();
+  chord_vibrato_envelope_array[i]->noteOn();
+  chord_vibrato_dc_envelope_array[i]->noteOn();
+  chord_envelope_array[i]->noteOn();
+  chord_envelope_filter_array[i]->noteOn();
+  chord_voice_released[i] = false;
+  interrupts();
+}
+
+void midi_in_release(midi_in_voice *voices, uint8_t i, bool harp) {
+  voices[i].key_down = false;
+  voices[i].sustained = false;
+  noInterrupts();
+  if (harp) {
+    string_enveloppe_array[i]->noteOff();
+    string_transient_envelope_array[i]->noteOff();
+    string_enveloppe_filter_array[i]->noteOff();
+  } else {
+    chord_vibrato_envelope_array[i]->noteOff();
+    chord_vibrato_dc_envelope_array[i]->noteOff();
+    chord_envelope_array[i]->noteOff();
+    chord_envelope_filter_array[i]->noteOff();
+    chord_voice_released[i] = true;
+  }
+  interrupts();
+}
+
+void midi_in_message(uint8_t type, uint8_t cable, uint8_t channel, uint8_t data1, uint8_t data2) {
+  static bool pedal_harp = false, pedal_chord = false;
+  bool harp = cable == harp_port && channel == harp_channel;
+  bool chord = !harp && cable == chord_port && channel == chord_channel;
+  if (!harp && !chord) return;
+  midi_in_voice *voices = harp ? midi_in_harp : midi_in_chord;
+  uint8_t count = harp ? 12 : 4;
+  bool &pedal = harp ? pedal_harp : pedal_chord;
+  if (type == usbMIDI.NoteOn && data2 > 0) {
+    if (harp) midi_in_harp_on(data1, data2);
+    else midi_in_chord_on(data1, data2);
+  } else if (type == usbMIDI.NoteOn || type == usbMIDI.NoteOff) {
+    for (uint8_t i = 0; i < count; i++) {
+      if (!voices[i].owned || !voices[i].key_down || voices[i].note != data1) continue;
+      if (pedal) { voices[i].key_down = false; voices[i].sustained = true; }
+      else midi_in_release(voices, i, harp);
+    }
+  } else if (type == usbMIDI.ControlChange && data1 == 64) {
+    pedal = data2 >= 64;
+    if (!pedal) for (uint8_t i = 0; i < count; i++) if (voices[i].owned && voices[i].sustained) midi_in_release(voices, i, harp);
+  }
+}
+
+// Switched off, whatever incoming notes are sounding ring out
+void midi_in_set(bool on) {
+  if (!on) {
+    for (uint8_t i = 0; i < 12; i++) if (midi_in_harp[i].owned && (midi_in_harp[i].key_down || midi_in_harp[i].sustained)) midi_in_release(midi_in_harp, i, true);
+    for (uint8_t i = 0; i < 4; i++) if (midi_in_chord[i].owned && (midi_in_chord[i].key_down || midi_in_chord[i].sustained)) midi_in_release(midi_in_chord, i, false);
+  }
+  midi_in_plays = on;
+}
+
 // Function to compute MIDI note offset dynamically with circular frame shift
 int8_t get_root_button(uint8_t key, uint8_t shift, uint8_t button) {
   int8_t note = base_notes[button];
@@ -3118,6 +3329,7 @@ void rythm_tick_function() {
       }else{
         current_voice=i-3;
       }
+      chords_take_voice(current_voice);
       set_chord_voice_frequency(current_voice, rythm_freeze_current_chord_notes[i]);
       play_note_selected_duration(current_voice, rythm_freeze_current_chord_notes[i]);
     }
@@ -3485,6 +3697,7 @@ void send_string_pressure(uint8_t i, float firmness);
 // A string sounds: tuned to the note its pad plays now, its envelopes started,
 // its midi note sent.
 void pluck_string(uint8_t i) {
+  midi_in_harp[i].owned = false;   // the harp takes the voice back from an incoming note
   string_pluck_firmness[i] = pluck_strength < 0 ? 1 : touch_firmness(pluck_strength);
   string_firmness[i] = string_pluck_firmness[i];
   for (uint8_t k = 0; k < press_slots; k++) press_recent[i][k] = string_pluck_firmness[i];
@@ -4547,6 +4760,7 @@ void stop_chord_notes() {
     // test stays as the safety net it always was: a voice caught in its
     // retrigger ramp ignores a note off, and it is released once it settles.
     noInterrupts();
+    if (midi_in_chord[i].owned) { interrupts(); continue; }   // an incoming note's, not the chord's
     if (chord_envelope_array[i]->isSustain() || (chord_envelope_array[i]->isActive() && !chord_voice_released[i])) {
       chord_vibrato_envelope_array[i]->noteOff();
       chord_vibrato_dc_envelope_array[i]->noteOff();
@@ -4567,7 +4781,7 @@ void stop_chord_notes() {
 
 void handle_rhythm_mode() {
   for (int i = 0; i < 4; i++) {
-    if (note_off_timing[i] > note_pushed_duration) {
+    if (note_off_timing[i] > note_pushed_duration && !midi_in_chord[i].owned) {
       // As in stop_chord_notes(). The rhythm timer starts notes from an
       // interrupt, so the check and the flag are one step: a note starting in
       // between would otherwise be marked released without ever being.
@@ -5026,6 +5240,7 @@ void apply_temperament(uint8_t t) {
   }
   update_chord_notes();
   update_harp_notes();
+  midi_in_retune();
 }
 
 //>>HOVER<<
@@ -5149,7 +5364,8 @@ void handle_hover() {
 void loop() {
   usb_audio_update();
   // Process incoming MIDI messages
-  if (usbMIDI.read()) {
+  // A chord sent in arrives as several notes at once: take what has come, up to a handful a pass
+  for (uint8_t k = 0; k < 16 && usbMIDI.read(); k++) {
     processMIDI();
   }
   // Check sysex controller connection

@@ -48,6 +48,9 @@ void apply_audio_parameter(int adress, int value) {
       case 215:
         harp_note_off_on_lift=value;
         break;
+      case 8:
+        midi_in_set(value);
+        break;
       case 238:
         knob_midi=value; knob_midi_resend=true;
         break;
@@ -528,9 +531,7 @@ void apply_audio_parameter(int adress, int value) {
         osc_3_freq_multiplier=value/100.0;
         break;
       case 130:
-        for (int i=0;i<4;i++){
-          chord_voice_mixer_array[i]->gain(3,value/100.0);
-        }
+        chord_noise_level=value/100.0; for (int v=0;v<4;v++) apply_chord_voice_level(v);
         break;
       case 131:
         chord_voice_mixer.gain(0,value/100.0);
@@ -871,6 +872,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 108: lo=0; hi=1; return true;
       case 110: lo=0; hi=1; return true;
       case 215: lo=0; hi=1; return true;
+      case 8: lo=0; hi=1; return true;
       case 238: lo=0; hi=1; return true;
       case 24: lo=0; hi=100; return true;
       case 25: lo=0; hi=100; return true;
