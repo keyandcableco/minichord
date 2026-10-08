@@ -629,7 +629,7 @@
               <dfn title="which setting two quick taps of the modifier button toggle, with the settings of double tap control 2 and 3 if assigned. 0 leaves this pair unassigned. Set it to 39 to switch chord layouts, or to any other setting you want under a tap">double tap control</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="200" curve="linear" data_type="int" id="24" max="255" min="0" onchange="handlechange(this)" step="1" target_max="255" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="200" curve="linear" data_type="int" id="24" max="511" min="0" onchange="handlechange(this)" step="1" target_max="511" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone200" class="value_zone"></p>
@@ -669,7 +669,7 @@
               <dfn title="a second setting the double tap toggles at the same time as the first, so one double tap can turn a preset over to its other side. 0 leaves this pair unused">double tap control 2</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="209" curve="linear" data_type="int" id="26" max="255" min="0" onchange="handlechange(this)" step="1" target_max="255" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="209" curve="linear" data_type="int" id="26" max="511" min="0" onchange="handlechange(this)" step="1" target_max="511" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone209" class="value_zone"></p>
@@ -709,7 +709,7 @@
               <dfn title="a third setting the double tap toggles at the same time. 0 leaves this pair unused">double tap control 3</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="211" curve="linear" data_type="int" id="28" max="255" min="0" onchange="handlechange(this)" step="1" target_max="255" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="211" curve="linear" data_type="int" id="28" max="511" min="0" onchange="handlechange(this)" step="1" target_max="511" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone211" class="value_zone"></p>
@@ -749,7 +749,7 @@
               <dfn title="defines the adress targeted by the chord potentiometer alternate function">chord alternate control</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="10" curve="linear" data_type="int" id="30" max="255" min="21" onchange="handlechange(this)" step="1" target_max="255" target_min="21" type="range" value="0" />
+              <input class="slider inactive" adress_field="10" curve="linear" data_type="int" id="30" max="511" min="21" onchange="handlechange(this)" step="1" target_max="511" target_min="21" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone10" class="value_zone"></p>
@@ -789,7 +789,7 @@
               <dfn title="defines the adress targeted by the harp potentiometer alternate function">harp alternate control</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="12" curve="linear" data_type="int" id="32" max="255" min="21" onchange="handlechange(this)" step="1" target_max="255" target_min="21" type="range" value="0" />
+              <input class="slider inactive" adress_field="12" curve="linear" data_type="int" id="32" max="511" min="21" onchange="handlechange(this)" step="1" target_max="511" target_min="21" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone12" class="value_zone"></p>
@@ -829,7 +829,7 @@
               <dfn title="defines the adress targeted by the modulation potentiometer main function">mod main control</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="14" curve="linear" data_type="int" id="34" max="255" min="21" onchange="handlechange(this)" step="1" target_max="255" target_min="21" type="range" value="0" />
+              <input class="slider inactive" adress_field="14" curve="linear" data_type="int" id="34" max="511" min="21" onchange="handlechange(this)" step="1" target_max="511" target_min="21" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone14" class="value_zone"></p>
@@ -869,7 +869,7 @@
               <dfn title="defines the adress targeted by the modulation potentiometer alternate function">mod alternate control</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="16" curve="linear" data_type="int" id="36" max="255" min="21" onchange="handlechange(this)" step="1" target_max="255" target_min="21" type="range" value="0" />
+              <input class="slider inactive" adress_field="16" curve="linear" data_type="int" id="36" max="511" min="21" onchange="handlechange(this)" step="1" target_max="511" target_min="21" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone16" class="value_zone"></p>
@@ -929,7 +929,7 @@
               <dfn title="which setting a hand held over the harp plate moves, like a fourth knob: from as the preset has it with no hand near, to hover value with the hand close over the plate. 0 leaves hover unassigned. While the harp is played hover holds where it was before the hand came down, and after the hand lifts it waits for it to rise back to that height before following again; a quick swoop down to strum doesn't move it. Any setting a knob can take but the double tap's and USB audio. With knobs send MIDI on, hover also goes out as control change 25 on the chord channel, assigned or not">hover control</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="249" curve="linear" data_type="int" id="39" max="255" min="0" onchange="handlechange(this)" step="1" target_max="255" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="249" curve="linear" data_type="int" id="39" max="511" min="0" onchange="handlechange(this)" step="1" target_max="511" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone249" class="value_zone"></p>
