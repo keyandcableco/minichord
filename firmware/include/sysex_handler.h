@@ -176,9 +176,7 @@ void apply_audio_parameter(int adress, int value) {
         change_held_strings=value;
         break;
       case 41:
-        for (int i=0;i<12;i++){
-          string_waveform_array[i]->amplitude(value/100.0);
-        }
+        string_level=value/100.0; for (int s=0;s<12;s++) apply_string_firmness(s);
         break;
       case 42:
         for (int i=0;i<12;i++){
@@ -223,6 +221,12 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 216:
         harp_pluck_on_lift=value;
+        break;
+      case 252:
+        touch_velocity=value;
+        break;
+      case 253:
+        touch_pressure=value;
         break;
       case 49:
         string_filter_base_freq=value;
@@ -276,9 +280,7 @@ void apply_audio_parameter(int adress, int value) {
         }
         break;
       case 101:
-        for (int i=0;i<12;i++){
-          string_transient_waveform_array[i]->amplitude(value/100.0);
-        }
+        transient_level=value/100.0; for (int s=0;s<12;s++) apply_string_firmness(s);
         break;
       case 102:
         for (int i=0;i<12;i++){
@@ -921,6 +923,8 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 213: lo=0; hi=12; return true;
       case 214: lo=1; hi=250; return true;
       case 216: lo=0; hi=1; return true;
+      case 252: lo=0; hi=100; return true;
+      case 253: lo=0; hi=2; return true;
       case 49: lo=0; hi=2000; return true;
       case 50: lo=0; hi=300; return true;
       case 51: lo=70; hi=500; return true;

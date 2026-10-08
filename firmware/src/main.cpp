@@ -15,7 +15,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=27; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251)
+int version_ID=28; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -854,6 +854,27 @@ uint8_t chord_started_notes[4]={0,0,0,0};
 uint8_t harp_port=1;
 uint8_t harp_channel=1;
 uint8_t harp_attack_velocity=127; 
+// Touch velocity and pressure (addresses 252, 253): how firmly a string is plucked, and how hard
+// it is pressed while held, read from its pad's strength (see touch_firmness)
+uint8_t touch_velocity = 0;      // 0-100: how much softer and darker a light touch plays than a firm one
+uint8_t touch_pressure = 0;      // a held string follows how hard it is pressed (1) or only swells (2), and sends it as MIDI pressure
+float string_level = 0.15;       // the strings' amplitude (41), before each string's own firmness
+float transient_level = 0.1;     // the transient's amplitude (101), likewise
+float string_pluck_firmness[12] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};   // 0-1, how firmly each string was plucked
+float string_firmness[12] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};         // that, or firmer while pressed harder
+uint8_t string_pressure_sent[12] = {0};
+// A held string's pressure, kept as the firmest of each of the last four 5 ms stretches, so it
+// follows a finger up at once and down 20 ms late. Easing off, the lag doesn't show; lifting, the
+// reading falls away for a few milliseconds before the pad lets go, and the string would follow it
+// down and then release from there, which sounds like the note cut short.
+const uint8_t press_slots = 4;
+const uint8_t press_slot_ms = 5;
+float press_recent[12][press_slots] = {{0}};
+uint8_t press_slot = 0;
+float string_note_freq[12] = {0};   // the frequency each string sounds, for its filter
+float pluck_strength = -1;          // the strength the plucks made now are made with; below 0, full
+void apply_string_firmness(uint8_t i);
+float touch_softness(float firmness);
 uint8_t harp_release_velocity=20;
 uint8_t harp_started_notes[12]={0,0,0,0,0,0,0,0,0,0,0,0};
 // Where each harp note went, so its note-off follows it there even if the
@@ -879,6 +900,8 @@ uint midi_buffer_delay=300; //in microseconds, helps compatibility with some har
 #define MIDI_EVT_NOTE_OFF 1
 #define MIDI_EVT_BEND 2
 #define MIDI_EVT_CC 3
+#define MIDI_EVT_PRESSURE 4   // channel pressure, in velocity
+#define MIDI_EVT_POLY 5       // polyphonic aftertouch: note and pressure
 struct midi_event_t {
   uint8_t note;      // note number, or controller number for a CC
   uint8_t velocity;  // velocity, or controller value for a CC
@@ -988,6 +1011,8 @@ void drain_midi_queue() {
       case MIDI_EVT_NOTE_OFF: usbMIDI.sendNoteOff(e.note, e.velocity, e.channel, e.cable); break;
       case MIDI_EVT_BEND:     usbMIDI.sendPitchBend(e.bend, e.channel, e.cable); break;
       case MIDI_EVT_CC:       usbMIDI.sendControlChange(e.note, e.velocity, e.channel, e.cable); break;
+      case MIDI_EVT_PRESSURE: usbMIDI.sendAfterTouch(e.velocity, e.channel, e.cable); break;
+      case MIDI_EVT_POLY:     usbMIDI.sendAfterTouchPoly(e.note, e.velocity, e.channel, e.cable); break;
     }
     sent = true;
   }
@@ -1186,7 +1211,8 @@ void harp_midi_on(uint8_t i) {
     }
   }
   mpe_prepare_harp(i);
-  queue_midi(true, note, harp_attack_velocity, channel, harp_port);
+  float softer = 0.9f * touch_softness(string_pluck_firmness[i]);   // down to a tenth
+  queue_midi(true, note, max(1, (int)lroundf(harp_attack_velocity * (1 - softer))), channel, harp_port);
   harp_started_notes[i] = note;
   harp_started_channel[i] = channel;
   harp_started_port[i] = harp_port;
@@ -1720,15 +1746,32 @@ void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
   }
 }
 // setting the harp
+// A light touch plays darker, by up to two octaves of the string's filter at full touch velocity
+float string_filter_freq(uint8_t i) {
+  float darker = powf(2.0f, -2.0f * touch_softness(string_firmness[i]));
+  return (string_filter_base_freq + string_note_freq[i] * string_filter_keytrack) * darker;
+}
+
+// and quieter, by up to 24 dB
+void apply_string_firmness(uint8_t i) {
+  float gain = powf(10.0f, -1.2f * touch_softness(string_firmness[i]));
+  AudioNoInterrupts();
+  string_waveform_array[i]->amplitude(string_level * gain);
+  string_transient_waveform_array[i]->amplitude(transient_level * gain);
+  string_filter_array[i]->frequency(string_filter_freq(i));
+  AudioInterrupts();
+}
+
 void set_harp_voice_frequency(uint8_t i, uint16_t current_note) {
   harp_voice_current_note[i] = current_note;
   float note_freq =  pow(2,harp_octave_change)*c_frequency/4 * temper_ratio(current_note+transpose_steps);
   if (harp_voice_glide[i] != 0) note_freq *= powf(2.0f, harp_voice_glide[i] / 12.0f);   // a ribbon touch's slide
   float transient_freq =  64.0*c_frequency/4 *temper_ratio((current_note+transpose_steps)%EDO+transient_note_level);
+  string_note_freq[i] = note_freq;
   AudioNoInterrupts();
   string_waveform_array[i]->frequency(note_freq);
   string_transient_waveform_array[i]->frequency(transient_freq);
-  string_filter_array[i]->frequency(string_filter_base_freq + note_freq * string_filter_keytrack);
+  string_filter_array[i]->frequency(string_filter_freq(i));
   // string_vibrato_1.offset(0);
   AudioInterrupts();
 }
@@ -3421,10 +3464,32 @@ void handle_chords_button() {
   }
 }
 
+// How firm a touch a pad's strength is, 0 to 1. Measured on the stock plate: a soft tap peaks at
+// 35-120, a firm one at 300-350; strummed strings read 80-260 (the middle half), 154 typically; a
+// fingertip resting lightly reads 100-200 and pressed hard 450. Plucking on touch the strength is
+// read as the string sounds, by when a firm tap has already reached its peak and a soft one is
+// still creeping up, so soft reads softer; a slow strum rolls onto each pad gently and reads soft,
+// a quick one firm.
+float touch_firmness(float strength) {
+  return constrain((strength - 40) / 210, 0.0f, 1.0f);
+}
+
+// How much softer than full a firmness plays, 0 to 1: the square of how far short of full it is,
+// so an ordinary strum sounds nearly full and only a really light touch is quiet. At full touch
+// velocity a typical strum plays 5 dB down, a soft tap 20.
+float touch_softness(float firmness) {
+  return touch_velocity / 100.0f * (1 - firmness) * (1 - firmness);
+}
+void send_string_pressure(uint8_t i, float firmness);
+
 // A string sounds: tuned to the note its pad plays now, its envelopes started,
 // its midi note sent.
 void pluck_string(uint8_t i) {
+  string_pluck_firmness[i] = pluck_strength < 0 ? 1 : touch_firmness(pluck_strength);
+  string_firmness[i] = string_pluck_firmness[i];
+  for (uint8_t k = 0; k < press_slots; k++) press_recent[i][k] = string_pluck_firmness[i];
   set_harp_voice_frequency(i, current_harp_notes[i]);
+  apply_string_firmness(i);
   AudioNoInterrupts();
   envelope_string_vibrato_lfo.noteOn();
   envelope_string_vibrato_dc.noteOn();
@@ -3433,7 +3498,41 @@ void pluck_string(uint8_t i) {
   string_transient_envelope_array[i]->noteOn();
   AudioInterrupts();
   harp_midi_on(i);
+  if (touch_pressure) send_string_pressure(i, string_pluck_firmness[i]);   // a channel starts from this note's pressure, not the last one's
   cantus_follow(i);
+}
+
+// A held string pressed harder than it was plucked swells, as far as it would have sounded plucked
+// that firmly, and its pressure goes out: each voice's channel pressure in MPE, polyphonic
+// aftertouch otherwise.
+void press_string(uint8_t i, float strength) {
+  if (!touch_pressure) return;
+  static uint32_t slot_clock = 0;
+  uint32_t now_slot = millis() / press_slot_ms;
+  if (now_slot != slot_clock) {
+    slot_clock = now_slot;
+    press_slot = (press_slot + 1) % press_slots;
+    for (uint8_t k = 0; k < 12; k++) press_recent[k][press_slot] = 0;
+  }
+  press_recent[i][press_slot] = fmaxf(press_recent[i][press_slot], touch_firmness(strength));
+  float firmness = 0;
+  for (uint8_t k = 0; k < press_slots; k++) firmness = fmaxf(firmness, press_recent[i][k]);
+  // swelling only, it keeps the firmest it has been pressed until it is let go
+  float swelled = fmaxf(touch_pressure == 2 ? string_firmness[i] : string_pluck_firmness[i], firmness);
+  if (fabsf(swelled - string_firmness[i]) >= 0.02f) {
+    string_firmness[i] = swelled;
+    apply_string_firmness(i);
+  }
+  uint8_t value = (uint8_t)lroundf(firmness * 127);
+  if (abs(value - string_pressure_sent[i]) >= 2 || (value == 0 && string_pressure_sent[i] != 0)) send_string_pressure(i, firmness);
+}
+
+void send_string_pressure(uint8_t i, float firmness) {
+  if (harp_started_notes[i] == 0) return;
+  uint8_t value = (uint8_t)lroundf(firmness * 127);
+  if (mpe_mode) queue_midi_event(MIDI_EVT_PRESSURE, 0, value, 0, harp_started_channel[i], harp_started_port[i]);
+  else queue_midi_event(MIDI_EVT_POLY, harp_started_notes[i], value, 0, harp_started_channel[i], harp_started_port[i]);
+  string_pressure_sent[i] = value;
 }
 
 // A string is let go to ring out through its release. With note-off on lift
@@ -3628,6 +3727,7 @@ void handle_harp_positions() {
       touch.active = false;
       if (touch.palmed) continue;
       // a tap too quick to settle still sounds, where it was read
+      pluck_strength = touch.peak;
       if (touch.landing) {
         touch.position = settle(touch.weight_sum > 0 ? touch.centre_sum / touch.weight_sum : touch.position);
         harp_position_land(touch.position);
@@ -3650,12 +3750,15 @@ void handle_harp_positions() {
       }
       touch.landing = false;
       touch.position = settle(touch.weight_sum > 0 ? touch.centre_sum / touch.weight_sum : found.centre);
+      pluck_strength = touch.peak;
       if (!touch.palmed) harp_position_land(touch.position);
       continue;
     }
     float relaxed = touch.peak - touch.peak * (now - touch.peak_at) / harp_peak_relax_ms;
     touch.peak = max(found.total, relaxed);
     touch.peak_at = now;
+    pluck_strength = touch.peak;
+    if (!touch.palmed && !harp_pluck_on_lift) press_string(touch.position % 12, found.total);
     // A finger rising off a band lets go of one zone before the other, which
     // looks like a move onto the one it still touches. Lifting, its readings
     // fall away; moving, they hold. So a touch only moves while it reads firm.
@@ -3877,6 +3980,7 @@ void handle_harp_ribbon() {
       // a tap too quick to settle still sounds, where it was read
       if (touch.landing) {
         touch.place = touch.weight_sum > 0 ? touch.centre_sum / touch.weight_sum : touch.centre;
+        pluck_strength = touch.peak;
         ribbon_land(touch);
       }
       release_string(touch.voice);
@@ -3895,6 +3999,7 @@ void handle_harp_ribbon() {
       touch.landing = false;
       touch.place = touch.weight_sum > 0 ? touch.centre_sum / touch.weight_sum : found.centre;
       touch.moved_at = now_us;
+      pluck_strength = touch.peak;
       if (!touch.palmed) ribbon_land(touch);
       continue;
     }
@@ -3911,6 +4016,7 @@ void handle_harp_ribbon() {
       touch.place += (found.centre - touch.place) * dt / (glide + dt);
     }
     ribbon_tune(touch);
+    press_string(touch.voice, found.total);
   }
   for (uint8_t r = 0; r < run_count; r++) {
     if (runs[r].matched) continue;
@@ -4062,7 +4168,20 @@ void handle_harp() {
   if (ribbon) handle_harp_ribbon();
   if (positions) handle_harp_positions();
   if (harp_plate == 2) handle_wheel();
-  for (int i = 0; i < 12 && !positions && !ribbon; i++) {
+  // Touch velocity and pressure read the pads' strengths while the stock plate is touched. Plucking
+  // on lift, a string sounds as firmly as it was held at its firmest.
+  static int16_t pad_strength[12] = {0};
+  static int16_t pad_firmest[12] = {0};
+  bool stock = !positions && !ribbon;
+  if (stock && (touch_velocity || touch_pressure)) {
+    bool any = false;
+    for (int i = 0; i < 12; i++) any |= harp_array[i].read_value() || harp_array[i].read_raw();
+    if (any) {
+      harp_sensor.read_strength(pad_strength);
+      for (int i = 0; i < 12; i++) if (harp_array[i].read_value()) pad_firmest[i] = max(pad_firmest[i], pad_strength[i]);
+    }
+  }
+  for (int i = 0; i < 12 && stock; i++) {
     int value = harp_array[i].read_transition();
     if (value == 2 && string_palmed[i]) {
       // landed under the palm: silent until lifted
@@ -4074,18 +4193,23 @@ void handle_harp() {
       // be placed ahead of time, under a chord yet to come, and lifted together
       // or one by one.
       if (value == 2) {
+        pad_firmest[i] = pad_strength[i];
         damp_string(i);
       } else if (value == 1) {
+        pluck_strength = pad_firmest[i];
         pluck_string(i);
         string_plucked[i] = true;
       }
     } else if (value == 2) {
       string_plucked[i] = false;
+      pluck_strength = pad_strength[i];
       pluck_string(i);
     } else if (value == 1) {
       release_string(i);
     }
+    if (!harp_pluck_on_lift && harp_array[i].read_value() && !string_palmed[i]) press_string(i, pad_strength[i]);
   }
+  pluck_strength = -1;   // a pluck from anywhere else is full
   for (int i = 0; i < 12; i++) {
     // A string plucked on lift has no finger on it to hold it at sustain: once
     // it has come through its decay it rings out through its release, as a
@@ -4921,8 +5045,9 @@ void apply_temperament(uint8_t t) {
 // A strum's quick swoop down shouldn't count as where the hand was, so hover only rises once the
 // hand has stayed that close for a moment (hover_rise_ms): it follows a hand away at once, and
 // towards the plate a beat behind. With "knobs send MIDI" on, it also goes out as control change
-// 24 on the chord channel, beside the knobs' 20-22.
-const uint8_t hover_cc = 24;
+// 25 on the chord channel, beside the knobs' 20-22 (23 and 24 are the arcade wheel's, on the harp
+// channel, which may be the same one).
+const uint8_t hover_cc = 25;
 const uint16_t hover_rise_ms = 200;
 const uint8_t hover_slot_ms = 10;
 const float hover_full_cm = 2;
@@ -5119,7 +5244,6 @@ void loop() {
 
   // Handle harp functions
   handle_harp();
-
   // The only point at which this firmware transmits MIDI. Must stay last, and must
   // stay in loop() -- see the MIDI OUTPUT QUEUE comment above.
   mpe_update_glide();
