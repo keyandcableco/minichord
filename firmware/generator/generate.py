@@ -10,7 +10,9 @@ a = Airium(
     source_line_break_character="\n",  # str
     )
 
-cpp_start_file="void apply_audio_parameter(int adress, int value) {\r\n    switch(adress){\r\n"
+# FLASHMEM: run from flash, not RAM1, which code and variables share in 32 kB banks; a preset load
+# or a knob turn is not timing critical, and the cache keeps it quick
+cpp_start_file="FLASHMEM void apply_audio_parameter(int adress, int value) {\r\n    switch(adress){\r\n"
 cpp_end_file="  }\r\n}"
 id_iterator=0
 

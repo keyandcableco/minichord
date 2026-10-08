@@ -155,6 +155,7 @@ AudioFilterStateVariable voice2_filter;  //xy=1621.1000061035156,1811.9999923706
 AudioFilterStateVariable voice3_filter;  //xy=1620.1000061035156,2087.9999923706055
 AudioFilterStateVariable voice1_filter;  //xy=1642.1000061035156,1543.9999923706055
 AudioMixer4              all_string_mix; //xy=1715.1000061035156,1143.9999923706055
+AudioMixer4              vocoder_string_return;   // the harp, dry, and vocoded when it carries the vocoder (see VOCODER)
 AudioEffectEnvelope      voice1_envelope; //xy=1798.1000061035156,1694.9999923706055
 AudioEffectEnvelope      voice3_envelope; //xy=1800.1000061035156,2225.9999923706055
 AudioEffectEnvelope      voice2_envelope; //xy=1803.1000061035156,1945.9999923706055
@@ -166,6 +167,24 @@ AudioEffectMultiply      voice1_tremolo_mult; //xy=1856.1000061035156,1537.99999
 AudioEffectWaveshaper    string_waveshape; //xy=1948.1000061035156,961.9999923706055
 AudioMixer4              string_waveshaper_mix; //xy=2000.1000061035156,1139.9999923706055
 AudioMixer4              chord_voice_mixer; //xy=2157.1000061035156,1558.9999923706055
+//VOCODER
+// The chords (or the harp) take on the shape of the sound coming in over USB: the incoming sound's
+// level in each of sixteen bands (the analysis filters and their RMS) sets how much of the
+// carrier's same band comes through (the synthesis filters and their mixers' gains, set in
+// vocoder_update). The incoming sound's hiss above 5 kHz is blended in for consonants. It sits
+// before the formants, and is declared between the chords' voice mix and them, so the chords keep
+// their block; the harp's return is declared up by its mix for the same reason, so only the
+// vocoded harp arrives a block later. At vocoder amount 0 both returns pass their section as is.
+AudioMixer4              vocoder_modulator;        // the incoming sound, both sides
+AudioFilterBiquad        vocoder_analysis[16];
+AudioAnalyzeRMS          vocoder_level[16];
+AudioFilterBiquad        vocoder_hiss;
+AudioMixer4              vocoder_carrier_mix;        // the chords, the harp, or both
+AudioFilterBiquad        vocoder_synthesis[16];
+AudioMixer4              vocoder_bands[4];
+AudioMixer4              vocoder_bands_mix;
+AudioMixer4              vocoder_out;
+AudioMixer4              vocoder_chord_return;     // the chords, dry, and vocoded when they carry it
 AudioFilterBiquad        formant_1;      //xy=2250,1480
 AudioFilterBiquad        formant_2;      //xy=2250,1520
 AudioFilterBiquad        formant_3;      //xy=2250,1560
@@ -351,8 +370,8 @@ AudioConnection          patchCord172(voice4_filter, 0, voice4_tremolo_mult, 0);
 AudioConnection          patchCord173(voice2_filter, 0, voice2_tremolo_mult, 0);
 AudioConnection          patchCord174(voice3_filter, 0, voice3_tremolo_mult, 0);
 AudioConnection          patchCord175(voice1_filter, 0, voice1_tremolo_mult, 0);
-AudioConnection          patchCord176(all_string_mix, string_waveshape);
-AudioConnection          patchCord177(all_string_mix, 0, string_waveshaper_mix, 0);
+AudioConnection          patchCord176(vocoder_string_return, string_waveshape);
+AudioConnection          patchCord177(vocoder_string_return, 0, string_waveshaper_mix, 0);
 AudioConnection          patchCord178(voice1_envelope, 0, voice1_tremolo_mult, 1);
 AudioConnection          patchCord179(voice3_envelope, 0, voice3_tremolo_mult, 1);
 AudioConnection          patchCord180(voice2_envelope, 0, voice2_tremolo_mult, 1);
@@ -367,10 +386,10 @@ AudioConnection          patchCord188(string_waveshaper_mix, 0, string_delay_mix
 AudioConnection          patchCord189(formant_mix, chord_waveshape);
 AudioConnection          patchCord190(formant_mix, 0, chord_waveshaper_mix, 0);
 // the formants: the chord voices' mix through three band-passes, blended with it dry
-AudioConnection          patchCordFormant1(chord_voice_mixer, formant_1);
-AudioConnection          patchCordFormant2(chord_voice_mixer, formant_2);
-AudioConnection          patchCordFormant3(chord_voice_mixer, formant_3);
-AudioConnection          patchCordFormant4(chord_voice_mixer, 0, formant_mix, 0);
+AudioConnection          patchCordFormant1(vocoder_chord_return, formant_1);
+AudioConnection          patchCordFormant2(vocoder_chord_return, formant_2);
+AudioConnection          patchCordFormant3(vocoder_chord_return, formant_3);
+AudioConnection          patchCordFormant4(vocoder_chord_return, 0, formant_mix, 0);
 AudioConnection          patchCordFormant5(formant_1, 0, formant_mix, 1);
 AudioConnection          patchCordFormant6(formant_2, 0, formant_mix, 2);
 AudioConnection          patchCordFormant7(formant_3, 0, formant_mix, 3);
@@ -472,6 +491,7 @@ AudioMixer4              string_mix_1_r;
 AudioMixer4              string_mix_2_r;
 AudioMixer4              string_mix_3_r;
 AudioMixer4              all_string_mix_r;
+AudioMixer4              vocoder_string_return_r;   // the right side's harp, dry and vocoded (see VOCODER)
 AudioEffectWaveshaper    string_waveshape_r;
 AudioMixer4              string_waveshaper_mix_r;
 AudioFilterStateVariable filter_delay_strings_r;   // ahead of the delay's mixer, as on the left: the feedback loop's block falls in the same place
@@ -588,8 +608,8 @@ AudioConnection          patchCord164_r(transient_full_mix, 0, all_string_mix_r,
 AudioConnection          patchCord165_r(string_mix_3_r, 0, all_string_mix_r, 2);
 AudioConnection          patchCord166_r(string_mix_1_r, 0, all_string_mix_r, 0);
 AudioConnection          patchCord167_r(string_mix_2_r, 0, all_string_mix_r, 1);
-AudioConnection          patchCord176_r(all_string_mix_r, string_waveshape_r);
-AudioConnection          patchCord177_r(all_string_mix_r, 0, string_waveshaper_mix_r, 0);
+AudioConnection          patchCord176_r(vocoder_string_return_r, string_waveshape_r);
+AudioConnection          patchCord177_r(vocoder_string_return_r, 0, string_waveshaper_mix_r, 0);
 AudioConnection          patchCord186_r(string_waveshape_r, 0, string_waveshaper_mix_r, 1);
 AudioConnection          patchCord187_r(string_waveshaper_mix_r, 0, strings_effect_mix_r, 0);
 AudioConnection          patchCord188_r(string_waveshaper_mix_r, 0, string_delay_mix_r, 0);
@@ -609,3 +629,90 @@ AudioConnection          patchCord212_r(string_filter_r, 2, string_filter_mixer_
 AudioConnection          patchCord2000_r(string_filter_mixer_r, 0, string_multiplier_r, 0);
 AudioConnection          patchCord2001_r(string_gain, 0, string_multiplier_r, 1);
 AudioConnection          patchCord2002_r(string_multiplier_r, 0, string_amplifier_r, 0);
+// the vocoder (see VOCODER)
+AudioConnection          vocoderCord1(chord_voice_mixer, 0, vocoder_chord_return, 0);
+AudioConnection          vocoderCord2(vocoder_out, 0, vocoder_chord_return, 1);
+AudioConnection          vocoderCord3(all_string_mix, 0, vocoder_string_return, 0);
+AudioConnection          vocoderCord4(vocoder_out, 0, vocoder_string_return, 1);
+AudioConnection          vocoderCord5(chord_voice_mixer, 0, vocoder_carrier_mix, 0);
+AudioConnection          vocoderCord6(all_string_mix, 0, vocoder_carrier_mix, 1);
+AudioConnection          vocoderCord7(vocoder_modulator, vocoder_hiss);
+AudioConnection          vocoderCord8(vocoder_hiss, 0, vocoder_out, 1);
+AudioConnection          vocoderCord9(vocoder_bands_mix, 0, vocoder_out, 0);
+AudioConnection          vocoderAnalysis0(vocoder_modulator, vocoder_analysis[0]);
+AudioConnection          vocoderLevel0(vocoder_analysis[0], vocoder_level[0]);
+AudioConnection          vocoderSynthesis0(vocoder_carrier_mix, vocoder_synthesis[0]);
+AudioConnection          vocoderBand0(vocoder_synthesis[0], 0, vocoder_bands[0], 0);
+AudioConnection          vocoderAnalysis1(vocoder_modulator, vocoder_analysis[1]);
+AudioConnection          vocoderLevel1(vocoder_analysis[1], vocoder_level[1]);
+AudioConnection          vocoderSynthesis1(vocoder_carrier_mix, vocoder_synthesis[1]);
+AudioConnection          vocoderBand1(vocoder_synthesis[1], 0, vocoder_bands[0], 1);
+AudioConnection          vocoderAnalysis2(vocoder_modulator, vocoder_analysis[2]);
+AudioConnection          vocoderLevel2(vocoder_analysis[2], vocoder_level[2]);
+AudioConnection          vocoderSynthesis2(vocoder_carrier_mix, vocoder_synthesis[2]);
+AudioConnection          vocoderBand2(vocoder_synthesis[2], 0, vocoder_bands[0], 2);
+AudioConnection          vocoderAnalysis3(vocoder_modulator, vocoder_analysis[3]);
+AudioConnection          vocoderLevel3(vocoder_analysis[3], vocoder_level[3]);
+AudioConnection          vocoderSynthesis3(vocoder_carrier_mix, vocoder_synthesis[3]);
+AudioConnection          vocoderBand3(vocoder_synthesis[3], 0, vocoder_bands[0], 3);
+AudioConnection          vocoderAnalysis4(vocoder_modulator, vocoder_analysis[4]);
+AudioConnection          vocoderLevel4(vocoder_analysis[4], vocoder_level[4]);
+AudioConnection          vocoderSynthesis4(vocoder_carrier_mix, vocoder_synthesis[4]);
+AudioConnection          vocoderBand4(vocoder_synthesis[4], 0, vocoder_bands[1], 0);
+AudioConnection          vocoderAnalysis5(vocoder_modulator, vocoder_analysis[5]);
+AudioConnection          vocoderLevel5(vocoder_analysis[5], vocoder_level[5]);
+AudioConnection          vocoderSynthesis5(vocoder_carrier_mix, vocoder_synthesis[5]);
+AudioConnection          vocoderBand5(vocoder_synthesis[5], 0, vocoder_bands[1], 1);
+AudioConnection          vocoderAnalysis6(vocoder_modulator, vocoder_analysis[6]);
+AudioConnection          vocoderLevel6(vocoder_analysis[6], vocoder_level[6]);
+AudioConnection          vocoderSynthesis6(vocoder_carrier_mix, vocoder_synthesis[6]);
+AudioConnection          vocoderBand6(vocoder_synthesis[6], 0, vocoder_bands[1], 2);
+AudioConnection          vocoderAnalysis7(vocoder_modulator, vocoder_analysis[7]);
+AudioConnection          vocoderLevel7(vocoder_analysis[7], vocoder_level[7]);
+AudioConnection          vocoderSynthesis7(vocoder_carrier_mix, vocoder_synthesis[7]);
+AudioConnection          vocoderBand7(vocoder_synthesis[7], 0, vocoder_bands[1], 3);
+AudioConnection          vocoderAnalysis8(vocoder_modulator, vocoder_analysis[8]);
+AudioConnection          vocoderLevel8(vocoder_analysis[8], vocoder_level[8]);
+AudioConnection          vocoderSynthesis8(vocoder_carrier_mix, vocoder_synthesis[8]);
+AudioConnection          vocoderBand8(vocoder_synthesis[8], 0, vocoder_bands[2], 0);
+AudioConnection          vocoderAnalysis9(vocoder_modulator, vocoder_analysis[9]);
+AudioConnection          vocoderLevel9(vocoder_analysis[9], vocoder_level[9]);
+AudioConnection          vocoderSynthesis9(vocoder_carrier_mix, vocoder_synthesis[9]);
+AudioConnection          vocoderBand9(vocoder_synthesis[9], 0, vocoder_bands[2], 1);
+AudioConnection          vocoderAnalysis10(vocoder_modulator, vocoder_analysis[10]);
+AudioConnection          vocoderLevel10(vocoder_analysis[10], vocoder_level[10]);
+AudioConnection          vocoderSynthesis10(vocoder_carrier_mix, vocoder_synthesis[10]);
+AudioConnection          vocoderBand10(vocoder_synthesis[10], 0, vocoder_bands[2], 2);
+AudioConnection          vocoderAnalysis11(vocoder_modulator, vocoder_analysis[11]);
+AudioConnection          vocoderLevel11(vocoder_analysis[11], vocoder_level[11]);
+AudioConnection          vocoderSynthesis11(vocoder_carrier_mix, vocoder_synthesis[11]);
+AudioConnection          vocoderBand11(vocoder_synthesis[11], 0, vocoder_bands[2], 3);
+AudioConnection          vocoderAnalysis12(vocoder_modulator, vocoder_analysis[12]);
+AudioConnection          vocoderLevel12(vocoder_analysis[12], vocoder_level[12]);
+AudioConnection          vocoderSynthesis12(vocoder_carrier_mix, vocoder_synthesis[12]);
+AudioConnection          vocoderBand12(vocoder_synthesis[12], 0, vocoder_bands[3], 0);
+AudioConnection          vocoderAnalysis13(vocoder_modulator, vocoder_analysis[13]);
+AudioConnection          vocoderLevel13(vocoder_analysis[13], vocoder_level[13]);
+AudioConnection          vocoderSynthesis13(vocoder_carrier_mix, vocoder_synthesis[13]);
+AudioConnection          vocoderBand13(vocoder_synthesis[13], 0, vocoder_bands[3], 1);
+AudioConnection          vocoderAnalysis14(vocoder_modulator, vocoder_analysis[14]);
+AudioConnection          vocoderLevel14(vocoder_analysis[14], vocoder_level[14]);
+AudioConnection          vocoderSynthesis14(vocoder_carrier_mix, vocoder_synthesis[14]);
+AudioConnection          vocoderBand14(vocoder_synthesis[14], 0, vocoder_bands[3], 2);
+AudioConnection          vocoderAnalysis15(vocoder_modulator, vocoder_analysis[15]);
+AudioConnection          vocoderLevel15(vocoder_analysis[15], vocoder_level[15]);
+AudioConnection          vocoderSynthesis15(vocoder_carrier_mix, vocoder_synthesis[15]);
+AudioConnection          vocoderBand15(vocoder_synthesis[15], 0, vocoder_bands[3], 3);
+AudioConnection          vocoderBandsMix0(vocoder_bands[0], 0, vocoder_bands_mix, 0);
+AudioConnection          vocoderBandsMix1(vocoder_bands[1], 0, vocoder_bands_mix, 1);
+AudioConnection          vocoderBandsMix2(vocoder_bands[2], 0, vocoder_bands_mix, 2);
+AudioConnection          vocoderBandsMix3(vocoder_bands[3], 0, vocoder_bands_mix, 3);
+#ifdef AUDIO_INTERFACE
+AudioConnection          vocoderModulator1(USB_in, 0, vocoder_modulator, 0);   // the incoming sound, whether or not it is heard
+AudioConnection          vocoderModulator2(USB_in, 1, vocoder_modulator, 1);
+#endif
+// the vocoded harp into the right side as well (see VOCODER, STEREO STRINGS). The vocoder takes the
+// left side's mix as its carrier, all of the harp at spread 0; and the left side's return gets it a
+// block later than the right's, which only the vocoded harp hears.
+AudioConnection          vocoderCord10(all_string_mix_r, 0, vocoder_string_return_r, 0);
+AudioConnection          vocoderCord11(vocoder_out, 0, vocoder_string_return_r, 1);

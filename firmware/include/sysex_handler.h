@@ -1,4 +1,4 @@
-void apply_audio_parameter(int adress, int value) {
+FLASHMEM void apply_audio_parameter(int adress, int value) {
     switch(adress){
       case 20:
         bank_led_hue=value; set_led_color(bank_led_hue, bank_led_saturation(), 1-led_attenuation);
@@ -77,6 +77,15 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 259:
         set_chord_ensemble(value);
+        break;
+      case 260:
+        vocoder_amount=value; vocoder_set();
+        break;
+      case 261:
+        vocoder_carrier=value; vocoder_set();
+        break;
+      case 262:
+        vocoder_consonants=value; vocoder_set();
         break;
       case 29:
         pan=value/100.0;apply_audio_parameter(85, current_sysex_parameters[85]);apply_audio_parameter(184, current_sysex_parameters[184]);
@@ -903,6 +912,9 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 257: lo=0; hi=100; return true;
       case 258: lo=0; hi=1; return true;
       case 259: lo=0; hi=100; return true;
+      case 260: lo=0; hi=100; return true;
+      case 261: lo=0; hi=2; return true;
+      case 262: lo=0; hi=100; return true;
       case 29: lo=0; hi=100; return true;
       case 200: lo=0; hi=511; return true;
       case 201: lo=0; hi=4095; return true;
