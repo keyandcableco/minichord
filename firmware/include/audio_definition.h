@@ -497,6 +497,7 @@ AudioMixer4              string_waveshaper_mix_r;
 AudioFilterStateVariable filter_delay_strings_r;   // ahead of the delay's mixer, as on the left: the feedback loop's block falls in the same place
 AudioMixer4              string_delay_mix_r;
 AudioEffectDelay         delay_strings_r;
+AudioEffectSilenceGate   delay_strings_gate_r;   // as the left's (see DELAY LOOP GATES): the loop goes quiet once its echoes die
 AudioMixer4              strings_effect_mix_r;
 AudioEffectMultiply      string_multiply_r;
 AudioFilterStateVariable string_filter_r;
@@ -620,7 +621,6 @@ AudioConnection          patchCord195_r(string_delay_mix_r, delay_strings_r);
 AudioConnection          patchCord196_r(string_delay_mix_r, 0, strings_effect_mix_r, 1);
 AudioConnection          patchCord199_r(string_tremolo_lfo, 0, string_multiply_r, 1);
 AudioConnection          patchCord200_r(strings_effect_mix_r, 0, string_multiply_r, 0);
-AudioConnection          patchCord204_r(delay_strings_r, 0, filter_delay_strings_r, 0);
 AudioConnection          patchCord205_r(string_filter_lfo, 0, string_filter_r, 1);
 AudioConnection          patchCord208_r(string_multiply_r, 0, string_filter_r, 0);
 AudioConnection          patchCord210_r(string_filter_r, 0, string_filter_mixer_r, 0);
@@ -716,3 +716,6 @@ AudioConnection          vocoderModulator2(USB_in, 1, vocoder_modulator, 1);
 // block later than the right's, which only the vocoded harp hears.
 AudioConnection          vocoderCord10(all_string_mix_r, 0, vocoder_string_return_r, 0);
 AudioConnection          vocoderCord11(vocoder_out, 0, vocoder_string_return_r, 1);
+// the right side's delay loop through its gate, as the left's (gateCord1a, gateCord1b)
+AudioConnection          gateCord1a_r(delay_strings_r, 0, delay_strings_gate_r, 0);
+AudioConnection          gateCord1b_r(delay_strings_gate_r, 0, filter_delay_strings_r, 0);
