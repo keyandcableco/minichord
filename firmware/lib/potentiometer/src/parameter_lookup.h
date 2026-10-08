@@ -51,6 +51,9 @@ static const ParameterInfo parameter_lookup[] = {
     { 16, 0, 21, 255 }, // mod alternate control
     { 17, 0, 0, 100 }, // mod alternate percent range 
     { 117, 1, 0, 1 }, // knob layer
+    { 249, 0, 0, 255 }, // hover control
+    { 250, 0, 0, 4095 }, // hover value
+    { 251, 1, 3, 10 }, // hover reach
     { 4, 0, 0, 1024 }, // chord alternate value
     { 5, 0, 0, 1024 }, // harp alternate value
     { 6, 0, 0, 1024 }, // mod alternate value

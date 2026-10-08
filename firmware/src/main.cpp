@@ -15,7 +15,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=26; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on)
+int version_ID=27; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -956,6 +956,13 @@ void send_knob_ccs() {
   }
   knob_midi_resend = false;
 }
+
+// Hover: the harp plate as a fourth knob, played by holding a hand over it (see handle_hover)
+int16_t hover_target = 0;      // the setting hover moves (address 249), 0 for none
+int16_t hover_value = 0;       // what that setting reaches with a hand 2 cm above the plate (250)
+uint8_t hover_reach = 7;       // how high above the plate hover begins, roughly in centimetres (251)
+bool hover_reapply = true;     // apply again even if the value hasn't changed
+void hover_set_target(int16_t adress);
 
 // Called from loop() only. The single point at which this firmware talks to usbMIDI.
 void drain_midi_queue() {
@@ -4891,6 +4898,123 @@ void apply_temperament(uint8_t t) {
   update_harp_notes();
 }
 
+//>>HOVER<<
+// The harp plate as a fourth knob, played by holding a hand over it. The touch chip's thirteenth
+// channel reads the twelve pads together as one antenna (harp::read_proximity), which a hand pulls
+// down from several centimetres away. Measured on the stock plate, at the charge set_proximity_charge
+// finds: a palm pulls it about 1 count at 5 cm, 3.5 at 2 cm and 300 resting on the plate. Smoothed,
+// the chip's own noise is 0.04 counts, but a player moving about beside it stirs it by 0.1 or so,
+// which is what limits the reach. Hover runs from 0 at hover reach to 1 at 2 cm, on a log scale
+// between, so it moves about evenly as the hand comes down and is full before the hand gets in the
+// way of playing. With no hand near, the setting is as the preset has it; at 2 cm it reaches hover
+// value. Like the knobs, what it sets is applied but not saved.
+//
+// Playing the harp puts a hand on the plate, the closest hover there is. So while the plate is
+// touched hover holds where it was before the hand came down, and after it lifts, it waits for the
+// hand to rise back through that height (pickup, as the knob layer does) before following again.
+// A strum's quick swoop down shouldn't count as where the hand was, so hover only rises once the
+// hand has stayed that close for a moment (hover_rise_ms): it follows a hand away at once, and
+// towards the plate a beat behind. With "knobs send MIDI" on, it also goes out as control change
+// 24 on the chord channel, beside the knobs' 20-22.
+const uint8_t hover_cc = 24;
+const uint16_t hover_rise_ms = 200;
+const uint8_t hover_slot_ms = 10;
+const float hover_full_cm = 2;
+const float hover_pull_5cm = 1.09f / 709.0f;      // a palm at 5 cm, per count of the idle reading: the pull grows with the charge
+const float hover_touch_counts = 20.0f;           // past this it's a hand on the plate
+float hover_position = 0;                         // 0 to 1, after the hold: what the setting follows
+
+// How far a palm d cm above the plate pulls the reading, for an idle reading of idle. It falls off
+// as the distance to the 1.3 within 5 cm and faster beyond, as the plate starts to look small.
+static float hover_pull(float d, float idle) {
+  return hover_pull_5cm * idle * powf(5.0f / d, d <= 5 ? 1.3f : 1.85f);
+}
+
+// What hover may move: what a knob may, but not its own settings, the double tap's, or USB audio,
+// which belongs to the instrument and restarts it.
+static bool hover_can_move(int16_t adress) {
+  return is_target_adress(adress) && (adress < 249 || adress > 251) && adress != usb_audio_adress && !is_double_tap_setting(adress);
+}
+
+void hover_set_target(int16_t adress) {
+  if (adress == hover_target) return;
+  if (hover_can_move(hover_target)) apply_audio_parameter(hover_target, current_sysex_parameters[hover_target]);  // the old one back as the preset has it
+  hover_target = adress;
+  hover_reapply = true;
+}
+
+void handle_hover() {
+  static elapsedMicros since_read;
+  if (since_read < 2000) return;                   // the chip has a new reading each millisecond; every other one is plenty
+  since_read = 0;
+  float reading = harp_sensor.read_proximity();
+  if (reading <= 0) return;                        // no proximity channel on this touch chip
+  static float level = -1, baseline = -1;
+  if (level < 0) level = baseline = reading;
+  level += (reading - level) * 0.05f;              // about 40 ms of smoothing
+  float near = baseline - level;                   // how far a hand pulls the reading down
+  bool touched = near > hover_touch_counts;
+  for (int i = 0; i < 12 && !touched; i++) touched = harp_array[i].read_value();
+  // The baseline is what the plate reads with no hand. It follows the reading up quickly (a hand
+  // leaving, or the air drying) and down slowly, so a hand held still isn't soaked up but a drift
+  // with nobody near is; slower still within reach, and not at all while the plate is touched.
+  float pull_full = hover_pull(hover_full_cm, baseline);
+  float pull_edge = hover_pull(hover_reach, baseline);
+  float rate = near < 0 ? 0.02f : touched ? 0 : near < pull_edge ? 0.0004f : 0.00002f;  // 0.1 s, 5 s, 100 s
+  baseline -= near * rate;
+
+  float live = touched ? 1 : near <= pull_edge ? 0 : fminf(logf(near / pull_edge) / logf(pull_full / pull_edge), 1);
+  // Rises only once the hand has been that close all of hover_rise_ms: the lowest of the last
+  // stretch, kept in slots holding each one's lowest.
+  static float recent[hover_rise_ms / hover_slot_ms] = {0};
+  static uint8_t slot = 0;
+  static elapsedMillis since_slot;
+  const uint8_t slots = hover_rise_ms / hover_slot_ms;
+  if (since_slot >= hover_slot_ms) {
+    since_slot = 0;
+    slot = (slot + 1) % slots;
+    recent[slot] = live;
+  } else recent[slot] = fminf(recent[slot], live);
+  float follow = live;
+  for (uint8_t k = 0; k < slots; k++) follow = fminf(follow, recent[k]);
+
+  static bool holding = false;
+  if (touched) holding = true;
+  else if (holding && follow <= hover_position + 0.02f) holding = false;   // back down to where it was held: pickup
+  if (!holding) {
+    hover_position += (follow - hover_position) * 0.033f;   // 60 ms more, to calm the far end
+    if (follow == 0 && hover_position < 0.001f) hover_position = 0;
+  }
+
+  static elapsedMillis since_apply;
+  if (since_apply < 10) return;
+  since_apply = 0;
+  if (hover_can_move(hover_target)) {
+    static int16_t applied = 0;
+    static elapsedMillis since_refresh;
+    int16_t from = current_sysex_parameters[hover_target];
+    int16_t to = hover_value;
+    int16_t lo, hi;
+    if (parameter_range(hover_target, lo, hi)) to = constrain(to, lo, hi);
+    int16_t value = (int16_t)lroundf(from + (to - from) * hover_position);
+    // a preset load or an editor puts the stored value back: while hover is up, apply it again now and then
+    if (hover_position > 0 && since_refresh > 250) hover_reapply = true;
+    if (value != applied || hover_reapply) {
+      apply_audio_parameter(hover_target, value);
+      applied = value;
+      hover_reapply = false;
+      since_refresh = 0;
+    }
+  }
+  static int16_t sent = -1;
+  if (!knob_midi) sent = -1;                       // sent again whenever it's switched back on
+  else {
+    int16_t cc = (int16_t)lroundf(hover_position * 127);
+    if (cc != sent) queue_midi_cc(hover_cc, cc, chord_channel, chord_port);
+    sent = cc;
+  }
+}
+
 void loop() {
   usb_audio_update();
   // Process incoming MIDI messages
@@ -4934,6 +5058,7 @@ void loop() {
   flag_save_needed |= harp_pot.update_parameter(alternate);
   flag_save_needed |= mod_pot.update_parameter(alternate);
   if (knob_midi) send_knob_ccs();
+  handle_hover();
 
   // Two quick taps of the modifier toggle whatever the player has assigned to
   // the gesture. Only when no chord button is down, so it never competes with

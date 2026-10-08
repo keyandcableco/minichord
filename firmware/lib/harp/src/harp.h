@@ -27,6 +27,12 @@ class harp{
   void set_thresholds(uint8_t touch, uint8_t release);
   bool thresholds_pending() { return thresholds_changed; }
   void apply_thresholds();
+  // Hover: the chip's thirteenth channel reads all twelve pads together as one
+  // large antenna, which feels a hand above the plate before it lands. Its
+  // filtered reading, which falls as a hand comes near; 0 if there is none. The
+  // chip's own baseline is only kept to four counts, coarser than a hand a few
+  // centimetres away moves it, so the baseline is the caller's to keep.
+  uint16_t read_proximity();
 
   private:
   bool thresholds_changed = false;
@@ -52,6 +58,11 @@ class harp{
     const MPR121::FirstFilterIterations first_filter_iterations = MPR121::FIRST_FILTER_ITERATIONS_6;
     const MPR121::SecondFilterIterations second_filter_iterations = MPR121::SECOND_FILTER_ITERATIONS_4;
     const MPR121::SamplePeriod sample_period = MPR121::SAMPLE_PERIOD_1MS;
+    // The twelve pads read together hold about twelve times one pad's charge,
+    // so the half microsecond that suits a pad leaves them far below the chip's
+    // range. They get a charge of their own, found at calibration.
+    static const uint8_t proximity_channel = 12;
+    void set_proximity_charge();
   #endif
 
 

@@ -114,6 +114,15 @@ void apply_audio_parameter(int adress, int value) {
       case 117:
         if (knob_layer != (bool)value) { chord_pot.pickup_on_next_switch(); harp_pot.pickup_on_next_switch(); mod_pot.pickup_on_next_switch(); } knob_layer=value; set_led_color(bank_led_hue, bank_led_saturation(), 1-led_attenuation);
         break;
+      case 249:
+        hover_set_target(constrain(value,0,parameter_size-1));
+        break;
+      case 250:
+        hover_value=value; hover_reapply=true;
+        break;
+      case 251:
+        hover_reach=constrain(value,3,10);
+        break;
       case 4:
         chord_pot.set_alternate_default(value);chord_pot.force_update();
         break;
@@ -882,6 +891,9 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 16: lo=21; hi=255; return true;
       case 17: lo=0; hi=100; return true;
       case 117: lo=0; hi=1; return true;
+      case 249: lo=0; hi=255; return true;
+      case 250: lo=0; hi=4095; return true;
+      case 251: lo=3; hi=10; return true;
       case 4: lo=0; hi=1024; return true;
       case 5: lo=0; hi=1024; return true;
       case 6: lo=0; hi=1024; return true;
