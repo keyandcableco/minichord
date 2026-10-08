@@ -1,5 +1,19 @@
 #include "plucked_string.h"
 
+// The strings' delay lines are 4 KB each, 48 KB for the twelve, which RAM1 can't spare: the stack
+// shares it, and grows down towards the variables. So they come from a pool in RAM2 (DMAMEM), one a
+// string. RAM2 isn't cleared at boot, so each is cleared as it's handed out. A thirteenth string
+// would take its line from the heap, and one that got none stays silent.
+static const uint8_t pool_strings = 12;
+DMAMEM static float pool[pool_strings][AudioSynthPluckedString::length];
+static uint8_t pool_used = 0;
+
+float *AudioSynthPluckedString::take_buffer() {
+  float *b = pool_used < pool_strings ? pool[pool_used++] : (float *)malloc(length * sizeof(float));
+  if (b) memset(b, 0, length * sizeof(float));
+  return b;
+}
+
 // The cubic (Lagrange) interpolation's four weights, reading x (0-1) of the way from
 // the second sample to the third.
 static inline void lagrange(double x, double h[4]) {
@@ -72,6 +86,7 @@ void AudioSynthPluckedString::tune(float freq) {
 // that died within a few periods or never got past the filter, and turning up
 // string model lost the harp 16-20 dB.
 void AudioSynthPluckedString::pluck(float brightness) {
+  if (!buffer) return;   // no line to ring in
   tune(base_freq);
   uint16_t n = (uint16_t)ceilf(delay_samples) + 2;   // the cubic reads a sample either side
   const float w = 2.0f * (float)M_PI * tuned_freq / AUDIO_SAMPLE_RATE_EXACT;

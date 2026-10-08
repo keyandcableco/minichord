@@ -4165,7 +4165,7 @@ void load_config(int bank_number) {
 FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to the rest (see apply_audio_parameter)
   Serial.begin(9600);
   Serial.println("Initialising audio parameters");
-  AudioMemory(1200);
+  AudioMemory(900);
   update_formants();   // off (amount 0) until a preset says otherwise
   //>>STATIC AUDIO PARAMETERS
   // the waveshaper

@@ -19,7 +19,8 @@
 class AudioSynthPluckedString : public AudioStream
 {
 public:
-  AudioSynthPluckedString() : AudioStream(2, inputQueueArray) {}
+  AudioSynthPluckedString() : AudioStream(2, inputQueueArray) { buffer = take_buffer(); }
+  static const uint16_t length = 1024;   // the longest period: about 43 Hz
   void frequency(float freq) { base_freq = freq; }
   void frequencyModulation(float octaves) { fm_octaves = octaves; }
   void amplitude(float level) { amp = level; }
@@ -35,8 +36,8 @@ public:
 
 private:
   audio_block_t *inputQueueArray[2];
-  static const uint16_t length = 1024;   // the longest period: about 43 Hz
-  float buffer[length] = {0};
+  float *buffer;           // length samples, in RAM2 (take_buffer)
+  static float *take_buffer();
   uint16_t write_index = 0;
   float base_freq = 220;
   float fm_octaves = 0;
