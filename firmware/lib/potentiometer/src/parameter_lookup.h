@@ -264,4 +264,25 @@ static const ParameterInfo parameter_lookup[] = {
     { 197, 0, 0, 2 }, // output amplifier
 };
 
+// Which controls may move each address, from each parameter's "controls" in
+// parameters.json: "all" (the default) for the knobs, hover and the double tap;
+// "tap" for the double tap only, which sets an exact value, for settings a sweep
+// would only scramble (a bitmask, the knob layer under the knob turning it, a MIDI
+// mode); "none" for settings no control should touch (the controls' own wiring,
+// the instrument's setup, MIDI routing). Addresses with no parameter are "none".
+// It goes by the setting, not its address, so a new one can live anywhere.
+#define PARAMETER_CONTROL_NONE 0
+#define PARAMETER_CONTROL_TAP 1
+#define PARAMETER_CONTROL_ALL 2
+static const uint8_t parameter_control[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 2, 2, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 2, 2, 0, 0,
+};
+
 #endif // PARAMETER_LOOKUP_H

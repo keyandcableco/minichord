@@ -424,6 +424,28 @@ static const ParameterInfo parameter_lookup[] = {
                     parameter["sysex_adress"], is_selector, min_value, max_value, name)
     lookup_file_content += """};
 
+// Which controls may move each address, from each parameter's "controls" in
+// parameters.json: "all" (the default) for the knobs, hover and the double tap;
+// "tap" for the double tap only, which sets an exact value, for settings a sweep
+// would only scramble (a bitmask, the knob layer under the knob turning it, a MIDI
+// mode); "none" for settings no control should touch (the controls' own wiring,
+// the instrument's setup, MIDI routing). Addresses with no parameter are "none".
+// It goes by the setting, not its address, so a new one can live anywhere.
+#define PARAMETER_CONTROL_NONE 0
+#define PARAMETER_CONTROL_TAP 1
+#define PARAMETER_CONTROL_ALL 2
+static const uint8_t parameter_control[256] = {
+"""
+    control = [0] * 256
+    control_values = {"none": 0, "tap": 1, "all": 2}
+    for section in d:
+        for parameter in d[section]:
+            if "sysex_adress" in parameter:
+                control[parameter["sysex_adress"]] = control_values[parameter.get("controls", "all")]
+    for row in range(0, 256, 32):
+        lookup_file_content += "    " + ", ".join(str(v) for v in control[row:row + 32]) + ",\n"
+    lookup_file_content += """};
+
 #endif // PARAMETER_LOOKUP_H
 """
     with open('../lib/potentiometer/src/parameter_lookup.h', 'w') as lookup_output:

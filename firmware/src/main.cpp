@@ -683,9 +683,14 @@ static inline float bank_led_saturation() { return knob_layer ? 0.45 : 1.0; }
 // 120-219 are chord parameters
 // 220-235 are rythm patterns
 // 236-255 are the parameters added since, when 21-219 had filled up
-// What a knob or the double tap can be pointed at: any parameter from 21 on but the rythm patterns
-static inline bool is_target_adress(int16_t adress) {
-  return (adress >= 21 && adress <= 219) || (adress >= 236 && adress < (int16_t)parameter_size);
+// What the controls can be pointed at goes by each parameter's "controls" in parameters.json
+// (parameter_control, in parameter_lookup.h), not by its address: the knobs and hover sweep, so
+// they take only "all"; the double tap sets an exact value, so "tap" too.
+static inline bool control_can_sweep(int16_t adress) {
+  return adress >= 0 && adress < (int16_t)parameter_size && parameter_control[adress] == PARAMETER_CONTROL_ALL;
+}
+static inline bool control_can_tap(int16_t adress) {
+  return adress >= 0 && adress < (int16_t)parameter_size && parameter_control[adress] >= PARAMETER_CONTROL_TAP;
 }
 bool sysex_controler_connected=false; //bool to remember if there is a controller that is connected to avoid saving any change
 
@@ -3479,7 +3484,7 @@ void save_config(int bank_number, bool default_save) {
     int16_t held_value[double_tap_pairs] = {0, 0, 0};
     for (uint8_t k = 0; k < double_tap_pairs; k++) {
       int16_t a = double_tap_engaged_adress[k];
-      if (double_tap_engaged && is_target_adress(a) && current_sysex_parameters[a] == double_tap_applied[k]) {
+      if (double_tap_engaged && control_can_tap(a) && current_sysex_parameters[a] == double_tap_applied[k]) {
         held_value[k] = current_sysex_parameters[a];
         current_sysex_parameters[a] = double_tap_saved[k];
       } else held_value[k] = -32768;              // untouched by the double tap, or changed since: saved as it is
@@ -3490,7 +3495,7 @@ void save_config(int bank_number, bool default_save) {
     dataFile.println(serialize(current_sysex_parameters, parameter_size));
     for (uint8_t k = 0; k < double_tap_pairs; k++) {
       int16_t a = double_tap_engaged_adress[k];
-      if (double_tap_engaged && is_target_adress(a) && held_value[k] != -32768) current_sysex_parameters[a] = held_value[k];
+      if (double_tap_engaged && control_can_tap(a) && held_value[k] != -32768) current_sysex_parameters[a] = held_value[k];
     }
   }
   Serial.print("Saved preset: ");
@@ -5087,12 +5092,6 @@ void trigger_chord_notes() {
   button_pushed = false;
 }
 
-// true if an address is one of the double tap's own settings, which it must never toggle
-static bool is_double_tap_setting(int16_t adress) {
-  for (uint8_t k = 0; k < double_tap_pairs; k++)
-    if (adress == double_tap_control_adress[k] || adress == double_tap_value_adress[k]) return true;
-  return false;
-}
 
 // Applies the chosen values, or puts back what was there before.
 void toggle_double_tap_target() {
@@ -5117,8 +5116,7 @@ void toggle_double_tap_target() {
     for (uint8_t k = 0; k < double_tap_pairs; k++) {
       int16_t adress = current_sysex_parameters[double_tap_control_adress[k]];
       double_tap_engaged_adress[k] = -1;
-      if (!is_target_adress(adress)) continue;     // 0 means this pair is unassigned
-      if (is_double_tap_setting(adress)) continue;
+      if (!control_can_tap(adress)) continue;      // 0 means this pair is unassigned
       bool repeat = false;                          // two pairs on one parameter: the first one wins
       for (uint8_t j = 0; j < k; j++) if (double_tap_engaged_adress[j] == adress) repeat = true;
       if (repeat) continue;
@@ -5305,10 +5303,10 @@ static float hover_pull(float d, float idle) {
   return hover_pull_5cm * idle * powf(5.0f / d, d <= 5 ? 1.3f : 1.85f);
 }
 
-// What hover may move: what a knob may, but not its own settings, the double tap's, or USB audio,
-// which belongs to the instrument and restarts it.
+// What hover may move: what a knob may (its own settings, the double tap's and USB audio among the
+// ones none may)
 static bool hover_can_move(int16_t adress) {
-  return is_target_adress(adress) && (adress < 249 || adress > 251) && adress != usb_audio_adress && !is_double_tap_setting(adress);
+  return control_can_sweep(adress);
 }
 
 void hover_set_target(int16_t adress) {

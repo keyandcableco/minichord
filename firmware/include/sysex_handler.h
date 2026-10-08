@@ -91,25 +91,25 @@ void apply_audio_parameter(int adress, int value) {
         
         break;
       case 10:
-        chord_pot.set_alternate(constrain(value,0,parameter_size-1));
+        chord_pot.set_alternate(control_can_sweep(value) ? value : 0);
         break;
       case 11:
         chord_pot.set_alternate_range(value);
         break;
       case 12:
-        harp_pot.set_alternate(constrain(value,0,parameter_size-1));
+        harp_pot.set_alternate(control_can_sweep(value) ? value : 0);
         break;
       case 13:
         harp_pot.set_alternate_range(value);
         break;
       case 14:
-        mod_pot.set_main(constrain(value,0,parameter_size-1));
+        mod_pot.set_main(control_can_sweep(value) ? value : 0);
         break;
       case 15:
         mod_pot.set_main_range(value);
         break;
       case 16:
-        mod_pot.set_alternate(constrain(value,0,parameter_size-1));
+        mod_pot.set_alternate(control_can_sweep(value) ? value : 0);
         break;
       case 17:
         mod_pot.set_alternate_range(value);
