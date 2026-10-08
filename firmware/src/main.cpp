@@ -15,7 +15,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=10; //to be read 00.03, stored at adress 7 in memory
+int version_ID=11; //to be read 00.03, stored at adress 7 in memory
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -90,12 +90,13 @@ const uint8_t edo_scale_intervals[4][7][8] = {
 // chords they serve: the whole tone row by its names, and the octatonic (dim)
 // and offset diminished sixth (dim7) rows with the chord's own G-flat and
 // B-double-flat in place of F-sharp and A, so the harp in modes 8 and 9 plays
-// the chord it is under.
-const uint8_t edo_chord_scale_intervals[4][15][8] = {
-  {{0, 2, 4, 7, 9, 0, 0, 0}, {0, 2, 4, 6, 9, 0, 0, 0}, {0, 3, 5, 7, 10, 0, 0, 0}, {0, 2, 4, 7, 10, 0, 0, 0}, {0, 3, 5, 7, 9, 0, 0, 0}, {0, 1, 3, 4, 6, 7, 9, 10}, {0, 2, 4, 6, 8, 10, 0, 0}, {0, 2, 4, 5, 7, 8, 9, 11}, {0, 2, 3, 5, 7, 8, 9, 11}, {0, 2, 3, 4, 6, 7, 9, 11}, {0, 2, 4, 5, 7, 9, 11, 0}, {0, 2, 3, 5, 7, 9, 10, 0}, {0, 2, 4, 6, 7, 9, 11, 0}, {0, 2, 4, 5, 7, 9, 10, 0}, {0, 2, 3, 5, 7, 8, 10, 0}},
-  {{0, 3, 6, 11, 14, 0, 0, 0}, {0, 3, 6, 9, 14, 0, 0, 0}, {0, 5, 8, 11, 16, 0, 0, 0}, {0, 3, 6, 11, 16, 0, 0, 0}, {0, 5, 8, 11, 14, 0, 0, 0}, {0, 2, 5, 6, 10, 11, 14, 16}, {0, 3, 6, 9, 12, 15, 0, 0}, {0, 3, 6, 8, 11, 13, 14, 17}, {0, 3, 5, 8, 11, 13, 14, 17}, {0, 3, 5, 6, 10, 11, 15, 17}, {0, 3, 6, 8, 11, 14, 17, 0}, {0, 3, 5, 8, 11, 14, 16, 0}, {0, 3, 6, 9, 11, 14, 17, 0}, {0, 3, 6, 8, 11, 14, 16, 0}, {0, 3, 5, 8, 11, 13, 16, 0}},
-  {{0, 5, 10, 18, 23, 0, 0, 0}, {0, 5, 10, 15, 23, 0, 0, 0}, {0, 8, 13, 18, 26, 0, 0, 0}, {0, 5, 10, 18, 26, 0, 0, 0}, {0, 8, 13, 18, 23, 0, 0, 0}, {0, 3, 8, 10, 16, 18, 23, 26}, {0, 5, 10, 15, 20, 25, 0, 0}, {0, 5, 10, 13, 18, 21, 23, 28}, {0, 5, 8, 13, 18, 21, 23, 28}, {0, 5, 8, 10, 16, 18, 24, 28}, {0, 5, 10, 13, 18, 23, 28, 0}, {0, 5, 8, 13, 18, 23, 26, 0}, {0, 5, 10, 15, 18, 23, 28, 0}, {0, 5, 10, 13, 18, 23, 26, 0}, {0, 5, 8, 13, 18, 21, 26, 0}},
-  {{0, 4, 8, 14, 18, 0, 0, 0}, {0, 4, 8, 12, 18, 0, 0, 0}, {0, 6, 10, 14, 20, 0, 0, 0}, {0, 4, 8, 14, 20, 0, 0, 0}, {0, 6, 10, 14, 18, 0, 0, 0}, {0, 2, 6, 8, 12, 14, 18, 20}, {0, 4, 8, 12, 16, 20, 0, 0}, {0, 4, 8, 10, 14, 16, 18, 22}, {0, 4, 6, 10, 14, 16, 18, 22}, {0, 4, 6, 8, 12, 14, 18, 22}, {0, 4, 8, 10, 14, 18, 22, 0}, {0, 4, 6, 10, 14, 18, 20, 0}, {0, 4, 8, 12, 14, 18, 22, 0}, {0, 4, 8, 10, 14, 18, 20, 0}, {0, 4, 6, 10, 14, 16, 20, 0}}
+// the chord it is under. Row 15, locrian, is the utonal tetrad's (a just chord,
+// m7b5 in twelve), by its names too.
+const uint8_t edo_chord_scale_intervals[4][16][8] = {
+  {{0, 2, 4, 7, 9, 0, 0, 0}, {0, 2, 4, 6, 9, 0, 0, 0}, {0, 3, 5, 7, 10, 0, 0, 0}, {0, 2, 4, 7, 10, 0, 0, 0}, {0, 3, 5, 7, 9, 0, 0, 0}, {0, 1, 3, 4, 6, 7, 9, 10}, {0, 2, 4, 6, 8, 10, 0, 0}, {0, 2, 4, 5, 7, 8, 9, 11}, {0, 2, 3, 5, 7, 8, 9, 11}, {0, 2, 3, 4, 6, 7, 9, 11}, {0, 2, 4, 5, 7, 9, 11, 0}, {0, 2, 3, 5, 7, 9, 10, 0}, {0, 2, 4, 6, 7, 9, 11, 0}, {0, 2, 4, 5, 7, 9, 10, 0}, {0, 2, 3, 5, 7, 8, 10, 0}, {0, 1, 3, 5, 6, 8, 10, 0}},
+  {{0, 3, 6, 11, 14, 0, 0, 0}, {0, 3, 6, 9, 14, 0, 0, 0}, {0, 5, 8, 11, 16, 0, 0, 0}, {0, 3, 6, 11, 16, 0, 0, 0}, {0, 5, 8, 11, 14, 0, 0, 0}, {0, 2, 5, 6, 10, 11, 14, 16}, {0, 3, 6, 9, 12, 15, 0, 0}, {0, 3, 6, 8, 11, 13, 14, 17}, {0, 3, 5, 8, 11, 13, 14, 17}, {0, 3, 5, 6, 10, 11, 15, 17}, {0, 3, 6, 8, 11, 14, 17, 0}, {0, 3, 5, 8, 11, 14, 16, 0}, {0, 3, 6, 9, 11, 14, 17, 0}, {0, 3, 6, 8, 11, 14, 16, 0}, {0, 3, 5, 8, 11, 13, 16, 0}, {0, 2, 5, 8, 10, 13, 16, 0}},
+  {{0, 5, 10, 18, 23, 0, 0, 0}, {0, 5, 10, 15, 23, 0, 0, 0}, {0, 8, 13, 18, 26, 0, 0, 0}, {0, 5, 10, 18, 26, 0, 0, 0}, {0, 8, 13, 18, 23, 0, 0, 0}, {0, 3, 8, 10, 16, 18, 23, 26}, {0, 5, 10, 15, 20, 25, 0, 0}, {0, 5, 10, 13, 18, 21, 23, 28}, {0, 5, 8, 13, 18, 21, 23, 28}, {0, 5, 8, 10, 16, 18, 24, 28}, {0, 5, 10, 13, 18, 23, 28, 0}, {0, 5, 8, 13, 18, 23, 26, 0}, {0, 5, 10, 15, 18, 23, 28, 0}, {0, 5, 10, 13, 18, 23, 26, 0}, {0, 5, 8, 13, 18, 21, 26, 0}, {0, 3, 8, 13, 16, 21, 26, 0}},
+  {{0, 4, 8, 14, 18, 0, 0, 0}, {0, 4, 8, 12, 18, 0, 0, 0}, {0, 6, 10, 14, 20, 0, 0, 0}, {0, 4, 8, 14, 20, 0, 0, 0}, {0, 6, 10, 14, 18, 0, 0, 0}, {0, 2, 6, 8, 12, 14, 18, 20}, {0, 4, 8, 12, 16, 20, 0, 0}, {0, 4, 8, 10, 14, 16, 18, 22}, {0, 4, 6, 10, 14, 16, 18, 22}, {0, 4, 6, 8, 12, 14, 18, 22}, {0, 4, 8, 10, 14, 18, 22, 0}, {0, 4, 6, 10, 14, 18, 20, 0}, {0, 4, 8, 12, 14, 18, 22, 0}, {0, 4, 8, 10, 14, 18, 20, 0}, {0, 4, 6, 10, 14, 16, 20, 0}, {0, 2, 6, 10, 12, 16, 20, 0}}
 };
 const uint8_t edo_major[4][7] = {{0, 4, 7, 12, 2, 5, 9}, {0, 6, 11, 19, 3, 8, 14}, {0, 10, 18, 31, 5, 13, 23}, {0, 8, 14, 24, 4, 10, 18}};
 const uint8_t edo_minor[4][7] = {{0, 3, 7, 12, 1, 5, 8}, {0, 5, 11, 19, 2, 8, 13}, {0, 8, 18, 31, 3, 13, 21}, {0, 6, 14, 24, 2, 10, 16}};
@@ -124,6 +125,37 @@ const uint8_t edo_major_ninth[4][7] = {{0, 4, 11, 2, 7, 5, 9}, {0, 6, 17, 3, 11,
 const uint8_t edo_minor_ninth[4][7] = {{0, 3, 10, 2, 7, 5, 8}, {0, 5, 16, 3, 11, 8, 13}, {0, 8, 26, 5, 18, 13, 21}, {0, 6, 20, 4, 14, 10, 16}};
 const uint8_t edo_added_ninth[4][7] = {{0, 4, 7, 2, 5, 9, 11}, {0, 6, 11, 3, 8, 14, 17}, {0, 10, 18, 5, 13, 23, 28}, {0, 8, 14, 4, 10, 18, 22}};
 const uint8_t edo_six_nine[4][7] = {{0, 4, 9, 2, 7, 5, 11}, {0, 6, 14, 3, 11, 8, 17}, {0, 10, 23, 5, 18, 13, 28}, {0, 8, 18, 4, 14, 10, 22}};
+/* The chords the divided octaves are for: built from ratios rather than letter
+ * names, the intervals twelve notes cannot spell. Steps are round(cents * EDO /
+ * 1200) of each ratio, and every row is in all four divisions so a layout slot
+ * does not break when the temperament changes. In 31 the harmonic seventh is a
+ * cent from 7:4 and the neutral third a cent from 11:9, and no tone is more than
+ * 15 cents off; in 19 the septimal tones hold within 22 cents, but 19 has no
+ * neutral intervals, so a neutral third rounds onto the major third there; in 24
+ * the neutral intervals are the quarter-tones. In 12 most of them collapse onto
+ * chords the catalogue already has -- the subminor seventh onto m7, the utonal
+ * tetrad onto m7b5 -- which is the point of having the divisions at all.
+ *
+ * The four voices take the first four entries; the remaining tones of the larger
+ * sonorities live in the extras, where the rhythm voices and the harp spell them.
+ */
+const uint8_t edo_neutral[4][7] = {{0, 3, 7, 12, 2, 5, 9}, {0, 6, 11, 19, 3, 8, 14}, {0, 9, 18, 31, 5, 13, 23}, {0, 7, 14, 24, 4, 10, 18}};      // 1 11/9 3/2
+const uint8_t edo_harmonic_7th[4][7] = {{0, 4, 10, 7, 2, 5, 9}, {0, 6, 15, 11, 3, 8, 14}, {0, 10, 25, 18, 5, 13, 23}, {0, 8, 19, 14, 4, 10, 18}}; // 4:5:6:7
+const uint8_t edo_subminor[4][7] = {{0, 3, 7, 12, 2, 5, 9}, {0, 4, 11, 19, 3, 8, 14}, {0, 7, 18, 31, 5, 13, 23}, {0, 5, 14, 24, 4, 10, 18}};     // 6:7:9
+const uint8_t edo_supermajor[4][7] = {{0, 4, 7, 12, 2, 5, 9}, {0, 7, 11, 19, 3, 8, 14}, {0, 11, 18, 31, 5, 13, 23}, {0, 9, 14, 24, 4, 10, 18}};   // 14:18:21
+const uint8_t edo_subminor_seventh[4][7] = {{0, 3, 7, 10, 2, 5, 9}, {0, 4, 11, 15, 3, 7, 14}, {0, 7, 18, 25, 5, 12, 23}, {0, 5, 14, 19, 4, 9, 18}};   // 1 7/6 3/2 7/4 | 9/8 21/16 5/3
+const uint8_t edo_utonal_tetrad[4][7] = {{0, 3, 6, 10, 2, 5, 8}, {0, 4, 9, 15, 3, 8, 13}, {0, 7, 15, 25, 5, 13, 21}, {0, 5, 12, 19, 4, 10, 16}};    // 1 7/6 7/5 7/4 | 9/8 4/3 8/5
+const uint8_t edo_harmonic_ninth[4][7] = {{0, 2, 4, 10, 7, 6, 8}, {0, 3, 6, 15, 11, 9, 13}, {0, 5, 10, 25, 18, 14, 22}, {0, 4, 8, 19, 14, 11, 17}};  // 1 9/8 5/4 7/4 | 3/2 11/8 13/8
+const uint8_t edo_neutral_seventh[4][7] = {{0, 3, 7, 10, 2, 6, 9}, {0, 6, 11, 17, 2, 9, 13}, {0, 9, 18, 27, 4, 14, 22}, {0, 7, 14, 21, 3, 11, 17}};   // 1 11/9 3/2 11/6 | 12/11 11/8 18/11
+const uint8_t edo_otonal_hexad[4][7] = {{0, 4, 7, 10, 2, 6, 12}, {0, 6, 11, 15, 3, 9, 19}, {0, 10, 18, 25, 5, 14, 31}, {0, 8, 14, 19, 4, 11, 24}}; // 1 5/4 3/2 7/4 | 9/8 11/8 2
+// The just augmented is stacked pure major thirds. Its last extra is 125/64,
+// the next third up: in twelve it rounds onto the octave, which is the closure
+// that makes the equal tempered chord symmetric; in nineteen and thirty one it
+// does not, so the harp plays the note that shows the chord no longer closes.
+const uint8_t edo_just_augmented[4][7] = {{0, 4, 8, 12, 2, 6, 12}, {0, 6, 12, 19, 3, 9, 18}, {0, 10, 20, 31, 5, 15, 30}, {0, 8, 15, 24, 4, 12, 23}};  // 1 5/4 25/16 2 | 9/8 45/32 125/64
+// In nineteen the septimal fourth 21/16 rounds onto the same step as the 9/7
+// third, so the extras take the plain 4/3, as the subminor seventh does 5/3.
+const uint8_t edo_supermajor_seventh[4][7] = {{0, 4, 7, 11, 2, 5, 9}, {0, 7, 11, 18, 4, 8, 15}, {0, 11, 18, 29, 6, 13, 24}, {0, 9, 14, 23, 5, 10, 19}}; // 1 9/7 3/2 27/14 | 8/7 4/3 12/7
 
 uint8_t major[7] = {0, 4, 7, 12, 2, 5, 9};  // After the four notes of the chord (fundamental, third, fifth of seven, and octave of fifth, the next notes are the second fourth and sixth)
 uint8_t minor[7] = {0, 3, 7, 12, 1, 5, 8};
@@ -144,19 +176,42 @@ uint8_t minor_ninth[7]  = {0, 3, 10, 2, 7, 5, 8};   // min9, no fifth
 uint8_t added_ninth[7]  = {0, 4, 7, 2, 5, 9, 11};   // add9
 uint8_t six_nine[7]     = {0, 4, 9, 2, 7, 5, 11};   // 6/9
 uint8_t half_dim[7]     = {0, 3, 6, 10, 2, 5, 8};   // m7b5
+// The just chords, for the divided octaves; their ratios and rounding are in
+// the edo_ tables above.
+uint8_t supermajor[7]         = {0, 4, 7, 12, 2, 5, 9};    // 14:18:21
+uint8_t subminor[7]           = {0, 3, 7, 12, 2, 5, 9};    // 6:7:9
+uint8_t neutral[7]            = {0, 3, 7, 12, 2, 5, 9};    // 1 11/9 3/2
+uint8_t harmonic_7th[7]       = {0, 4, 10, 7, 2, 5, 9};    // 4:5:6:7
+uint8_t neutral_seventh[7]    = {0, 3, 7, 10, 2, 6, 9};    // 1 11/9 3/2 11/6
+uint8_t subminor_seventh[7]   = {0, 3, 7, 10, 2, 5, 9};    // 12:14:18:21
+uint8_t utonal_tetrad[7]      = {0, 3, 6, 10, 2, 5, 8};    // 1/7:1/6:1/5:1/4
+uint8_t harmonic_ninth[7]     = {0, 2, 4, 10, 7, 6, 8};    // 4:5:6:7:9, the fifth in the extras
+uint8_t otonal_hexad[7]       = {0, 4, 7, 10, 2, 6, 12};   // 4:5:6:7, the 9 and 11 in the extras
+uint8_t just_augmented[7]     = {0, 4, 8, 12, 2, 6, 12};   // 16:20:25
+uint8_t supermajor_seventh[7] = {0, 4, 7, 11, 2, 5, 9};    // 14:18:21:27
 
 uint8_t alt_chord_layout = 0;   // 0 = standard chords, 1 = the assignable layout
 
 
 // Every chord the instrument can make, in one list, so a button combination can
 // be pointed at any of them rather than at a fixed table.
-uint8_t (*chord_catalogue[18])[7] = {
+uint8_t (*chord_catalogue[29])[7] = {
   &major, &minor, &seventh, &maj_seventh, &min_seventh, &dim, &aug,
   &maj_sixth, &min_sixth, &full_dim, &half_dim,
   &sus_fourth, &sus_second, &seventh_sus,
-  &major_ninth, &minor_ninth, &added_ninth, &six_nine
+  &major_ninth, &minor_ninth, &added_ninth, &six_nine,
+  // The just chords keep the order of their twelve-tone counterparts: triads
+  // first (supermajor as major, subminor as minor, neutral as the third triad
+  // twelve does not have), then the sevenths tracking dominant, major and minor
+  // -- 11/6 sits nearer the major seventh than the minor, so the neutral seventh
+  // takes the major seat -- then the utonal tetrad where m7b5 sits, the harmonic
+  // ninth with the ninths, and the hexad. The just augmented fills the augmented
+  // seat, and the supermajor seventh is the septimal major seventh.
+  &supermajor, &subminor, &neutral, &harmonic_7th,
+  &neutral_seventh, &subminor_seventh, &utonal_tetrad, &harmonic_ninth, &otonal_hexad,
+  &just_augmented, &supermajor_seventh
 };
-const uint8_t chord_catalogue_size = 18;
+const uint8_t chord_catalogue_size = 29;
 
 // One parameter per button combination, so a layout is part of the preset.
 const uint8_t alt_slot_adress[7] = {202, 203, 204, 205, 206, 207, 208};
@@ -225,7 +280,7 @@ uint8_t scale_intervals[7][8] = {
 const uint8_t scale_lengths[7] = {7, 5, 5, 8, 7, 7, 5};
 
 // Scales chosen per chord type for modes 8 and 9
-uint8_t chord_scale_intervals[15][8] = {
+uint8_t chord_scale_intervals[16][8] = {
   {0, 2, 4, 7, 9, 0, 0, 0},  //  0: Major Pentatonic, major chord
   {0, 2, 4, 6, 9, 0, 0, 0},  //  1: Lydian Pentatonic, major seventh
   {0, 3, 5, 7, 10, 0, 0, 0}, //  2: Minor Pentatonic, minor
@@ -240,9 +295,28 @@ uint8_t chord_scale_intervals[15][8] = {
   {0, 2, 3, 5, 7, 9, 10, 0}, // 11: Dorian, minor seventh
   {0, 2, 4, 6, 7, 9, 11, 0}, // 12: Lydian, major seventh
   {0, 2, 4, 5, 7, 9, 10, 0}, // 13: Mixolydian, dominant seventh
-  {0, 2, 3, 5, 7, 8, 10, 0}  // 14: Aeolian, minor
+  {0, 2, 3, 5, 7, 8, 10, 0}, // 14: Aeolian, minor
+  {0, 1, 3, 5, 6, 8, 10, 0}  // 15: Locrian, the utonal tetrad (an m7b5 in twelve)
 };
-const uint8_t chord_scale_lengths[15] = {5, 5, 5, 5, 5, 8, 6, 8, 8, 8, 7, 7, 7, 7, 7};
+const uint8_t chord_scale_lengths[16] = {5, 5, 5, 5, 5, 8, 6, 8, 8, 8, 7, 7, 7, 7, 7, 7};
+// The letter degree each scale entry names (0 = root, 1 = second, 2 = third, ...
+// 6 = seventh), so a just chord's tone can take the place of the scale's own
+// third or seventh rather than whichever entry happens to lie nearest it (see
+// substitute_chord_tones). The degrees are the same in every division; only the
+// steps are retuned. The octatonic, whole tone and diminished sixth rows name a
+// degree twice or not at all, so they are left unlabelled (DEG_NONE) and fall
+// back to the nearest entry.
+#define DEG_NONE 255
+const uint8_t chord_scale_degrees[16][8] = {
+  {0, 1, 2, 4, 5}, {0, 1, 2, 3, 5}, {0, 2, 3, 4, 6}, {0, 1, 2, 4, 6}, {0, 2, 3, 4, 5},
+  {DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE},
+  {DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE},
+  {DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE},
+  {DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE},
+  {DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE, DEG_NONE},
+  {0, 1, 2, 3, 4, 5, 6}, {0, 1, 2, 3, 4, 5, 6}, {0, 1, 2, 3, 4, 5, 6}, {0, 1, 2, 3, 4, 5, 6}, {0, 1, 2, 3, 4, 5, 6},
+  {0, 1, 2, 3, 4, 5, 6}
+};
 
 
 
@@ -970,6 +1044,17 @@ void apply_temperament(uint8_t t) {
   memcpy(minor_ninth, edo_minor_ninth[edo_index], 7);
   memcpy(added_ninth, edo_added_ninth[edo_index], 7);
   memcpy(six_nine, edo_six_nine[edo_index], 7);
+  memcpy(neutral, edo_neutral[edo_index], 7);
+  memcpy(harmonic_7th, edo_harmonic_7th[edo_index], 7);
+  memcpy(subminor, edo_subminor[edo_index], 7);
+  memcpy(supermajor, edo_supermajor[edo_index], 7);
+  memcpy(subminor_seventh, edo_subminor_seventh[edo_index], 7);
+  memcpy(utonal_tetrad, edo_utonal_tetrad[edo_index], 7);
+  memcpy(harmonic_ninth, edo_harmonic_ninth[edo_index], 7);
+  memcpy(neutral_seventh, edo_neutral_seventh[edo_index], 7);
+  memcpy(otonal_hexad, edo_otonal_hexad[edo_index], 7);
+  memcpy(just_augmented, edo_just_augmented[edo_index], 7);
+  memcpy(supermajor_seventh, edo_supermajor_seventh[edo_index], 7);
 
   /* Every note number just changed meaning: in 31 a fifth is 18 rather than 7.
    * So the note arrays are recomputed unconditionally — update_chord_notes and
@@ -1193,7 +1278,13 @@ uint8_t calculate_note_chord(uint8_t voice, bool slashed, bool sharp) {
 
 enum ChordType {
   CHORD_MAJOR, CHORD_MINOR, CHORD_SEVENTH, CHORD_MAJ_SEVENTH, CHORD_MIN_SEVENTH,
-  CHORD_DIM, CHORD_AUG, CHORD_MAJ_SIXTH, CHORD_MIN_SIXTH, CHORD_FULL_DIM, CHORD_UNKNOWN
+  CHORD_DIM, CHORD_AUG, CHORD_MAJ_SIXTH, CHORD_MIN_SIXTH, CHORD_FULL_DIM,
+  // the just chords, kept together so is_ratio_chord() can test a range
+  CHORD_NEUTRAL, CHORD_HARMONIC_7TH, CHORD_SUBMINOR, CHORD_SUPERMAJOR,
+  CHORD_SUBMINOR_SEVENTH, CHORD_UTONAL_TETRAD, CHORD_HARMONIC_NINTH,
+  CHORD_NEUTRAL_SEVENTH, CHORD_OTONAL_HEXAD,
+  CHORD_JUST_AUGMENTED, CHORD_SUPERMAJOR_SEVENTH,
+  CHORD_UNKNOWN
 };
 
 ChordType get_chord_type(uint8_t (*chord)[7]) {
@@ -1207,6 +1298,17 @@ ChordType get_chord_type(uint8_t (*chord)[7]) {
   if (chord == &maj_sixth)   return CHORD_MAJ_SIXTH;
   if (chord == &min_sixth)   return CHORD_MIN_SIXTH;
   if (chord == &full_dim)    return CHORD_FULL_DIM;
+  if (chord == &neutral)      return CHORD_NEUTRAL;
+  if (chord == &harmonic_7th) return CHORD_HARMONIC_7TH;
+  if (chord == &subminor)     return CHORD_SUBMINOR;
+  if (chord == &supermajor)   return CHORD_SUPERMAJOR;
+  if (chord == &subminor_seventh)   return CHORD_SUBMINOR_SEVENTH;
+  if (chord == &utonal_tetrad)      return CHORD_UTONAL_TETRAD;
+  if (chord == &harmonic_ninth)     return CHORD_HARMONIC_NINTH;
+  if (chord == &neutral_seventh)    return CHORD_NEUTRAL_SEVENTH;
+  if (chord == &otonal_hexad)       return CHORD_OTONAL_HEXAD;
+  if (chord == &just_augmented)     return CHORD_JUST_AUGMENTED;
+  if (chord == &supermajor_seventh) return CHORD_SUPERMAJOR_SEVENTH;
   return CHORD_UNKNOWN;
 }
 
@@ -1230,6 +1332,35 @@ uint8_t get_chord_scale_index(ChordType chord_type, bool use_pentatonic) {
     case CHORD_MAJ_SIXTH:    return 7;
     case CHORD_MIN_SIXTH:    return 8;
     case CHORD_FULL_DIM:     return 9;
+    // The just chords, each on the scale of its twelve-tone counterpart, which
+    // substitute_chord_tones() then retunes to the chord's own tones. Each row is
+    // chosen so it has a seat for every tone the chord defines, so the retuning
+    // replaces like with like. The neutral triad takes the major rows and its
+    // neutral third the third's seat: a neutral third is still the chord's third,
+    // and the harp plays the chord's tones.
+    case CHORD_NEUTRAL:      return use_pentatonic ? 0 : 10;
+    case CHORD_HARMONIC_7TH: return use_pentatonic ? 3 : 13;  // as a dominant: mixolydian
+    case CHORD_SUBMINOR:     return use_pentatonic ? 2 : 14;  // leans minor
+    case CHORD_SUPERMAJOR:   return use_pentatonic ? 0 : 10;  // leans major
+    // The subminor seventh takes the minor pentatonic rather than m7's dorian
+    // one, which voices a sixth in place of the seventh that is the whole point
+    // of this chord. The utonal tetrad is m7b5 in twelve: locrian, and in mode 9
+    // the minor pentatonic, whose fifth its 7/5 replaces. The neutral seventh
+    // sits in the major seventh's seat but has no major third or seventh to keep,
+    // so it takes the major rows and both its neutral tones move in; the
+    // pentatonic has no seventh, so 11/6 takes the sixth's place, its nearest.
+    case CHORD_SUBMINOR_SEVENTH: return use_pentatonic ? 2 : 11;   // as m7: dorian
+    case CHORD_UTONAL_TETRAD:    return use_pentatonic ? 2 : 15;   // as m7b5: locrian
+    case CHORD_HARMONIC_NINTH:   return use_pentatonic ? 3 : 13;   // as a dominant ninth
+    case CHORD_NEUTRAL_SEVENTH:  return use_pentatonic ? 0 : 10;
+    case CHORD_OTONAL_HEXAD:     return use_pentatonic ? 3 : 13;   // 4:5:6:7 is a dominant
+    // The just augmented keeps the augmented chord's whole tone scale, which
+    // has no letter degrees; its thirds already fall on whole tone steps in
+    // every division, so nothing moves. The supermajor seventh takes the major
+    // seventh's lydian rows; the pentatonic has no seventh, so 27/14 takes the
+    // sixth's place, as the neutral seventh's 11/6 does.
+    case CHORD_JUST_AUGMENTED:     return 6;
+    case CHORD_SUPERMAJOR_SEVENTH: return use_pentatonic ? 1 : 12;
     default:                 return use_pentatonic ? 0 : 10;
   }
 }
@@ -1248,12 +1379,92 @@ uint8_t calculate_static_scale_note(uint8_t string, uint8_t mode, uint8_t key) {
 }
 
 // Modes 8 and 9: a scale chosen to suit the chord being held, rooted on it.
+//
+// The just chords then retune that scale to their own tones: each of the
+// chord's four voices replaces the scale entry naming the same degree -- its
+// third the scale's third, its seventh the scale's seventh -- so the harp's
+// third or seventh is the chord's own instead of the diatonic stand-in a step
+// away (a 10-step third against the supermajor's 11 in 31, mixolydian's 26
+// against the harmonic seventh's 25), and passing notes stay diatonic. A tone
+// with no seat of its degree in the scale (a seventh over a pentatonic that has
+// none) takes the nearest entry, the upper on a tie.
+//
+// Seating by degree rather than by nearness matters wherever a chord tone falls
+// midway between two scale entries: in 19 the supermajor third sits one step
+// above the major third and one below the fourth, and would otherwise take the
+// fourth's place, leaving the harp both thirds and no fourth.
+//
+// The classical chords never reach this: their scales were designed around
+// their tones, including the pentatonic rows that voice a sixth in place of a
+// seventh on purpose.
+bool is_ratio_chord(ChordType chord_type) {
+  return chord_type >= CHORD_NEUTRAL && chord_type <= CHORD_SUPERMAJOR_SEVENTH;
+}
+
+// Degrees of each just chord's four voices, in table order; a voice that
+// repeats a pitch class already placed (the octave doubling a triad's root) is
+// skipped.
+const uint8_t *ratio_chord_degrees(ChordType chord_type) {
+  static const uint8_t triad[4]    = {0, 2, 4, 0};   // root, third, fifth, octave
+  static const uint8_t dominant[4] = {0, 2, 6, 4};   // harmonic 7th lists its seventh before its fifth
+  static const uint8_t seventh[4]  = {0, 2, 4, 6};
+  static const uint8_t ninth[4]    = {0, 1, 2, 6};   // harmonic ninth: root, ninth, third, seventh
+  switch (chord_type) {
+    case CHORD_HARMONIC_7TH:   return dominant;
+    case CHORD_HARMONIC_NINTH: return ninth;
+    case CHORD_SUBMINOR_SEVENTH: case CHORD_UTONAL_TETRAD:
+    case CHORD_NEUTRAL_SEVENTH:  case CHORD_OTONAL_HEXAD:
+    case CHORD_SUPERMAJOR_SEVENTH:
+      return seventh;
+    default: return triad;
+  }
+}
+
+void substitute_chord_tones(uint8_t *scale, uint8_t scale_length, uint8_t scale_index,
+                            uint8_t (*chord)[7], ChordType chord_type) {
+  const uint8_t *degrees = ratio_chord_degrees(chord_type);
+  uint8_t placed[4];
+  uint8_t placed_count = 0;
+  for (uint8_t voice = 0; voice < 4; voice++) {
+    uint8_t tone = (*chord)[voice] % EDO;
+    bool seen = false;
+    for (uint8_t i = 0; i < placed_count; i++) {
+      if (placed[i] == tone) seen = true;
+    }
+    if (seen) continue;
+    placed[placed_count++] = tone;
+
+    uint8_t seat = 255;
+    for (uint8_t j = 0; j < scale_length; j++) {
+      if (chord_scale_degrees[scale_index][j] == degrees[voice]) { seat = j; break; }
+    }
+    if (seat == 255) {
+      uint8_t best_distance = 255;
+      for (uint8_t j = 0; j < scale_length; j++) {
+        uint8_t distance = (scale[j] > tone) ? scale[j] - tone : tone - scale[j];
+        if (distance < best_distance || (distance == best_distance && scale[j] > tone)) {
+          best_distance = distance;
+          seat = j;
+        }
+      }
+    }
+    scale[seat] = tone;
+  }
+}
+
 uint8_t calculate_chord_specific_note(uint8_t string, uint8_t root_note, int8_t sharp_offset,
                                       uint8_t (*chord)[7], bool use_pentatonic) {
-  uint8_t scale_index = get_chord_scale_index(get_chord_type(chord), use_pentatonic);
+  ChordType chord_type = get_chord_type(chord);
+  uint8_t scale_index = get_chord_scale_index(chord_type, use_pentatonic);
   uint8_t scale_length = chord_scale_lengths[scale_index];
   uint8_t octave = string / scale_length;
   uint8_t scale_degree = string % scale_length;
+  if (is_ratio_chord(chord_type)) {
+    uint8_t scale[8];
+    memcpy(scale, chord_scale_intervals[scale_index], 8); // work on a copy, never the live table
+    substitute_chord_tones(scale, scale_length, scale_index, chord, chord_type);
+    return root_note + sharp_offset + scale[scale_degree] + (octave * EDO);
+  }
   return root_note + sharp_offset + chord_scale_intervals[scale_index][scale_degree] + (octave * EDO);
 }
 
