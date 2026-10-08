@@ -31,6 +31,9 @@ static const ParameterInfo parameter_lookup[] = {
     { 26, 0, 0, 1 }, // reverb low damping
     { 27, 0, 0, 1 }, // reverb low pass
     { 28, 0, 0, 1 }, // reverb diffusion
+    { 257, 0, 0, 100 }, // string spread
+    { 258, 1, 0, 1 }, // spread pattern
+    { 259, 0, 0, 100 }, // chord ensemble
     { 29, 0, 0, 1 }, // pan
     { 10, 0, 21, 219 }, // chord alternate control
     { 11, 0, 0, 100 }, // chord alternate range

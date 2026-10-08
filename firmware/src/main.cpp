@@ -12,7 +12,7 @@
 #include <potentiometer.h>
 
 //>>SOFWTARE VERSION 
-int version_ID=10; //to be read 00.03, stored at adress 7 in memory
+int version_ID=11; //to be read 00.03, stored at adress 7 in memory
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -259,6 +259,7 @@ AudioSynthWaveformModulated *string_waveform_array[12] = {&waveform_string_1, &w
 AudioEffectEnvelope *string_enveloppe_array[12] = {&envelope_string_1, &envelope_string_2, &envelope_string_3, &envelope_string_4, &envelope_string_5, &envelope_string_6, &envelope_string_7, &envelope_string_8, &envelope_string_9, &envelope_string_10, &envelope_string_11, &envelope_string_12};
 AudioEffectEnvelope *string_enveloppe_filter_array[12] = {&envelope_filter_1, &envelope_filter_2, &envelope_filter_3, &envelope_filter_4, &envelope_filter_5, &envelope_filter_6, &envelope_filter_7, &envelope_filter_8, &envelope_filter_9, &envelope_filter_10, &envelope_filter_11, &envelope_filter_12};
 AudioMixer4 *string_mixer_array[3] = {&string_mix_1, &string_mix_2, &string_mix_3};
+AudioMixer4 *string_mixer_r_array[3] = {&string_mix_1_r, &string_mix_2_r, &string_mix_3_r}; // the right side, for string spread
 AudioFilterStateVariable *string_filter_array[12] = {&filter_string_1, &filter_string_2, &filter_string_3, &filter_string_4, &filter_string_5, &filter_string_6, &filter_string_7, &filter_string_8, &filter_string_9, &filter_string_10, &filter_string_11, &filter_string_12};
 AudioSynthWaveform *string_transient_waveform_array[12] = {&waveform_transient_1, &waveform_transient_2, &waveform_transient_3, &waveform_transient_4, &waveform_transient_5, &waveform_transient_6, &waveform_transient_7, &waveform_transient_8, &waveform_transient_9, &waveform_transient_10, &waveform_transient_11, &waveform_transient_12};
 AudioEffectEnvelope *string_transient_envelope_array[12] = {&envelope_transient_1, &envelope_transient_2, &envelope_transient_3, &envelope_transient_4, &envelope_transient_5, &envelope_transient_6, &envelope_transient_7, &envelope_transient_8, &envelope_transient_9, &envelope_transient_10, &envelope_transient_11, &envelope_transient_12};
@@ -465,6 +466,15 @@ void refresh_chord_filter();
 float chord_voice_note_freq[4] = {0, 0, 0, 0};
 void calculate_ws_array();
 void rythm_tick_function();
+// string spread and chord ensemble (257-259)
+uint8_t string_spread = 0;          // 0-100: how wide the strings fan out, 0 all in the middle
+uint8_t string_spread_pattern = 0;  // 0 by pitch, low to the left; 1 neighbouring strings on alternate sides
+int16_t harp_voice_note[12] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}; // the note each string is tuned to, -1 before its first
+void apply_string_spread(uint8_t i);
+void apply_string_spreads();
+void set_chord_ensemble(uint8_t depth);
+short chord_ensemble_line_l[2048];  // the ensemble's delay lines (8 kB)
+short chord_ensemble_line_r[2048];
 
 //-->>LED HSV CALCULATION
 // function to calculate led RGB value, thank you SO
@@ -783,6 +793,7 @@ void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
 void set_harp_voice_frequency(uint8_t i, uint16_t current_note) {
   float note_freq =  pow(2,harp_octave_change)*c_frequency/4 * pow(2, (current_note+transpose_semitones) / 12.0);
   float transient_freq =  64.0*c_frequency/4 *pow(2, ((current_note+transpose_semitones)%12+transient_note_level) / 12.0);
+  harp_voice_note[i] = current_note;
   AudioNoInterrupts();
   string_waveform_array[i]->frequency(note_freq);
   string_transient_waveform_array[i]->frequency(transient_freq);
@@ -1215,10 +1226,12 @@ void setup() {
   calculate_ws_array();
   chord_waveshape.shape(wave_shape, 257);
   string_waveshape.shape(wave_shape, 257);
+  string_waveshape_r.shape(wave_shape, 257);
   //the base DC value for strings
   filter_dc.amplitude(1);
   // the delay passthrough
   string_delay_mix.gain(0, 1);
+  string_delay_mix_r.gain(0, 1);
   chord_delay_mix.gain(0, 1);
   // simple mixers
   string_vibrato_mixer.gain(0,0.5);
@@ -1249,11 +1262,18 @@ void setup() {
     chord_vibrato_dc_envelope_array[i]->sustain(0); //for the pitch bend no need for sustain
     transient_full_mix.gain(i, 1);
     all_string_mix.gain(i, 1);
+    all_string_mix_r.gain(i, 1);
   }
   for(int i=0;i<12;i++){
     string_transient_envelope_array[i]->sustain(0);//don't need sustain for the transient
   }
   all_string_mix.gain(3,0.02); //for the transient
+  all_string_mix_r.gain(3,0.02);
+  apply_string_spreads(); // each string's share of the two sides
+  // the ensemble: about 10 ms swept by 3, at a different rate a side
+  chord_ensemble_l.begin(chord_ensemble_line_l, 2048, 441, 132, 0.53);
+  chord_ensemble_r.begin(chord_ensemble_line_r, 2048, 529, 150, 0.71);
+  set_chord_ensemble(0);
 
   // initialising the rest of the hardware
   chord_matrix.setup();
@@ -1292,6 +1312,39 @@ void setup() {
   digitalWrite(_MUTE_PIN, HIGH);
 }
 
+//>>STEREO<<
+// String spread places each string between the strings' two chains by its gains into the left
+// and right mixers: by pitch, from the lowest of the twelve strings as tuned now on the left to the
+// highest on the right, or neighbouring strings on alternate sides. Constant power, with the middle
+// at full in both as every string was before, so pan still places the harp as a whole.
+void apply_string_spread(uint8_t i) {
+  float position = 0;   // -1 left, 1 right
+  if (string_spread_pattern == 1) {
+    position = (i % 2) ? 1 : -1;
+  } else {
+    int low = current_harp_notes[0];
+    int high = current_harp_notes[11];
+    if (harp_voice_note[i] >= 0 && high > low) position = constrain(2.0f * (harp_voice_note[i] - low) / (high - low) - 1, -1.0f, 1.0f);
+  }
+  float angle = (position * string_spread / 100.0f + 1) * (float)M_PI / 4;
+  string_mixer_array[i / 4]->gain(i % 4, sqrtf(2.0f) * cosf(angle));
+  string_mixer_r_array[i / 4]->gain(i % 4, sqrtf(2.0f) * sinf(angle));
+}
+
+void apply_string_spreads() {
+  for (uint8_t i = 0; i < 12; i++) apply_string_spread(i);
+}
+
+// Chord ensemble: at 0 only the dry; at 100 half dry and half the swept delay (the flange object
+// already gives half and half)
+void set_chord_ensemble(uint8_t depth) {
+  float d = depth / 100.0f;
+  chord_ensemble_mix_l.gain(0, 1 - d);
+  chord_ensemble_mix_l.gain(1, d);
+  chord_ensemble_mix_r.gain(0, 1 - d);
+  chord_ensemble_mix_r.gain(1, d);
+}
+
 void handle_chords_button() {
   int sharp_transition = chord_matrix_array[0].read_transition();
   if (sharp_transition > 1 && current_line != -1) {
@@ -1321,6 +1374,7 @@ void handle_harp() {
     int value = harp_array[i].read_transition();
     if (value == 2) {
       set_harp_voice_frequency(i, current_harp_notes[i]);
+      apply_string_spread(i);
       AudioNoInterrupts();
       envelope_string_vibrato_lfo.noteOn();
       envelope_string_vibrato_dc.noteOn();
