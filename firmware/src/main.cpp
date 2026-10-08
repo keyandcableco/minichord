@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=37; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7)
+int version_ID=38; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -71,7 +71,8 @@ float led_attenuation = 0.0;
  * What does NOT follow the temperament:
  *   - the custom scale (address 236) is a twelve-bit mask over twelve chromatic
  *     degrees and cannot express thirty-one. It stays twelve-note and is simply
- *     wrong in 19 and 31; left as is rather than silently reinterpreted.
+ *     wrong in 19 and 31; left as is rather than silently reinterpreted. The
+ *     generator scale (267-269) is the one built in steps of the division.
  *   - MIDI out. Note numbers are integers and there is nowhere to put a
  *     31st of an octave, so notes are rescaled to the nearest semitone on the
  *     way out. The audio is microtonal and the MIDI is an approximation of it.
@@ -347,7 +348,8 @@ float c_frequency = 130.81;                      // for C3
 //>>SCALAR HARP MODE<<
 // 0 follows the chord as before. 1-7 are fixed scales rooted on the key. 8 and 9
 // pick a scale to suit whichever chord is currently held, 9 being the pentatonic
-// version of 8.
+// version of 8. 10 and 11 play the custom scale and 12 and 13 the generator
+// scale, rooted on the key and on the chord respectively.
 uint8_t scalar_harp_selection = 0;
 
 // Tonic pitch class for each key signature, in the order of the KeySig enum
@@ -425,6 +427,24 @@ uint16_t custom_scale_mask = 0b101010110101;
 uint8_t custom_scale_intervals[12] = {0, 2, 4, 5, 7, 9, 11, 0, 0, 0, 0, 0};
 uint8_t custom_scale_length = 7;
 const uint8_t custom_scale_max_octave = 3; // how far the harp may climb, in octaves, in any scale mode
+
+// A scale made of one interval, the generator, stacked so many times and folded
+// into the octave (addresses 267-269). That is how a regular temperament makes
+// its scales: in 31, seven steps nine times over is Orwell[9] (its generator is
+// 19 steps of 84, a 7/6 of 271 cents, whence the name), eighteen seven times is
+// the meantone diatonic and nine seven times Mohajira. The generator counts
+// steps of the live division, so the same numbers make another scale in
+// another: in 12, 7 is the fifth and seven of them the major scale. The mode
+// says how many of the generators lie below the root, which picks the rotation:
+// 0 builds the chain straight up from it. A chain that comes back on itself
+// before it is done (4 in 12 closes after three) keeps the notes it has.
+// rebuild_generator_scale() makes the interval list, on any change to these and
+// to the division; modes 12 and 13 play it as 10 and 11 play the custom scale.
+uint8_t generator_steps = 7;
+uint8_t generator_size = 9;
+uint8_t generator_mode = 0;
+uint8_t generator_scale_intervals[31] = {0, 1, 2, 4, 6, 7, 8, 9, 11};   // 7 in 12, nine times
+uint8_t generator_scale_length = 9;
 uint8_t chord_octave_change=4;
 uint8_t harp_octave_change=4;
 uint8_t chord_frame_shift=0;
@@ -1364,6 +1384,7 @@ float chord_voice_note_freq[4] = {0, 0, 0, 0};
 uint16_t chord_voice_current_note[4] = {0, 0, 0, 0};   // last note each chord voice was tuned to, so a tuning change can re-apply it
 void set_harp_voice_frequency(uint8_t i, uint16_t current_note);
 void rebuild_custom_scale();
+void rebuild_generator_scale();
 void calculate_ws_array();
 void rythm_tick_function();
 
@@ -3573,16 +3594,33 @@ void rebuild_custom_scale() {
   }
 }
 
-// Modes 10 and 11 both run the user scale; they differ only in what they root
-// it on, the key signature or the chord being held.
-uint8_t calculate_custom_scale_note(uint8_t string, uint8_t root_note, int8_t sharp_offset) {
-  uint8_t octave = string / custom_scale_length;
-  uint8_t degree = string % custom_scale_length;
+void rebuild_generator_scale() {
+  bool present[31] = {false};
+  uint8_t generator = generator_steps % EDO;
+  uint8_t size = generator_size < 1 ? 1 : generator_size;
+  uint8_t below = generator_mode < size ? generator_mode : size - 1;
+  for (uint8_t k = 0; k < size; k++) {
+    int16_t step = ((int16_t)k - below) * generator;   // the root is k = below
+    present[((step % EDO) + EDO) % EDO] = true;
+  }
+  generator_scale_length = 0;
+  for (uint8_t i = 0; i < EDO; i++) {
+    if (present[i]) generator_scale_intervals[generator_scale_length++] = i;
+  }
+}
+
+// Modes 10 and 11 both run the user scale, 12 and 13 the generator scale; each
+// pair differs only in what it roots the scale on, the key signature or the
+// chord being held.
+uint8_t calculate_list_scale_note(uint8_t string, uint8_t root_note, int8_t sharp_offset,
+                                  const uint8_t *intervals, uint8_t length) {
+  uint8_t octave = string / length;
+  uint8_t degree = string % length;
   // A very short scale would otherwise climb an octave per string: with a
   // single note the top string lands eleven octaves up, far past Nyquist, and
   // aliases into noise. Cap the climb and let the upper strings repeat.
   if (octave > custom_scale_max_octave) octave = custom_scale_max_octave;
-  return root_note + sharp_offset + custom_scale_intervals[degree] + (octave * EDO);
+  return root_note + sharp_offset + intervals[degree] + (octave * EDO);
 }
 
 enum ChordType {
@@ -3818,18 +3856,25 @@ uint8_t calculate_note_harp(uint8_t string, bool slashed, bool sharp) {
     return calculate_static_scale_note(string, scalar_harp_selection, key_signature_selection);
   }
 
-  // Mode 10 runs the user scale from the key signature, like modes 1-7
-  if (scalar_harp_selection == 10) {
-    return calculate_custom_scale_note(string, scale_root_offsets[key_signature_selection] + EDO, 0);
+  // Modes 10 and 12 run the user scale and the generator scale from the key
+  // signature, like modes 1-7
+  if (scalar_harp_selection == 10 || scalar_harp_selection == 12) {
+    bool generated = scalar_harp_selection == 12;
+    return calculate_list_scale_note(string, scale_root_offsets[key_signature_selection] + EDO, 0,
+                                     generated ? generator_scale_intervals : custom_scale_intervals,
+                                     generated ? generator_scale_length : custom_scale_length);
   }
 
-  // Mode 11 runs the user scale from the chord's root, like modes 8 and 9
-  if (scalar_harp_selection == 11) {
+  // Modes 11 and 13 run them from the chord's root, like modes 8 and 9
+  if (scalar_harp_selection == 11 || scalar_harp_selection == 13) {
+    bool generated = scalar_harp_selection == 13;
     uint8_t root_note = slashed
       ? get_root_button(key_signature_selection, chord_frame_shift, slash_value)
       : get_root_button(key_signature_selection, chord_frame_shift, fundamental);
     int8_t sharp_offset = sharp ? (flat_button_modifier ? -modifier_step : modifier_step) : 0;
-    return calculate_custom_scale_note(string, root_note, sharp_offset);
+    return calculate_list_scale_note(string, root_note, sharp_offset,
+                                     generated ? generator_scale_intervals : custom_scale_intervals,
+                                     generated ? generator_scale_length : custom_scale_length);
   }
 
   // Modes 8 and 9 keep the chord's root but choose the scale to suit its type
@@ -5806,6 +5851,7 @@ void apply_temperament(uint8_t t) {
   memcpy(scale_root_offsets, edo_scale_root_offsets[edo_index], sizeof(scale_root_offsets));
   memcpy(scale_intervals, edo_scale_intervals[edo_index], sizeof(scale_intervals));
   memcpy(chord_scale_intervals, edo_chord_scale_intervals[edo_index], sizeof(chord_scale_intervals));
+  rebuild_generator_scale();   // its generator counts steps of the new division
   memcpy(major, edo_major[edo_index], 7);
   memcpy(minor, edo_minor[edo_index], 7);
   memcpy(maj_sixth, edo_maj_sixth[edo_index], 7);

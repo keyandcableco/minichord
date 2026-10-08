@@ -168,6 +168,15 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 236:
         custom_scale_mask=value; rebuild_custom_scale(); for (int i=0;i<12;i++){ current_harp_notes[i]=calculate_note_harp(i,slash_chord,sharp_active); }
         break;
+      case 267:
+        generator_steps=value; rebuild_generator_scale(); for (int i=0;i<12;i++){ current_harp_notes[i]=calculate_note_harp(i,slash_chord,sharp_active); }
+        break;
+      case 268:
+        generator_size=value; rebuild_generator_scale(); for (int i=0;i<12;i++){ current_harp_notes[i]=calculate_note_harp(i,slash_chord,sharp_active); }
+        break;
+      case 269:
+        generator_mode=value; rebuild_generator_scale(); for (int i=0;i<12;i++){ current_harp_notes[i]=calculate_note_harp(i,slash_chord,sharp_active); }
+        break;
       case 98:
         chromatic_harp_mode=value; for (int i=0;i<12;i++){ current_harp_notes[i]=calculate_note_harp(i,slash_chord,sharp_active); }
         break;
@@ -949,8 +958,11 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 6: lo=0; hi=1024; return true;
       case 7: lo=0; hi=1000; return true;
       case 2: lo=0; hi=100; return true;
-      case 36: lo=0; hi=11; return true;
+      case 36: lo=0; hi=13; return true;
       case 236: lo=0; hi=4095; return true;
+      case 267: lo=1; hi=30; return true;
+      case 268: lo=1; hi=31; return true;
+      case 269: lo=0; hi=30; return true;
       case 98: lo=0; hi=1; return true;
       case 116: lo=1; hi=3; return true;
       case 245: lo=0; hi=1; return true;
