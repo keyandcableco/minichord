@@ -49,6 +49,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 40, 1, 0, 6 }, // harp shuffling
     { 98, 1, 0, 1 }, // chromatic mode
     { 41, 0, 0, 1 }, // amplitude
+    { 264, 1, 0, 4 }, // harp voice
     { 42, 1, 0, 11 }, // waveform
     { 43, 0, 0, 5000 }, // attack
     { 44, 0, 0, 5000 }, // hold
@@ -115,6 +116,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 120, 1, 0, 5 }, // chord shuffling
     { 198, 1, 0, 4 }, // octave change
     { 199, 0, 0, 1500 }, // glide chords
+    { 265, 1, 0, 4 }, // chord voice
     { 121, 0, 0, 1 }, // amplitude 1
     { 122, 1, 0, 11 }, // waveform 1
     { 123, 0, 0, 2 }, // frequency multiplier 1
