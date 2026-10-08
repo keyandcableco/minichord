@@ -124,7 +124,7 @@ void apply_audio_parameter(int adress, int value) {
         hover_value=value; hover_reapply=true;
         break;
       case 251:
-        hover_reach=constrain(value,3,10);
+        hover_reach=value ? constrain(value,3,10) : 7;
         break;
       case 4:
         chord_pot.set_alternate_default(value);chord_pot.force_update();
