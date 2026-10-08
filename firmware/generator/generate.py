@@ -417,6 +417,29 @@ static const int16_t parameter_page1_defaults[%d] = {
         lookup_file_content += "    " + ", ".join(str(v) for v in page1[row:row + 32]) + ",\n"
     lookup_file_content += """};
 
+// Which controls may move each address, from each parameter's "controls" in
+// parameters.json: "all" (the default) for any control, the knobs included; "tap"
+// for controls that set an exact value but not those that sweep, for settings a
+// sweep would only scramble; "none" for settings no control should touch (the
+// knobs' own wiring, the instrument's setup, MIDI routing, the rythm patterns).
+// Addresses with no parameter are "none". It goes by the setting, not its address,
+// so a new setting can live anywhere, on either page.
+#define PARAMETER_CONTROL_NONE 0
+#define PARAMETER_CONTROL_TAP 1
+#define PARAMETER_CONTROL_ALL 2
+static const uint8_t parameter_control[%d] = {
+""" % PARAMETER_SIZE
+    control_values = {"none": 0, "tap": 1, "all": 2}
+    control = [0] * PARAMETER_SIZE
+    for section in d:
+        for parameter in d[section]:
+            c = parameter.get("controls", "all")
+            assert c in control_values, "%s: controls must be all, tap or none, not %s" % (parameter["name"], c)
+            control[parameter["sysex_adress"]] = control_values[c]
+    for row in range(0, PARAMETER_SIZE, 32):
+        lookup_file_content += "    " + ", ".join(str(v) for v in control[row:row + 32]) + ",\n"
+    lookup_file_content += """};
+
 #endif // PARAMETER_LOOKUP_H
 """
     with open('../lib/potentiometer/src/parameter_lookup.h', 'w') as lookup_output:

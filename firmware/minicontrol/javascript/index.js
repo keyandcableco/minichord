@@ -31,6 +31,7 @@ function handledegree(box) {
 
 function handlechange(event) {
   if (miniChordController.isConnected()) {
+    if (target_choices[event.getAttribute("adress_field")]) snap_target(event);
     const curve_type = event.getAttribute("curve");
     let range_value;
     if (curve_type == "exponential") {
@@ -51,6 +52,7 @@ function handlechange(event) {
       value_zone.innerHTML = displayed_value;
     }
     miniChordController.sendParameter(address, Math.round(range_value));
+    if (target_choices[address]) show_target(address, Math.round(range_value));
     if (address == miniChordController.color_hue_sysex_adress) { //handling the color scheme
       var hue = Math.round(range_value);
       var elements = document.getElementsByClassName('slider');
@@ -159,6 +161,7 @@ miniChordController.onPageReceived = function(page, parameters) {
 };
 
 miniChordController.onDataReceived = function(data) {
+  connected_firmware_version = data.firmwareVersion;   // a knob target can't be a setting this firmware lacks
   // Update sliders
   for (let i = 2; i < miniChordController.parameter_size; i++) {
     if (data.parameters[i] !== undefined) {
@@ -272,8 +275,60 @@ function set_slider_to_value(slider_num, sysex_value) {
       if (value_zone) {
         value_zone.innerHTML = sysex_value;
       }
+      if (target_choices[slider_num]) show_target(slider_num, sysex_value);
     }
   }
+}
+
+//-->>KNOB TARGETS
+// A slider that picks a control's target ("target_for" in parameters.json: "knob") offers only
+// the settings that control may move. Each parameter's "controls" says which may move it: "all"
+// (the default), "tap" (a control that sets an exact value, but no knob) or "none". The slider
+// skips the rest, onward in the direction it was moved, and the value shows the target's name
+// when hovered. The firmware checks the same thing, from the same field, whatever it is sent.
+const target_kinds = { knob: ["all"], tap: ["all", "tap"] };
+let target_choices = {};             // a target slider's address -> the addresses it may hold, in order
+let parameter_info = {};             // address -> its name, its "controls" and the version it came in
+let connected_firmware_version = Infinity;
+fetch('./json/parameters.json').then(r => r.json()).then(d => {
+  const prefix = { harp_parameter: "harp ", chord_parameter: "chord " };
+  const pickers = [];
+  Object.entries(d).forEach(([section, list]) => (list || []).forEach(p => {
+    parameter_info[p.sysex_adress] = { label: (prefix[section] || "") + p.name, controls: p.controls || "all", version: p.introduction_version };
+    if (p.target_for) pickers.push(p);
+  }));
+  pickers.forEach(p => {
+    const kinds = target_kinds[p.target_for] || [];
+    target_choices[p.sysex_adress] = Object.keys(parameter_info).map(Number)
+      .filter(a => kinds.includes(parameter_info[a].controls) && a >= p.min_value && a <= p.max_value)
+      .sort((a, b) => a - b);
+    const slider = document.querySelector('input[adress_field="' + p.sysex_adress + '"]');
+    if (slider) show_target(p.sysex_adress, Number(slider.value));
+  });
+}).catch(e => console.log(">> parameters.json not loaded: knob targets not filtered", e));
+
+function allowed_targets(address) {
+  const list = target_choices[address] || [];
+  return list.filter(a => parameter_info[a].version <= connected_firmware_version);
+}
+
+// Moves a target slider off an address it can't hold, to the next one it can in the direction it
+// was moved (or the nearest, at either end)
+function snap_target(slider) {
+  const list = allowed_targets(slider.getAttribute("adress_field"));
+  const v = Number(slider.value);
+  if (list.length == 0 || list.includes(v)) return;
+  const from = Number(slider.getAttribute("last_target") ?? v);
+  let pick = v >= from ? list.find(a => a >= v) : list.slice().reverse().find(a => a <= v);
+  if (pick === undefined) pick = list.reduce((best, a) => Math.abs(a - v) < Math.abs(best - v) ? a : best);
+  slider.value = pick;
+}
+
+function show_target(address, value) {
+  const slider = document.querySelector('input[adress_field="' + address + '"]');
+  if (slider) slider.setAttribute("last_target", value);
+  const value_zone = document.getElementById("value_zone" + address);
+  if (value_zone) value_zone.title = allowed_targets(address).includes(value) ? parameter_info[value].label : "unassigned";
 }
 
 

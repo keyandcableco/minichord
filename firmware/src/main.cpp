@@ -12,7 +12,7 @@
 #include <potentiometer.h>
 
 //>>SOFWTARE VERSION 
-int version_ID=10; //to be read 00.03, stored at adress 7 in memory
+int version_ID=11; //to be read 00.03, stored at adress 7 in memory
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -208,6 +208,7 @@ const uint16_t parameter_size = 512;
 const uint16_t page_size = 256;
 const uint8_t preset_number = 12;
 static_assert(sizeof(parameter_page1_defaults) / sizeof(parameter_page1_defaults[0]) == parameter_size - page_size, "parameter_lookup.h is for another array size: run the generator");
+static_assert(sizeof(parameter_control) == parameter_size, "parameter_lookup.h is for another array size: run the generator");
 // The factory presets' page 0; page 1's defaults are generated, the same for every bank
 // (parameter_page1_defaults in parameter_lookup.h, from parameters.json)
 int16_t default_bank_sysex_parameters[preset_number][page_size] = {
@@ -251,6 +252,22 @@ int8_t mod_pot_alternate_range = 17;
 // 40-119 are harp parameters
 // 120-219 are chord parameters
 // 220-235 are rythm patterns
+// 256-511 (page 1) are for the parameters still to come
+// What a control can be pointed at goes by each parameter's "controls" in parameters.json
+// (parameter_control, in parameter_lookup.h), not by its address, so a setting on page 1 can go
+// under a knob as well as one on page 0. The knobs sweep, so they take only "all"; a control
+// that sets an exact value takes "tap" too.
+static inline bool control_can_sweep(int adress) {
+  return adress >= 0 && adress < (int)parameter_size && parameter_control[adress] == PARAMETER_CONTROL_ALL;
+}
+static inline bool control_can_tap(int adress) {
+  return adress >= 0 && adress < (int)parameter_size && parameter_control[adress] >= PARAMETER_CONTROL_TAP;
+}
+// A knob's target as a preset or an editor gives it: a setting no knob may move, or an address
+// past the array, leaves the knob unassigned (0, which moves nothing).
+static inline int knob_target(int adress) {
+  return control_can_sweep(adress) ? adress : 0;
+}
 bool sysex_controler_connected=false; //bool to remember if there is a controller that is connected to avoid saving any change
 
 //>>AUDIO OBJECT ARRAYS<<
@@ -1189,9 +1206,9 @@ void load_config(int bank_number) {
     save_config(bank_number, true); // reboot with default value
   }
   // Loading the potentiometer
-  chord_pot.setup(chord_volume_sysex, 100, current_sysex_parameters[chord_pot_alternate_control], current_sysex_parameters[chord_pot_alternate_range], current_sysex_parameters,current_sysex_parameters[chord_pot_alternate_storage],apply_audio_parameter,chord_pot_alternate_storage);
-  harp_pot.setup(harp_volume_sysex, 100, current_sysex_parameters[harp_pot_alternate_control], current_sysex_parameters[harp_pot_alternate_range], current_sysex_parameters,current_sysex_parameters[harp_pot_alternate_storage],apply_audio_parameter,harp_pot_alternate_storage);
-  mod_pot.setup(current_sysex_parameters[mod_pot_main_control], current_sysex_parameters[mod_pot_main_range], current_sysex_parameters[mod_pot_alternate_control], current_sysex_parameters[mod_pot_alternate_range], current_sysex_parameters,current_sysex_parameters[mod_pot_alternate_storage],apply_audio_parameter,mod_pot_alternate_storage);
+  chord_pot.setup(chord_volume_sysex, 100, knob_target(current_sysex_parameters[chord_pot_alternate_control]), current_sysex_parameters[chord_pot_alternate_range], current_sysex_parameters,current_sysex_parameters[chord_pot_alternate_storage],apply_audio_parameter,chord_pot_alternate_storage);
+  harp_pot.setup(harp_volume_sysex, 100, knob_target(current_sysex_parameters[harp_pot_alternate_control]), current_sysex_parameters[harp_pot_alternate_range], current_sysex_parameters,current_sysex_parameters[harp_pot_alternate_storage],apply_audio_parameter,harp_pot_alternate_storage);
+  mod_pot.setup(knob_target(current_sysex_parameters[mod_pot_main_control]), current_sysex_parameters[mod_pot_main_range], knob_target(current_sysex_parameters[mod_pot_alternate_control]), current_sysex_parameters[mod_pot_alternate_range], current_sysex_parameters,current_sysex_parameters[mod_pot_alternate_storage],apply_audio_parameter,mod_pot_alternate_storage);
   Serial.println("pot setup done");
   for (int i = 1; i < parameter_size; i++) {
     apply_audio_parameter(i, current_sysex_parameters[i]);
