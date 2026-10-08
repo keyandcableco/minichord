@@ -126,6 +126,9 @@ void apply_audio_parameter(int adress, int value) {
       case 251:
         hover_reach=value ? constrain(value,3,10) : 7;
         break;
+      case 256:
+        looper_action(value);
+        break;
       case 4:
         chord_pot.set_alternate_default(value);chord_pot.force_update();
         break;
@@ -907,6 +910,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 249: lo=0; hi=511; return true;
       case 250: lo=0; hi=4095; return true;
       case 251: lo=3; hi=10; return true;
+      case 256: lo=0; hi=6; return true;
       case 4: lo=0; hi=1024; return true;
       case 5: lo=0; hi=1024; return true;
       case 6: lo=0; hi=1024; return true;

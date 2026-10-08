@@ -408,6 +408,15 @@ function generate_settings() {
   }
 }
 
+// The looper: 1 record, 2 play, 3 stop, 4 clear, 5 overdub on or off (setting 256, an action)
+function looper(action) {
+  if (!miniChordController.isConnected()) {
+    document.getElementById("information_zone").focus();
+    return;
+  }
+  miniChordController.sendParameter(256, action);
+}
+
 function load_settings() {
   if (!miniChordController.isConnected()) {
     document.getElementById("information_zone").focus();
