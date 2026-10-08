@@ -6,6 +6,9 @@ void apply_audio_parameter(int adress, int value) {
       case 32:
         led_attenuation=value/100.0; set_led_color(bank_led_hue, 1.0, 1-led_attenuation);
         break;
+      case 244:
+        usb_audio_request(value);
+        break;
       case 21:
         retrigger_chord=value;
         break;
