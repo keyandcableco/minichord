@@ -2070,6 +2070,17 @@ void midi_in_message(uint8_t type, uint8_t cable, uint8_t channel, uint8_t data1
   }
 }
 
+// The harp's vibrato and bend envelopes are the twelve strings' together, started by each pluck,
+// and nothing ended them: held at sustain after the first pluck, they kept every harp oscillator
+// taking frequency modulation, which costs it twice the work (twelve times 0.14% of the processor,
+// idle). Once no string is sounding they are let go, and the next pluck starts them afresh.
+void harp_vibrato_settle() {
+  if (!envelope_string_vibrato_lfo.isSustain() && !envelope_string_vibrato_dc.isSustain()) return;
+  for (uint8_t i = 0; i < 12; i++) if (string_enveloppe_array[i]->isActive()) return;
+  envelope_string_vibrato_lfo.noteOff();
+  envelope_string_vibrato_dc.noteOff();
+}
+
 // Switched off, whatever incoming notes are sounding ring out
 void midi_in_set(bool on) {
   if (!on) {
@@ -5448,6 +5459,7 @@ void loop() {
     processMIDI();
   }
   midi_in_settle();
+  harp_vibrato_settle();
   // Check sysex controller connection
   if (sysex_controler_connected && bitRead(USB1_PORTSC1, 7)) {
     sysex_controler_connected = false;
