@@ -2078,6 +2078,19 @@ void midi_in_set(bool on) {
   midi_in_plays = on;
 }
 
+// A note off that lands in an envelope's retrigger ramp (a note on to a voice still sounding starts
+// one) is ignored by the Teensy envelope, and the voice would then hold at its sustain for good: a
+// note repeated quickly, or sent on and off at once, stuck that way. So a voice that has been let go
+// of and has settled at sustain is released again, as the chords' and the harp's own are.
+void midi_in_settle() {
+  for (uint8_t i = 0; i < 12; i++) {
+    if (midi_in_harp[i].owned && !midi_in_harp[i].key_down && !midi_in_harp[i].sustained && string_enveloppe_array[i]->isSustain()) midi_in_release(midi_in_harp, i, true);
+  }
+  for (uint8_t i = 0; i < 4; i++) {
+    if (midi_in_chord[i].owned && !midi_in_chord[i].key_down && !midi_in_chord[i].sustained && chord_envelope_array[i]->isSustain()) midi_in_release(midi_in_chord, i, false);
+  }
+}
+
 // Function to compute MIDI note offset dynamically with circular frame shift
 int8_t get_root_button(uint8_t key, uint8_t shift, uint8_t button) {
   int8_t note = base_notes[button];
@@ -5433,6 +5446,7 @@ void loop() {
   for (uint8_t k = 0; k < 16 && usbMIDI.read(); k++) {
     processMIDI();
   }
+  midi_in_settle();
   // Check sysex controller connection
   if (sysex_controler_connected && bitRead(USB1_PORTSC1, 7)) {
     sysex_controler_connected = false;
