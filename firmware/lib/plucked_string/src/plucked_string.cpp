@@ -45,15 +45,39 @@ void AudioSynthPluckedString::pluck(float brightness) {
 
 void AudioSynthPluckedString::update(void) {
   audio_block_t *fm = receiveReadOnly(0);
-  audio_block_t *osc = receiveReadOnly(1);
   if (mix <= 0.0f) {   // no string in the blend: the oscillator as it is
     if (fm) release(fm);
+    audio_block_t *osc = receiveReadOnly(1);
     if (osc) {
       transmit(osc);
       release(osc);
     }
     return;
   }
+  if (!ringing) {
+    // No string sounding, so only the oscillator's share of the blend to pass on: scaled in
+    // place, two integer operations a sample where the loop below spends a few dozen in float,
+    // and with nearly every string silent nearly all the time, that was most of the model's
+    // cost. A block still goes out, silent if need be, rather than none: the envelope after
+    // this only moves on through its stages while blocks arrive.
+    if (fm) release(fm);
+    audio_block_t *osc = receiveWritable(1);
+    if (!osc) {
+      osc = allocate();
+      if (!osc) return;
+      memset(osc->data, 0, sizeof(osc->data));
+    } else {
+      int32_t gain = (int32_t)((1.0f - mix) * 65536.0f);   // 1 - mix, in 16 fractional bits
+      for (int i = 0; i < AUDIO_BLOCK_SAMPLES; i++) {
+        int32_t v = osc->data[i] * gain;
+        osc->data[i] = v >= 0 ? v >> 16 : -(-v >> 16);   // towards zero, as the float loop's cast
+      }
+    }
+    transmit(osc);
+    release(osc);
+    return;
+  }
+  audio_block_t *osc = receiveReadOnly(1);
   float freq = base_freq;
   if (fm) {
     int32_t sum = 0;
