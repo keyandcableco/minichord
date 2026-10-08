@@ -52,11 +52,12 @@ static const ParameterInfo parameter_lookup[] = {
     { 15, 0, 0, 100 }, // mod main percent range
     { 16, 0, 21, 219 }, // mod alternate control
     { 17, 0, 0, 100 }, // mod alternate percent range 
+    { 256, 1, 0, 7 }, // looper
     { 4, 0, 0, 1024 }, // chord alternate value
     { 5, 0, 0, 1024 }, // harp alternate value
     { 6, 0, 0, 1024 }, // mod alternate value
     { 7, 0, 0, 10 }, // firmware revision
-    { 200, 0, 0, 255 }, // double tap control
+    { 200, 0, 0, 511 }, // double tap control
     { 201, 0, 0, 4095 }, // double tap value
     { 2, 0, 0, 1 }, // global gain
     { 99, 1, 0, 4 }, // octave change

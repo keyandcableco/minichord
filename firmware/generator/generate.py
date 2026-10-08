@@ -87,6 +87,17 @@ with open('parameters.json') as f: # Reserved adresses: 0 for system command and
                                 a.button(onclick='reset_current_bank()', _t='reset bank',klass="inactive")
                             with a.div(klass="bloc B3 M3 S3 button_div"):
                                 a.button(onclick='reset_memory()', _t='reset all banks',klass="inactive")
+                        # the looper (firmware 11 on): each button writes setting 256 once
+                        with a.div(klass="line"):
+                            a.h5(_t='looper:',klass="inactive", version="11")
+                        with a.div(klass="line"):
+                            for action, label in ((1, 'record'), (2, 'play'), (3, 'stop')):
+                                with a.div(klass="bloc B2 M2 S2 button_div"):
+                                    a.button(onclick='looper(%d)' % action, _t=label, klass="inactive", version="11")
+                        with a.div(klass="line"):
+                            for action, label in ((5, 'overdub'), (4, 'clear')):
+                                with a.div(klass="bloc B2 M2 S2 button_div"):
+                                    a.button(onclick='looper(%d)' % action, _t=label, klass="inactive", version="11")
                     with a.details():
                         with a.summary():
                             a.b(_t='Connection instruction')
