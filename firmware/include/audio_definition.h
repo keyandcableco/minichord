@@ -36,6 +36,22 @@ AudioSynthWaveformModulated waveform_string_8; //xy=782.1000061035156,1245.99999
 AudioSynthWaveformModulated waveform_string_1; //xy=783.1000061035156,998.9999923706055
 AudioSynthWaveformModulated waveform_string_9; //xy=783.1000061035156,1281.9999923706055
 AudioSynthWaveformModulated waveform_string_11; //xy=783.1000061035156,1351.9999923706055
+// The plucked strings (see PLUCKED STRINGS below), declared between the oscillators they follow and
+// the envelopes they feed: the library updates objects in the order they are declared, and declared
+// after the envelopes they made every harp note a block (2.9 ms) late.
+#include "plucked_string.h"
+AudioSynthPluckedString  pluck_string_1;
+AudioSynthPluckedString  pluck_string_2;
+AudioSynthPluckedString  pluck_string_3;
+AudioSynthPluckedString  pluck_string_4;
+AudioSynthPluckedString  pluck_string_5;
+AudioSynthPluckedString  pluck_string_6;
+AudioSynthPluckedString  pluck_string_7;
+AudioSynthPluckedString  pluck_string_8;
+AudioSynthPluckedString  pluck_string_9;
+AudioSynthPluckedString  pluck_string_10;
+AudioSynthPluckedString  pluck_string_11;
+AudioSynthPluckedString  pluck_string_12;
 AudioSynthWaveformDc     filter_dc;      //xy=806.1000061035156,567.9999923706055
 AudioSynthWaveform       waveform_transient_9; //xy=822.1000061035156,410.99999237060547
 AudioSynthWaveform       waveform_transient_5; //xy=823.1000061035156,282.99999237060547
@@ -389,19 +405,7 @@ AudioConnection          patchCord216(chords_main_filter, 2, chords_main_filter_
 // Each harp string's oscillator passes through a plucked string model on its way to its envelope;
 // string model (217) crossfades from the oscillator alone to the string (plucked_string.h). They take
 // the same vibrato as the oscillators.
-#include "plucked_string.h"
-AudioSynthPluckedString  pluck_string_1;
-AudioSynthPluckedString  pluck_string_2;
-AudioSynthPluckedString  pluck_string_3;
-AudioSynthPluckedString  pluck_string_4;
-AudioSynthPluckedString  pluck_string_5;
-AudioSynthPluckedString  pluck_string_6;
-AudioSynthPluckedString  pluck_string_7;
-AudioSynthPluckedString  pluck_string_8;
-AudioSynthPluckedString  pluck_string_9;
-AudioSynthPluckedString  pluck_string_10;
-AudioSynthPluckedString  pluck_string_11;
-AudioSynthPluckedString  pluck_string_12;
+// (declared up with the oscillators: see there)
 AudioConnection          pluckCord1a(string_vibrato_mixer, 0, pluck_string_1, 0);
 AudioConnection          pluckCord1b(waveform_string_1, 0, pluck_string_1, 1);
 AudioConnection          pluckCord1c(pluck_string_1, 0, envelope_string_1, 0);
