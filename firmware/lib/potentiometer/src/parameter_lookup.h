@@ -72,6 +72,9 @@ static const ParameterInfo parameter_lookup[] = {
     { 99, 1, 0, 4 }, // octave change
     { 22, 1, 0, 1 }, // change held strings
     { 41, 0, 0, 1 }, // amplitude
+    { 217, 0, 0, 100 }, // string model
+    { 218, 0, 0, 20 }, // string decay
+    { 219, 0, 0, 100 }, // string damping
     { 42, 1, 0, 11 }, // waveform
     { 43, 0, 0, 5000 }, // attack
     { 44, 0, 0, 5000 }, // hold

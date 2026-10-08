@@ -181,6 +181,15 @@ void apply_audio_parameter(int adress, int value) {
       case 41:
         string_level=value/100.0; for (int s=0;s<12;s++) apply_string_firmness(s);
         break;
+      case 217:
+        for (int s=0;s<12;s++) string_pluck_array[s]->blend(value/100.0);
+        break;
+      case 218:
+        for (int s=0;s<12;s++) string_pluck_array[s]->decay(value/100.0 > 0 ? value/100.0 : 3.0);
+        break;
+      case 219:
+        for (int s=0;s<12;s++) string_pluck_array[s]->damping(value/100.0);
+        break;
       case 42:
         for (int i=0;i<12;i++){
           string_waveform_array[i]->begin(waveform_array[constrain(value,0,11)]);
@@ -356,7 +365,7 @@ void apply_audio_parameter(int adress, int value) {
         break;
       case 76:
         for (int i=0;i<12;i++){
-          string_waveform_array[i]->frequencyModulation(value/100.0);
+          string_waveform_array[i]->frequencyModulation(value/100.0); string_pluck_array[i]->frequencyModulation(value/100.0);
         }
         break;
       case 77:
@@ -915,6 +924,9 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 99: lo=0; hi=4; return true;
       case 22: lo=0; hi=1; return true;
       case 41: lo=0; hi=100; return true;
+      case 217: lo=0; hi=100; return true;
+      case 218: lo=10; hi=2000; return true;
+      case 219: lo=0; hi=100; return true;
       case 42: lo=0; hi=11; return true;
       case 43: lo=0; hi=5000; return true;
       case 44: lo=0; hi=5000; return true;
