@@ -12,7 +12,7 @@
 #include <potentiometer.h>
 
 //>>SOFWTARE VERSION 
-int version_ID=10; //to be read 00.03, stored at adress 7 in memory
+int version_ID=11; //to be read 00.03, stored at adress 7 in memory
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -347,6 +347,12 @@ u_int32_t random_delay = 10000;
 // pan for audio output 
 float pan=1;
 float reverb_dry_proportion=0.6; //to avoid drop in volume in full reverb, keep some part of the dry signal in
+// the vocoder (addresses 260-262), see VOCODER
+uint8_t vocoder_amount = 0;      // 0-100: the vocoded sound in place of the dry, 0 off
+uint8_t vocoder_carrier = 0;     // what the incoming sound shapes: 0 the chords, 1 the harp, 2 both
+uint8_t vocoder_consonants = 30; // 0-100: the incoming sound's hiss blended in, for words
+void vocoder_set();
+void vocoder_setup();
 
 //>>AUTO RYTHM<<
 u_int8_t rythm_pattern[16] = {};
@@ -1105,6 +1111,60 @@ uint8_t calculate_note_harp(uint8_t string, bool slashed, bool sharp) {
   }
   return note;
 }
+//-->>VOCODER
+// Sixteen bands from 100 Hz to 8 kHz, a third of an octave and a bit apart, each two bandpass
+// stages so they overlap without smearing. The incoming sound's level in each band, read as it is
+// measured (every block), rises fast and falls slower, and sets its band's gain in the carrier.
+const uint8_t vocoder_band_count = 16;
+const float vocoder_makeup = 10.0f;   // a band's level is a small part of full scale
+const float vocoder_hiss_makeup = 2.0f;
+
+void vocoder_setup() {
+  vocoder_modulator.gain(0, 0.5);
+  vocoder_modulator.gain(1, 0.5);
+  for (uint8_t k = 0; k < vocoder_band_count; k++) {
+    float f = 100.0f * powf(80.0f, k / (float)(vocoder_band_count - 1));
+    const float q = 3.4f;   // neighbouring bands meet about where each is 3 dB down
+    vocoder_analysis[k].setBandpass(0, f, q);
+    vocoder_analysis[k].setBandpass(1, f, q);
+    vocoder_synthesis[k].setBandpass(0, f, q);
+    vocoder_synthesis[k].setBandpass(1, f, q);
+    vocoder_bands[k / 4].gain(k % 4, 0);
+  }
+  for (uint8_t m = 0; m < 4; m++) vocoder_bands_mix.gain(m, 1);
+  vocoder_hiss.setHighpass(0, 5000, 0.707);
+  vocoder_hiss.setHighpass(1, 5000, 0.707);
+  vocoder_set();
+}
+
+// The returns, the carrier and the consonants, from the settings. Carrying both, the harp's
+// vocoded part comes back through the chords, since there is one bank.
+void vocoder_set() {
+  float a = vocoder_amount / 100.0f;
+  bool chords = vocoder_carrier != 1;
+  bool harp = vocoder_carrier != 0;
+  vocoder_carrier_mix.gain(0, chords ? 1 : 0);
+  vocoder_carrier_mix.gain(1, harp ? 1 : 0);
+  vocoder_chord_return.gain(0, chords ? 1 - a : 1);
+  vocoder_chord_return.gain(1, chords ? a : 0);
+  vocoder_string_return.gain(0, harp ? 1 - a : 1);
+  vocoder_string_return.gain(1, vocoder_carrier == 1 ? a : 0);
+  vocoder_out.gain(0, 1);
+  vocoder_out.gain(1, vocoder_consonants / 100.0f * vocoder_hiss_makeup);
+}
+
+// Called from loop(): each band's gain follows the incoming sound's level in it
+void vocoder_update() {
+  static float level[vocoder_band_count] = {0};
+  if (vocoder_amount == 0) return;
+  for (uint8_t k = 0; k < vocoder_band_count; k++) {
+    if (!vocoder_level[k].available()) continue;
+    float r = vocoder_level[k].read();
+    level[k] += (r - level[k]) * (r > level[k] ? 0.5f : 0.08f);   // about 5 ms up, 35 ms down
+    vocoder_bands[k / 4].gain(k % 4, level[k] * vocoder_makeup);
+  }
+}
+
 //-->>RYTHM MODE UTILITIES
 void rythm_tick_function() {
   //this function seems a bit long for a timed one. Maybe try to offload some logic somewhere else? 
@@ -1319,6 +1379,7 @@ void setup() {
     string_transient_envelope_array[i]->sustain(0);//don't need sustain for the transient
   }
   all_string_mix.gain(3,0.02); //for the transient
+  vocoder_setup();
 
   // initialising the rest of the hardware
   chord_matrix.setup();
@@ -1725,6 +1786,9 @@ void loop() {
 
   // Handle harp functions
   handle_harp();
+
+  // The vocoder's bands follow the sound coming in over USB
+  vocoder_update();
 
   // The only point at which this firmware transmits MIDI. Must stay last, and must
   // stay in loop() -- see the MIDI OUTPUT QUEUE comment above.

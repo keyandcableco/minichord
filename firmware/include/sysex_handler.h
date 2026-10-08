@@ -90,6 +90,15 @@ void apply_audio_parameter(int adress, int value) {
       case 28:
         main_reverb.diffusion(value/100.0);
         break;
+      case 260:
+        vocoder_amount=value; vocoder_set();
+        break;
+      case 261:
+        vocoder_carrier=value; vocoder_set();
+        break;
+      case 262:
+        vocoder_consonants=value; vocoder_set();
+        break;
       case 29:
         pan=value/100.0;apply_audio_parameter(85, current_sysex_parameters[85]);apply_audio_parameter(184, current_sysex_parameters[184]);
         break;

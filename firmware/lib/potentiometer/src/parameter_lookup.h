@@ -32,6 +32,9 @@ static const ParameterInfo parameter_lookup[] = {
     { 26, 0, 0, 1 }, // reverb low damping
     { 27, 0, 0, 1 }, // reverb low pass
     { 28, 0, 0, 1 }, // reverb diffusion
+    { 260, 0, 0, 100 }, // vocoder
+    { 261, 1, 0, 2 }, // vocoder carrier
+    { 262, 0, 0, 100 }, // vocoder consonants
     { 29, 0, 0, 1 }, // pan
     { 10, 0, 21, 219 }, // chord alternate control
     { 11, 0, 0, 100 }, // chord alternate range
@@ -214,7 +217,7 @@ static const ParameterInfo parameter_lookup[] = {
 // Page 1's factory defaults, as stored (floats in hundredths), from each parameter's
 // default_value: the same in every bank. Page 0's are the factory presets in main.cpp.
 static const int16_t parameter_page1_defaults[256] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
