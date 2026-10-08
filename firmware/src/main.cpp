@@ -15,7 +15,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=34; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262)
+int version_ID=35; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -921,6 +921,9 @@ uint8_t vocoder_carrier = 0;     // what the incoming sound shapes: 0 the chords
 uint8_t vocoder_consonants = 30; // 0-100: the incoming sound's hiss blended in, for words
 void vocoder_set();
 void vocoder_setup();
+// Strum velocity (address 263), see strum_softness
+uint8_t strum_velocity = 0;      // 0-100: how much softer a slow strum plays than a fast one, 0 off
+float pluck_strum = -1;          // strum velocity's say on the plucks made now, -1 none (as pluck_strength)
 
 // Touch velocity and pressure (addresses 252, 253): how firmly a string is plucked, and how hard
 // it is pressed while held, read from its pad's strength (see touch_firmness)
@@ -945,9 +948,16 @@ void apply_string_firmness(uint8_t i);
 float touch_softness(float firmness);
 // How much softer than full string i plays: an incoming note by its velocity always, a plucked one as
 // far as touch velocity says
+// A plucked string's: touch velocity's say (from how firmly it is held, if touch velocity is on) and
+// strum velocity's (from the strum it was part of, if it is on and the strum had a speed), the less
+// soft of the two; full if neither has a say.
+float string_strum_softness[12] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};   // -1: no say
 static inline float string_softness(uint8_t i) {
   float f = string_firmness[i];
-  return midi_in_harp[i].owned ? (1 - f) * (1 - f) : touch_softness(f);
+  if (midi_in_harp[i].owned) return (1 - f) * (1 - f);
+  float s = touch_velocity ? touch_softness(f) : -1;
+  if (string_strum_softness[i] >= 0) s = s < 0 ? string_strum_softness[i] : fminf(s, string_strum_softness[i]);
+  return s < 0 ? 0 : s;
 }
 // How bright a plucked string model's pluck is: a soft one is muffled, never dull
 static inline float pluck_brightness(uint8_t i) {
@@ -1282,7 +1292,7 @@ void harp_midi_off(uint8_t i) {
 // channel, and only when two strings play the same note.
 // A plucked string's midi velocity: the harp's, softer for a light touch, down to a tenth
 uint8_t harp_note_velocity(uint8_t i) {
-  float softer = 0.9f * touch_softness(string_pluck_firmness[i]);
+  float softer = 0.9f * string_softness(i);   // touch and strum velocity's say (string_firmness is the pluck's as it sounds)
   return max(1, (int)lroundf(harp_attack_velocity * (1 - softer)));
 }
 
@@ -4230,10 +4240,37 @@ void set_chord_ensemble(uint8_t depth) {
   chord_ensemble_mix_r.gain(1, d);
 }
 
+// Strum velocity: a strum is plucks on neighbouring strings (or zipper positions) one after another
+// in the same direction, each under 200 ms after the last; two fingers on strings apart, or a turn
+// back, start over. Its speed, the time between neighbours, says how firmly it plays: measured,
+// about 150 ms a string for a slow strum and 15 for a fast one, so on a log scale from soft at 150
+// to full at 15, at strum velocity's depth. The first string of a strum has nothing to measure and
+// leaves it to touch velocity (full if that's off). Called at each pluck, with its position.
+float strum_softness(int16_t position) {
+  static int16_t last_position = -1;
+  static uint32_t last_us = 0;
+  static int8_t direction = 0;
+  uint32_t now = micros();
+  float gap_ms = (now - last_us) / 1000.0f;
+  int16_t step = position - last_position;
+  float softness = -1;
+  if (strum_velocity && last_position >= 0 && abs(step) == 1 && gap_ms < 200 && (direction == 0 || step == direction)) {
+    direction = step;
+    float f = constrain(logf(150.0f / fmaxf(gap_ms, 1.0f)) / logf(10.0f), 0.0f, 1.0f);
+    softness = strum_velocity / 100.0f * (1 - f) * (1 - f);
+  } else {
+    direction = 0;
+  }
+  last_position = position;
+  last_us = now;
+  return softness;
+}
+
 // A string sounds: tuned to the note its pad plays now, its envelopes started,
 // its midi note sent.
 void pluck_string(uint8_t i) {
   looper_voice_taken(true, i);
+  string_strum_softness[i] = pluck_strum;
   midi_in_harp[i].owned = false;   // the harp takes the voice back from an incoming note
   string_pluck_firmness[i] = pluck_strength < 0 ? 1 : touch_firmness(pluck_strength);
   string_firmness[i] = string_pluck_firmness[i];
@@ -4368,6 +4405,7 @@ void harp_position_land(uint8_t p) {
     damp_string(v);
   } else {
     string_plucked[v] = false;
+    pluck_strum = strum_softness(p);
     pluck_string(v);
   }
 }
@@ -4375,6 +4413,7 @@ void harp_position_land(uint8_t p) {
 void harp_position_leave(uint8_t p) {
   uint8_t v = harp_position_voice(p);
   if (harp_pluck_on_lift) {
+    pluck_strum = strum_softness(p);
     pluck_string(v);
     string_plucked[v] = true;
   } else {
@@ -4953,12 +4992,14 @@ void handle_harp() {
         damp_string(i);
       } else if (value == 1) {
         pluck_strength = pad_firmest[i];
+        pluck_strum = strum_softness(i);
         pluck_string(i);
         string_plucked[i] = true;
       }
     } else if (value == 2) {
       string_plucked[i] = false;
       pluck_strength = pad_strength[i];
+      pluck_strum = strum_softness(i);
       pluck_string(i);
     } else if (value == 1) {
       release_string(i);
@@ -4966,6 +5007,7 @@ void handle_harp() {
     if (!harp_pluck_on_lift && harp_array[i].read_value() && !string_palmed[i]) press_string(i, pad_strength[i]);
   }
   pluck_strength = -1;   // a pluck from anywhere else is full
+  pluck_strum = -1;
   for (int i = 0; i < 12; i++) {
     // A string plucked on lift has no finger on it to hold it at sustain: once
     // it has come through its decay it rings out through its release, as a
