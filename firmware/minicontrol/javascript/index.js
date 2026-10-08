@@ -53,6 +53,7 @@ function handlechange(event) {
     }
     miniChordController.sendParameter(address, Math.round(range_value));
     if (target_choices[address]) show_target(address, Math.round(range_value));
+    if (control_leads[address] != null) retarget_value_slider(control_leads[address]);
     if (address == miniChordController.color_hue_sysex_adress) { //handling the color scheme
       var hue = Math.round(range_value);
       var elements = document.getElementsByClassName('slider');
@@ -277,6 +278,8 @@ function set_slider_to_value(slider_num, sysex_value) {
       }
       if (target_choices[slider_num]) show_target(slider_num, sysex_value);
     }
+    if (control_leads[slider_num] != null) retarget_value_slider(control_leads[slider_num]);
+    if (value_follows[slider_num] != null) retarget_value_slider(slider_num);
   }
 }
 
@@ -285,7 +288,8 @@ function set_slider_to_value(slider_num, sysex_value) {
 // the settings that control may move. Each parameter's "controls" says which may move it: "all"
 // (the default), "tap" (a control that sets an exact value, but no knob) or "none". The slider
 // skips the rest, onward in the direction it was moved, and the value shows the target's name
-// when hovered. The firmware checks the same thing, from the same field, whatever it is sent.
+// when hovered. A slider whose range starts at 0 keeps 0 too, for unassigned (hover control).
+// The firmware checks the same thing, from the same field, whatever it is sent.
 const target_kinds = { knob: ["all"], tap: ["all", "tap"] };
 let target_choices = {};             // a target slider's address -> the addresses it may hold, in order
 let parameter_info = {};             // address -> its name, its "controls" and the version it came in
@@ -299,9 +303,9 @@ fetch('./json/parameters.json').then(r => r.json()).then(d => {
   }));
   pickers.forEach(p => {
     const kinds = target_kinds[p.target_for] || [];
-    target_choices[p.sysex_adress] = Object.keys(parameter_info).map(Number)
+    target_choices[p.sysex_adress] = (p.min_value == 0 ? [0] : []).concat(Object.keys(parameter_info).map(Number)
       .filter(a => kinds.includes(parameter_info[a].controls) && a >= p.min_value && a <= p.max_value)
-      .sort((a, b) => a - b);
+      .sort((a, b) => a - b));
     const slider = document.querySelector('input[adress_field="' + p.sysex_adress + '"]');
     if (slider) show_target(p.sysex_adress, Number(slider.value));
   });
@@ -309,7 +313,7 @@ fetch('./json/parameters.json').then(r => r.json()).then(d => {
 
 function allowed_targets(address) {
   const list = target_choices[address] || [];
-  return list.filter(a => parameter_info[a].version <= connected_firmware_version);
+  return list.filter(a => a == 0 || parameter_info[a].version <= connected_firmware_version);
 }
 
 // Moves a target slider off an address it can't hold, to the next one it can in the direction it
@@ -328,7 +332,43 @@ function show_target(address, value) {
   const slider = document.querySelector('input[adress_field="' + address + '"]');
   if (slider) slider.setAttribute("last_target", value);
   const value_zone = document.getElementById("value_zone" + address);
-  if (value_zone) value_zone.title = allowed_targets(address).includes(value) ? parameter_info[value].label : "unassigned";
+  if (value_zone) value_zone.title = value != 0 && allowed_targets(address).includes(value) ? parameter_info[value].label : "unassigned";
+}
+
+//-->>VALUES FOLLOW THEIR TARGETS
+// A value a control sets on its target (hover value) is a raw number whatever its target, so on
+// its own it is a 0-4095 slider. Once its control names a target, the value's slider takes on that
+// target's own range, type and curve, so the value is set the way the setting itself is.
+// parameters.json says which control each value follows ("follows_target").
+let parameter_meta = {};         // address -> the parameter's entry in parameters.json
+let value_follows = {};          // value address -> its control's address
+let control_leads = {};          // control address -> the value address that follows it
+fetch('./json/parameters.json').then(r => r.json()).then(d => {
+  ['global_parameter', 'harp_parameter', 'chord_parameter'].forEach(section => (d[section] || []).forEach(p => {
+    parameter_meta[p.sysex_adress] = p;
+    if (p.follows_target != null) { value_follows[p.sysex_adress] = p.follows_target; control_leads[p.follows_target] = p.sysex_adress; }
+  }));
+  Object.keys(value_follows).forEach(v => retarget_value_slider(v));
+}).catch(e => console.log(">> parameters.json not loaded: values stay plain sliders", e));
+
+function retarget_value_slider(value_address) {
+  const slider = document.querySelector('input[adress_field="' + value_address + '"]');
+  const control = document.querySelector('input[adress_field="' + value_follows[value_address] + '"]');
+  if (!slider || !control) return;
+  if (!slider.hasAttribute("plain_max")) {       // remember the plain slider, to go back to with no target
+    ["min", "max", "step", "target_min", "target_max", "data_type", "curve"].forEach(a => slider.setAttribute("plain_" + a, slider.getAttribute(a)));
+  }
+  const target = parameter_meta[parseInt(control.value)];
+  const plain = !target || target.follows_target != null || target.sysex_adress == value_address;
+  const attr = a => plain ? slider.getAttribute("plain_" + a) : null;
+  const float = !plain && target.data_type == "float";
+  slider.min = plain ? attr("min") : target.min_value;
+  slider.max = plain ? attr("max") : target.max_value;
+  slider.step = plain ? attr("step") : (float ? "0.01" : "1");
+  slider.setAttribute("target_min", plain ? attr("target_min") : target.min_value);
+  slider.setAttribute("target_max", plain ? attr("target_max") : target.max_value);
+  slider.setAttribute("data_type", plain ? attr("data_type") : target.data_type);
+  slider.setAttribute("curve", plain ? attr("curve") : target.curve);
 }
 
 

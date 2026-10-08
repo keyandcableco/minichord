@@ -40,6 +40,9 @@ static const ParameterInfo parameter_lookup[] = {
     { 15, 0, 0, 100 }, // mod main percent range
     { 16, 0, 21, 511 }, // mod alternate control
     { 17, 0, 0, 100 }, // mod alternate percent range 
+    { 249, 0, 0, 511 }, // hover control
+    { 250, 0, 0, 4095 }, // hover value
+    { 251, 1, 3, 10 }, // hover reach
     { 4, 0, 0, 1024 }, // chord alternate value
     { 5, 0, 0, 1024 }, // harp alternate value
     { 6, 0, 0, 1024 }, // mod alternate value
