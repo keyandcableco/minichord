@@ -796,11 +796,6 @@ uint8_t voice_leading_range = 12;
 // what the four voices were last given, so the next chord can be placed near them
 int16_t previous_voicing[4] = {0, 0, 0, 0};
 uint8_t chord_spacing = 0;   // 0 = close, 1 = drop 2, 2 = drop 3, 3 = drop 2+4, 4 = spread
-// Whole octaves each chord voice has been displaced by, from the inversion and
-// the spacing together. The glide path centres an oscillator per voice and
-// carries the rest as a DC offset which saturates past two octaves, so
-// whole-octave moves belong in the centre rather than the offset.
-int8_t chord_voice_octave_shift[4] = {0, 0, 0, 0};
 int16_t chord_note_floor = 12;    // one octave above the base, in steps of the live division; below this the chord voices turn to mud
 int16_t chord_note_ceiling = 96;  // eight octaves above the base; both move with the division in apply_temperament
 // retrigger release for chord delayed note
@@ -1872,10 +1867,13 @@ void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
         //ok so first we need to set the "middle note". Keep in mind that the signal will be +/-1 and will go +/- 2 octaves (frequencyModulation(2), hence the /24.0 below)
     //let's do a trick to select a middle note: get the level (relative to the C) and the note and do a modulo 
     int note_level=EDO*chord_octave_change-3*EDO+current_note+transpose_steps;
-    int base_octave =chord_octave_change-2+(chord_shuffling_array[chord_shuffling_selection][i])/10
-      + (i < 4 ? chord_voice_octave_shift[i] : 0);
+    int base_octave =chord_octave_change-2+(chord_shuffling_array[chord_shuffling_selection][i])/10;
     int middle_note=base_octave*EDO+transpose_steps; 
     int note_delta=note_level-middle_note;
+    // the offset reaches two octaves either way; a voice that inversion, spacing or voice leading has
+    // taken further moves the centre instead, so a note within reach glides as it always did
+    while (note_delta > 2*EDO) { middle_note += EDO; note_delta -= EDO; }
+    while (note_delta < -2*EDO) { middle_note -= EDO; note_delta += EDO; }
     float middle_freq=c_frequency*temper_ratio(middle_note);
 
     AudioNoInterrupts();
@@ -2709,13 +2707,6 @@ int16_t inverted_voice_offset(uint8_t (*chord)[7], uint8_t voice, uint8_t invers
 // down an octave to open the chord out; the numbering counts from the top, so
 // "drop 2" is the second voice down. Once the inversion step has run the voices
 // are in pitch order, which is what makes this expressible per voice.
-int8_t inversion_octave_part(uint8_t (*chord)[7], uint8_t voice, uint8_t inversion) {
-  uint8_t tones[4];
-  uint8_t n = collect_chord_tones(chord, tones);
-  if (n == 0) return 0;
-  return (voice + inversion) / n;
-}
-
 int8_t chord_spacing_shift(uint8_t voice) {
   switch (chord_spacing) {
     case 1: return (voice == 2) ? -EDO : 0;                         // drop 2
@@ -2750,15 +2741,6 @@ uint8_t apply_chord_spacing(uint8_t note, uint8_t voice, uint8_t level, bool sla
   return note + shift;
 }
 
-void note_chord_octave_shift(uint8_t voice, uint8_t level, uint8_t before, uint8_t after) {
-  if (voice >= 4) return;
-  int8_t total = (int8_t)(((int16_t)after - (int16_t)before) / EDO);
-  if ((chord_inversion > 0 || chord_spacing > 0) && level % 10 < 4) {
-    total += inversion_octave_part(current_chord, voice, chord_inversion);
-  }
-  chord_voice_octave_shift[voice] = total;
-}
-
 int16_t chord_tone_offset(uint8_t level, uint8_t voice) {
   // Spacing needs the voices in pitch order, so it uses the same sorted path as
   // inversion. At inversion 0 that reorders which oscillator plays which note
@@ -2781,12 +2763,10 @@ uint8_t calculate_note_chord(uint8_t voice, bool slashed, bool sharp) {
   } else {
     if (!flat_button_modifier) {
       note = (EDO * int(level / 10) + get_root_button(key_signature_selection, chord_frame_shift, fundamental) + sharp * modifier_step + chord_tone_offset(level, voice));
-      { uint8_t before = note; note = apply_chord_spacing(note, voice, level, slashed, sharp);
-        note_chord_octave_shift(voice, level, before, note); }
+      note = apply_chord_spacing(note, voice, level, slashed, sharp);
     } else {
       note = (EDO * int(level / 10) + get_root_button(key_signature_selection, chord_frame_shift, fundamental) - sharp * modifier_step + chord_tone_offset(level, voice));
-      { uint8_t before = note; note = apply_chord_spacing(note, voice, level, slashed, sharp);
-        note_chord_octave_shift(voice, level, before, note); }
+      note = apply_chord_spacing(note, voice, level, slashed, sharp);
     }
   }
   return note;
