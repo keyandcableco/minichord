@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=36; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265)
+int version_ID=37; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -2287,8 +2287,9 @@ void midi_in_settle() {
 // looped notes go out over midi as they did when played.
 //
 // It is driven through setting 256, which is never saved as anything but 0: writing it does one
-// thing (looper_action: 1 record, 2 play, 3 stop, 4 clear, 5 overdub on or off, 6 the next step),
-// so minicontrol's looper buttons write it, and control changes 85-90 do the same on any channel.
+// thing (looper_action: 1 record, 2 play, 3 stop, 4 clear, 5 overdub on or off, 6 the next step,
+// 7 the next step sent to a computer's looper instead), so minicontrol's looper buttons write it,
+// and control changes 85-90 do the same on any channel.
 // Assigned to the double tap, each double tap takes the next step (looper_step): record, play,
 // stop, then record a new loop. A loop closes where the second tap landed, not where the gesture
 // was recognised, a moment later. In rhythm mode, or with midi clock coming in, a loop starts on
@@ -2296,6 +2297,13 @@ void midi_in_settle() {
 // Overdub (minicontrol or midi only) adds to a playing loop, and a note captured on a pass isn't
 // played back over itself on that pass. Voices still sounding when a loop closes are let go at its
 // end, so none hangs across the join, and a chord ringing when recording starts begins the loop.
+//
+// A looper on the computer (the Lab's looper page) is worked the same way from here: double tap
+// value 7 (with double tap control 256) sends each double tap out as control change 90, the next
+// step, on the chords' port and channel, and leaves the minichord's own looper alone. The double
+// tap is only known once the second tap lifts, so the value carries how long ago it landed, 4 ms a
+// step down from 127 (127: just now; never under 64, so it still reads as a press anywhere a press is
+// 64 or more): the computer places the step where the tap was, not where it was recognised.
 const int16_t looper_adress = 256;
 struct loop_event {
   uint32_t t;            // ms from the loop's start
@@ -2556,6 +2564,13 @@ void looper_step(uint32_t at) {
   }
 }
 
+// The next step, for a looper on the computer: control change 90, its value 127 less the tap's
+// delay in 4 ms steps (a tap is at most modifier_tap_max, 250 ms, so it stays 64 or more)
+void looper_send_step(uint32_t delay_ms) {
+  uint8_t late = min((delay_ms + 2) / 4, 63UL);
+  queue_midi_cc(90, 127 - late, chord_channel, chord_port);
+}
+
 void looper_action(int16_t action) {
   current_sysex_parameters[looper_adress] = 0;         // an action, never a value to keep
   switch (action) {
@@ -2565,6 +2580,7 @@ void looper_action(int16_t action) {
     case 4: looper_clear(); break;
     case 5: looper_overdub_toggle(); break;
     case 6: looper_step(millis()); break;
+    case 7: looper_send_step(0); break;
   }
 }
 
@@ -5735,9 +5751,13 @@ void trigger_chord_notes() {
 
 // Applies the chosen values, or puts back what was there before.
 void toggle_double_tap_target() {
-  // The looper, assigned to the double tap, takes its next step, from where the second tap landed
+  // The looper, assigned to the double tap, takes its next step, from where the second tap landed;
+  // with the pair's value at 7 the step goes to a looper on the computer instead (see LOOPER)
   for (uint8_t k = 0; k < double_tap_pairs; k++) {
-    if (current_sysex_parameters[double_tap_control_adress[k]] == looper_adress) { looper_step(modifier_pressed_ms); break; }
+    if (current_sysex_parameters[double_tap_control_adress[k]] != looper_adress) continue;
+    if (current_sysex_parameters[double_tap_value_adress[k]] == 7) looper_send_step(millis() - modifier_pressed_ms);
+    else looper_step(modifier_pressed_ms);
+    break;
   }
   if (double_tap_engaged) {
     // Restore to the addresses latched at engage time, last applied first: the

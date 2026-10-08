@@ -61,7 +61,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 249, 0, 0, 511 }, // hover control
     { 250, 0, 0, 4095 }, // hover value
     { 251, 1, 3, 10 }, // hover reach
-    { 256, 1, 0, 6 }, // looper
+    { 256, 1, 0, 7 }, // looper
     { 4, 0, 0, 1024 }, // chord alternate value
     { 5, 0, 0, 1024 }, // harp alternate value
     { 6, 0, 0, 1024 }, // mod alternate value

@@ -768,7 +768,7 @@
               <p>200</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="which setting two quick taps of the modifier button toggle, with the settings of double tap control 2 and 3 if assigned. 0 leaves this pair unassigned. Set it to 39 to switch chord layouts, or to any other setting you want under a tap. Set it to 256 for the looper: each double tap then takes its next step, record, play, stop, and record a new loop, instead of toggling (best given the double tap on its own, since every assigned pair moves on each double tap)">double tap control</dfn>
+              <dfn title="which setting two quick taps of the modifier button toggle, with the settings of double tap control 2 and 3 if assigned. 0 leaves this pair unassigned. Set it to 39 to switch chord layouts, or to any other setting you want under a tap. Set it to 256 for the looper: each double tap then takes its next step, record, play, stop, and record a new loop, instead of toggling; with double tap value 7, the step goes to a looper on the computer (the Lab's looper page) instead of the minichord's own (best given the double tap on its own, since every assigned pair moves on each double tap)">double tap control</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
               <input class="slider inactive" adress_field="200" curve="linear" data_type="int" id="30" max="511" min="0" onchange="handlechange(this)" step="1" target_max="511" target_min="0" type="range" value="0" />
@@ -1128,10 +1128,10 @@
               <p>256</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="the looper: writing it does one thing and it goes back to 0, never kept in a preset. 1 record, 2 play, 3 stop, 4 clear, 5 overdub on or off, 6 the next step. Assign the double tap to it (double tap control 256) and each double tap takes the next step: record, play, stop, then record a new loop">looper</dfn>
+              <dfn title="the looper: writing it does one thing and it goes back to 0, never kept in a preset. 1 record, 2 play, 3 stop, 4 clear, 5 overdub on or off, 6 the next step, 7 the next step sent to a looper on the computer instead (control change 90 over USB). Assign the double tap to it (double tap control 256) and each double tap takes the next step: record, play, stop, then record a new loop. With the double tap value at 7, each double tap works a looper on the computer, such as the Lab's looper page, and the minichord's own looper is left alone">looper</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="256" curve="linear" data_type="int" id="48" max="6" min="0" onchange="handlechange(this)" step="1" target_max="6" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="256" curve="linear" data_type="int" id="48" max="7" min="0" onchange="handlechange(this)" step="1" target_max="7" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone256" class="value_zone"></p>
