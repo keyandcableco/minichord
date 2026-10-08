@@ -449,9 +449,11 @@ void drain_midi_queue() {
 // With "knobs send MIDI" on (address 238), each knob's position goes out as a control change as it
 // turns: CC 20 the chord knob, 21 the harp knob, 22 the modulation knob, 0 to 127 across its travel,
 // on the chord channel and port. They can be MIDI-learnt in a DAW, or read by a program. The knobs
-// keep doing their usual jobs; this only reports where they are. Read on its own, lightly smoothed,
-// with a little hysteresis so a knob resting between two values doesn't chatter, and at most once
-// every 8 ms. Switching the setting on sends every knob's position straight away.
+// keep doing their usual jobs; this only reports where they are. Read on its own, smoothed, and sent
+// only once the reading has moved a whole value from the last one sent, so a knob resting between two
+// values doesn't chatter (with less, 0.7 of a value and lighter smoothing, a resting mod knob flickered
+// between 71 and 72); at most once every 8 ms. Switching the setting on sends every knob's position
+// straight away.
 bool knob_midi = false;
 bool knob_midi_resend = false;
 void send_knob_ccs();
@@ -1636,9 +1638,9 @@ void send_knob_ccs() {
   since = 0;
   for (uint8_t k = 0; k < 3; k++) {
     float reading = 1024 - analogRead(pins[k]);
-    smoothed[k] = smoothed[k] < 0 ? reading : smoothed[k] * 0.75f + reading * 0.25f;
+    smoothed[k] = smoothed[k] < 0 ? reading : smoothed[k] * 0.875f + reading * 0.125f;
     float scaled = constrain((smoothed[k] - 12.0f) * 127.0f / 1000.0f, 0.0f, 127.0f);
-    bool moved = sent[k] < 0 || fabsf(scaled - sent[k]) > 0.7f;
+    bool moved = sent[k] < 0 || fabsf(scaled - sent[k]) >= 1.0f;
     if (moved || knob_midi_resend) {
       int16_t value = (int16_t)(scaled + 0.5f);
       if (value != sent[k] || knob_midi_resend) queue_midi_cc(20 + k, value, chord_channel, chord_port);
