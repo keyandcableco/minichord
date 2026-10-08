@@ -10,6 +10,7 @@ class debouncer{
   uint8_t read_transition();
   bool read_value();
   bool read_raw();   // the latest reading, before it has held: for a caller that must not wait
+  void set_debounce(uint16_t microseconds);   // how long a reading must hold, 10 ms unless set
   private:
   u_int16_t debounce_value=10000;
   bool flag=false; //flag warns that there has been a change in value that was not yet accounted for 

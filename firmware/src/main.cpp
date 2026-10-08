@@ -18,6 +18,7 @@ void apply_preset_version(int bank_number);
 int version_ID=27; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
+const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
 debouncer chord_matrix_array[22];
 
 //>>HARDWARE SETUP<<
@@ -3332,6 +3333,11 @@ void setup() {
   chord_matrix.setup();
   harp_sensor.setup();
   harp_sensor.recalibrate();
+  // The harp pads don't bounce: the touch chip already wants two readings in a row before it calls a
+  // pad touched. The buttons' 10 ms was most of the harp's latency: from a pad's reading crossing
+  // the touch threshold to the pluck took 17 ms (median, measured), and with 4 ms it takes 11.
+  // 4 ms rather than none gives a landing finger's reading time to rise, for a pluck's velocity.
+  for (int i = 0; i < 12; i++) harp_array[i].set_debounce(harp_debounce_us);
   pinMode(BATT_LBO_PIN, INPUT);
   pinMode(DOWN_PGM_PIN, INPUT);
   pinMode(UP_PGM_PIN, INPUT);
