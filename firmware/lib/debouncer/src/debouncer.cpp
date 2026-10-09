@@ -23,9 +23,15 @@ void debouncer::set(bool set_value){
         last_update=0;
         return;
     }
-    if(pending!=value && last_update>debounce_value){
+    // A press may be taken sooner than a release (set_press): measured on the chord buttons, a
+    // press hardly ever bounces, a release often does, for up to 30 ms, so the press's wait was
+    // the whole of a button's latency. Just after a release, a closing is more likely its chatter
+    // than a new press, so there a press waits the full debounce as before.
+    uint32_t need = (pending && since_release >= relock_value) ? press_value : debounce_value;
+    if(pending!=value && last_update>need){
         value=pending;
         flag=true;
+        if(!value) since_release=0;
     }
 }
 
@@ -48,8 +54,13 @@ uint8_t debouncer::read_transition(){
 bool debouncer::read_raw(){
     return pending;
 }
+void debouncer::set_press(uint16_t microseconds, uint32_t relock){
+    press_value=microseconds;
+    relock_value=relock;
+}
 void debouncer::set_debounce(uint16_t microseconds){
     debounce_value=microseconds;
+    press_value=microseconds;
 }
 bool debouncer::read_value(){
     return value;
