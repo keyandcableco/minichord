@@ -441,6 +441,12 @@ add("child voice, small voice, little voice, chipmunk", "setting", "small singin
     moves={"chord": (EXACT("formant_size", 20), MIN("formant", 60))})
 add("giant voice, deep voice, bass voice, big voice", "setting", "large singing voice", home="chord",
     moves={"chord": (EXACT("formant_size", 85), MIN("formant", 60))})
+add("dim the leds, dim leds, dimmed leds, dimmer leds, darker leds, dim the lights, dim lights, dim led, leds dim",
+    "setting", "dimmer LEDs", home="global", moves=(EXACT("led", 0.6),))
+add("bright leds, brighter leds, full brightness, leds bright, leds at full", "setting", "LEDs at full brightness",
+    home="global", moves=(EXACT("led", 0.0),))
+add("leds off, no leds, turn off the leds, lights off, turn off the lights, dark leds", "setting", "LEDs off",
+    home="global", moves=(EXACT("led", 1.0),))
 add("twin peaks, laura palmer, badalamenti, angelo badalamenti, david lynch", "sound",
     "Twin Peaks (Ben's Twin Green preset)", base="Twin Green", hue=120)
 
@@ -771,7 +777,8 @@ WEAK = {"slightly", "bit", "little", "subtle", "subtly", "touch", "hint", "light
 NEGATE = {"no", "not", "without", "zero", "remove", "removed", "off", "kill", "lose", "drop", "stop", "never",
           "isnt", "dont", "doesnt", "less"}
 MORE = {"more", "extra", "increase", "increased", "add", "boost", "bigger"}
-ACTION_VERBS = {"turns", "turn", "adds", "add", "makes", "make", "starts", "start", "opens", "open", "sweeps",
+ACTION_VERBS = {"assign", "assigns", "assigned", "map", "maps", "mapped", "route", "routes", "routed", "link",
+                "links", "linked", "point", "points", "turns", "turn", "adds", "add", "makes", "make", "starts", "start", "opens", "open", "sweeps",
                 "sweep", "controls", "control", "changes", "change", "brings", "bring", "gives", "give", "does",
                 "do", "kicks", "switches", "switch", "toggles", "toggle", "sets", "set", "mutes", "mute"}
 STOPWORDS = set("""a an the and or with of to in on for it its it's is are be been being am that this these those
@@ -786,7 +793,8 @@ only same different new nice good great cool beautiful sounding sort of kinda so
 yeah yes okay ok um uh hmm think thinking thought guess sure probably perhaps possibly
 mean means anyway kind course whatever there's theres it'd isnt also all any some most my mine maybe recent
 would'nt wouldnt want wanted wish hope going gonna wanna let lets please thanks thank sounds sound right left
-know see try trying tried able unless otherwise case build built separate profile profiles based
+know see try trying tried able unless otherwise case bank banks color led leds light lights assign assigns
+assigned map maps mapped route routes routed link links linked point points build built separate profile profiles based
 temperament alternate setting settings options option actually basically something like really much bit amount level levels stuff start
 starts starting play plays playing played sounds both everything whole overall little touch hint lot add adds
 adding added need needs want hear heard should be will its whose whole than up down""".split())
@@ -809,7 +817,7 @@ def selectors():
 
 def normalise(text):
     t = "".join(c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c))
-    t = t.lower().replace("’", "'")
+    t = t.lower().replace("’", "'").replace("colour", "color")
     t = re.sub(r"\b((?:[a-z]\.){2,})", lambda m: m.group(1).replace(".", ""), t)   # r.e.m. is rem
     t = re.sub(r"\b(mr|mrs|ms|dr|st|jr|vs)\.", r"\1", t)                         # mr. blue sky.replace("&", " and ").replace("+", " plus ")
     t = re.sub(r"(\d)\s*-\s*bit", r"\1 bit", t)

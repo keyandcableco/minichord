@@ -55,6 +55,9 @@ SENTENCES = [
     "the mod knob controls key", "the harp knob does the transposition",
     "set reverb to 40%", "harp reverb at 0.2, chord delay 30 percent", "chord waveform 1 sawtooth",
     "oscillator 2 square, harp waveform triangle", "lots of chorus at 80", "vibrato 15 on the harp",
+    "dim the leds", "brighter leds and a blue bank colour", "set the bank color to blue", "turn off the leds",
+    "assign the mod pot to the key signature", "map the harp knob to the reverb", "set the bank colour to 200",
+    "I want the mod knob to control the vibrato",
 ]
 # every song in the list, by its first name, as a preset and a profile
 SENTENCES += [e.words[0] for e in interpret.V if e.kind == "song"]
