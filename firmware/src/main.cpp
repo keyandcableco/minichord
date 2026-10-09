@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=38; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269)
+int version_ID=39; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1538,8 +1538,12 @@ static inline int16_t parameter_default(int bank_number, uint16_t i) {
   return i < page_size ? default_bank_sysex_parameters[bank_number][i] : parameter_page1_defaults[i - page_size];
 }
 
+// Push and pop (control commands 5 and 6). A second push keeps the first unless it asks to replace
+// it: a remote that has lost track (a page reloaded) can't know one is held. What was pushed
+// belongs to its bank, so loading any other bank drops it.
 int16_t pushed_sysex_parameters[parameter_size];
 bool sysex_pushed = false;
+int8_t pushed_bank = -1;
 void apply_audio_parameter(int adress, int value);      // defined in the generated sysex_handler.h, included below
 void pop_sysex_parameters() {
   if (!sysex_pushed) return;
@@ -1598,10 +1602,11 @@ FLASHMEM void control_command(uint8_t command, uint8_t parameter) {
     current_bank_number = parameter;
     save_config(parameter, true);
     break;
-  case 5: // push: remember the live parameters as they are now
-    if (!sysex_pushed) {
+  case 5: // push: remember the live parameters as they are now; parameter 1 replaces one already held
+    if (!sysex_pushed || parameter == 1) {
       for (int i = 0; i < parameter_size; i++) pushed_sysex_parameters[i] = current_sysex_parameters[i];
       sysex_pushed = true;
+      pushed_bank = current_bank_number;
       Serial.println("Parameters pushed");
     } else Serial.println("Parameters already pushed: keeping the first");
     break;
@@ -4220,6 +4225,8 @@ void load_config(int bank_number) {
     Serial.printf("Error: Invalid bank_number %d in save_config\n", bank_number);
     return;
   }
+  // another preset, by the preset buttons or a remote: what was pushed belonged to the last one
+  if (bank_number != pushed_bank) sysex_pushed = false;
   //digitalWrite(_MUTE_PIN, LOW); // muting the DAC
   //Turn off chords notes
   for (int i = 0; i < 4; i++) {
