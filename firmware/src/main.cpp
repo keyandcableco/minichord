@@ -852,6 +852,7 @@ u_int32_t long_timer_period = shuffle * (60 * 1000 * 1000) / (2 * rythm_bpm);
 u_int32_t short_timer_period = 2 * (60 * 1000 * 1000) / (2 * rythm_bpm) - long_timer_period;
 bool current_long_period = true;
 bool rythm_timer_running = false;
+volatile bool rythm_clock_synced = false;   // the steps following a MIDI clock (see the clock in processMIDI)
 IntervalTimer rythm_timer;       // that gives the general rythm
 // The rhythm LED's flash: lit on the step (rythm_tick_function), let go by the loop 200 ms on
 // (rythm_led_settle), not by a timer of its own, so the rhythm holds one of the four timer channels
@@ -1394,6 +1395,8 @@ void rebuild_custom_scale();
 void rebuild_generator_scale();
 void calculate_ws_array();
 void rythm_tick_function();
+void rythm_free_run();
+void rythm_clock_downbeat();
 
 //-->>LED HSV CALCULATION
 // function to calculate led RGB value, thank you SO
@@ -1716,39 +1719,40 @@ void processMIDI(void) {
       }
     }
   }
+  // Following a MIDI clock (24 a beat): each beat's first step falls on the clock that starts the
+  // beat, and its second follows by the long half of the shuffle, on a one-shot timer
+  // (rythm_clock_downbeat). Start begins the pattern on the next clock, as MIDI has it; Stop, or the
+  // clock going quiet for half a second (rythm_clock_watch), hands the steps back to the minichord's
+  // own tempo.
   if(type==usbMIDI.Start && rythm_mode){
-    rythm_current_step=0;
-    midi_clock_current_step=0;
-    rythm_tick_function();
-    Serial.println("Start received");
     rythm_timer.end();
+    rythm_clock_synced = true;
+    rythm_current_step = 0;
+    midi_clock_current_step = 23;   // so the next clock starts a beat
+    last_midi_clock_in = 0;
+    Serial.println("Start received");
   }
   if(type==usbMIDI.Stop && rythm_mode){
-    rythm_timer.begin(rythm_tick_function, short_timer_period);
+    rythm_clock_synced = false;
+    rythm_free_run();
   }
-
-
   if(type==usbMIDI.Clock && rythm_mode){
-    //here we want half of the cycle to be synced with the midi clock, and half with the calculated internal clock, so we can still have shuffle
-    //recalculate the BPM
-    rythm_bpm=(rythm_bpm*10+(1000*1000*60/last_midi_clock_in)/24)/11.0;
-    last_midi_clock_in=0;
-    midi_clock_current_step+=1;
-    recalculate_timer();   
-    //once every two beat, we sync
-    if(midi_clock_current_step==24){
-      rythm_timer.begin(rythm_tick_function, short_timer_period);
-      rythm_tick_function();
-      midi_clock_current_step=0;
+    uint32_t us = last_midi_clock_in;
+    last_midi_clock_in = 0;
+    // the tempo from the clock's spacing, in float: it was floored to a whole BPM. Only a real
+    // interval counts (25 to 1250 BPM), not the first clock after a gap
+    if (us > 2000 && us < 100000) {
+      rythm_bpm = constrain((rythm_bpm * 10 + 60e6f / (24.0f * us)) / 11.0f, 30.0f, 300.0f);
+      recalculate_timer();
     }
-    //We disable the timer to avoid having it trigger the tick too early when we arrive at the sync beat 
-    if(midi_clock_current_step>18){
-      rythm_timer.end();
+    if (!rythm_clock_synced) {   // a clock already running when rhythm mode came on: from the next beat
+      rythm_clock_synced = true;
+      midi_clock_current_step = 23;
     }
-
-   
-  
-   
+    if (++midi_clock_current_step >= 24) {
+      midi_clock_current_step = 0;
+      rythm_clock_downbeat();
+    }
   }
 }
 
@@ -3989,6 +3993,43 @@ uint8_t harp_string_note(uint8_t i, bool slashed, bool sharp) {
   return calculate_note_harp(harp_voice_position[i], slashed, sharp);
 }
 //-->>RYTHM MODE UTILITIES
+// the rhythm on the minichord's own tempo: steps alternating long and short (the shuffle), from now
+void rythm_free_run() {
+  rythm_timer.priority(254);
+  rythm_timer.begin(rythm_tick_function, short_timer_period);
+  rythm_timer_running = true;
+  rythm_timer.update(long_timer_period);
+  current_long_period = true;
+}
+
+// a beat's second step, the long half of the shuffle after its first (rythm_clock_downbeat)
+void rythm_offbeat() {
+  rythm_timer.end();
+  rythm_tick_function();
+}
+
+// A beat's first step, on the clock that starts it. The timer was setting the second step with
+// the short half first, so a shuffle came out reversed under a clock; and Start played its first
+// step at once and the second only a beat later, so the pattern ran an eighth behind the clock.
+// The first step of a beat is always an even one: if a second step went missing, the count skips it.
+void rythm_clock_downbeat() {
+  noInterrupts();
+  rythm_timer.end();
+  if (rythm_loop_length % 2 == 0 && rythm_current_step % 2 == 1) rythm_current_step = (rythm_current_step + 1) % rythm_loop_length;
+  interrupts();
+  rythm_tick_function();
+  rythm_timer.begin(rythm_offbeat, long_timer_period);
+  rythm_timer_running = true;
+}
+
+// from the loop: a clock gone quiet without a Stop (the computer's player closed, the cable out)
+void rythm_clock_watch() {
+  if (rythm_mode && rythm_clock_synced && last_midi_clock_in > 500000) {
+    rythm_clock_synced = false;
+    rythm_free_run();
+  }
+}
+
 void rythm_tick_function() {
   //this function seems a bit long for a timed one. Maybe try to offload some logic somewhere else? 
   if (rythm_current_step % rythm_limit_change_to_every == 0) {
@@ -4008,12 +4049,14 @@ void rythm_tick_function() {
   analogWrite(RYTHM_LED_PIN, (220 * (rythm_current_step % rythm_limit_change_to_every == 0) + 15) * (rythm_current_step % active_modulus == 0));
   rythm_led_lit_at = millis();   // off 200 ms on (rythm_led_settle)
   rythm_led_lit = true;
-  if (current_long_period) {
-    rythm_timer.update(short_timer_period);
-    current_long_period = false;
-  } else {
-    rythm_timer.update(long_timer_period);
-    current_long_period = true;
+  if (!rythm_clock_synced) {   // under a clock the steps come from rythm_clock_downbeat and rythm_offbeat
+    if (current_long_period) {
+      rythm_timer.update(short_timer_period);
+      current_long_period = false;
+    } else {
+      rythm_timer.update(long_timer_period);
+      current_long_period = true;
+    }
   }
   u_int8_t result;
   result = rythm_pattern[rythm_current_step];
@@ -5665,7 +5708,7 @@ void handle_hold_button() {
         trigger_chord = true;
       }
     } else {
-      if (since_last_button_push > 100 && since_last_button_push < 2000) {
+      if (since_last_button_push > 100 && since_last_button_push < 2000 && !rythm_clock_synced) {   // under a clock, the clock's tempo
         rythm_bpm = (rythm_bpm * 5.0 + 60 * 1000 / since_last_button_push) / 6.0;
         Serial.print("Updating the BPM to: ");
         Serial.println(rythm_bpm);
@@ -5682,13 +5725,11 @@ void handle_hold_button() {
     if (rythm_mode) {
       rythm_current_step = 0;
       Serial.println("Starting rhythm timers");
-      rythm_timer.priority(254);
-      rythm_timer.begin(rythm_tick_function, short_timer_period);
-      rythm_timer_running = true;
-      rythm_timer.update(long_timer_period);
-      current_long_period = true;
+      rythm_clock_synced = false;
+      rythm_free_run();
     } else {
       Serial.println("Stopping rhythm timers");
+      rythm_clock_synced = false;
       rythm_timer.end();
       rythm_timer_running = false;
     }
@@ -6342,6 +6383,7 @@ void loop() {
 
   step_led_animation();
   rythm_led_settle();
+  rythm_clock_watch();
 
   // Handle continuous mode logic
   if (!continuous_chord && !rythm_mode) {

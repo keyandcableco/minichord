@@ -1,7 +1,7 @@
 #include <Audio.h>
-#include "envelope_retrigger.h"   // AudioEffectEnvelope, keeping a noteOff that comes during the retrigger fade (envelope_retrigger.h)
 #include "lean_filter.h"   // AudioFilterStateVariable's sums, the corner once a block while its control holds still (lean_filter.h)
 #include "lean_mixer.h"   // AudioMixer4's arithmetic, without the work on inputs at gain 0 (lean_mixer.h)
+#include "envelope_retrigger.h"   // AudioEffectEnvelope, keeping a noteOff that comes during the retrigger fade (envelope_retrigger.h)
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
