@@ -18,6 +18,10 @@ wavetable player's data (AudioSynthWavetable::instrument_data), each note soundi
 the notes nearest it, with an envelope that just passes the sound on: the minichord's own
 envelope shapes it.
 
+A recording is pitched from the note its file is named for, less any offset in TUNING_CENTS:
+some of the renderings are off, and every note played from one carries its error, which a pure
+third against it (in 31-EDO, or just chords) makes plain.
+
 Flash is the limit: the firmware has about 740 kB besides the presets' storage, so the
 loops are shorter than the Lab's (whose are about two seconds), the choir and strings,
 with little above 8 kHz, are kept at 16 kHz, and the sizes are printed at the end.
@@ -46,6 +50,19 @@ INSTRUMENTS = [
                 ('quartet/violin', 82)], loop=(0.5, 0.5, 0.2)),
 ]
 TARGET_RMS = 0.2
+# Recordings that sound away from the note they are named for, in cents, measured on the minichord
+# (the recording played at its own note, so at the speed it was recorded) and from its spectrum,
+# the two agreeing within 5 cents. Only those that agree are here: a plucked or sung ensemble's pitch
+# drifts as it sounds (the pizzicato 40 and 50, the choir 44 and 54), and a guess would be worse
+# than the name. Offsets under 3 cents are left alone.
+TUNING_CENTS = {
+    ('quartet/pizz', 60): -12.5,       # the harp's C4 to F4 in pizzicato
+    ('quartet/pizz', 82): -5.4,
+    ('choir/musyng/aah', 64): -12.6,
+    ('choir/musyng/aah', 76): -18.8,
+    ('quartet/viola', 60): 3.0,
+    ('piano', 78): 6.4,
+}
 
 
 def decode(path, rate):
@@ -140,7 +157,8 @@ def main():
             pcm, loop = build_note(root, inst, folder, note)
             array = 'sample_%s_%d' % (inst['name'], note)
             cpp.append(c_array(array, pcm))
-            structs.append(sample_struct(array, pcm, loop, 440 * 2 ** ((note - 69) / 12), inst['rate']))
+            root_hz = 440 * 2 ** ((note - 69 + TUNING_CENTS.get((folder, note), 0) / 100) / 12)
+            structs.append(sample_struct(array, pcm, loop, root_hz, inst['rate']))
             ranges.append(127 if k == len(notes) - 1 else (note + notes[k + 1]) // 2)
             size += pcm.nbytes
         cpp.append('static const AudioSynthWavetable::sample_data %s_samples[%d] = {\n%s\n};' % (
