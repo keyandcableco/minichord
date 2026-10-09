@@ -125,6 +125,10 @@ private:
     uint16_t quiet_blocks = 0;
     static const uint16_t sleep_after = 345;
     void clear_buffers(void);
+    // the right input's allpasses, resting once it has had no input for right_tail_blocks (2 s)
+    uint16_t right_quiet_blocks = 0;
+    static const uint16_t right_tail_blocks = 690;
+    void clear_right_input(void);
     audio_block_t *inputQueueArray[2];
 #ifndef REVERB_USE_DMAMEM
     float32_t input_blockL[AUDIO_BLOCK_SAMPLES];
