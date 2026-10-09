@@ -4219,6 +4219,9 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   }
   all_string_mix.gain(3,0.02); //for the transient
   all_string_mix_r.gain(3,0.02);
+  // at spread 0 the right chain's mixers are all at 0 and send nothing, so the chain rests
+  for (uint8_t k = 0; k < 3; k++) string_mixer_r_array[k]->silent_when_muted(true);
+  all_string_mix_r.silent_when_muted(true);
   apply_string_spreads();             // each string's share of the two sides
   // the ensemble: about 10 ms swept by 3, at a different rate a side
   chord_ensemble_l.begin(chord_ensemble_line_l, 2048, 441, 132, 0.53);
@@ -4358,13 +4361,25 @@ void apply_string_spread(uint8_t i) {
     float high = log2f(harp_note_frequency(current_harp_notes[11]));
     if (string_note_freq[i] > 0 && high > low) position = constrain(2 * (log2f(string_note_freq[i]) - low) / (high - low) - 1, -1.0f, 1.0f);
   }
+  if (string_spread == 0) {   // in the middle: the left chain alone, the right side its copy
+    string_mixer_array[i / 4]->gain(i % 4, 1);
+    string_mixer_r_array[i / 4]->gain(i % 4, 0);
+    return;
+  }
   float angle = (position * string_spread / 100.0f + 1) * (float)M_PI / 4;
   string_mixer_array[i / 4]->gain(i % 4, sqrtf(2.0f) * cosf(angle));
   string_mixer_r_array[i / 4]->gain(i % 4, sqrtf(2.0f) * sinf(angle));
 }
 
+// At spread 0 the two chains carried the same, so the right one, the strings' whole effects chain
+// over again (its delay too), worked for nothing in every preset: it now rests, and the right side
+// takes the left's (string_right_source)
 void apply_string_spreads() {
   for (uint8_t i = 0; i < 12; i++) apply_string_spread(i);
+  bool spread = string_spread > 0;
+  all_string_mix_r.gain(3, spread ? 0.02 : 0);   // the transient, as the left has it
+  string_right_source.gain(0, spread ? 1 : 0);
+  string_right_source.gain(1, spread ? 0 : 1);
 }
 
 // Chord ensemble: depth 0 only the dry; at 100 half dry and half the swept delay (the flange object

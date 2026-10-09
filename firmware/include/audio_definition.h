@@ -545,6 +545,9 @@ AudioEffectMultiply      string_multiplier_r;
 AudioAmplifier           string_amplifier_r;
 AudioEffectMultiply      string_multiplier;  
 AudioAmplifier           string_amplifier; 
+// The right side's strings: its own chain's (string_amplifier_r) with the strings spread, the left
+// chain's at spread 0, where the two carry the same and the right chain rests (apply_string_spreads)
+AudioMixer4Lean          string_right_source;
 AudioSynthWaveformDc     string_l_stereo_gain;        
 AudioSynthWaveformDc     string_r_stereo_gain;        
 AudioEffectMultiply      string_l_stereo_multiply;  
@@ -584,12 +587,14 @@ AudioConnection          patchCord2001(string_gain, 0, string_multiplier, 1);
 AudioConnection          patchCord2002(string_multiplier, 0, string_amplifier, 0);
 AudioConnection          patchCord2003(string_amplifier, 0, string_l_stereo_multiply, 0);
 AudioConnection          patchCord2004(string_l_stereo_gain, 0, string_l_stereo_multiply, 1);
-AudioConnection          patchCord2005(string_amplifier_r, 0, string_r_stereo_multiply, 0);
+AudioConnection          patchCord2005a(string_amplifier_r, 0, string_right_source, 0);
+AudioConnection          patchCord2005b(string_amplifier, 0, string_right_source, 1);
+AudioConnection          patchCord2005(string_right_source, 0, string_r_stereo_multiply, 0);
 AudioConnection          patchCord2006(string_r_stereo_gain, 0, string_r_stereo_multiply, 1);
 AudioConnection          patchCord2007(string_r_stereo_multiply, 0, stereo_r_mixer, 0);
 AudioConnection          patchCord2008(string_l_stereo_multiply, 0, stereo_l_mixer, 0);
 AudioConnection          patchCord2009(string_amplifier, 0, reverb_mixer, 0);
-AudioConnection          patchCord2009r(string_amplifier_r, 0, reverb_mixer, 2);   // the reverb hears both sides, each at half
+AudioConnection          patchCord2009r(string_right_source, 0, reverb_mixer, 2);   // the reverb hears both sides, each at half
 
 AudioConnection          patchCord2010(chords_main_filter_mixer, 0, chords_multiplier, 0);
 AudioConnection          patchCord2011(chords_gain, 0, chords_multiplier, 1);
