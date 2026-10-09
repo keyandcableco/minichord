@@ -1509,7 +1509,11 @@ void usb_audio_gain() {
 #endif
 }
 // a value written to 244 (by an editor or a page): kept, and a restart scheduled if the host must be told
-void usb_audio_request(int value) {
+// FLASHMEM on the settings path (this and the other functions so marked: the dump, control commands,
+// save, temperament, ensemble, vocoder and sample setup): run from flash, as apply_audio_parameter
+// already is, so they don't take ITCM. The code had crossed a 32 KB ITCM block by a few hundred bytes,
+// and the rest of that block was padding: 33 KB of RAM1 the stack couldn't have.
+FLASHMEM void usb_audio_request(int value) {
   uint8_t mode = constrain(value, 0, 2);
   current_sysex_parameters[usb_audio_adress] = mode;
   if (mode == usb_audio_mode && !usb_audio_restart_pending) return;
@@ -1551,7 +1555,7 @@ void pop_sysex_parameters() {
 // its length alone, so it stays exactly that; the others carry a header (7D, the id for
 // non-commercial use, then 6D and the page) and are a few bytes longer, which an editor that
 // knows only page 0 drops.
-void send_parameter_page(uint8_t page) {
+FLASHMEM void send_parameter_page(uint8_t page) {
   if (page >= parameter_size / page_size) return;
   const uint8_t header = page == 0 ? 0 : 3;
   uint8_t midi_data_array[3 + page_size * 2];
@@ -1566,7 +1570,7 @@ void send_parameter_page(uint8_t page) {
   usbMIDI.sendSysEx(header + page_size * 2, midi_data_array, 0);
 }
 
-void control_command(uint8_t command, uint8_t parameter) {
+FLASHMEM void control_command(uint8_t command, uint8_t parameter) {
   switch (command) {
   case 0: // SIGNAL TO SEND BACK ALL DATA: page 0, as it always was, two bytes a setting and no header
     Serial.println("Reporting all data");
@@ -1906,7 +1910,7 @@ void rythm_led_settle() {
 
 //-->>AUDIO HELPER FUNCTIONS
 // calculationg the ws array
-void calculate_ws_array() {
+FLASHMEM void calculate_ws_array() {
   for (int i = 0; i < 257; i++) {
     float current_x = (i / 256.0 - 0.5) * 2.0 * PI;
     wave_shape[i] = sin(current_x);
@@ -2122,7 +2126,7 @@ static const AudioSynthWavetable::instrument_data *sampled_instrument(uint8_t so
   return nullptr;
 }
 
-void set_harp_source(uint8_t source) {
+FLASHMEM void set_harp_source(uint8_t source) {
   const AudioSynthWavetable::instrument_data *instrument = sampled_instrument(source);
   harp_voice_source = instrument ? source : 0;
   for (uint8_t i = 0; i < 12; i++) {
@@ -2134,7 +2138,7 @@ void set_harp_source(uint8_t source) {
   }
 }
 
-void set_chord_source(uint8_t source) {
+FLASHMEM void set_chord_source(uint8_t source) {
   const AudioSynthWavetable::instrument_data *instrument = sampled_instrument(source);
   chord_voice_source = instrument ? source : 0;
   for (uint8_t i = 0; i < 4; i++) {
@@ -3675,7 +3679,7 @@ void rebuild_custom_scale() {
   }
 }
 
-void rebuild_generator_scale() {
+FLASHMEM void rebuild_generator_scale() {
   bool present[31] = {false};
   uint8_t generator = generator_steps % EDO;
   uint8_t size = generator_size < 1 ? 1 : generator_size;
@@ -4159,7 +4163,7 @@ void apply_preset_version(int bank_number) {
   }
 }
 
-void save_config(int bank_number, bool default_save) {
+FLASHMEM void save_config(int bank_number, bool default_save) {
   if (bank_number < 0 || bank_number >= preset_number) {
     Serial.printf("Error: Invalid bank_number %d in save_config\n", bank_number);
     return;
@@ -4507,7 +4511,7 @@ void apply_string_spreads() {
 
 // Chord ensemble: depth 0 only the dry; at 100 half dry and half the swept delay (the flange object
 // already gives half and half)
-void set_chord_ensemble(uint8_t depth) {
+FLASHMEM void set_chord_ensemble(uint8_t depth) {
   float d = depth / 100.0f;
   // At depth 0 the swept delays only pass the chords through to a mixer input at 0, so they're left
   // to pass them through (filling their lines, so turning the depth up starts from the sound so far)
@@ -5996,7 +6000,7 @@ void toggle_double_tap_target() {
 // the chord catalogue, inversion, spacing, the alternate layout — keeps working
 // on the same flat arrays it always did, so only these copies know about
 // temperament at all.
-void apply_temperament(uint8_t t) {
+FLASHMEM void apply_temperament(uint8_t t) {
   if (t >= temperament_count) t = 0;
   uint8_t previous_edo = EDO;
   temperament_selection = t;
@@ -6247,7 +6251,7 @@ const uint8_t vocoder_band_count = 16;
 const float vocoder_makeup = 10.0f;   // a band's level is a small part of full scale
 const float vocoder_hiss_makeup = 2.0f;
 
-void vocoder_setup() {
+FLASHMEM void vocoder_setup() {
   // Off, the vocoder takes nothing in (vocoder_set), and these two send nothing then rather than
   // silence, so its 32 filters and 16 level meters rest instead of working on zeros
   vocoder_carrier_mix.silent_when_muted(true);
