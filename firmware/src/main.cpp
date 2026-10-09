@@ -626,9 +626,46 @@ void processMIDI(void) {
 }
 
 //-->>TIMER FUNCTIONS
+// A chord voice whose envelope has ended rests: its oscillators and noise at amplitude 0 (keeping their
+// phase, sending nothing), so the chain after them goes idle; they ran on every block for the envelope
+// to mute. A note on wakes it first (play_single_note, play_note_selected_duration), from its own
+// settings (121, 124, 127), and every 100 ms the resting ones are put back to 0, in case one of those
+// settings was written meanwhile.
+bool chord_voice_resting[4] = {false, false, false, false};
+void chord_voice_sources(uint8_t i) {
+  bool on = !chord_voice_resting[i];
+  chord_osc_1_array[i]->amplitude(on ? current_sysex_parameters[121] / 100.0 : 0);
+  chord_osc_2_array[i]->amplitude(on ? current_sysex_parameters[124] / 100.0 : 0);
+  chord_osc_3_array[i]->amplitude(on ? current_sysex_parameters[127] / 100.0 : 0);
+  chord_noise_array[i]->amplitude(on ? 0.5 : 0);
+}
+// from the note on's own context, a timer's interrupt as often as not
+void wake_chord_voice(uint8_t i) {
+  if (!chord_voice_resting[i]) return;
+  chord_voice_resting[i] = false;
+  chord_voice_sources(i);
+}
+// from the loop: the check and the rest together, so a timer's note on can't fall between them
+void rest_chord_voices() {
+  static elapsedMillis since_reassert;
+  bool reassert = since_reassert >= 100;
+  if (reassert) since_reassert = 0;
+  for (uint8_t i = 0; i < 4; i++) {
+    noInterrupts();
+    if (chord_voice_resting[i]) {
+      if (reassert) chord_voice_sources(i);
+    } else if (!chord_envelope_array[i]->isActive()) {
+      chord_voice_resting[i] = true;
+      chord_voice_sources(i);
+    }
+    interrupts();
+  }
+}
+
 // function to handle the delayed chord activation
 void play_single_note(int i, IntervalTimer *timer) {
   timer->end();
+  wake_chord_voice(i);
   set_chord_voice_frequency(i, current_applied_chord_notes[i]);
   chord_vibrato_envelope_array[i]->noteOn();
   chord_vibrato_dc_envelope_array[i]->noteOn();
@@ -644,6 +681,7 @@ void play_single_note(int i, IntervalTimer *timer) {
 }
 
 void play_note_selected_duration(int i,int current_note){
+  wake_chord_voice(i);
   chord_vibrato_envelope_array[i]->noteOn();
   chord_vibrato_dc_envelope_array[i]->noteOn();
   chord_envelope_array[i]->noteOn();
@@ -1612,6 +1650,7 @@ void loop() {
   }
   harp_vibrato_settle();
   harp_strings_settle();
+  rest_chord_voices();
   // Check sysex controller connection
   if (sysex_controler_connected && bitRead(USB1_PORTSC1, 7)) {
     sysex_controler_connected = false;
