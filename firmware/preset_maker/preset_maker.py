@@ -456,6 +456,8 @@ def main():
     ap.add_argument("--profile", action="store_true",
                     help="describe a bulk edit profile instead of a preset: a file minicontrol's bulk edit sheet "
                          "imports, setting the same values in every bank")
+    ap.add_argument("--export-js", metavar="FILE",
+                    help="write the vocabulary and the firmware's settings for minicontrol's describe.js")
     ap.add_argument("--name", help="the profile's name (or say \"call it ...\" in the description)")
     ap.add_argument("--out", help="where to write the profile file (default: its name, in this folder)")
     ap.add_argument("--apply", metavar="FILE", help="apply a JSON list of {address, value} changes, no model")
@@ -476,6 +478,12 @@ def main():
     if args.list_mics:
         import voice
         voice.list_mics()
+        return
+    if args.export_js:
+        import interpret
+        with open(args.export_js, "w") as f:
+            json.dump(interpret.export_data(params, version), f, separators=(",", ":"))
+        print(f"Wrote {args.export_js}")
         return
     if args.words:
         import interpret

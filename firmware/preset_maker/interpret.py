@@ -941,7 +941,7 @@ class Interpreter:
             for j, t in enumerate(toks):
                 nxt = toks[j + 1:j + 3]
                 joined = (cur and cur[-1] == "on" and nxt[:1] == ["off"]) or \
-                         (cur and cur[-1] in sections and (nxt[:1] and nxt[0] in sections or nxt[:2] and
+                         (cur and cur[-1] in sections and (nxt[:1] and nxt[0] in sections or len(nxt) >= 2 and
                                                            nxt[0] == "the" and nxt[1] in sections))
                 if t in ("and", "plus") and cur and not joined:
                     pieces.append(cur)
@@ -1216,7 +1216,7 @@ class Interpreter:
         """"the value is 100", "hover value 0.8": in the units of the setting the hover or double tap moves"""
         r = self.result
         fill = r"(?:\s+(?:is|set|to|be|at|of|should|as|make|sure|it|now))*"
-        for m in re.finditer(r"(?:^(?:and\s+|also\s+|then\s+)?(?:the\s+)?|\b(hover|double ?tap)\s+)value\b" + fill +
+        for m in re.finditer(r"(?:(?:^|\band\s+)(?:also\s+|then\s+)?(?:the\s+)?|\b(hover|double ?tap)\s+)value\b" + fill +
                              r"\s+(\d*\.?\d+)", s):
             if m.group(1) and m.group(1).startswith("hover"):
                 where = (250, self.state.get(249))
@@ -1381,3 +1381,31 @@ def print_vocabulary():
     print("  what they can take: " + "; ".join(f"{r}: {w}" for r, w in TARGETS.items()))
     print("\nName the chords or the harp to say which one a word is for (\"plucky harp\", \"dark chords\");")
     print("otherwise it goes where it usually belongs, or to both.")
+
+
+def export_data(params, version):
+    """Everything describe.js needs, from this file and the firmware: the one source for both"""
+    def moves(m):
+        if isinstance(m, dict):
+            return {k: [list(x) for x in v] for k, v in m.items()}
+        return [list(x) for x in m] if m is not None else None
+    return {
+        "firmware_version": version,
+        "params": {str(a): {k: p.get(k) for k in ("name", "group", "section", "data_type", "min_value", "max_value",
+                                                 "default_value", "controls", "follows_target",
+                                                 "introduction_version")}
+                   for a, p in params.items()},
+        "selectors": sorted(selectors()),
+        "vocabulary": [{"words": list(e.words), "kind": e.kind, "label": e.label, "moves": moves(e.moves),
+                        "off": moves(e.off), "opposite": e.opposite, "home": e.home, "hue": e.hue, "note": e.note}
+                       for e in V],
+        "roles": ROLES, "controls": [list(c) for c in CONTROLS], "knob_addresses": KNOB_ADDRESSES,
+        "control_names": CONTROL_NAMES, "tap_pairs": [list(p) for p in TAP_PAIRS], "targets": TARGETS,
+        "multi_targets": {k: list(v) for k, v in MULTI_TARGETS.items()}, "on_off": ON_OFF,
+        "on_value": {str(k): v for k, v in ON_VALUE.items()}, "sweep": SWEEP, "tap": TAP,
+        "prepare": {k: [list(x) for x in v] for k, v in PREPARE.items()},
+        "section_words": {k: sorted(v) for k, v in SECTION_WORDS.items()},
+        "strong": sorted(STRONG), "weak": sorted(WEAK), "negate": sorted(NEGATE), "more": sorted(MORE),
+        "action_verbs": sorted(ACTION_VERBS), "stopwords": sorted(STOPWORDS), "number_words": _NUMBER_WORDS,
+        "colors": COLORS, "not_in_presets": sorted(NOT_IN_PRESETS),
+    }
