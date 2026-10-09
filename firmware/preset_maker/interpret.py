@@ -43,12 +43,24 @@ ROLES = {
     "mult1": {"chord": 123}, "mult2": {"chord": 126}, "mult3": {"chord": 129},
     "noise": {"chord": 130},
     "note1": {"chord": 131}, "note2": {"chord": 132}, "note3": {"chord": 133}, "note4": {"chord": 134},
+    "ribbon_span": {"harp": 246}, "ribbon_snap": {"harp": 247}, "ribbon_glide": {"harp": 248},
+    "vib_attack": {"chord": 164, "harp": 65},
+    "transient_wave": {"harp": 100}, "transient_attack": {"harp": 102}, "transient_decay": {"harp": 104},
+    "out_freq": {"chord": 192, "harp": 88}, "out_res": {"chord": 193, "harp": 89}, "out_lp": {"chord": 194, "harp": 90},
+    "out_bp": {"chord": 195, "harp": 91}, "out_hp": {"chord": 196, "harp": 92},
+    "out_lfo_wave": {"harp": 93}, "out_lfo_freq": {"harp": 94}, "out_lfo_amount": {"harp": 95}, "out_lfo_sens": {"harp": 96},
+    "harp_shuffle": {"harp": 40}, "inversion": {"chord": 37}, "roll": {"chord": 135}, "loose": {"chord": 136},
+    "retrigger": {"chord": 21}, "held_strings": {"harp": 22}, "cantus": {"chord": 115},
+    "pan": {"global": 29}, "reverb_hidamp": {"global": 25}, "reverb_lowpass": {"global": 27},
+    "vocoder_carrier": {"global": 261}, "vocoder_consonants": {"global": 262}, "formant_size": {"chord": 239},
+    "rhythm_length": {"global": 188}, "swing": {"global": 190}, "rhythm_note": {"global": 191},
+    **{f"rhythm{i}": {"global": 220 + i} for i in range(16)},
     "lfo_wave": {"chord": 152}, "lfo_freq": {"chord": 153}, "lfo_amount": {"chord": 154},
     "glide": {"chord": 199}, "ensemble": {"chord": 259},
     "spread": {"harp": 257}, "spread_pattern": {"harp": 258},
     "string_model": {"harp": 217}, "string_decay": {"harp": 218}, "string_damping": {"harp": 219},
     "transient": {"harp": 101},
-    "vowel": {"chord": 118}, "formant": {"chord": 119}, "vocoder": {"chord": 260},
+    "vowel": {"chord": 118}, "formant": {"chord": 119}, "vocoder": {"global": 260},
     "touch": {"harp": 252}, "pressure": {"harp": 253}, "strum": {"harp": 263},
     "palm_mute": {"harp": 213}, "lift": {"harp": 216},
     "scale": {"harp": 36}, "chromatic": {"harp": 98},
@@ -213,6 +225,14 @@ add("acid, squelch, squelchy, 303", "sound", "acid", hue=90, moves={
              EXACT("fenv_sustain", 0.2))})
 add("bass, bassy, bassline, sub, sub bass", "sound", "bass", home="chord", hue=240, moves=(ADD("octave", -1),))
 
+def rhythm(steps, length=16, swing=None):
+    """A rhythm-mode pattern: each step a sum of voices (1, 2, 4, 8 the chord's four from the bottom;
+    16, 32, 64 three more, higher), two steps a beat"""
+    steps = (list(steps) * 16)[:16]
+    moves = tuple(EXACT(f"rhythm{i}", v) for i, v in enumerate(steps)) + (EXACT("rhythm_length", length),)
+    return moves + ((EXACT("swing", swing),) if swing else ())
+
+
 # One voice at a time: the chords play their lowest voice alone, as a mono synth does
 MONO = (EXACT("note1", 0.6), EXACT("note2", 0), EXACT("note3", 0), EXACT("note4", 0))
 POLY = (EXACT("note1", 0.5), EXACT("note2", 0.5), EXACT("note3", 0.5), EXACT("note4", 0.5))
@@ -299,10 +319,12 @@ add("clint eastwood, gorillaz, omnichord, classic omnichord, om 84, om84, om 27,
     note="Clint Eastwood's rhythm is the minichord's rhythm mode, turned on at the instrument")
 add("baba o riley, baba oriley, baba o reilly, baba oreilly, teenage wasteland, the who", "sound",
     "the Who's Baba O'Riley", hue=60, moves={
-        "chord": synth_chord(0.15, 0, 1.0, 0.1, 0, 2.0, 0.08, 0, 0.5) + env(5, 100, 1.0, 80) + (EXACT("cutoff", 3500),),
+        "chord": synth_chord(0.15, 0, 1.0, 0.1, 0, 2.0, 0.08, 0, 0.5) + env(5, 100, 1.0, 80) + (EXACT("cutoff", 3500),)
+                 + rhythm([1, 4, 2, 8, 4, 16, 8, 4]),
         "harp": synth_harp(0) + env(1, 300, 0.0, 200) + (EXACT("transient", 0.2), EXACT("trem_wave", 2),
                                                          EXACT("trem_freq", 8), SET("trem_amount", 0.6))},
-    note="Baba O'Riley: organ chords, and a harp chopped into repeats like the organ's marimba repeat")
+    note="Baba O'Riley: organ chords, and a harp chopped into repeats like the organ's marimba repeat; in rhythm "
+         "mode the chords play the arpeggio")
 add("sweet dreams, eurythmics", "sound", "Eurythmics' Sweet Dreams", hue=250, moves={
     "harp": synth_harp(9) + env(1, 220, 0.0, 150) + (ADD("octave", -1), EXACT("cutoff", 400), EXACT("resonance", 2.5),
                                                      EXACT("filter_sens", 2.5), EXACT("fenv_attack", 1),
@@ -316,18 +338,20 @@ add("stranger things", "sound", "the Stranger Things theme", hue=0, moves={
                                                      EXACT("fenv_sustain", 0.1)) + DELAY_READY + (SET("delay_mix", 0.25),
                                                                                                  SET("reverb", 0.5)),
     "chord": synth_chord(0.1, 9, 1.0, 0.1, 9, 1.01, 0.06, 9, 0.5) + env(400, 1000, 0.8, 2500) + (
-        EXACT("cutoff", 600), SET("reverb", 0.6), EXACT("ensemble", 30))},
-    note="Stranger Things: the harp is the arpeggio; strum it slowly up and down")
+        EXACT("cutoff", 600), SET("reverb", 0.6), EXACT("ensemble", 30)) + rhythm([1, 2, 4, 8, 16, 8, 4, 2])},
+    note="Stranger Things: the harp is the arpeggio; strum it slowly up and down, or turn on rhythm mode, which "
+         "plays the chords as a rising arpeggio")
 add("juno, juno 60, juno 106, juno60, juno106", "sound", "Juno", home="chord", hue=180, moves={
     "chord": synth_chord(0.12, 4, 1.0, 0.08, 9, 1.0) + (EXACT("ensemble", 70), EXACT("cutoff", 1500))})
 add("prophet, prophet 5, prophet5", "sound", "Prophet-5", home="chord", hue=20, moves={
     "chord": synth_chord(0.12, 9, 1.0, 0.1, 4, 1.01) + env(80, 800, 0.8, 1200) + (EXACT("cutoff", 1200),
                                                                                   EXACT("resonance", 1.3))})
-add("theremin, theremins", "sound", "theremin", home="chord", hue=160, moves={
+add("theremin, theremins", "sound", "theremin", hue=160, moves={
     "chord": synth_chord(0.15, 0, 1.0) + MONO + env(150, 300, 1.0, 400) + (EXACT("glide", 250), SET("vib_amount", 0.12),
                                                                          EXACT("vib_freq", 5)) + VIBRATO_READY,
-    "harp": synth_harp(0) + env(100, 300, 1.0, 400) + (SET("vib_amount", 0.12), EXACT("vib_freq", 5))},
-    note="theremin: the chords play one voice that glides; the harp can't glide")
+    "harp": synth_harp(0) + env(100, 300, 1.0, 400) + (SET("vib_amount", 0.12), EXACT("vib_freq", 5),
+                                                       EXACT("ribbon", 1), EXACT("ribbon_snap", 0), EXACT("ribbon_glide", 150))},
+    note="theremin: the chords play one voice that glides, and the harp is a fretless ribbon: slide a finger along it")
 add("harmonica, harmonicas, blues harp, mouth organ", "sound", "harmonica", hue=20, moves={
     "chord": synth_chord(0.12, 5, 1.0, 0.08, 4, 1.0) + env(20, 200, 0.9, 100) + (SET("vib_amount", 0.06),
                                                                               EXACT("vib_freq", 5)) + VIBRATO_READY,
@@ -352,6 +376,71 @@ add("synth strings, string synth, strings synth", "sound", "synth strings", home
 add("orchestra hit, orchestra hits, orch hit, orchestral hit", "sound", "orchestra hit", home="chord", hue=10, moves={
     "chord": (EXACT("voice", 4),) + env(1, 300, 0.0, 300) + (EXACT("cutoff", 4000), SET("crunch", 0.1), SET("reverb", 0.4)),
     "harp": (EXACT("voice", 4),) + env(1, 300, 0.0, 300) + (EXACT("cutoff", 4000),)})
+RHYTHM_NOTE = "rhythm patterns play in rhythm mode, which is turned on at the instrument"
+for words, label, moves in (
+        ("arpeggio, arpeggios, arpeggiated, arpeggiator, arp up, rolling arpeggio", "arpeggio up", rhythm([1, 2, 4, 8])),
+        ("arpeggio down, arp down, falling arpeggio", "arpeggio down", rhythm([8, 4, 2, 1])),
+        ("arpeggio up and down, arp up and down, up and down arpeggio", "arpeggio up and down",
+         rhythm([1, 2, 4, 8, 4, 2], 12)),
+        ("alberti bass, alberti", "Alberti bass", rhythm([1, 8, 4, 8])),
+        ("waltz, oom pah pah, three four, 3 4 time, three four time", "waltz", rhythm([1, 0, 14, 0, 14, 0], 6)),
+        ("march, oom pah, two step", "march", rhythm([1, 0, 14, 0])),
+        ("offbeat, offbeats, reggae, skank, ska", "offbeat chords", rhythm([0, 14])),
+        ("straight eighths, eighths, pulsing chords, driving eighths, rock eighths", "straight eighths", rhythm([15]))):
+    add(words, "setting", f"{label} rhythm", home="global", moves=moves, note=RHYTHM_NOTE)
+add("swing, swung, swinging, shuffle feel, shuffled", "setting", "swing", home="global",
+    moves=(EXACT("swing", 1.25),), off=(EXACT("swing", 1.0),), note=RHYTHM_NOTE)
+add("straight time, no swing", "setting", "straight time", home="global", moves=(EXACT("swing", 1.0),))
+add("delayed vibrato, vibrato that grows, growing vibrato, vibrato fades in", "effect", "delayed vibrato", hue=300,
+    moves={"chord": (SET("vib_amount", 0.2), EXACT("vib_attack", 800)) + VIBRATO_READY,
+           "harp": (SET("vib_amount", 0.2), IFZERO("vib_freq", 5), EXACT("vib_attack", 800))},
+    off={"chord": (EXACT("vib_attack", 1),), "harp": (EXACT("vib_attack", 1),)})
+add("key click, click, clicky, clicks, hammer, hammered, percussive click", "effect", "key click", home="harp",
+    moves={"harp": (SET("transient", 0.3), EXACT("transient_wave", 5), EXACT("transient_attack", 0),
+                    EXACT("transient_decay", 20))}, off={"harp": (EXACT("transient", 0),)})
+add("telephone, phone, old radio, am radio, radio, megaphone, transistor radio", "quality", "telephone", hue=60,
+    moves=(EXACT("out_freq", 1500), EXACT("out_res", 3.0), EXACT("out_lp", 0), EXACT("out_bp", 1.0), EXACT("out_hp", 0)))
+add("fretless, fretless harp, ribbon harp, slide harp, pitch slide, glissando, gliss", "setting", "fretless ribbon harp",
+    home="harp", moves={"harp": (EXACT("ribbon", 1), EXACT("ribbon_snap", 0), SET("ribbon_glide", 60))},
+    off={"harp": (EXACT("ribbon", 0),)}, note="a ribbon harp: slide a finger along the strip")
+add("in tune slides, snapped ribbon, ribbon that snaps", "setting", "ribbon that snaps to the notes", home="harp",
+    moves={"harp": (EXACT("ribbon", 1), EXACT("ribbon_snap", 70))})
+for words, label, value in (("harp in octaves, octave strings, octaves on the harp, doubled octaves", "harp in octaves", 4),
+                            ("harp in sixths, sixths", "harp in sixths", 3), ("harp in fourths, fourths", "harp in fourths", 2),
+                            ("harp in seconds, clusters, cluster", "harp in seconds", 1)):
+    add(words, "setting", label, home="harp", moves={"harp": (EXACT("harp_shuffle", value),)},
+        off={"harp": (EXACT("harp_shuffle", 0),)})
+for words, label, value in (("root position", "root position", 0), ("first inversion", "first inversion", 1),
+                            ("second inversion", "second inversion", 2), ("third inversion", "third inversion", 3)):
+    add(words, "setting", f"chords in {label}", home="chord", moves={"chord": (EXACT("inversion", value),)})
+add("rolled chords, rolled, strummed chords, broken chords, spread chords", "setting", "rolled chords", home="chord",
+    moves={"chord": (SET("roll", 40),)}, off={"chord": (EXACT("roll", 0),)})
+add("humanized, humanised, loose, sloppy, human feel", "setting", "loose timing", home="chord",
+    moves={"chord": (SET("loose", 15),)}, off={"chord": (EXACT("loose", 0),)})
+add("retrigger chords, retrigger, restrike", "setting", "chords retrigger", home="chord",
+    moves={"chord": (EXACT("retrigger", 1),)}, off={"chord": (EXACT("retrigger", 0),)})
+add("held strings follow the chords, strings follow the chords, held notes change", "setting",
+    "held strings follow the chords", home="harp", moves={"harp": (EXACT("held_strings", 1),)},
+    off={"harp": (EXACT("held_strings", 0),)})
+add("cantus, harp sets the melody, harp leads the chord, melody voice", "setting", "the harp sets a chord voice",
+    home="chord", moves={"chord": (EXACT("cantus", 5),)}, off={"chord": (EXACT("cantus", 0),)})
+add("chords left harp right, harp right chords left, separated, split stereo, wide separation", "setting",
+    "chords and harp apart", home="global", moves=(EXACT("pan", 0.2),))
+add("centred, centered, mono mix, both in the middle", "setting", "chords and harp in the middle", home="global",
+    moves=(EXACT("pan", 1.0),))
+add("dark reverb, warm reverb, damped reverb", "setting", "dark reverb", home="global",
+    moves=(EXACT("reverb_hidamp", 0.7), EXACT("reverb_lowpass", 0.6), MIN("reverb", 0.3)))
+add("bright reverb, shimmering reverb, plate reverb", "setting", "bright reverb", home="global",
+    moves=(EXACT("reverb_hidamp", 0.0), EXACT("reverb_lowpass", 0.0), MIN("reverb", 0.3)))
+add("harp vocoder, vocoded harp, vocoder on the harp", "setting", "vocoder on the harp", home="harp",
+    moves=(EXACT("vocoder_carrier", 1), SET("vocoder", 70)),
+    note="the vocoder needs a voice coming in over USB (usb audio set to 0 or 1 in minicontrol)")
+add("clear words, intelligible, consonants", "setting", "clearer vocoder words", home="global",
+    moves=(EXACT("vocoder_consonants", 70),))
+add("child voice, small voice, little voice, chipmunk", "setting", "small singing voice", home="chord",
+    moves={"chord": (EXACT("formant_size", 20), MIN("formant", 60))})
+add("giant voice, deep voice, bass voice, big voice", "setting", "large singing voice", home="chord",
+    moves={"chord": (EXACT("formant_size", 85), MIN("formant", 60))})
 add("twin peaks, laura palmer, badalamenti, angelo badalamenti, david lynch", "sound",
     "Twin Peaks (Ben's Twin Green preset)", base="Twin Green", hue=120)
 
@@ -395,10 +484,14 @@ add("lofi, lo fi, dusty, vintage, tape, cassette, worn, nostalgic, old school, w
                     + (SCALE("cutoff", 0.6), SET("crunch", 0.1), SET("noise", 0.02)),
            "harp": (SET("vib_amount", 0.06), EXACT("vib_freq", 0.6), SCALE("cutoff", 0.6), SET("crunch", 0.1))})
 add("glitch, glitchy, random, chaotic, stuttering, stutter, sample and hold", "quality", "glitchy", home="chord",
-    hue=300, moves={"chord": (EXACT("lfo_wave", 7), EXACT("lfo_freq", 8), SET("lfo_amount", 0.5), MIN("filter_sens", 1.0))})
+    hue=300, moves={"chord": (EXACT("lfo_wave", 7), EXACT("lfo_freq", 8), SET("lfo_amount", 0.5), MIN("filter_sens", 1.0)),
+                    "harp": (EXACT("out_lfo_wave", 7), EXACT("out_lfo_freq", 8), SET("out_lfo_amount", 0.5),
+                             MIN("out_lfo_sens", 1.0))})
 add("wah, wobble, wobbles, wub, wubs, dubstep, filter wobble, filter sweep, sweeping, swirling, swirly", "quality",
     "filter wobble", home="chord", hue=120,
-    moves={"chord": (EXACT("lfo_wave", 0), IFZERO("lfo_freq", 2), SET("lfo_amount", 0.6), MIN("filter_sens", 1.5))})
+    moves={"chord": (EXACT("lfo_wave", 0), IFZERO("lfo_freq", 2), SET("lfo_amount", 0.6), MIN("filter_sens", 1.5)),
+           "harp": (EXACT("out_lfo_wave", 0), IFZERO("out_lfo_freq", 2), SET("out_lfo_amount", 0.6),
+                    MIN("out_lfo_sens", 1.5))})
 add("metallic, metal, clangy, clanging, steel, tinny", "quality", "metallic", hue=200,
     moves={"harp": (EXACT("string_damping", 0), SET("string_model", 70), SCALE("resonance", 1.4)),
            "chord": (SCALE("resonance", 1.4), EXACT("wave", 4))})
@@ -477,7 +570,10 @@ add("stereo, wide, wider, width, spread, spread out, panned, across the stereo f
 add("ping pong, ping pong strings, alternating sides", "setting", "strings ping-pong", home="harp",
     moves={"harp": (EXACT("spread_pattern", 1), MIN("spread", 60))})
 add("glide, gliding, glides, portamento, slide, sliding, slidey", "effect", "glide", home="chord", hue=290,
-    moves={"chord": (SET("glide", 300),)})
+    moves={"chord": (SET("glide", 300),),
+           "harp": (EXACT("ribbon", 1), SET("ribbon_glide", 120), EXACT("ribbon_snap", 30))},
+    off={"chord": (EXACT("glide", 0),), "harp": (EXACT("ribbon_glide", 0),)},
+    note="a gliding harp plays as a ribbon: slide a finger along the strip")
 add("vocoder, robot, robotic, talk box, talkbox, talking chords, robot voice", "effect", "vocoder", home="chord",
     hue=100, moves={"chord": (SET("vocoder", 70),)},
     note="the vocoder needs a voice coming in over USB (usb audio set to 0 or 1 in minicontrol)")
@@ -607,7 +703,8 @@ TARGETS = {
     "level": "volume, level, loudness, mute, mutes, silence, silences",
     "lfo_amount": "wah, sweep, wobble, wub",
     "noise": "noise, breath, air",
-    "transpose": "transpose, transposes, key",
+    "transpose": "transpose, transposes, transposition",
+    "key": "key, key signature, key sig, chord key signature",
     "looper": "looper, loop, loops, record, recording, recorder",
     "chromatic": "chromatic",
     "lift": "pluck on lift, lift",
@@ -636,7 +733,13 @@ TAP = {"resonance": 4.0, "reverb": 0.9, "reverb_size": 1.0, "delay_mix": 0.45, "
        "release": 3500, "sustain": 1.0, "decay": 2000, "spread": 90, "ensemble": 80, "level": 1.6, "lfo_amount": 0.7,
        "noise": 0.15, "string_model": 100, "wave": 9, "looper": 7, "chromatic": 1, "lift": 1, "scale": 2, "barry": 1,
        "voice_leading": 1, "touch": 80, "palm_mute": 5, "transpose": 7, "tempo": 140, "ribbon": 1, "mpe": 1,
-       "midi_in": 1, "knob_midi": 1, "knob_layer": 1, "layout": 1}
+       "midi_in": 1, "knob_midi": 1, "knob_layer": 1, "layout": 1, "key": 1}
+# Words between an effect and its amount ("reverb at 40%"), and waveforms by name ("chord waveform 1 sawtooth")
+AMOUNT_FILLERS = {"to", "at", "of", "is", "set", "=", "around", "about"}
+WAVE_NAMES = {"sine": 0, "sawtooth": 9, "saw": 9, "square": 11, "triangle": 3, "pulse": 4}
+# A control named with one of these and no setting is cleared: "turn off hover", "unassign the mod knob"
+CLEAR_WORDS = {"off", "unassign", "unassigned", "disable", "disabled", "nothing", "none", "remove", "clear",
+               "cleared", "free", "no"}
 # Words for several settings at once, for a double tap with slots to fill
 MULTI_TARGETS = {"midi options": ("mpe", "midi_in", "knob_midi"), "recent midi options": ("mpe", "midi_in", "knob_midi"),
                  "midi settings": ("mpe", "midi_in", "knob_midi"), "midi stuff": ("mpe", "midi_in", "knob_midi")}
@@ -759,6 +862,9 @@ class Interpreter:
             variants = [name, f"{group} {name}"]
             if p["section"] != "global":
                 variants += [f"{p['section']} {name}", f"{p['section']}s {name}", f"{p['section']} {group} {name}"]
+            m = re.fullmatch(r"waveform (\d)", name)
+            if m and p["section"] == "chord":
+                variants += [f"oscillator {m.group(1)}", f"osc {m.group(1)}", f"chord oscillator {m.group(1)}"]
             for v in variants:
                 self.names.setdefault(tuple(v.split()), set()).add(a)
         self.preset_names = {tuple(tokens(normalise(n))): n for n in preset_names}
@@ -861,7 +967,7 @@ class Interpreter:
 
     # ---- one descriptor ----
 
-    def describe(self, entry, section, strength, negate, more, less):
+    def describe(self, entry, section, strength, negate, more, less, amount=None):
         key = (entry.label, section, negate, less)
         if key in self.applied:
             return
@@ -900,6 +1006,29 @@ class Interpreter:
                           for s in ("chord", "harp")}
                 self._apply(entry, section, 1, f"less {entry.label}", moves=halves)
                 self.result.understood.append(f"{prefix}less {entry.label}")
+                return
+            if amount is not None:   # "reverb at 40%": exactly that much
+                moves = {}
+                for s in ("chord", "harp"):
+                    out = []
+                    for m in self._moves_for(entry.moves, s):
+                        if m[0] == "set":
+                            a = self._addr(m[1], s)
+                            if a is None or a not in self.state:
+                                continue
+                            p, v = self.params[a], amount
+                            if p["data_type"] == "float" and v > p["max_value"] and v / 100 <= p["max_value"]:
+                                v /= 100
+                            out.append(EXACT(m[1], v))
+                        else:
+                            out.append(m)
+                    moves[s] = tuple(out)
+                self._apply(entry, section, 1, entry.label, moves=moves)
+                self.result.understood.append(f"{prefix}{entry.label} at {amount:g}")
+                if entry.note:
+                    self.result.notes.append(entry.note)
+                if entry.hue is not None and self.hue is None:
+                    self.hue = entry.hue
                 return
             k = {1: 1.0, 2: 1.5, 0: 0.5}[strength]
             moves = {}
@@ -1055,6 +1184,21 @@ class Interpreter:
             self.tap_note = True
             self.result.notes.append("one double tap flips all three of its slots together")
 
+    def _clear(self, control):
+        """A control set to do nothing"""
+        if control.startswith("tap"):
+            pairs = [TAP_PAIRS[int(control[4:])]] if ":" in control else TAP_PAIRS
+            for c, _ in pairs:
+                self._put(c, 0, "double tap cleared")
+            slot = f" slot {int(control[4:]) + 1}" if ":" in control else ""
+            self.result.understood.append(f"double tap{slot} does nothing")
+        elif control == "hover":
+            self._put(249, 0, "hover cleared")
+            self.result.understood.append("hover does nothing")
+        else:
+            self._put(KNOB_ADDRESSES[control][0], 0, f"{CONTROL_NAMES[control]} cleared")
+            self.result.understood.append(f"{CONTROL_NAMES[control]} does nothing")
+
     def setting_name(self, a):
         p = self.params[a]
         name, group = p["name"].strip(), p["group"]
@@ -1108,6 +1252,7 @@ class Interpreter:
         self.forced = None
         for clause in self._clauses(normalise(text)):
             self._clause(clause)
+        self.result.notes = list(dict.fromkeys(self.result.notes))
         color = self.color if self.color is not None else (None if self.profile else self.hue)
         if color is not None and self.result.understood and (first or self.color is not None):
             self._put(20, color, "bank color")
@@ -1305,8 +1450,20 @@ class Interpreter:
             for j in range(max(0, i - 3), i):
                 if toks[j] in STRONG | WEAK | NEGATE | MORE:
                     used[j] = True
+            amount = None
+            if entry.kind == "effect":
+                k = i + n
+                while k < len(toks) and toks[k] in AMOUNT_FILLERS and k < i + n + 3:
+                    k += 1
+                if k < len(toks) and re.fullmatch(r"\d*\.?\d+", toks[k]) and \
+                        not (k + 1 < len(toks) and toks[k + 1] in ("edo", "bpm", "hz", "cm", "hertz")):
+                    amount = float(toks[k])
+                    for j in range(i + n, k + 1):
+                        used[j] = True
+                    if k + 1 < len(toks) and toks[k + 1] in ("percent", "pc"):
+                        used[k + 1] = True
             section = self._section_for(i, anchors, entry)
-            self.describe(entry, section, strength, negate, more, less)
+            self.describe(entry, section, strength, negate, more, less, amount)
             for j in range(i, i + n):
                 used[j] = True
             i += n
@@ -1348,6 +1505,15 @@ class Interpreter:
 
     def _assignments(self, toks, used, controls, anchors, carried=False):
         roles = self._roles(toks, used)
+        if not roles and CLEAR_WORDS & set(toks):
+            for control in controls:
+                self._clear(control)
+            for i, t in enumerate(toks):
+                if t in CLEAR_WORDS or t in ACTION_VERBS or t in ("also", "too", "on"):
+                    used[i] = True
+            self.pending = []
+            self._leftovers(toks, used)
+            return
         if not roles:
             if not carried:
                 self.pending = controls       # the next clause may say ("..., to turn pluck on lift on and off")
@@ -1470,7 +1636,11 @@ class Interpreter:
             k = i + n
             while k < len(toks) and toks[k] in fillers and k < i + n + 3:
                 k += 1
-            if k >= len(toks) or not re.fullmatch(r"\d*\.?\d+", toks[k]) or \
+            wave = None
+            if k < len(toks) and toks[k] in WAVE_NAMES and \
+                    all("waveform" in self.params[a]["name"] for a in self.names[key]):
+                wave = WAVE_NAMES[toks[k]]
+            elif k >= len(toks) or not re.fullmatch(r"\d*\.?\d+", toks[k]) or \
                     (k + 1 < len(toks) and toks[k + 1] in ("edo", "bpm", "hz", "cm", "hertz")):
                 i += 1
                 continue
@@ -1489,7 +1659,7 @@ class Interpreter:
                 continue
             for a in addrs:
                 p = self.params[a]
-                v = float(toks[k])
+                v = float(toks[k]) if wave is None else wave
                 if p["data_type"] == "float" and v > p["max_value"] and v / 100 <= p["max_value"]:
                     v /= 100
                 self._put(a, v, self.setting_name(a))
@@ -1610,7 +1780,8 @@ def export_data(params, version):
         "section_words": {k: sorted(v) for k, v in SECTION_WORDS.items()},
         "strong": sorted(STRONG), "weak": sorted(WEAK), "negate": sorted(NEGATE), "more": sorted(MORE),
         "action_verbs": sorted(ACTION_VERBS), "stopwords": sorted(STOPWORDS), "number_words": _NUMBER_WORDS,
-        "colors": COLORS, "not_in_presets": sorted(NOT_IN_PRESETS),
+        "colors": COLORS, "not_in_presets": sorted(NOT_IN_PRESETS), "clear_words": sorted(CLEAR_WORDS),
+        "amount_fillers": sorted(AMOUNT_FILLERS), "wave_names": WAVE_NAMES,
     }
 
 

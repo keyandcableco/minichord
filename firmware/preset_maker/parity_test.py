@@ -46,6 +46,15 @@ SENTENCES = [
     "Purple Rain by Prince", "Jump chords with an Africa harp", "something like Mr. Blue Sky but darker", "Oxygène",
     "Strobe by deadmau5, slightly brighter", "an R.E.M. Losing My Religion harp", "blade runner chords with a tetris harp",
     "Gymnopédie with lots of reverb", "the Halloween theme, the mod knob opens the filter", "kraftwerk the model",
+    "a theremin", "sliding harp with delayed vibrato", "arpeggiated chords with swing, waltz",
+    "harp in octaves, key click, telephone, wobble harp", "a harp vocoder with clear words, a child voice singing",
+    "rolled chords in second inversion, loose, retrigger chords, chords left harp right, dark reverb",
+    "fretless harp, no glide", "a glitchy harp with an offbeat rhythm and no swing",
+    "turn off hover", "unassign the mod knob, the chord knob does nothing", "turn off the double tap",
+    "my second double tap does nothing", "no hover, the mod knob controls the key signature",
+    "the mod knob controls key", "the harp knob does the transposition",
+    "set reverb to 40%", "harp reverb at 0.2, chord delay 30 percent", "chord waveform 1 sawtooth",
+    "oscillator 2 square, harp waveform triangle", "lots of chorus at 80", "vibrato 15 on the harp",
 ]
 # every song in the list, by its first name, as a preset and a profile
 SENTENCES += [e.words[0] for e in interpret.V if e.kind == "song"]
