@@ -58,6 +58,9 @@ SENTENCES = [
     "dim the leds", "brighter leds and a blue bank colour", "set the bank color to blue", "turn off the leds",
     "assign the mod pot to the key signature", "map the harp knob to the reverb", "set the bank colour to 200",
     "I want the mod knob to control the vibrato",
+    "waltz rhythm at 100 bpm", "tempo 100 bpm with a waltz rhythm", "tempo 120", "just intonation",
+    "meantone tuning", "the Stranger Things theme", "slow vibrato and a long tail", "fast vibrato on the harp",
+    "mod knob to the delay mix", "the harp knob does the reverb mix", "short tail, kirnberger tuning",
 ]
 # every song in the list, by its first name, as a preset and a profile
 SENTENCES += [e.words[0] for e in interpret.V if e.kind == "song"]

@@ -391,6 +391,14 @@ for words, label, moves in (
 add("swing, swung, swinging, shuffle feel, shuffled", "setting", "swing", home="global",
     moves=(EXACT("swing", 1.25),), off=(EXACT("swing", 1.0),), note=RHYTHM_NOTE)
 add("straight time, no swing", "setting", "straight time", home="global", moves=(EXACT("swing", 1.0),))
+add("slow vibrato, gentle vibrato, lazy vibrato", "effect", "slow vibrato", hue=300,
+    moves={"chord": (SET("vib_amount", 0.2), EXACT("vib_freq", 3.5)) + VIBRATO_READY,
+           "harp": (SET("vib_amount", 0.2), EXACT("vib_freq", 3.5), MIN("vib_depth", 0.1), MIN("vib_sustain", 1.0))},
+    off={"chord": (EXACT("vib_amount", 0), EXACT("vib_depth", 0)), "harp": (EXACT("vib_amount", 0),)})
+add("fast vibrato, quick vibrato, nervous vibrato", "effect", "fast vibrato", hue=300,
+    moves={"chord": (SET("vib_amount", 0.2), EXACT("vib_freq", 7.5)) + VIBRATO_READY,
+           "harp": (SET("vib_amount", 0.2), EXACT("vib_freq", 7.5), MIN("vib_depth", 0.1), MIN("vib_sustain", 1.0))},
+    off={"chord": (EXACT("vib_amount", 0), EXACT("vib_depth", 0)), "harp": (EXACT("vib_amount", 0),)})
 add("delayed vibrato, vibrato that grows, growing vibrato, vibrato fades in", "effect", "delayed vibrato", hue=300,
     moves={"chord": (SET("vib_amount", 0.2), EXACT("vib_attack", 800)) + VIBRATO_READY,
            "harp": (SET("vib_amount", 0.2), IFZERO("vib_freq", 5), EXACT("vib_attack", 800))},
@@ -468,10 +476,12 @@ add("punchy, punchier, aggressive, hard, harder, harsh, harsher, biting, edgy, p
     moves=(SET("attack", 1), SCALE("level", 1.15), SCALE("cutoff", 1.4), SCALE("resonance", 1.2)))
 add("loud, louder, loudest, boost, boosted", "quality", "louder", opposite="quieter", moves=(SCALE("level", 1.3),))
 add("hushed, quieter level", "quality", "quieter", opposite="louder", moves=(SCALE("level", 0.75),))
-add("short, shorter, staccato, percussive, snappy, snappier, tight, tighter, clipped, choppy", "quality", "shorter",
+add("short, shorter, staccato, percussive, snappy, snappier, tight, tighter, clipped, choppy, short tail, "
+    "short release, shorter tail", "quality", "shorter",
     opposite="longer", moves=(SCALE("decay", 0.4), SET("sustain", 0.0), SCALE("release", 0.35),
                                SCALE("string_decay", 0.4)))
-add("long, longer, sustained, sustaining, ringing, legato, lingering, endless, held", "quality", "longer",
+add("long, longer, sustained, sustaining, ringing, legato, lingering, endless, held, long tail, long release, "
+    "longer tail, long decay", "quality", "longer",
     opposite="shorter", moves=(SET("sustain", 0.85), SCALE("release", 2.5), SCALE("decay", 2.0),
                                 SCALE("string_decay", 2.0)))
 add("slow attack, swell, swells, swelling, fade in, fades in, fading in, bowed, slow fade", "quality",
@@ -624,9 +634,11 @@ add("open voicing, open voicings, open chords, spread voicing, wide voicing", "s
 add("close voicing, closed voicing, close chords, tight voicing", "setting", "close voicing", home="chord",
     moves={"chord": (EXACT("spacing", 0),)})
 for words, label, value in (("just intonation, just tuning, pure tuning", "just intonation", 2),
-                            ("meantone, mean tone", "meantone tuning", 1), ("pythagorean", "Pythagorean tuning", 3),
-                            ("werckmeister", "Werckmeister III tuning", 4), ("kirnberger", "Kirnberger III tuning", 5),
-                            ("vallotti", "Vallotti tuning", 6), ("equal temperament, equal tuning", "equal temperament", 0),
+                            ("meantone, mean tone, meantone tuning, meantone temperament", "meantone tuning", 1),
+                            ("pythagorean, pythagorean tuning", "Pythagorean tuning", 3),
+                            ("werckmeister, werckmeister tuning, werckmeister temperament", "Werckmeister III tuning", 4),
+                            ("kirnberger, kirnberger tuning", "Kirnberger III tuning", 5),
+                            ("vallotti, vallotti tuning", "Vallotti tuning", 6), ("equal temperament, equal tuning", "equal temperament", 0),
                             ("quarter tones, quarter tone, quartertone, 24 edo", "quarter tones (24-EDO)", 11),
                             ("19 edo", "19-EDO", 10), ("31 edo", "31-EDO", 12)):
     add(words, "setting", label, home="global", moves=(EXACT("temperament", value),))
@@ -685,9 +697,9 @@ TAP_PAIRS = ((200, 201), (209, 210), (211, 212))
 TARGETS = {
     "cutoff": "overall filter, main filter, filter, filters, cutoff, cut off, brightness, brighter, darker, tone, low pass, lowpass, opens, closes",
     "resonance": "resonance, reso, squelch, peak",
-    "reverb": "reverb, verb, wet, wetness, ambience, space, room",
+    "reverb": "reverb mix, reverb level, reverb amount, reverb, verb, wet, wetness, ambience, space, room",
     "reverb_size": "room size, reverb size, hall size, size",
-    "delay_mix": "delay, echo, echoes",
+    "delay_mix": "delay mix, echo mix, delay level, delay, echo, echoes",
     "delay_time": "delay time, echo time, delay length",
     "vib_amount": "vibrato, warble, wobbly",
     "trem_amount": "tremolo, pulsing",
@@ -794,6 +806,8 @@ yeah yes okay ok um uh hmm think thinking thought guess sure probably perhaps po
 mean means anyway kind course whatever there's theres it'd isnt also all any some most my mine maybe recent
 would'nt wouldnt want wanted wish hope going gonna wanna let lets please thanks thank sounds sound right left
 know see try trying tried able unless otherwise case bank banks color led leds light lights assign assigns
+rhythm rhythms tuning tunings intonation theme themes song songs tune tunes track soundtrack music intro riff
+mix level amount
 assigned map maps mapped route routes routed link links linked point points build built separate profile profiles based
 temperament alternate setting settings options option actually basically something like really much bit amount level levels stuff start
 starts starting play plays playing played sounds both everything whole overall little touch hint lot add adds
@@ -817,7 +831,7 @@ def selectors():
 
 def normalise(text):
     t = "".join(c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c))
-    t = t.lower().replace("’", "'").replace("colour", "color")
+    t = t.lower().replace("’", "'").replace("colour", "color").replace("rythm", "rhythm")
     t = re.sub(r"\b((?:[a-z]\.){2,})", lambda m: m.group(1).replace(".", ""), t)   # r.e.m. is rem
     t = re.sub(r"\b(mr|mrs|ms|dr|st|jr|vs)\.", r"\1", t)                         # mr. blue sky.replace("&", " and ").replace("+", " plus ")
     t = re.sub(r"(\d)\s*-\s*bit", r"\1 bit", t)
@@ -1335,9 +1349,11 @@ class Interpreter:
             return idx
 
         # numbers and keys
-        for m in re.finditer(r"\b(\d{2,3}) ?(?:bpm|beats per minute)\b", s):
-            self._put(187, int(m.group(1)), "tempo")
-            r.understood.append(f"rhythm tempo {int(m.group(1))} bpm")
+        for m in re.finditer(r"\b(?:(?:tempo|speed)\s+(?:of\s+|at\s+|to\s+|is\s+)?|at\s+)?(\d{2,3}) ?(?:bpm|beats per minute)\b"
+                             r"|\btempo\s+(?:of\s+|at\s+|to\s+|is\s+)?(\d{2,3})\b", s):
+            m_bpm = m.group(1) or m.group(2)
+            self._put(187, int(m_bpm), "tempo")
+            r.understood.append(f"rhythm tempo {int(m_bpm)} bpm")
             take_span(m)
         for m in re.finditer(r"\b(?:a ?= ?)?(4[34]\d)(?:\.0)? ?(?:hz|hertz)\b|\btuned? to (4[34]\d)\b", s):
             hz = int(m.group(1) or m.group(2))
