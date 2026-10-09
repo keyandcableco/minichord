@@ -109,7 +109,8 @@ const out = input.sentences.map(text => {
                   edits: a.made.map(m => [m[0], m[2]]) };
   return row;
 });
-process.stdout.write(JSON.stringify(out));
+const decoded = shared.map(p => { try { return d.decode(p.value); } catch (e) { return String(e); } });
+process.stdout.write(JSON.stringify({ out, decoded }));
 """
 
 
@@ -152,8 +153,19 @@ def main():
         script = os.path.join(tmp, "run.js")
         with open(script, "w") as f:
             f.write(NODE)
-        js = json.loads(subprocess.run(["node", script, os.path.join(page, "describe.js"), data, pm.SHARED_PRESETS_JSON, inp],
-                                       capture_output=True, text=True, check=True).stdout)
+        both = json.loads(subprocess.run(["node", script, os.path.join(page, "describe.js"), data, pm.SHARED_PRESETS_JSON, inp],
+                                         capture_output=True, text=True, check=True).stdout)
+    js = both["out"]
+    decoded_bad = 0
+    for p, j in zip(presets, both["decoded"]):
+        try:
+            mine = pm.decode(p["value"], params)
+        except ValueError as e:
+            mine = str(e)
+        if mine != j:
+            decoded_bad += 1
+            print(f"DECODED DIFFERENTLY: {p['name']}: python {str(mine)[:80]} / js {str(j)[:80]}")
+    print(f"{len(presets)} shared presets: " + ("decoded the same in both" if not decoded_bad else f"{decoded_bad} differ"))
     bad = 0
     for text, p, j in zip(SENTENCES, py, js):
         for mode in p:
@@ -164,7 +176,7 @@ def main():
                     print(f"DIFFERENT [{mode}/{key}] {text[:60]!r}\n  python: {json.dumps(a)[:400]}\n  js:     {json.dumps(b)[:400]}")
     total = len(SENTENCES) * 3
     print(f"{len(SENTENCES)} descriptions, {total} runs: " + ("the same in both" if not bad else f"{bad} differences"))
-    sys.exit(1 if bad or song_problems else 0)
+    sys.exit(1 if bad or song_problems or decoded_bad else 0)
 
 
 if __name__ == "__main__":

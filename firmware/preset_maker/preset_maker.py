@@ -109,6 +109,8 @@ def decode(code, params):
         fields = base64.b64decode(s).decode("ascii").split(";")
     except Exception:
         raise ValueError("that isn't a minichord preset code")
+    if len(fields) in (PAGE_SIZE - 1, PARAMETER_SIZE - 1):   # written without the last ";" (the shared Ice Cream)
+        fields.append("")
     if len(fields) not in (PAGE_SIZE, PARAMETER_SIZE):
         raise ValueError(f"malformed preset code: {len(fields)} values, not 256 or 512")
     values = [int(round(float(v))) if v.strip() else 0 for v in fields]
