@@ -1,5 +1,6 @@
 #include <Audio.h>
 #include "envelope_retrigger.h"   // AudioEffectEnvelope, keeping a noteOff that comes during the retrigger fade (envelope_retrigger.h)
+#include "lean_mixer.h"   // AudioMixer4's arithmetic, without the work on inputs at gain 0 (lean_mixer.h)
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
@@ -12,7 +13,7 @@ AudioEffectEnvelopeRetrigger      envelope_string_vibrato_dc; //xy=394.100006103
 AudioEffectEnvelopeRetrigger      envelope_string_vibrato_lfo; //xy=419.1000061035156,886.9999923706055
 AudioSynthWaveformDc     chords_vibrato_dc; //xy=470.1000061035156,1584.9999923706055
 AudioSynthWaveform       chords_vibrato_lfo; //xy=473.1000061035156,1498.9999923706055
-AudioMixer4              string_vibrato_mixer; //xy=594.1000061035156,947.9999923706055
+AudioMixer4Lean              string_vibrato_mixer; //xy=594.1000061035156,947.9999923706055
 AudioEffectEnvelopeRetrigger      voice4_vibrato_dc_envelope; //xy=679.1000061035156,2398.9999923706055
 AudioEffectEnvelopeRetrigger      voice3_vibrato_envelope; //xy=683.1000061035156,2068.9999923706055
 AudioEffectEnvelopeRetrigger      voice3_vibrato_dc_envelope; //xy=686.1000061035156,2153.9999923706055
@@ -55,18 +56,18 @@ AudioSynthWavetable      harp_sample_9;
 AudioSynthWavetable      harp_sample_10;
 AudioSynthWavetable      harp_sample_11;
 AudioSynthWavetable      harp_sample_12;
-AudioMixer4              harp_source_mix_1;
-AudioMixer4              harp_source_mix_2;
-AudioMixer4              harp_source_mix_3;
-AudioMixer4              harp_source_mix_4;
-AudioMixer4              harp_source_mix_5;
-AudioMixer4              harp_source_mix_6;
-AudioMixer4              harp_source_mix_7;
-AudioMixer4              harp_source_mix_8;
-AudioMixer4              harp_source_mix_9;
-AudioMixer4              harp_source_mix_10;
-AudioMixer4              harp_source_mix_11;
-AudioMixer4              harp_source_mix_12;
+AudioMixer4Lean              harp_source_mix_1;
+AudioMixer4Lean              harp_source_mix_2;
+AudioMixer4Lean              harp_source_mix_3;
+AudioMixer4Lean              harp_source_mix_4;
+AudioMixer4Lean              harp_source_mix_5;
+AudioMixer4Lean              harp_source_mix_6;
+AudioMixer4Lean              harp_source_mix_7;
+AudioMixer4Lean              harp_source_mix_8;
+AudioMixer4Lean              harp_source_mix_9;
+AudioMixer4Lean              harp_source_mix_10;
+AudioMixer4Lean              harp_source_mix_11;
+AudioMixer4Lean              harp_source_mix_12;
 #include "plucked_string.h"
 AudioSynthPluckedString  pluck_string_1;
 AudioSynthPluckedString  pluck_string_2;
@@ -93,10 +94,10 @@ AudioSynthWaveform       waveform_transient_8; //xy=825.1000061035156,378.999992
 AudioSynthWaveform       waveform_transient_11; //xy=826.1000061035156,469.99999237060547
 AudioSynthWaveform       waveform_transient_10; //xy=828.1000061035156,441.99999237060547
 AudioSynthWaveform       waveform_transient_12; //xy=829.1000061035156,501.99999237060547
-AudioMixer4              voice3_vibrato_mixer; //xy=908.1000061035156,2098.9999923706055
-AudioMixer4              voice4_vibrato_mixer; //xy=914.1000061035156,2341.9999923706055
-AudioMixer4              voice2_vibrato_mixer; //xy=939.1000061035156,1807.9999923706055
-AudioMixer4              voice1_vibrato_mixer; //xy=947.1000061035156,1518.9999923706055
+AudioMixer4Lean              voice3_vibrato_mixer; //xy=908.1000061035156,2098.9999923706055
+AudioMixer4Lean              voice4_vibrato_mixer; //xy=914.1000061035156,2341.9999923706055
+AudioMixer4Lean              voice2_vibrato_mixer; //xy=939.1000061035156,1807.9999923706055
+AudioMixer4Lean              voice1_vibrato_mixer; //xy=947.1000061035156,1518.9999923706055
 AudioEffectEnvelopeRetrigger      envelope_filter_2; //xy=998.1000061035156,598.9999923706055
 AudioEffectEnvelopeRetrigger      envelope_filter_3; //xy=998.1000061035156,628.9999923706055
 AudioEffectEnvelopeRetrigger      envelope_filter_5; //xy=998.1000061035156,690.9999923706055
@@ -162,38 +163,38 @@ AudioFilterStateVariable filter_string_9; //xy=1243.1000061035156,1298.999992370
 AudioFilterStateVariable filter_string_11; //xy=1244.1000061035156,1390.9999923706055
 AudioFilterStateVariable filter_string_12; //xy=1244.1000061035156,1436.9999923706055
 AudioFilterStateVariable filter_string_10; //xy=1245.1000061035156,1343.9999923706055
-AudioMixer4              transient_mix_2; //xy=1272.1000061035156,272.99999237060547
-AudioMixer4              transient_mix_1; //xy=1273.1000061035156,175.99999237060547
-AudioMixer4              transient_mix_3; //xy=1278.1000061035156,374.99999237060547
+AudioMixer4Lean              transient_mix_2; //xy=1272.1000061035156,272.99999237060547
+AudioMixer4Lean              transient_mix_1; //xy=1273.1000061035156,175.99999237060547
+AudioMixer4Lean              transient_mix_3; //xy=1278.1000061035156,374.99999237060547
 AudioEffectEnvelopeRetrigger      voice4_envelope_filter; //xy=1304.1000061035156,2510.9999923706055
-AudioMixer4              voice3_mixer;   //xy=1308.1000061035156,2091.9999923706055
-AudioMixer4              voice4_mixer;   //xy=1309.1000061035156,2354.9999923706055
-AudioMixer4              voice2_mixer;   //xy=1313.1000061035156,1806.9999923706055
+AudioMixer4Lean              voice3_mixer;   //xy=1308.1000061035156,2091.9999923706055
+AudioMixer4Lean              voice4_mixer;   //xy=1309.1000061035156,2354.9999923706055
+AudioMixer4Lean              voice2_mixer;   //xy=1313.1000061035156,1806.9999923706055
 AudioEffectEnvelopeRetrigger      voice3_envelope_filter; //xy=1312.1000061035156,2197.9999923706055
 AudioEffectEnvelopeRetrigger      voice2_envelope_filter; //xy=1328.1000061035156,1924.9999923706055
 AudioEffectEnvelopeRetrigger      voice1_envelope_filter; //xy=1330.1000061035156,1693.9999923706055
-AudioMixer4              voice1_mixer;   //xy=1332.1000061035156,1536.9999923706055
+AudioMixer4Lean              voice1_mixer;   //xy=1332.1000061035156,1536.9999923706055
 // SAMPLED CHORDS: each chord voice's source, its oscillators or a sampled instrument (chord voice,
 // 265; set_chord_source), mixed ahead of its filter, declared between the two for its block
 AudioSynthWavetable      chord_sample_1;
 AudioSynthWavetable      chord_sample_2;
 AudioSynthWavetable      chord_sample_3;
 AudioSynthWavetable      chord_sample_4;
-AudioMixer4              chord_source_mix_1;
-AudioMixer4              chord_source_mix_2;
-AudioMixer4              chord_source_mix_3;
-AudioMixer4              chord_source_mix_4;
-AudioMixer4              transient_full_mix; //xy=1502.1000061035156,244.99999237060547
-AudioMixer4              string_mix_3;   //xy=1498.1000061035156,1326.9999923706055
-AudioMixer4              string_mix_1;   //xy=1501.1000061035156,1014.9999923706055
-AudioMixer4              string_mix_2;   //xy=1515.1000061035156,1143.9999923706055
+AudioMixer4Lean              chord_source_mix_1;
+AudioMixer4Lean              chord_source_mix_2;
+AudioMixer4Lean              chord_source_mix_3;
+AudioMixer4Lean              chord_source_mix_4;
+AudioMixer4Lean              transient_full_mix; //xy=1502.1000061035156,244.99999237060547
+AudioMixer4Lean              string_mix_3;   //xy=1498.1000061035156,1326.9999923706055
+AudioMixer4Lean              string_mix_1;   //xy=1501.1000061035156,1014.9999923706055
+AudioMixer4Lean              string_mix_2;   //xy=1515.1000061035156,1143.9999923706055
 AudioSynthWaveform       chords_tremolo_lfo; //xy=1580.1000061035156,1694.9999923706055
 AudioFilterStateVariable voice4_filter;  //xy=1613.1000061035156,2358.9999923706055
 AudioFilterStateVariable voice2_filter;  //xy=1621.1000061035156,1811.9999923706055
 AudioFilterStateVariable voice3_filter;  //xy=1620.1000061035156,2087.9999923706055
 AudioFilterStateVariable voice1_filter;  //xy=1642.1000061035156,1543.9999923706055
-AudioMixer4              all_string_mix; //xy=1715.1000061035156,1143.9999923706055
-AudioMixer4              vocoder_string_return;   // the harp, dry, and vocoded when it carries the vocoder (see VOCODER)
+AudioMixer4Lean              all_string_mix; //xy=1715.1000061035156,1143.9999923706055
+AudioMixer4Lean              vocoder_string_return;   // the harp, dry, and vocoded when it carries the vocoder (see VOCODER)
 AudioEffectEnvelopeRetrigger      voice1_envelope; //xy=1798.1000061035156,1694.9999923706055
 AudioEffectEnvelopeRetrigger      voice3_envelope; //xy=1800.1000061035156,2225.9999923706055
 AudioEffectEnvelopeRetrigger      voice2_envelope; //xy=1803.1000061035156,1945.9999923706055
@@ -203,8 +204,8 @@ AudioEffectMultiply      voice3_tremolo_mult; //xy=1848.1000061035156,2087.99999
 AudioEffectMultiply      voice4_tremolo_mult; //xy=1851.1000061035156,2362.9999923706055
 AudioEffectMultiply      voice1_tremolo_mult; //xy=1856.1000061035156,1537.9999923706055
 AudioEffectWaveshaper    string_waveshape; //xy=1948.1000061035156,961.9999923706055
-AudioMixer4              string_waveshaper_mix; //xy=2000.1000061035156,1139.9999923706055
-AudioMixer4              chord_voice_mixer; //xy=2157.1000061035156,1558.9999923706055
+AudioMixer4Lean              string_waveshaper_mix; //xy=2000.1000061035156,1139.9999923706055
+AudioMixer4Lean              chord_voice_mixer; //xy=2157.1000061035156,1558.9999923706055
 //VOCODER
 // The chords (or the harp) take on the shape of the sound coming in over USB: the incoming sound's
 // level in each of sixteen bands (the analysis filters and their RMS) sets how much of the
@@ -213,38 +214,38 @@ AudioMixer4              chord_voice_mixer; //xy=2157.1000061035156,1558.9999923
 // before the formants, and is declared between the chords' voice mix and them, so the chords keep
 // their block; the harp's return is declared up by its mix for the same reason, so only the
 // vocoded harp arrives a block later. At vocoder amount 0 both returns pass their section as is.
-AudioMixer4              vocoder_modulator;        // the incoming sound, both sides
+AudioMixer4Lean              vocoder_modulator;        // the incoming sound, both sides
 AudioFilterBiquad        vocoder_analysis[16];
 AudioAnalyzeRMS          vocoder_level[16];
 AudioFilterBiquad        vocoder_hiss;
-AudioMixer4              vocoder_carrier_mix;        // the chords, the harp, or both
+AudioMixer4Lean              vocoder_carrier_mix;        // the chords, the harp, or both
 AudioFilterBiquad        vocoder_synthesis[16];
-AudioMixer4              vocoder_bands[4];
-AudioMixer4              vocoder_bands_mix;
-AudioMixer4              vocoder_out;
-AudioMixer4              vocoder_chord_return;     // the chords, dry, and vocoded when they carry it
+AudioMixer4Lean              vocoder_bands[4];
+AudioMixer4Lean              vocoder_bands_mix;
+AudioMixer4Lean              vocoder_out;
+AudioMixer4Lean              vocoder_chord_return;     // the chords, dry, and vocoded when they carry it
 AudioFilterBiquad        formant_1;      //xy=2250,1480
 AudioFilterBiquad        formant_2;      //xy=2250,1520
 AudioFilterBiquad        formant_3;      //xy=2250,1560
-AudioMixer4              formant_mix;    //xy=2380,1540
+AudioMixer4Lean              formant_mix;    //xy=2380,1540
 AudioFilterStateVariable filter_delay_strings; //xy=2184.1000061035156,927.9999923706055
 AudioEffectWaveshaper    chord_waveshape; //xy=2335.1000061035156,1454.9999923706055
-AudioMixer4              string_delay_mix; //xy=2366.1000061035156,1015.9999923706055
-AudioMixer4              chord_waveshaper_mix; //xy=2488.1000061035156,1539.9999923706055
+AudioMixer4Lean              string_delay_mix; //xy=2366.1000061035156,1015.9999923706055
+AudioMixer4Lean              chord_waveshaper_mix; //xy=2488.1000061035156,1539.9999923706055
 AudioSynthWaveform       string_tremolo_lfo; //xy=2523.1000061035156,1318.9999923706055
-AudioMixer4              strings_effect_mix; //xy=2570.1000061035156,1196.9999923706055
+AudioMixer4Lean              strings_effect_mix; //xy=2570.1000061035156,1196.9999923706055
 AudioFilterStateVariable filter_delay_chords; //xy=2580.1000061035156,1414.9999923706055
 AudioEffectDelay         delay_strings;  //xy=2680.1000061035156,1026.9999923706055
 AudioSynthWaveform       string_filter_lfo; //xy=2776.1000061035156,1365.9999923706055
-AudioMixer4              chord_delay_mix; //xy=2780.1000061035156,1514.9999923706055
+AudioMixer4Lean              chord_delay_mix; //xy=2780.1000061035156,1514.9999923706055
 AudioEffectMultiply      string_multiply; //xy=2797.1000061035156,1277.9999923706055
-AudioMixer4              chords_effect_mix; //xy=2928.1000061035156,1662.9999923706055
+AudioMixer4Lean              chords_effect_mix; //xy=2928.1000061035156,1662.9999923706055
 AudioFilterStateVariable string_filter;  //xy=2995.1000061035156,1311.9999923706055
 AudioEffectDelay         delay_chords;   //xy=3078.1000061035156,1534.9999923706055
 AudioInputI2S            i2s1;           //xy=3183.1000061035156,1062.9999923706055
-AudioMixer4              string_filter_mixer; //xy=3200.1000061035156,1312.9999923706055
+AudioMixer4Lean              string_filter_mixer; //xy=3200.1000061035156,1312.9999923706055
 AudioFilterStateVariable chords_main_filter; //xy=3246.1000061035156,1595.9999923706055
-AudioMixer4              chords_main_filter_mixer; //xy=3529.1000061035156,1610.9999923706055
+AudioMixer4Lean              chords_main_filter_mixer; //xy=3529.1000061035156,1610.9999923706055
 AudioConnection          patchCord1(string_vibrato_dc, envelope_string_vibrato_dc);
 AudioConnection          patchCord2(string_vibrato_lfo, envelope_string_vibrato_lfo);
 AudioConnection          patchCord3(envelope_string_vibrato_dc, 0, string_vibrato_mixer, 1);
@@ -525,21 +526,21 @@ AudioSynthWaveformDc     string_gain;
 // carry the same, so the harp sounds as it did through the one chain. Declared here, in signal
 // order and before the output stage, because the library updates objects in the order they are
 // declared: declared later, the right side would arrive a block (2.9 ms) behind the left.
-AudioMixer4              string_mix_1_r;
-AudioMixer4              string_mix_2_r;
-AudioMixer4              string_mix_3_r;
-AudioMixer4              all_string_mix_r;
-AudioMixer4              vocoder_string_return_r;   // the right side's harp, dry and vocoded (see VOCODER)
+AudioMixer4Lean              string_mix_1_r;
+AudioMixer4Lean              string_mix_2_r;
+AudioMixer4Lean              string_mix_3_r;
+AudioMixer4Lean              all_string_mix_r;
+AudioMixer4Lean              vocoder_string_return_r;   // the right side's harp, dry and vocoded (see VOCODER)
 AudioEffectWaveshaper    string_waveshape_r;
-AudioMixer4              string_waveshaper_mix_r;
+AudioMixer4Lean              string_waveshaper_mix_r;
 AudioFilterStateVariable filter_delay_strings_r;   // ahead of the delay's mixer, as on the left: the feedback loop's block falls in the same place
-AudioMixer4              string_delay_mix_r;
+AudioMixer4Lean              string_delay_mix_r;
 AudioEffectDelay         delay_strings_r;
 AudioEffectSilenceGate   delay_strings_gate_r;   // as the left's (see DELAY LOOP GATES): the loop goes quiet once its echoes die
-AudioMixer4              strings_effect_mix_r;
+AudioMixer4Lean              strings_effect_mix_r;
 AudioEffectMultiply      string_multiply_r;
 AudioFilterStateVariable string_filter_r;
-AudioMixer4              string_filter_mixer_r;
+AudioMixer4Lean              string_filter_mixer_r;
 AudioEffectMultiply      string_multiplier_r;
 AudioAmplifier           string_amplifier_r;
 AudioEffectMultiply      string_multiplier;  
@@ -557,16 +558,16 @@ AudioAmplifier           chords_amplifier;
 // flanger's, at a different rate a side so the two never move together. At 0 only the dry goes on.
 AudioEffectFlange        chord_ensemble_l;
 AudioEffectFlange        chord_ensemble_r;
-AudioMixer4              chord_ensemble_mix_l;
-AudioMixer4              chord_ensemble_mix_r;
+AudioMixer4Lean              chord_ensemble_mix_l;
+AudioMixer4Lean              chord_ensemble_mix_r;
 AudioSynthWaveformDc     chords_l_stereo_gain;        
 AudioSynthWaveformDc     chords_r_stereo_gain;        
 AudioEffectMultiply      chords_l_stereo_multiply;  
 AudioEffectMultiply      chords_r_stereo_multiply;  
-AudioMixer4              reverb_mixer;   
+AudioMixer4Lean              reverb_mixer;   
 AudioEffectPlateReverb   main_reverb;    
-AudioMixer4              stereo_l_mixer;        
-AudioMixer4              stereo_r_mixer;   
+AudioMixer4Lean              stereo_l_mixer;        
+AudioMixer4Lean              stereo_r_mixer;   
 AudioOutputI2S           DAC_out;
 #ifdef AUDIO_INTERFACE
 AudioOutputUSB           USB_out;
@@ -574,8 +575,8 @@ AudioOutputUSB           USB_out;
 // (244) is 1, play along; silent otherwise, as it always was (main.cpp usb_audio_gain). Mixed in
 // after the recording tap, so the host never hears itself back.
 AudioInputUSB            USB_in;
-AudioMixer4              DAC_l_mixer;
-AudioMixer4              DAC_r_mixer;
+AudioMixer4Lean              DAC_l_mixer;
+AudioMixer4Lean              DAC_r_mixer;
 #endif
 
 AudioConnection          patchCord2000(string_filter_mixer, 0, string_multiplier, 0);
