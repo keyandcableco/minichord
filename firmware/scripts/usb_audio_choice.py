@@ -129,6 +129,34 @@ def patch_usb():
     return write("usb_choice.c", src)
 
 
-DESC, USB = patch_usb_desc(), patch_usb()
+def patch_usb_midi():
+    # USB MIDI's half-full packet is flushed by usb_midi_flush_output(), from the SOF interrupt and from
+    # usbMIDI.send_now() in the program, with nothing between the two: the interrupt's flush landing inside the
+    # program's prepared the dTD the hardware had just taken a second time and linked it to itself, after which
+    # the controller's descriptor engine froze (every endpoint silent, frames still counted; only a bus or chip
+    # reset brings it back). The firmware no longer calls send_now(), and here the flush holds interrupts, so a
+    # send_now() added later can't bring it back. And the three statics that usb_midi_write_packed() shares with
+    # the interrupt are volatile: as compiled, tx_head was read before tx_noautoflush was set, a four-instruction
+    # window in which the interrupt's flush left write_packed() with a stale head and its bytes in the wrong buffer.
+    path = os.path.join(CORE, "usb_midi.c")
+    src = open(path).read()
+    for old, new, what in (
+        ("static uint8_t tx_noautoflush=0;", "static volatile uint8_t tx_noautoflush=0;   // usb_audio_choice.py: shared with the SOF interrupt", "tx_noautoflush"),
+        ("static uint8_t tx_head=0;\nstatic uint16_t tx_available=0;", "static volatile uint8_t tx_head=0;   // usb_audio_choice.py: shared with the SOF interrupt\nstatic volatile uint16_t tx_available=0;", "tx_head/tx_available"),
+        ("void usb_midi_flush_output(void)\n{\n\t//printf(\"usb_midi_flush_output\\n\");\n\tif (tx_noautoflush == 0 && tx_available > 0) {\n",
+         "void usb_midi_flush_output(void)\n{\n"
+         "\t// usb_audio_choice.py: with interrupts held: called from the program (send_now) and from the SOF interrupt\n"
+         "\tuint32_t primask;\n\t__asm__ volatile(\"mrs %0, primask\" : \"=r\"(primask));\n\t__disable_irq();\n"
+         "\tif (tx_noautoflush == 0 && tx_available > 0) {\n", "usb_midi_flush_output's head"),
+        ("\t\ttx_available = 0;\n\t\tusb_stop_sof_interrupts(MIDI_INTERFACE);\n\t}\n}\n",
+         "\t\ttx_available = 0;\n\t\tusb_stop_sof_interrupts(MIDI_INTERFACE);\n\t}\n\tif (!primask) __enable_irq();\n}\n", "usb_midi_flush_output's end")):
+        if src.count(old) != 1:
+            fail(path, what)
+        src = src.replace(old, new)
+    return write("usb_midi_choice.c", src)
+
+
+DESC, USB, MIDI = patch_usb_desc(), patch_usb(), patch_usb_midi()
 env.AddBuildMiddleware(lambda env, node: env.Object(os.path.join("$BUILD_DIR", "usb_desc_choice.o"), DESC), "*cores/teensy4/usb_desc.c")
 env.AddBuildMiddleware(lambda env, node: env.Object(os.path.join("$BUILD_DIR", "usb_choice.o"), USB), "*cores/teensy4/usb.c")
+env.AddBuildMiddleware(lambda env, node: env.Object(os.path.join("$BUILD_DIR", "usb_midi_choice.o"), MIDI), "*cores/teensy4/usb_midi.c")
