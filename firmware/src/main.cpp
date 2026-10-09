@@ -853,8 +853,11 @@ u_int32_t short_timer_period = 2 * (60 * 1000 * 1000) / (2 * rythm_bpm) - long_t
 bool current_long_period = true;
 bool rythm_timer_running = false;
 IntervalTimer rythm_timer;       // that gives the general rythm
-IntervalTimer note_off_timer[4]; // timers for delayed chord enveloppe
-IntervalTimer led_timer;
+// The rhythm LED's flash: lit on the step (rythm_tick_function), let go by the loop 200 ms on
+// (rythm_led_settle), not by a timer of its own, so the rhythm holds one of the four timer channels
+// and not two, and nothing starts a timer from inside an interrupt
+volatile bool rythm_led_lit = false;
+volatile uint32_t rythm_led_lit_at = 0;
 
 //>>KEY CHANGE MODE<<
 // Holding both preset buttons together enters key change mode, where the chord
@@ -1888,9 +1891,13 @@ void step_led_animation() {
   }
 }
 
-void turn_off_led(IntervalTimer *timer) {
-  timer->end();
-  analogWrite(RYTHM_LED_PIN, 0);
+void rythm_led_settle() {
+  noInterrupts();   // so a step lighting it again can't fall between the check and the off
+  if (rythm_led_lit && millis() - rythm_led_lit_at >= 200) {
+    rythm_led_lit = false;
+    analogWrite(RYTHM_LED_PIN, 0);
+  }
+  interrupts();
 }
 
 //-->>AUDIO HELPER FUNCTIONS
@@ -3999,8 +4006,8 @@ void rythm_tick_function() {
     }
   }
   analogWrite(RYTHM_LED_PIN, (220 * (rythm_current_step % rythm_limit_change_to_every == 0) + 15) * (rythm_current_step % active_modulus == 0));
-  led_timer.priority(255);
-  led_timer.begin([] { turn_off_led(&led_timer); }, 200000); 
+  rythm_led_lit_at = millis();   // off 200 ms on (rythm_led_settle)
+  rythm_led_lit = true;
   if (current_long_period) {
     rythm_timer.update(short_timer_period);
     current_long_period = false;
@@ -5873,10 +5880,13 @@ void trigger_chord_notes() {
     for (int i = 0; i < 4; i++) {
       note_timer[i].priority(253);
     }
-    note_timer[0].begin([] { play_single_note(0, &note_timer[0]); }, 10+chord_retrigger_release*1000);          // those allow for delayed triggering
-    note_timer[1].begin([] { play_single_note(1, &note_timer[1]); }, 10 +chord_retrigger_release*1000+ inter_string_delay + random(random_delay));
-    note_timer[2].begin([] { play_single_note(2, &note_timer[2]); }, 10 + chord_retrigger_release*1000+inter_string_delay * 2 + random(random_delay));
-    note_timer[3].begin([] { play_single_note(3, &note_timer[3]); }, 10 + chord_retrigger_release*1000+inter_string_delay * 3 + random(random_delay));
+    // Each voice's start, delayed for the strum. There are four timer channels to share, and a
+    // timer that finds none begins nothing and says so: that voice then starts now, unstrummed,
+    // rather than not at all.
+    if (!note_timer[0].begin([] { play_single_note(0, &note_timer[0]); }, 10+chord_retrigger_release*1000)) play_single_note(0, &note_timer[0]);
+    if (!note_timer[1].begin([] { play_single_note(1, &note_timer[1]); }, 10 +chord_retrigger_release*1000+ inter_string_delay + random(random_delay))) play_single_note(1, &note_timer[1]);
+    if (!note_timer[2].begin([] { play_single_note(2, &note_timer[2]); }, 10 + chord_retrigger_release*1000+inter_string_delay * 2 + random(random_delay))) play_single_note(2, &note_timer[2]);
+    if (!note_timer[3].begin([] { play_single_note(3, &note_timer[3]); }, 10 + chord_retrigger_release*1000+inter_string_delay * 3 + random(random_delay))) play_single_note(3, &note_timer[3]);
     trigger_chord = false;
   }
   button_pushed = false;
@@ -6331,6 +6341,7 @@ void loop() {
   }
 
   step_led_animation();
+  rythm_led_settle();
 
   // Handle continuous mode logic
   if (!continuous_chord && !rythm_mode) {
