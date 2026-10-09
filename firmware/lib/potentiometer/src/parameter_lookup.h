@@ -7,14 +7,14 @@
 
 struct ParameterInfo {
     uint16_t sysex_adress;
-    bool is_selector;   // mapped across min..max; everything else scales around its value
-    int16_t min_value;
+    bool is_selector;   // mapped across min..max; everything else scales around its value, within them
+    int16_t min_value;  // as stored: floats in hundredths
     int16_t max_value;
 };
 
 static const ParameterInfo parameter_lookup[] = {
     { 20, 0, 0, 360 }, // bank color
-    { 32, 0, 0, 1 }, // led attenuation
+    { 32, 0, 0, 100 }, // led attenuation
     { 244, 1, 0, 2 }, // usb audio
     { 243, 1, 0, 3 }, // harp plate
     { 241, 0, 0, 120 }, // harp touch threshold
@@ -31,18 +31,18 @@ static const ParameterInfo parameter_lookup[] = {
     { 215, 1, 0, 1 }, // harp note-off on lift
     { 8, 1, 0, 1 }, // MIDI in plays
     { 238, 1, 0, 1 }, // knobs send MIDI
-    { 24, 0, 0, 1 }, // reverb size
-    { 25, 0, 0, 1 }, // reverb high damping
-    { 26, 0, 0, 1 }, // reverb low damping
-    { 27, 0, 0, 1 }, // reverb low pass
-    { 28, 0, 0, 1 }, // reverb diffusion
+    { 24, 0, 0, 100 }, // reverb size
+    { 25, 0, 0, 100 }, // reverb high damping
+    { 26, 0, 0, 100 }, // reverb low damping
+    { 27, 0, 0, 100 }, // reverb low pass
+    { 28, 0, 0, 100 }, // reverb diffusion
     { 257, 0, 0, 100 }, // string spread
     { 258, 1, 0, 1 }, // spread pattern
     { 259, 0, 0, 100 }, // chord ensemble
     { 260, 0, 0, 100 }, // vocoder
     { 261, 1, 0, 2 }, // vocoder carrier
     { 262, 0, 0, 100 }, // vocoder consonants
-    { 29, 0, 0, 1 }, // pan
+    { 29, 0, 0, 100 }, // pan
     { 200, 0, 0, 511 }, // double tap control
     { 201, 0, 0, 4095 }, // double tap value
     { 209, 0, 0, 511 }, // double tap control 2
@@ -65,8 +65,8 @@ static const ParameterInfo parameter_lookup[] = {
     { 4, 0, 0, 1024 }, // chord alternate value
     { 5, 0, 0, 1024 }, // harp alternate value
     { 6, 0, 0, 1024 }, // mod alternate value
-    { 7, 0, 0, 10 }, // firmware revision
-    { 2, 0, 0, 1 }, // global gain
+    { 7, 0, 0, 1000 }, // firmware revision
+    { 2, 0, 0, 100 }, // global gain
     { 36, 1, 0, 13 }, // scalar harp mode
     { 236, 0, 0, 4095 }, // custom scale
     { 267, 1, 1, 30 }, // generator
@@ -81,16 +81,16 @@ static const ParameterInfo parameter_lookup[] = {
     { 40, 1, 0, 6 }, // harp shuffling
     { 99, 1, 0, 4 }, // octave change
     { 22, 1, 0, 1 }, // change held strings
-    { 41, 0, 0, 1 }, // amplitude
+    { 41, 0, 0, 100 }, // amplitude
     { 217, 0, 0, 100 }, // string model
     { 264, 1, 0, 4 }, // harp voice
-    { 218, 0, 0, 20 }, // string decay
+    { 218, 0, 10, 2000 }, // string decay
     { 219, 0, 0, 100 }, // string damping
     { 42, 1, 0, 11 }, // waveform
     { 43, 0, 0, 5000 }, // attack
     { 44, 0, 0, 5000 }, // hold
     { 45, 0, 0, 5000 }, // decay
-    { 46, 0, 0, 1 }, // sustain
+    { 46, 0, 0, 100 }, // sustain
     { 47, 0, 0, 5000 }, // release
     { 48, 1, 0, 10 }, // retrigger release
     { 213, 1, 0, 12 }, // palm mute
@@ -100,61 +100,61 @@ static const ParameterInfo parameter_lookup[] = {
     { 253, 1, 0, 2 }, // touch pressure
     { 263, 0, 0, 100 }, // strum velocity
     { 49, 0, 0, 2000 }, // base frequency
-    { 50, 0, 0, 3 }, // keytrack value
-    { 51, 0, 1, 5 }, // resonance
+    { 50, 0, 0, 300 }, // keytrack value
+    { 51, 0, 70, 500 }, // resonance
     { 52, 0, 0, 5000 }, // attack
     { 53, 0, 0, 5000 }, // hold
     { 54, 0, 0, 5000 }, // decay
-    { 55, 0, 0, 1 }, // sustain
+    { 55, 0, 0, 100 }, // sustain
     { 56, 0, 0, 5000 }, // release
     { 57, 0, 0, 100 }, // retrigger release
-    { 58, 0, 0, 5 }, // filter sensitivity
+    { 58, 0, 0, 500 }, // filter sensitivity
     { 100, 1, 0, 11 }, // waveform
-    { 101, 0, 0, 1 }, // amplitude
+    { 101, 0, 0, 100 }, // amplitude
     { 102, 0, 0, 5000 }, // attack
     { 103, 0, 0, 5000 }, // hold
     { 104, 0, 0, 5000 }, // decay
     { 105, 1, 0, 24 }, // note level
     { 59, 1, 0, 11 }, // waveform
-    { 60, 0, 0, 20 }, // frequency
-    { 61, 0, 0, 1 }, // amplitude
+    { 60, 0, 0, 2000 }, // frequency
+    { 61, 0, 0, 100 }, // amplitude
     { 62, 1, 0, 11 }, // waveform
-    { 63, 0, 0, 20 }, // frequency
-    { 64, 0, 0, 1 }, // amplitude
+    { 63, 0, 0, 2000 }, // frequency
+    { 64, 0, 0, 100 }, // amplitude
     { 65, 0, 0, 5000 }, // attack
     { 66, 0, 0, 5000 }, // hold
     { 67, 0, 0, 5000 }, // decay
-    { 68, 0, 0, 1 }, // sustain
+    { 68, 0, 0, 100 }, // sustain
     { 69, 0, 0, 5000 }, // release
     { 70, 0, 0, 100 }, // retrigger release
-    { 71, 0, 0, 2 }, // pitch bend
+    { 71, 0, 0, 200 }, // pitch bend
     { 72, 0, 0, 5000 }, // attack bend
     { 73, 0, 0, 5000 }, // hold bend
     { 74, 0, 0, 5000 }, // decay bend
     { 75, 0, 0, 5000 }, // retrigger release bend
-    { 76, 0, 0, 1 }, // intensity
+    { 76, 0, 0, 100 }, // intensity
     { 77, 0, 0, 600 }, // delay length
     { 78, 0, 0, 5000 }, // delay filter frequency
-    { 79, 0, 1, 5 }, // delay filter resonance
-    { 80, 0, 0, 1 }, // delay lowpass
-    { 81, 0, 0, 1 }, // delay bandpass
-    { 82, 0, 0, 1 }, // delay highpass
-    { 83, 0, 0, 1 }, // dry mix
-    { 84, 0, 0, 1 }, // delay mix
-    { 85, 0, 0, 1 }, // reverb level
-    { 86, 0, 0, 1 }, // crunch level
+    { 79, 0, 70, 500 }, // delay filter resonance
+    { 80, 0, 0, 100 }, // delay lowpass
+    { 81, 0, 0, 100 }, // delay bandpass
+    { 82, 0, 0, 100 }, // delay highpass
+    { 83, 0, 0, 100 }, // dry mix
+    { 84, 0, 0, 100 }, // delay mix
+    { 85, 0, 0, 100 }, // reverb level
+    { 86, 0, 0, 100 }, // crunch level
     { 87, 1, 0, 2 }, // crunch type
     { 88, 0, 0, 5000 }, // frequency
-    { 89, 0, 1, 5 }, // resonance
-    { 90, 0, 0, 1 }, // lowpass
-    { 91, 0, 0, 1 }, // bandpass
-    { 92, 0, 0, 1 }, // highpass
+    { 89, 0, 70, 500 }, // resonance
+    { 90, 0, 0, 100 }, // lowpass
+    { 91, 0, 0, 100 }, // bandpass
+    { 92, 0, 0, 100 }, // highpass
     { 93, 1, 0, 11 }, // LFO waveform
-    { 94, 0, 0, 20 }, // LFO frequency
-    { 95, 0, 0, 1 }, // LFO amplitude
-    { 96, 0, 0, 5 }, // filter LFO sensitivity
-    { 97, 0, 0, 2 }, // output amplifier
-    { 3, 0, 0, 1 }, // global gain
+    { 94, 0, 0, 2000 }, // LFO frequency
+    { 95, 0, 0, 100 }, // LFO amplitude
+    { 96, 0, 0, 500 }, // filter LFO sensitivity
+    { 97, 0, 0, 200 }, // output amplifier
+    { 3, 0, 0, 100 }, // global gain
     { 33, 1, 0, 1 }, // barry harris mode
     { 39, 1, 0, 1 }, // chord layout
     { 34, 1, 0, 6 }, // chord frame shift
@@ -178,80 +178,80 @@ static const ParameterInfo parameter_lookup[] = {
     { 114, 1, 0, 1 }, // slash re-voice
     { 115, 1, 0, 5 }, // cantus
     { 265, 1, 0, 4 }, // chord voice
-    { 121, 0, 0, 1 }, // amplitude 1
+    { 121, 0, 0, 100 }, // amplitude 1
     { 122, 1, 0, 11 }, // waveform 1
-    { 123, 0, 0, 2 }, // frequency multiplier 1
-    { 124, 0, 0, 1 }, // amplitude 2
+    { 123, 0, 50, 200 }, // frequency multiplier 1
+    { 124, 0, 0, 100 }, // amplitude 2
     { 125, 1, 0, 11 }, // waveform 2
-    { 126, 0, 0, 2 }, // frequency multiplier 2
-    { 127, 0, 0, 1 }, // amplitude 3
+    { 126, 0, 50, 200 }, // frequency multiplier 2
+    { 127, 0, 0, 100 }, // amplitude 3
     { 128, 1, 0, 11 }, // waveform 3
-    { 129, 0, 0, 2 }, // frequency multiplier 3
-    { 130, 0, 0, 1 }, // noise
-    { 131, 0, 0, 1 }, // first note
-    { 132, 0, 0, 1 }, // second note
-    { 133, 0, 0, 1 }, // third note
-    { 134, 0, 0, 1 }, // fourth note
+    { 129, 0, 50, 200 }, // frequency multiplier 3
+    { 130, 0, 0, 100 }, // noise
+    { 131, 0, 0, 100 }, // first note
+    { 132, 0, 0, 100 }, // second note
+    { 133, 0, 0, 100 }, // third note
+    { 134, 0, 0, 100 }, // fourth note
     { 135, 0, 0, 100 }, // inter-note delay
     { 136, 0, 0, 100 }, // random note delay
     { 137, 0, 0, 5000 }, // attack
     { 138, 0, 0, 5000 }, // hold
     { 139, 0, 0, 5000 }, // decay
-    { 140, 0, 0, 1 }, // sustain
+    { 140, 0, 0, 100 }, // sustain
     { 141, 0, 0, 5000 }, // release
     { 142, 0, 0, 100 }, // retrigger release
     { 143, 0, 0, 5000 }, // base frequency
-    { 144, 0, 0, 1 }, // keytrack value
-    { 145, 0, 1, 5 }, // resonance
+    { 144, 0, 0, 100 }, // keytrack value
+    { 145, 0, 70, 500 }, // resonance
     { 146, 0, 0, 5000 }, // attack
     { 147, 0, 0, 5000 }, // hold
     { 148, 0, 0, 5000 }, // decay
-    { 149, 0, 0, 1 }, // sustain
+    { 149, 0, 0, 100 }, // sustain
     { 150, 0, 0, 5000 }, // release
     { 151, 0, 0, 100 }, // retrigger release
     { 152, 1, 0, 11 }, // LFO waveform
-    { 153, 0, 0, 20 }, // LFO frequency
-    { 154, 0, 0, 1 }, // LFO amplitude
-    { 155, 0, 0, 5 }, // filter sensitivity
+    { 153, 0, 0, 2000 }, // LFO frequency
+    { 154, 0, 0, 100 }, // LFO amplitude
+    { 155, 0, 0, 500 }, // filter sensitivity
     { 118, 0, 0, 100 }, // formant vowel
     { 119, 0, 0, 100 }, // formant amount
     { 239, 0, 0, 100 }, // formant voice size
     { 240, 0, 0, 100 }, // formant resonance
     { 156, 1, 0, 11 }, // waveform
-    { 157, 0, 0, 20 }, // frequency
-    { 158, 0, 0, 5 }, // keytrack value
-    { 159, 0, 0, 1 }, // amplitude
+    { 157, 0, 0, 2000 }, // frequency
+    { 158, 0, 0, 500 }, // keytrack value
+    { 159, 0, 0, 100 }, // amplitude
     { 160, 1, 0, 11 }, // waveform
-    { 161, 0, 0, 20 }, // frequency
-    { 162, 0, 0, 1 }, // keytrack value
-    { 163, 0, 0, 1 }, // amplitude
+    { 161, 0, 0, 2000 }, // frequency
+    { 162, 0, 0, 100 }, // keytrack value
+    { 163, 0, 0, 100 }, // amplitude
     { 164, 0, 0, 5000 }, // attack
     { 165, 0, 0, 5000 }, // hold
     { 166, 0, 0, 5000 }, // decay
-    { 167, 0, 0, 1 }, // sustain
+    { 167, 0, 0, 100 }, // sustain
     { 168, 0, 0, 5000 }, // release
     { 169, 0, 0, 100 }, // retrigger release
-    { 170, 0, 0, 2 }, // pitch bend
+    { 170, 0, 0, 200 }, // pitch bend
     { 171, 0, 0, 5000 }, // attack bend 
     { 172, 0, 0, 5000 }, // hold bend
     { 173, 0, 0, 5000 }, // decay bend
     { 174, 0, 0, 100 }, // retrigger release bend
-    { 175, 0, 0, 1 }, // intensity
+    { 175, 0, 0, 100 }, // intensity
     { 176, 0, 0, 600 }, // delay length
     { 177, 0, 0, 5000 }, // delay filter frequency
-    { 178, 0, 1, 5 }, // delay filter resonance
-    { 179, 0, 0, 1 }, // delay lowpass
-    { 180, 0, 0, 1 }, // delay bandpass
-    { 181, 0, 0, 1 }, // delay highpass
-    { 182, 0, 0, 1 }, // dry mix
-    { 183, 0, 0, 1 }, // delay mix
-    { 184, 0, 0, 1 }, // reverb level
-    { 185, 0, 0, 1 }, // crunch level
+    { 178, 0, 70, 500 }, // delay filter resonance
+    { 179, 0, 0, 100 }, // delay lowpass
+    { 180, 0, 0, 100 }, // delay bandpass
+    { 181, 0, 0, 100 }, // delay highpass
+    { 182, 0, 0, 100 }, // dry mix
+    { 183, 0, 0, 100 }, // delay mix
+    { 184, 0, 0, 100 }, // reverb level
+    { 185, 0, 0, 100 }, // crunch level
     { 186, 1, 0, 2 }, // crunch type
     { 187, 0, 30, 300 }, // default_bpm
     { 188, 1, 1, 16 }, // cycle length
     { 189, 1, 1, 8 }, // measure update
-    { 190, 0, 0, 2 }, // shuffle value
+    { 190, 0, 50, 150 }, // shuffle value
     { 191, 0, 20, 1000 }, // note pushed duration
     { 220, 0, 0, 128 }, // rythm pattern
     { 221, 0, 0, 128 }, // rythm pattern
@@ -270,11 +270,11 @@ static const ParameterInfo parameter_lookup[] = {
     { 234, 0, 0, 128 }, // rythm pattern
     { 235, 0, 0, 128 }, // rythm pattern
     { 192, 0, 0, 5000 }, // frequency
-    { 193, 0, 1, 5 }, // resonance
-    { 194, 0, 0, 1 }, // lowpass
-    { 195, 0, 0, 1 }, // bandpass
-    { 196, 0, 0, 1 }, // highpass
-    { 197, 0, 0, 2 }, // output amplifier
+    { 193, 0, 70, 500 }, // resonance
+    { 194, 0, 0, 100 }, // lowpass
+    { 195, 0, 0, 100 }, // bandpass
+    { 196, 0, 0, 100 }, // highpass
+    { 197, 0, 0, 200 }, // output amplifier
 };
 
 // Which controls may move each address, from each parameter's "controls" in

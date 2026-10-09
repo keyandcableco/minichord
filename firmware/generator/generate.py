@@ -410,7 +410,8 @@ with open('parameters.json') as f:
 
     # Emit a lookup table of declared parameter bounds, so the potentiometer
     # library can map selector targets across their real range rather than
-    # scaling around whatever value happens to be stored.
+    # scaling around whatever value happens to be stored, and hold everything
+    # else it scales within that range.
     #
     # A selector is an integer parameter whose whole declared range is a
     # handful of choices: waveforms, modes, inversions, keys, layouts. Integer
@@ -431,8 +432,8 @@ with open('parameters.json') as f:
 
 struct ParameterInfo {
     uint16_t sysex_adress;
-    bool is_selector;   // mapped across min..max; everything else scales around its value
-    int16_t min_value;
+    bool is_selector;   // mapped across min..max; everything else scales around its value, within them
+    int16_t min_value;  // as stored: floats in hundredths
     int16_t max_value;
 };
 
@@ -441,10 +442,11 @@ static const ParameterInfo parameter_lookup[] = {
     for section in d:
         for parameter in d[section]:
             if all(k in parameter for k in ("sysex_adress", "min_value", "max_value", "data_type")):
-                # the struct stores int16_t and these bounds are only read for
-                # selector targets, so round rather than narrow from double
-                min_value = int(round(parameter["min_value"]))
-                max_value = int(round(parameter["max_value"]))
+                # as stored, floats in hundredths, which a knob's sweep is held
+                # within; the struct stores int16_t, so round rather than narrow
+                scale = 100 if parameter["data_type"] == "float" else 1
+                min_value = int(round(parameter["min_value"] * scale))
+                max_value = int(round(parameter["max_value"] * scale))
                 is_selector = 1 if (parameter["data_type"] == "int"
                                     and max_value - min_value <= SELECTOR_MAX_SPAN) else 0
                 name = parameter.get("name", "unnamed")

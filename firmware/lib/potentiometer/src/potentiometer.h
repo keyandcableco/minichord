@@ -52,6 +52,7 @@ class potentiometer{
     // Discrete (integer) targets are mapped across the bounds declared in
     // parameters.json rather than scaled around the stored value.
     bool declared_bounds(int adress, int16_t &min_out, int16_t &max_out);
+    uint16_t sweep(int adress, float range, int reading, bool &discrete);
     int16_t quantise(int16_t proposed, int16_t lo, int16_t hi, int adress);
     int16_t last_discrete_output = 0;  // last value emitted for a discrete target
     int16_t last_discrete_reading = 0; // smoothed reading when it was latched

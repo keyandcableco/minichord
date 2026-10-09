@@ -35,20 +35,40 @@ void potentiometer::set_alternate_default(int alternate_initial_value){
 }
 
 
-// Looks up the bounds declared for a selector parameter. Returns false for
-// everything else -- floats, and integers with a wide continuous range such as
-// times and frequencies -- which keep the existing proportional behaviour.
+// Looks up the bounds declared for a parameter, as stored (floats in
+// hundredths). Returns false for an address that declares none.
+static const ParameterInfo* parameter_info(int adress){
+    for(unsigned i=0;i<sizeof(parameter_lookup)/sizeof(parameter_lookup[0]);i++){
+        if(parameter_lookup[i].sysex_adress==adress) return &parameter_lookup[i];
+    }
+    return nullptr;
+}
+
+// The bounds of a selector parameter. Returns false for everything else --
+// floats, and integers with a wide continuous range such as times and
+// frequencies -- which keep the existing proportional behaviour.
 // generator/generate.py decides which parameters are selectors.
 bool potentiometer::declared_bounds(int adress, int16_t &min_out, int16_t &max_out){
-    for(unsigned i=0;i<sizeof(parameter_lookup)/sizeof(parameter_lookup[0]);i++){
-        if(parameter_lookup[i].sysex_adress==adress){
-            if(!parameter_lookup[i].is_selector) return false;
-            min_out=parameter_lookup[i].min_value;
-            max_out=parameter_lookup[i].max_value;
-            return true;
-        }
-    }
-    return false;
+    const ParameterInfo* info=parameter_info(adress);
+    if(!info || !info->is_selector) return false;
+    min_out=info->min_value;
+    max_out=info->max_value;
+    return true;
+}
+
+// What the knob at this reading sets a parameter to. A selector runs across
+// all its steps; anything else from its value less range percent to its value
+// plus it, held within the parameter's own bounds, so a wide range doesn't send
+// a value the parameter was never meant to take: the knob rests at the bound.
+uint16_t potentiometer::sweep(int adress, float range, int reading, bool &discrete){
+    int16_t d_min, d_max;
+    discrete=declared_bounds(adress, d_min, d_max);
+    uint16_t min_value = discrete ? d_min : max(0,current_sysex_parameters_pointer[adress]*(1.0-range/100.0));
+    uint16_t max_value = discrete ? d_max : current_sysex_parameters_pointer[adress]*(1.0+range/100.0);
+    int32_t output_value=constrain(map(reading, dead_zone, 1024-dead_zone, min_value, max_value), min_value, max_value);
+    const ParameterInfo* info=parameter_info(adress);
+    if(info) output_value=constrain(output_value, info->min_value, info->max_value);
+    return output_value;
 }
 
 // Holds the current value until the reading has moved a fair way past the step
@@ -80,11 +100,8 @@ void potentiometer::force_update(){
     potentiometer_smoothed_value=0;
     potentiometer_old_value=1024;// bit of a hack to trigger an update of the main parameter
     update_parameter(false); //apply to the main the current value of the potentiometer.
-    int16_t d_min, d_max;
-    bool discrete=declared_bounds(alternate_adress, d_min, d_max);
-    uint16_t min_value = discrete ? d_min : max(0,current_sysex_parameters_pointer[alternate_adress]*(1.0-alternate_range/100.0));
-    uint16_t max_value = discrete ? d_max : current_sysex_parameters_pointer[alternate_adress]*(1.0+alternate_range/100.0);
-    uint16_t output_value=constrain(map(alternate_value, dead_zone, 1024-dead_zone,min_value ,max_value ),min_value, max_value);
+    bool discrete;
+    uint16_t output_value=sweep(alternate_adress, alternate_range, alternate_value, discrete);
     if(discrete){ last_discrete_adress=alternate_adress; last_discrete_output=output_value; last_discrete_reading=alternate_value; }
     apply_audio_parameter(alternate_adress, output_value); //now apply the value that was saved for the alternate. That allows to memorize the settings of the user.
 }
@@ -130,23 +147,19 @@ bool potentiometer::update_parameter(bool alternate_flag){
         trigger_change=false;
         this->potentiometer_old_value=potentiometer_smoothed_value;
         if(!alternate_flag ){
+            bool discrete;
+            uint16_t output_value=sweep(main_adress, main_range, potentiometer_smoothed_value, discrete);
             int16_t d_min, d_max;
-            bool discrete=declared_bounds(main_adress, d_min, d_max);
-            uint16_t min_value = discrete ? d_min : max(0,current_sysex_parameters_pointer[main_adress]*(1.0-main_range/100.0));
-            uint16_t max_value = discrete ? d_max : current_sysex_parameters_pointer[main_adress]*(1.0+main_range/100.0);
-            uint16_t output_value=constrain(map(potentiometer_smoothed_value, dead_zone,1024-dead_zone, min_value ,max_value ),min_value, max_value);
-            if(discrete) output_value=quantise(output_value, min_value, max_value, main_adress);
+            if(discrete && declared_bounds(main_adress, d_min, d_max)) output_value=quantise(output_value, d_min, d_max, main_adress);
             Serial.println(output_value);
             apply_audio_parameter(main_adress, output_value); //note: applied but not saved. So we can still read the initial value 
             main_position=potentiometer_smoothed_value;     // where the main function was last set from, for pickup
             update_parameter(false); //loop again for the smoothing
         }else{
+            bool discrete;
+            uint16_t output_value=sweep(alternate_adress, alternate_range, potentiometer_smoothed_value, discrete);
             int16_t d_min, d_max;
-            bool discrete=declared_bounds(alternate_adress, d_min, d_max);
-            uint16_t min_value = discrete ? d_min : max(0,current_sysex_parameters_pointer[alternate_adress]*(1.0-alternate_range/100.0));
-            uint16_t max_value = discrete ? d_max : current_sysex_parameters_pointer[alternate_adress]*(1.0+alternate_range/100.0);
-            uint16_t output_value=constrain(map(potentiometer_smoothed_value, dead_zone, 1024-dead_zone,min_value ,max_value ),min_value, max_value);
-            if(discrete) output_value=quantise(output_value, min_value, max_value, alternate_adress);
+            if(discrete && declared_bounds(alternate_adress, d_min, d_max)) output_value=quantise(output_value, d_min, d_max, alternate_adress);
             apply_audio_parameter(alternate_adress, output_value);
             this->alternate_value=potentiometer_smoothed_value;
             current_sysex_parameters_pointer[alternate_storage_adress] = potentiometer_smoothed_value; // saving the position in order to be able to retrieve it later
