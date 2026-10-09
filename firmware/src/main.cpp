@@ -2004,13 +2004,17 @@ float string_filter_freq(uint8_t i) {
 }
 
 // and quieter, by up to 24 dB
+// A string whose envelopes are done rests: its oscillator and transient oscillator go to amplitude 0
+// (keeping their phase, sending nothing), so the chain after them goes idle; they ran on every
+// block for the envelopes to mute. A pluck wakes it (pluck_string, owned_harp_on), through here.
+bool string_resting[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
 void apply_string_firmness(uint8_t i) {
   float gain = powf(10.0f, -1.2f * string_softness(i));
   AudioNoInterrupts();
-  string_waveform_array[i]->amplitude(harp_voice_source ? 0 : string_level * gain);   // a sample in its place: silent (set_harp_source)
+  string_waveform_array[i]->amplitude(harp_voice_source || string_resting[i] ? 0 : string_level * gain);   // silent resting, or with a sample in its place (set_harp_source)
   string_pluck_array[i]->amplitude(string_level * gain);
   harp_sample_array[i]->amplitude(fminf(1, string_level * gain * harp_sample_level));
-  string_transient_waveform_array[i]->amplitude(transient_level * gain);
+  string_transient_waveform_array[i]->amplitude(string_resting[i] ? 0 : transient_level * gain);
   string_filter_array[i]->frequency(string_filter_freq(i));
   AudioInterrupts();
 }
@@ -2216,6 +2220,7 @@ void owned_harp_on(uint8_t i, float firmness) {
   string_pluck_firmness[i] = string_firmness[i] = firmness;
   midi_in_tune_harp(i);
   harp_sample_start(i);
+  string_resting[i] = false;
   apply_string_firmness(i);
   apply_string_spread(i);
   AudioNoInterrupts();
@@ -2331,6 +2336,11 @@ void harp_vibrato_settle() {
 void harp_strings_settle() {
   for (uint8_t i = 0; i < 12; i++) {
     if (string_pluck_array[i]->is_ringing() && !string_enveloppe_array[i]->isActive()) string_pluck_array[i]->stop();
+    if (!string_resting[i] && !string_enveloppe_array[i]->isActive() && !string_transient_envelope_array[i]->isActive()) {
+      string_resting[i] = true;   // its oscillators silent till the next pluck (apply_string_firmness)
+      string_waveform_array[i]->amplitude(0);
+      string_transient_waveform_array[i]->amplitude(0);
+    }
   }
 }
 
@@ -4488,6 +4498,7 @@ void pluck_string(uint8_t i) {
   for (uint8_t k = 0; k < press_slots; k++) press_recent[i][k] = string_pluck_firmness[i];
   set_harp_voice_frequency(i, current_harp_notes[i]);
   harp_sample_start(i);
+  string_resting[i] = false;
   apply_string_firmness(i);
   apply_string_spread(i);
   AudioNoInterrupts();
