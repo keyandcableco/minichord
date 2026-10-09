@@ -1,4 +1,5 @@
 #include <Audio.h>
+#include "lean_filter.h"  // AudioFilterStateVariable, its frequency once a block while the control holds still (lean_filter.h)
 #include "lean_mixer.h"   // AudioMixer4's arithmetic, without the work on inputs at gain 0 (lean_mixer.h)
 #include <Wire.h>
 #include <SPI.h>
@@ -107,18 +108,18 @@ AudioSynthNoiseWhite     voice1_noise;   //xy=1141.1000061035156,1608.9999923706
 AudioSynthWaveformModulated voice1_osc3;    //xy=1146.1000061035156,1572.9999923706055
 AudioSynthWaveformModulated voice1_osc1;    //xy=1147.1000061035156,1502.9999923706055
 AudioSynthWaveformModulated voice1_osc2;    //xy=1147.1000061035156,1537.9999923706055
-AudioFilterStateVariable filter_string_4; //xy=1240.1000061035156,1068.9999923706055
-AudioFilterStateVariable filter_string_5; //xy=1240.1000061035156,1114.9999923706055
-AudioFilterStateVariable filter_string_1; //xy=1241.1000061035156,933.9999923706055
-AudioFilterStateVariable filter_string_7; //xy=1240.1000061035156,1206.9999923706055
-AudioFilterStateVariable filter_string_2; //xy=1241.1000061035156,978.9999923706055
-AudioFilterStateVariable filter_string_8; //xy=1241.1000061035156,1253.9999923706055
-AudioFilterStateVariable filter_string_3; //xy=1242.1000061035156,1023.9999923706055
-AudioFilterStateVariable filter_string_6; //xy=1243.1000061035156,1163.9999923706055
-AudioFilterStateVariable filter_string_9; //xy=1243.1000061035156,1298.9999923706055
-AudioFilterStateVariable filter_string_11; //xy=1244.1000061035156,1390.9999923706055
-AudioFilterStateVariable filter_string_12; //xy=1244.1000061035156,1436.9999923706055
-AudioFilterStateVariable filter_string_10; //xy=1245.1000061035156,1343.9999923706055
+AudioFilterStateVariableLean filter_string_4; //xy=1240.1000061035156,1068.9999923706055
+AudioFilterStateVariableLean filter_string_5; //xy=1240.1000061035156,1114.9999923706055
+AudioFilterStateVariableLean filter_string_1; //xy=1241.1000061035156,933.9999923706055
+AudioFilterStateVariableLean filter_string_7; //xy=1240.1000061035156,1206.9999923706055
+AudioFilterStateVariableLean filter_string_2; //xy=1241.1000061035156,978.9999923706055
+AudioFilterStateVariableLean filter_string_8; //xy=1241.1000061035156,1253.9999923706055
+AudioFilterStateVariableLean filter_string_3; //xy=1242.1000061035156,1023.9999923706055
+AudioFilterStateVariableLean filter_string_6; //xy=1243.1000061035156,1163.9999923706055
+AudioFilterStateVariableLean filter_string_9; //xy=1243.1000061035156,1298.9999923706055
+AudioFilterStateVariableLean filter_string_11; //xy=1244.1000061035156,1390.9999923706055
+AudioFilterStateVariableLean filter_string_12; //xy=1244.1000061035156,1436.9999923706055
+AudioFilterStateVariableLean filter_string_10; //xy=1245.1000061035156,1343.9999923706055
 AudioMixer4Lean              transient_mix_2; //xy=1272.1000061035156,272.99999237060547
 AudioMixer4Lean              transient_mix_1; //xy=1273.1000061035156,175.99999237060547
 AudioMixer4Lean              transient_mix_3; //xy=1278.1000061035156,374.99999237060547
@@ -135,10 +136,10 @@ AudioMixer4Lean              string_mix_3;   //xy=1498.1000061035156,1326.999992
 AudioMixer4Lean              string_mix_1;   //xy=1501.1000061035156,1014.9999923706055
 AudioMixer4Lean              string_mix_2;   //xy=1515.1000061035156,1143.9999923706055
 AudioSynthWaveform       chords_tremolo_lfo; //xy=1580.1000061035156,1694.9999923706055
-AudioFilterStateVariable voice4_filter;  //xy=1613.1000061035156,2358.9999923706055
-AudioFilterStateVariable voice2_filter;  //xy=1621.1000061035156,1811.9999923706055
-AudioFilterStateVariable voice3_filter;  //xy=1620.1000061035156,2087.9999923706055
-AudioFilterStateVariable voice1_filter;  //xy=1642.1000061035156,1543.9999923706055
+AudioFilterStateVariableLean voice4_filter;  //xy=1613.1000061035156,2358.9999923706055
+AudioFilterStateVariableLean voice2_filter;  //xy=1621.1000061035156,1811.9999923706055
+AudioFilterStateVariableLean voice3_filter;  //xy=1620.1000061035156,2087.9999923706055
+AudioFilterStateVariableLean voice1_filter;  //xy=1642.1000061035156,1543.9999923706055
 AudioMixer4Lean              all_string_mix; //xy=1715.1000061035156,1143.9999923706055
 AudioEffectEnvelope      voice1_envelope; //xy=1798.1000061035156,1694.9999923706055
 AudioEffectEnvelope      voice3_envelope; //xy=1800.1000061035156,2225.9999923706055
@@ -151,23 +152,23 @@ AudioEffectMultiply      voice1_tremolo_mult; //xy=1856.1000061035156,1537.99999
 AudioEffectWaveshaper    string_waveshape; //xy=1948.1000061035156,961.9999923706055
 AudioMixer4Lean              string_waveshaper_mix; //xy=2000.1000061035156,1139.9999923706055
 AudioMixer4Lean              chord_voice_mixer; //xy=2157.1000061035156,1558.9999923706055
-AudioFilterStateVariable filter_delay_strings; //xy=2184.1000061035156,927.9999923706055
+AudioFilterStateVariableLean filter_delay_strings; //xy=2184.1000061035156,927.9999923706055
 AudioEffectWaveshaper    chord_waveshape; //xy=2335.1000061035156,1454.9999923706055
 AudioMixer4Lean              string_delay_mix; //xy=2366.1000061035156,1015.9999923706055
 AudioMixer4Lean              chord_waveshaper_mix; //xy=2488.1000061035156,1539.9999923706055
 AudioSynthWaveform       string_tremolo_lfo; //xy=2523.1000061035156,1318.9999923706055
 AudioMixer4Lean              strings_effect_mix; //xy=2570.1000061035156,1196.9999923706055
-AudioFilterStateVariable filter_delay_chords; //xy=2580.1000061035156,1414.9999923706055
+AudioFilterStateVariableLean filter_delay_chords; //xy=2580.1000061035156,1414.9999923706055
 AudioEffectDelay         delay_strings;  //xy=2680.1000061035156,1026.9999923706055
 AudioSynthWaveform       string_filter_lfo; //xy=2776.1000061035156,1365.9999923706055
 AudioMixer4Lean              chord_delay_mix; //xy=2780.1000061035156,1514.9999923706055
 AudioEffectMultiply      string_multiply; //xy=2797.1000061035156,1277.9999923706055
 AudioMixer4Lean              chords_effect_mix; //xy=2928.1000061035156,1662.9999923706055
-AudioFilterStateVariable string_filter;  //xy=2995.1000061035156,1311.9999923706055
+AudioFilterStateVariableLean string_filter;  //xy=2995.1000061035156,1311.9999923706055
 AudioEffectDelay         delay_chords;   //xy=3078.1000061035156,1534.9999923706055
 AudioInputI2S            i2s1;           //xy=3183.1000061035156,1062.9999923706055
 AudioMixer4Lean              string_filter_mixer; //xy=3200.1000061035156,1312.9999923706055
-AudioFilterStateVariable chords_main_filter; //xy=3246.1000061035156,1595.9999923706055
+AudioFilterStateVariableLean chords_main_filter; //xy=3246.1000061035156,1595.9999923706055
 AudioMixer4Lean              chords_main_filter_mixer; //xy=3529.1000061035156,1610.9999923706055
 AudioConnection          patchCord1(string_vibrato_dc, envelope_string_vibrato_dc);
 AudioConnection          patchCord2(string_vibrato_lfo, envelope_string_vibrato_lfo);
