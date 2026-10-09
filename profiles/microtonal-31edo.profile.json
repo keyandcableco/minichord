@@ -1,0 +1,61 @@
+{
+ "profiles": [
+  {
+   "name": "Microtonal 31-EDO",
+   "edits": [
+    {
+     "addr": 237,
+     "value": 12
+    },
+    {
+     "addr": 202,
+     "value": 19
+    },
+    {
+     "addr": 203,
+     "value": 20
+    },
+    {
+     "addr": 204,
+     "value": 22
+    },
+    {
+     "addr": 205,
+     "value": 29
+    },
+    {
+     "addr": 206,
+     "value": 24
+    },
+    {
+     "addr": 207,
+     "value": 21
+    },
+    {
+     "addr": 208,
+     "value": 27
+    },
+    {
+     "addr": 245,
+     "value": 1
+    },
+    {
+     "addr": 200,
+     "value": 39
+    },
+    {
+     "addr": 201,
+     "value": 1
+    },
+    {
+     "addr": 209,
+     "value": 117
+    },
+    {
+     "addr": 210,
+     "value": 1
+    }
+   ]
+  }
+ ]
+}
