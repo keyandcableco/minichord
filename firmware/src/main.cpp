@@ -1760,9 +1760,47 @@ void chords_take_voice(int i) {
   apply_chord_voice_level(i);
 }
 
+// A chord voice's oscillators, noise, mixers and filter all come before its envelope, which is
+// applied by a multiply after them, so they ran on every block whether the voice sounded or not,
+// for the multiply to throw the result away. A voice whose envelope is done now rests: its
+// oscillators and noise go to amplitude 0 (keeping their phase, sending nothing), and what follows
+// them goes idle with them. Where a note starts it (the three places a chord envelope's note on is
+// called), it wakes first, so its sound starts in the same update as its envelope.
+bool chord_voice_resting[4] = {false, false, false, false};
+
+// the voice's oscillators and noise as they should be: their own settings while it sounds the
+// synth, silent while it rests or a sample sounds in their place
+void chord_voice_sources(uint8_t i) {
+  bool synth = !chord_voice_resting[i] && !chord_voice_source;
+  chord_osc_1_array[i]->amplitude(synth ? current_sysex_parameters[121] / 100.0 : 0);
+  chord_osc_2_array[i]->amplitude(synth ? current_sysex_parameters[124] / 100.0 : 0);
+  chord_osc_3_array[i]->amplitude(synth ? current_sysex_parameters[127] / 100.0 : 0);
+  chord_noise_array[i]->amplitude(synth ? 0.5 : 0);
+}
+
+// from the note on's own context, a timer's interrupt as often as not
+void wake_chord_voice(uint8_t i) {
+  if (!chord_voice_resting[i]) return;
+  chord_voice_resting[i] = false;
+  chord_voice_sources(i);
+}
+
+// from the loop: the check and the rest together, so a timer's note on can't fall between them
+void rest_chord_voices() {
+  for (uint8_t i = 0; i < 4; i++) {
+    noInterrupts();
+    if (!chord_voice_resting[i] && !chord_envelope_array[i]->isActive()) {
+      chord_voice_resting[i] = true;
+      chord_voice_sources(i);
+    }
+    interrupts();
+  }
+}
+
 void play_single_note(int i, IntervalTimer *timer) {
   timer->end();
   chords_take_voice(i);
+  wake_chord_voice(i);
   set_chord_voice_frequency(i, current_applied_chord_notes[i]);
   chord_vibrato_envelope_array[i]->noteOn();
   chord_vibrato_dc_envelope_array[i]->noteOn();
@@ -1782,6 +1820,7 @@ void play_single_note(int i, IntervalTimer *timer) {
 
 void play_note_selected_duration(int i,int current_note){
   chords_take_voice(i);
+  wake_chord_voice(i);
   chord_vibrato_envelope_array[i]->noteOn();
   chord_vibrato_dc_envelope_array[i]->noteOn();
   chord_envelope_array[i]->noteOn();
@@ -2088,12 +2127,7 @@ void set_chord_source(uint8_t source) {
     if (instrument) chord_sample_array[i]->setInstrument(*instrument);
     chord_source_mix_array[i]->gain(0, instrument ? 0 : 1);
     chord_source_mix_array[i]->gain(1, instrument ? 1 : 0);
-    // the voice's oscillators and noise silent while a sample sounds in their place, as their
-    // own settings (121, 124, 127) have them otherwise
-    chord_osc_1_array[i]->amplitude(instrument ? 0 : current_sysex_parameters[121] / 100.0);
-    chord_osc_2_array[i]->amplitude(instrument ? 0 : current_sysex_parameters[124] / 100.0);
-    chord_osc_3_array[i]->amplitude(instrument ? 0 : current_sysex_parameters[127] / 100.0);
-    chord_noise_array[i]->amplitude(instrument ? 0 : 0.5);
+    chord_voice_sources(i);   // the oscillators and noise silent while a sample sounds in their place
   }
 }
 
@@ -2220,6 +2254,7 @@ void owned_chord_on(uint8_t i, float firmness) {
   midi_in_tune_chord(i);
   chord_sample_start(i);
   noInterrupts();
+  wake_chord_voice(i);
   chord_vibrato_envelope_array[i]->noteOn();
   chord_vibrato_dc_envelope_array[i]->noteOn();
   chord_envelope_array[i]->noteOn();
@@ -6198,6 +6233,7 @@ void loop() {
   midi_in_settle();
   harp_vibrato_settle();
   harp_strings_settle();
+  rest_chord_voices();
   // Check sysex controller connection
   if (sysex_controler_connected && bitRead(USB1_PORTSC1, 7)) {
     sysex_controler_connected = false;
