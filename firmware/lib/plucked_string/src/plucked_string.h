@@ -32,6 +32,10 @@ public:
   void damping(float d) { damp = constrain(d, 0.0f, 1.0f) * 0.9f; tuned_freq = -1; }
   // 0-1: how bright the pluck is, from a muffled thump to a bright twang
   void pluck(float brightness);
+  // whether the string is still ringing; stop() silences it at once, for when what follows it has
+  // already gone quiet (its envelope done) and its ringing would only be work
+  bool is_ringing() const { return ringing; }
+  void stop() { ringing = false; }
   virtual void update(void);
 
 private:

@@ -2289,6 +2289,16 @@ void harp_vibrato_settle() {
   envelope_string_vibrato_dc.noteOff();
 }
 
+// A string's model rings on for its string decay (3 s, up to 20) after the string's envelope has
+// finished and gone silent, and it was all work for nothing then. Once the envelope is done, so is
+// the string; the next pluck fills it afresh. (A pluck and its envelope's note on come together,
+// under AudioNoInterrupts, so this never falls between them.)
+void harp_strings_settle() {
+  for (uint8_t i = 0; i < 12; i++) {
+    if (string_pluck_array[i]->is_ringing() && !string_enveloppe_array[i]->isActive()) string_pluck_array[i]->stop();
+  }
+}
+
 // Switched off, whatever incoming notes are sounding ring out
 void midi_in_set(bool on) {
   if (!on) {
@@ -6187,6 +6197,7 @@ void loop() {
   }
   midi_in_settle();
   harp_vibrato_settle();
+  harp_strings_settle();
   // Check sysex controller connection
   if (sysex_controler_connected && bitRead(USB1_PORTSC1, 7)) {
     sysex_controler_connected = false;

@@ -167,32 +167,34 @@ void AudioSynthPluckedString::update(void) {
   }
   if (fabsf(freq - tuned_freq) > 0.0002f * freq) tune(freq);
   float oscillator = 1.0f - mix;
-  float string = mix * amp;
+  float string = mix * amp * 32767.0f;
   float peak = 0;
+  // Within a block the delay is fixed (tune() runs at most once a block), so where the read falls
+  // between samples is too: the cubic's four weights are worked out once a block, not once a
+  // sample, and the read index steps along with the write, wrapping by mask (length is a power of
+  // two). The same cubic through the same four samples, a third of the work it was.
+  static_assert((length & (length - 1)) == 0, "length must be a power of two");
+  const uint32_t mask = length - 1;
+  float whole = floorf(delay_samples), part = delay_samples - whole;
+  uint32_t back = (uint32_t)whole + (part > 0 ? 1 : 0);   // the read sits between back and back - 1
+  double h[4];
+  lagrange(part > 0 ? 1.0 - part : 0.0, h);
+  const float h0 = h[0], h1 = h[1], h2 = h[2], h3 = h[3];
+  const float keep = 1.0f - loop_damp;
+  static const int16_t no_oscillator[AUDIO_BLOCK_SAMPLES] = {0};
+  const int16_t *od = osc ? osc->data : no_oscillator;
+  uint32_t w = write_index, r = (write_index - back) & mask;
   for (int i = 0; i < AUDIO_BLOCK_SAMPLES; i++) {
-    float s = 0;
-    if (ringing) {
-      float read = write_index - delay_samples;
-      if (read < 0) read += length;
-      uint16_t i1 = (uint16_t)read;
-      float x = read - i1;
-      uint16_t i0 = i1 == 0 ? length - 1 : i1 - 1;
-      uint16_t i2 = i1 + 1 >= length ? i1 + 1 - length : i1 + 1;
-      uint16_t i3 = i1 + 2 >= length ? i1 + 2 - length : i1 + 2;
-      // the cubic through the four samples about the read point, in Horner form
-      float y0 = buffer[i0], y1 = buffer[i1], y2 = buffer[i2], y3 = buffer[i3];
-      float c1 = y2 - (1.0f / 3.0f) * y0 - 0.5f * y1 - (1.0f / 6.0f) * y3;
-      float c2 = 0.5f * (y0 + y2) - y1;
-      float c3 = (1.0f / 6.0f) * (y3 - y0) + 0.5f * (y1 - y2);
-      s = y1 + x * (c1 + x * (c2 + x * c3));
-      lowpass += (1.0f - loop_damp) * (s - lowpass);
-      buffer[write_index] = lowpass * loss;
-      if (++write_index >= length) write_index = 0;
-      peak = max(peak, fabsf(s));
-    }
-    float v = string * s * 32767.0f + (osc ? oscillator * osc->data[i] : 0.0f);
+    float s = h0 * buffer[(r - 1) & mask] + h1 * buffer[r] + h2 * buffer[(r + 1) & mask] + h3 * buffer[(r + 2) & mask];
+    lowpass += keep * (s - lowpass);
+    buffer[w] = lowpass * loss;
+    w = (w + 1) & mask;
+    r = (r + 1) & mask;
+    peak = max(peak, fabsf(s));
+    float v = string * s + oscillator * od[i];
     out->data[i] = (int16_t)constrain(v, -32767.0f, 32767.0f);
   }
+  write_index = w;
   if (ringing && peak < 0.00002f) ringing = false;   // died away: nothing to compute until the next pluck
   if (osc) release(osc);
   transmit(out);
