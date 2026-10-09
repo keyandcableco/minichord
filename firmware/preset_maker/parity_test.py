@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""parity_test: minicontrol's describe.js against interpret.py, description by description.
+"""parity_test: minicontrol's describe.js against interpret.py, description by description,
+and every song in songs.json found by its name with its recipe understood.
 
     parity_test.py ~/minicontrol
 
@@ -38,7 +39,16 @@ SENTENCES = [
     "very spacey supersaw chords with a touch of delay, a staccato marimba harp an octave up, no vibrato",
     "lo-fi flute chords with slapback, harp: concert harp, wide, ping pong, the chord knob does the reverb",
     "attenuate all LEDs to 0.95, hover to chord crunch and the value is 100, my second double tap turns MPE on",
+    "give me a chameleon bass, like a Herbie Hancock chameleon bass, like that, that ARP 2600, like monophonic, wow, "
+    "kind of a uh, bark.",
+    "something like Africa by Toto", "Jump by Van Halen, with lots of reverb", "twin peaks but darker",
+    "the final countdown", "take on me with a mono minimoog", "blade runner", "superstition, the mod knob opens the filter",
+    "Purple Rain by Prince", "Jump chords with an Africa harp", "something like Mr. Blue Sky but darker", "Oxygène",
+    "Strobe by deadmau5, slightly brighter", "an R.E.M. Losing My Religion harp", "blade runner chords with a tetris harp",
+    "Gymnopédie with lots of reverb", "the Halloween theme, the mod knob opens the filter", "kraftwerk the model",
 ]
+# every song in the list, by its first name, as a preset and a profile
+SENTENCES += [e.words[0] for e in interpret.V if e.kind == "song"]
 
 
 def python_side(params, version, presets):
@@ -88,11 +98,34 @@ process.stdout.write(JSON.stringify(out));
 """
 
 
+def check_songs(params, version):
+    """Every song found by its own name, its recipe all known words, no name taken twice"""
+    base = pm.default_values(params, version)
+    others = {tuple(interpret.tokens(interpret.normalise(w))): e.label for e in interpret.V if e.kind != "song" for w in e.words}
+    seen, bad = {}, 0
+    for e in (e for e in interpret.V if e.kind == "song"):
+        for w in e.words:
+            k = tuple(interpret.tokens(interpret.normalise(w)))
+            if k in others:
+                print(f"SONG NAME TAKEN: {w!r} ({e.label}) is already {others[k]}"); bad += 1
+            if seen.get(k, e.label) != e.label:
+                print(f"TWO SONGS CALLED {w!r}: {seen[k]} and {e.label}"); bad += 1
+            seen[k] = e.label
+        r = interpret.interpret(e.words[0], base, params)
+        if not any(e.label in u for u in r.understood) or r.unknown:
+            print(f"NOT FOUND BY ITS NAME: {e.label} via {e.words[0]!r}: {r.understood} {r.unknown}"); bad += 1
+        if r.problems:
+            print(f"RECIPE WORDS NOT KNOWN: {e.label}: {[w for _, w in r.problems]}"); bad += 1
+    print(f"{len(seen) and sum(1 for e in interpret.V if e.kind == 'song')} songs: " + ("all found, every recipe understood" if not bad else f"{bad} problems"))
+    return bad
+
+
 def main():
     page = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/minicontrol")
     params = pm.load_parameters()
     version = pm.firmware_version(params)
     presets = pm.load_shared_presets()
+    song_problems = check_songs(params, version)
     py, plain, shared = python_side(params, version, presets)
     with tempfile.TemporaryDirectory() as tmp:
         data = os.path.join(tmp, "describe_data.json")
@@ -116,7 +149,7 @@ def main():
                     print(f"DIFFERENT [{mode}/{key}] {text[:60]!r}\n  python: {json.dumps(a)[:400]}\n  js:     {json.dumps(b)[:400]}")
     total = len(SENTENCES) * 3
     print(f"{len(SENTENCES)} descriptions, {total} runs: " + ("the same in both" if not bad else f"{bad} differences"))
-    sys.exit(1 if bad else 0)
+    sys.exit(1 if bad or song_problems else 0)
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ pad on the chords and the pluck on the harp. Anything it doesn't know is reporte
 interpret(text, values, params) returns the changes in the units of parameters.json, for
 preset_maker.apply_changes to check and store, with what was understood and what wasn't.
 """
-import difflib, os, re
+import difflib, json, os, re, unicodedata
 from dataclasses import dataclass, field
 
 NOT_IN_PRESETS = {0, 1, 2, 3, 4, 5, 6, 7, 241, 242, 243, 244, 256, 382, 383, 510, 511}
@@ -42,6 +42,7 @@ ROLES = {
     "amp1": {"chord": 121, "harp": 41}, "amp2": {"chord": 124}, "amp3": {"chord": 127},
     "mult1": {"chord": 123}, "mult2": {"chord": 126}, "mult3": {"chord": 129},
     "noise": {"chord": 130},
+    "note1": {"chord": 131}, "note2": {"chord": 132}, "note3": {"chord": 133}, "note4": {"chord": 134},
     "lfo_wave": {"chord": 152}, "lfo_freq": {"chord": 153}, "lfo_amount": {"chord": 154},
     "glide": {"chord": 199}, "ensemble": {"chord": 259},
     "spread": {"harp": 257}, "spread_pattern": {"harp": 258},
@@ -103,6 +104,10 @@ class Entry:
     home: str = "both"             # the section when the clause names none
     hue: int = None
     note: str = None
+    base: str = None               # a shared preset to start from ("Twin Peaks" is Ben's Twin Green)
+    chords: str = None             # a song: descriptions, in these same words, of its chords and harp
+    harp: str = None
+    both: str = None
 
 
 V = []   # the vocabulary
@@ -124,7 +129,7 @@ add("drone, drones, droning", "sound", "drone", home="chord", hue=260, moves=env
 add("organ, organs, hammond, b3, drawbar, church organ, combo organ", "sound", "organ", home="chord", hue=30, moves={
     "chord": synth_chord(0.15, 0, 1.0, 0.1, 0, 2.0, 0.08, 0, 0.5) + env(5, 100, 1.0, 80) + (EXACT("cutoff", 3500),),
     "harp": synth_harp(0) + env(5, 100, 1.0, 80)})
-add("electric piano, e piano, epiano, rhodes, wurlitzer, wurly, ep", "sound", "electric piano", home="chord", hue=35, moves={
+add("electric piano, e piano, epiano, rhodes, wurlitzer, wurly, ep, dx7, dx 7, fm piano", "sound", "electric piano", home="chord", hue=35, moves={
     "chord": synth_chord(0.15, 0, 1.0, 0.05, 3, 2.0) + env(2, 1800, 0.25, 500)
              + (SET("trem_amount", 0.2), IFZERO("trem_freq", 4), EXACT("cutoff", 2500)),
     "harp": synth_harp(0) + env(1, 1500, 0.2, 500) + (EXACT("transient", 0.15),)})
@@ -208,6 +213,148 @@ add("acid, squelch, squelchy, 303", "sound", "acid", hue=90, moves={
              EXACT("fenv_sustain", 0.2))})
 add("bass, bassy, bassline, sub, sub bass", "sound", "bass", home="chord", hue=240, moves=(ADD("octave", -1),))
 
+# One voice at a time: the chords play their lowest voice alone, as a mono synth does
+MONO = (EXACT("note1", 0.6), EXACT("note2", 0), EXACT("note3", 0), EXACT("note4", 0))
+POLY = (EXACT("note1", 0.5), EXACT("note2", 0.5), EXACT("note3", 0.5), EXACT("note4", 0.5))
+add("monophonic, mono, mono synth, one note at a time, single note", "setting", "monophonic chords", home="chord",
+    moves={"chord": MONO}, off={"chord": POLY},
+    note="monophonic: the chords play their lowest voice alone; the harp stays polyphonic")
+add("polyphonic, poly, full chords", "setting", "polyphonic chords", home="chord", moves={"chord": POLY})
+add("bark, barky, barking, quack, quacky, envelope filter, auto wah, autowah, funky filter", "quality", "filter bark",
+    hue=280, moves=(SET("resonance", 3.0), SET("filter_sens", 2.5), EXACT("fenv_attack", 1), EXACT("fenv_decay", 160),
+                    EXACT("fenv_sustain", 0.1), SCALE("cutoff", 0.5)))
+
+# Synths everyone knows, and songs: the nearest the minichord comes, as a starting point
+ARP_BASS = synth_chord(0.15, 9, 1.0, 0.1, 2, 0.5) + MONO + env(1, 300, 0.6, 80) + (
+    EXACT("octave", 1), EXACT("glide", 60), EXACT("cutoff", 250), EXACT("resonance", 3.0), EXACT("filter_sens", 2.5),
+    EXACT("fenv_attack", 1), EXACT("fenv_decay", 180), EXACT("fenv_sustain", 0.15), EXACT("fenv_release", 100),
+    EXACT("reverb", 0.05), EXACT("ensemble", 0), EXACT("crunch", 0.1))
+CLAV_HARP = synth_harp(9, 60) + env(1, 500, 0.0, 120) + (
+    EXACT("string_damping", 5), EXACT("cutoff", 900), EXACT("filter_sens", 2.0), EXACT("fenv_attack", 1),
+    EXACT("fenv_decay", 150), EXACT("fenv_sustain", 0.0), EXACT("reverb", 0.1))
+OBX_BRASS = synth_chord(0.1, 9, 1.0, 0.1, 9, 1.01, 0.08, 9, 0.5) + env(3, 600, 0.75, 250) + (
+    EXACT("cutoff", 3200), EXACT("resonance", 1.0), EXACT("filter_sens", 0.8), EXACT("fenv_attack", 1),
+    EXACT("fenv_decay", 300), EXACT("fenv_sustain", 0.6), EXACT("ensemble", 45), SET("reverb", 0.35), EXACT("crunch", 0))
+CS80_PAD = synth_chord(0.12, 9, 1.0, 0.1, 9, 1.01, 0.06, 3, 0.5) + env(600, 1500, 0.9, 3500) + (
+    EXACT("cutoff", 900), EXACT("resonance", 1.4), SET("vib_amount", 0.05), EXACT("vib_freq", 5)) + VIBRATO_READY + (
+    EXACT("ensemble", 50), SET("reverb", 0.8), SET("reverb_size", 0.95))
+MELLOTRON_FLUTE = synth_chord(0.15, 0, 1.0, 0.03, 3, 2.0, noise=0.04) + env(60, 300, 0.85, 300) + (
+    SET("vib_amount", 0.05), EXACT("vib_freq", 0.6)) + VIBRATO_READY + (EXACT("cutoff", 1800),)
+add("herbie hancock, chameleon, chameleon bass, head hunters, headhunters", "sound", "Herbie Hancock's Chameleon",
+    hue=280, moves={"chord": ARP_BASS, "harp": CLAV_HARP},
+    note="Chameleon: the chords are the ARP bass, one voice, an octave down with a quick filter bark; "
+         "the harp is a clavinet-like pluck. Play the bass line on the chord buttons")
+add("arp 2600, arp odyssey, odyssey, arp bass", "sound", "ARP bass", home="chord", hue=280,
+    moves={"chord": ARP_BASS})
+add("minimoog, mini moog, moog, moog bass, model d", "sound", "Minimoog", home="chord", hue=30, moves={
+    "chord": synth_chord(0.12, 9, 1.0, 0.1, 9, 1.01, 0.08, 2, 0.5) + MONO + env(2, 400, 0.7, 120) + (
+        EXACT("octave", 1), EXACT("glide", 40), EXACT("cutoff", 600), EXACT("resonance", 1.8), EXACT("filter_sens", 1.5),
+        EXACT("fenv_attack", 2), EXACT("fenv_decay", 350), EXACT("fenv_sustain", 0.4), EXACT("ensemble", 0))})
+add("ob xa, obxa, ob x, oberheim, jupiter 8, jupiter", "sound", "OB-Xa brass", home="chord", hue=0,
+    moves={"chord": OBX_BRASS})
+add("van halen, jump by van halen, van halen jump", "sound", "Van Halen's Jump", hue=0, moves={
+        "chord": OBX_BRASS, "harp": synth_harp(9) + env(1, 400, 0.5, 300) + (EXACT("cutoff", 1500),)},
+    note="Jump: big detuned brass chords; play the riff on the chord buttons")
+add("africa, toto", "sound", "Toto's Africa", hue=30, moves={
+    "harp": synth_harp(0, 20) + env(1, 900, 0.0, 900) + (EXACT("transient", 0.3), EXACT("string_damping", 50),
+                                                         SET("reverb", 0.45)),
+    "chord": synth_chord(0.12, 9, 1.0, 0.08, 3, 2.0) + env(120, 800, 0.8, 900) + (
+        EXACT("cutoff", 900), EXACT("resonance", 1.2), EXACT("ensemble", 40), SET("reverb", 0.5))},
+    note="Africa: the harp is the kalimba and marimba riff, the chords a soft brass pad")
+add("superstition, stevie wonder", "sound", "Stevie Wonder's Superstition", hue=40, moves={
+    "harp": CLAV_HARP + (SET("touch", 60),),
+    "chord": synth_chord(0.12, 4, 1.0, 0.06, 9, 2.0) + env(1, 500, 0.2, 100) + (
+        EXACT("cutoff", 1500), EXACT("filter_sens", 1.5), EXACT("fenv_attack", 1), EXACT("fenv_decay", 200),
+        EXACT("fenv_sustain", 0.1), EXACT("reverb", 0.1))},
+    note="Superstition: clavinet on both; tap the harp hard and soft for the funk")
+add("final countdown, the final countdown", "sound", "Europe's The Final Countdown", hue=50, moves={
+    "chord": synth_chord(0.12, 9, 1.0, 0.1, 9, 1.01, 0.06, 11, 0.5) + env(15, 500, 0.85, 600) + (
+        EXACT("cutoff", 2400), EXACT("ensemble", 50), SET("reverb", 0.6), SET("reverb_size", 0.8)),
+    "harp": synth_harp(9) + env(5, 300, 0.7, 400) + (EXACT("cutoff", 1600),)})
+add("take on me, a ha", "sound", "a-ha's Take On Me", hue=200, moves={
+    "harp": synth_harp(11) + env(1, 250, 0.3, 200) + (EXACT("cutoff", 2000), EXACT("resonance", 1.2),
+                                                      EXACT("transient", 0)),
+    "chord": synth_chord(0.1, 9, 1.0, 0.08, 11, 2.0) + env(5, 400, 0.7, 300) + (EXACT("cutoff", 3000),
+                                                                               EXACT("ensemble", 30))},
+    note="Take On Me: the harp is the bright riff synth; strum or tap it in the scale")
+add("axel f, beverly hills cop, harold faltermeyer", "sound", "Axel F", hue=300, moves={
+    "harp": synth_harp(11) + env(1, 200, 0.8, 120) + (EXACT("cutoff", 1500), EXACT("resonance", 1.5)),
+    "chord": synth_chord(0.12, 11, 1.0, 0.06, 9, 0.5) + env(2, 300, 0.7, 150) + (EXACT("glide", 120),
+                                                                               EXACT("cutoff", 1800))})
+add("cs 80, cs80, yamaha cs 80", "sound", "CS-80 brass", home="chord", hue=220, moves={"chord": CS80_PAD})
+add("blade runner, vangelis", "sound", "Vangelis's Blade Runner", hue=220,
+    moves={"chord": CS80_PAD + (IFZERO("delay_time", 450), IFZERO("delay_filter", 2500), IFZERO("delay_feedback", 0.4),
+                                SET("delay_mix", 0.2)),
+           "harp": synth_harp(0) + env(1, 2500, 0.0, 2500) + (SET("reverb", 0.7),)},
+    note="Blade Runner: slow, swelling brass with vibrato and a huge room; hold the chords")
+add("strawberry fields, strawberry fields forever, mellotron, mellotron flute", "sound",
+    "the Beatles' Strawberry Fields (Mellotron flute)", hue=330, moves={
+        "chord": MELLOTRON_FLUTE,
+        "harp": synth_harp(0) + env(40, 200, 0.8, 300) + (SET("vib_amount", 0.05), EXACT("vib_freq", 0.6))})
+add("clint eastwood, gorillaz, omnichord, classic omnichord, om 84, om84, om 27, om27, om 36, om36", "sound",
+    "classic Omnichord (Gorillaz's Clint Eastwood)", hue=120, moves={
+        "harp": synth_harp(0) + env(1, 1500, 0.0, 1500) + (EXACT("transient", 0.1), SET("reverb", 0.35)),
+        "chord": synth_chord(0.12, 3, 1.0, 0.06, 0, 2.0) + env(5, 300, 0.8, 250) + (EXACT("cutoff", 1400),
+                                                                                    SET("reverb", 0.3))},
+    note="Clint Eastwood's rhythm is the minichord's rhythm mode, turned on at the instrument")
+add("baba o riley, baba oriley, baba o reilly, baba oreilly, teenage wasteland, the who", "sound",
+    "the Who's Baba O'Riley", hue=60, moves={
+        "chord": synth_chord(0.15, 0, 1.0, 0.1, 0, 2.0, 0.08, 0, 0.5) + env(5, 100, 1.0, 80) + (EXACT("cutoff", 3500),),
+        "harp": synth_harp(0) + env(1, 300, 0.0, 200) + (EXACT("transient", 0.2), EXACT("trem_wave", 2),
+                                                         EXACT("trem_freq", 8), SET("trem_amount", 0.6))},
+    note="Baba O'Riley: organ chords, and a harp chopped into repeats like the organ's marimba repeat")
+add("sweet dreams, eurythmics", "sound", "Eurythmics' Sweet Dreams", hue=250, moves={
+    "harp": synth_harp(9) + env(1, 220, 0.0, 150) + (ADD("octave", -1), EXACT("cutoff", 400), EXACT("resonance", 2.5),
+                                                     EXACT("filter_sens", 2.5), EXACT("fenv_attack", 1),
+                                                     EXACT("fenv_decay", 150), EXACT("fenv_sustain", 0)),
+    "chord": synth_chord(0.1, 9, 1.0, 0.08, 9, 1.01) + env(300, 800, 0.8, 1500) + (EXACT("cutoff", 700),
+                                                                                  SET("reverb", 0.5))},
+    note="Sweet Dreams: the harp is the bass sequence, an octave down; the chords a dark pad")
+add("stranger things", "sound", "the Stranger Things theme", hue=0, moves={
+    "harp": synth_harp(9) + env(1, 350, 0.1, 400) + (EXACT("cutoff", 500), EXACT("resonance", 2.0),
+                                                     EXACT("filter_sens", 2.0), EXACT("fenv_decay", 300),
+                                                     EXACT("fenv_sustain", 0.1)) + DELAY_READY + (SET("delay_mix", 0.25),
+                                                                                                 SET("reverb", 0.5)),
+    "chord": synth_chord(0.1, 9, 1.0, 0.1, 9, 1.01, 0.06, 9, 0.5) + env(400, 1000, 0.8, 2500) + (
+        EXACT("cutoff", 600), SET("reverb", 0.6), EXACT("ensemble", 30))},
+    note="Stranger Things: the harp is the arpeggio; strum it slowly up and down")
+add("juno, juno 60, juno 106, juno60, juno106", "sound", "Juno", home="chord", hue=180, moves={
+    "chord": synth_chord(0.12, 4, 1.0, 0.08, 9, 1.0) + (EXACT("ensemble", 70), EXACT("cutoff", 1500))})
+add("prophet, prophet 5, prophet5", "sound", "Prophet-5", home="chord", hue=20, moves={
+    "chord": synth_chord(0.12, 9, 1.0, 0.1, 4, 1.01) + env(80, 800, 0.8, 1200) + (EXACT("cutoff", 1200),
+                                                                                  EXACT("resonance", 1.3))})
+add("theremin, theremins", "sound", "theremin", home="chord", hue=160, moves={
+    "chord": synth_chord(0.15, 0, 1.0) + MONO + env(150, 300, 1.0, 400) + (EXACT("glide", 250), SET("vib_amount", 0.12),
+                                                                         EXACT("vib_freq", 5)) + VIBRATO_READY,
+    "harp": synth_harp(0) + env(100, 300, 1.0, 400) + (SET("vib_amount", 0.12), EXACT("vib_freq", 5))},
+    note="theremin: the chords play one voice that glides; the harp can't glide")
+add("harmonica, harmonicas, blues harp, mouth organ", "sound", "harmonica", hue=20, moves={
+    "chord": synth_chord(0.12, 5, 1.0, 0.08, 4, 1.0) + env(20, 200, 0.9, 100) + (SET("vib_amount", 0.06),
+                                                                              EXACT("vib_freq", 5)) + VIBRATO_READY,
+    "harp": synth_harp(5) + env(15, 200, 0.9, 100) + (SET("vib_amount", 0.06), EXACT("vib_freq", 5))})
+add("steel drum, steel drums, steel pan, steelpan, steel band", "sound", "steel drum", home="harp", hue=50, moves={
+    "harp": synth_harp(3) + env(1, 700, 0.0, 600) + (EXACT("transient", 0.25), EXACT("cutoff", 1500)),
+    "chord": synth_chord(0.12, 3, 1.0, 0.05, 0, 2.0) + env(1, 700, 0.0, 600)})
+add("toy piano, toy pianos, kids piano", "sound", "toy piano", home="harp", hue=330, moves={
+    "harp": synth_harp(0) + env(1, 500, 0.0, 400) + (EXACT("transient", 0.3), ADD("octave", 1)),
+    "chord": synth_chord(0.12, 0, 1.0, 0.06, 3, 2.0) + env(1, 500, 0.0, 400) + (ADD("octave", 1),)})
+add("calliope, carousel, circus organ, fairground organ, merry go round", "sound", "calliope", hue=50, moves={
+    "chord": synth_chord(0.15, 0, 1.0, 0.1, 0, 2.0, 0.06, 3, 0.5) + env(5, 100, 1.0, 80) + (
+        EXACT("cutoff", 4000), SET("vib_amount", 0.1), EXACT("vib_freq", 6)) + VIBRATO_READY,
+    "harp": synth_harp(0) + env(5, 100, 1.0, 80) + (SET("vib_amount", 0.1), EXACT("vib_freq", 6), ADD("octave", 1))})
+add("stylophone", "sound", "Stylophone", hue=90, moves={
+    "chord": synth_chord(0.12, 11, 1.0) + MONO + env(1, 100, 1.0, 30) + (EXACT("reverb", 0.05), EXACT("cutoff", 3000)),
+    "harp": synth_harp(11) + env(1, 100, 1.0, 30) + (EXACT("reverb", 0.05),)})
+add("synth strings, string synth, strings synth", "sound", "synth strings", home="chord", hue=200, moves={
+    "chord": synth_chord(0.1, 9, 1.0, 0.08, 9, 1.01) + env(250, 800, 0.85, 1200) + (EXACT("ensemble", 70),
+                                                                                    EXACT("cutoff", 1600)),
+    "harp": synth_harp(9) + env(150, 600, 0.8, 1000)})
+add("orchestra hit, orchestra hits, orch hit, orchestral hit", "sound", "orchestra hit", home="chord", hue=10, moves={
+    "chord": (EXACT("voice", 4),) + env(1, 300, 0.0, 300) + (EXACT("cutoff", 4000), SET("crunch", 0.1), SET("reverb", 0.4)),
+    "harp": (EXACT("voice", 4),) + env(1, 300, 0.0, 300) + (EXACT("cutoff", 4000),)})
+add("twin peaks, laura palmer, badalamenti, angelo badalamenti, david lynch", "sound",
+    "Twin Peaks (Ben's Twin Green preset)", base="Twin Green", hue=120)
+
 # Qualities: they move the sound some way, by more with "very", by less with "slightly"
 add("bright, brighter, brightest, brilliant, crisp, crisper, crispy, sparkly, sparkling, shiny, shinier, clear, "
     "clearer, open, opened", "quality", "brighter", opposite="darker", hue=55,
@@ -249,7 +396,7 @@ add("lofi, lo fi, dusty, vintage, tape, cassette, worn, nostalgic, old school, w
            "harp": (SET("vib_amount", 0.06), EXACT("vib_freq", 0.6), SCALE("cutoff", 0.6), SET("crunch", 0.1))})
 add("glitch, glitchy, random, chaotic, stuttering, stutter, sample and hold", "quality", "glitchy", home="chord",
     hue=300, moves={"chord": (EXACT("lfo_wave", 7), EXACT("lfo_freq", 8), SET("lfo_amount", 0.5), MIN("filter_sens", 1.0))})
-add("wah, wobble, wobbles, wub, wubs, dubstep, filter sweep, sweeping, swirling, swirly", "quality",
+add("wah, wobble, wobbles, wub, wubs, dubstep, filter wobble, filter sweep, sweeping, swirling, swirly", "quality",
     "filter wobble", home="chord", hue=120,
     moves={"chord": (EXACT("lfo_wave", 0), IFZERO("lfo_freq", 2), SET("lfo_amount", 0.6), MIN("filter_sens", 1.5))})
 add("metallic, metal, clangy, clanging, steel, tinny", "quality", "metallic", hue=200,
@@ -558,7 +705,10 @@ def selectors():
 
 
 def normalise(text):
-    t = text.lower().replace("’", "'").replace("&", " and ").replace("+", " plus ")
+    t = "".join(c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c))
+    t = t.lower().replace("’", "'")
+    t = re.sub(r"\b((?:[a-z]\.){2,})", lambda m: m.group(1).replace(".", ""), t)   # r.e.m. is rem
+    t = re.sub(r"\b(mr|mrs|ms|dr|st|jr|vs)\.", r"\1", t)                         # mr. blue sky.replace("&", " and ").replace("+", " plus ")
     t = re.sub(r"(\d)\s*-\s*bit", r"\1 bit", t)
     t = re.sub(r"\b([a-g])\s*#", r"\1 sharp", t)
     t = re.sub(r"(?<=[a-z])-(?=[a-z])", " ", t)          # lo-fi, double-tap, touch-sensitive
@@ -579,6 +729,7 @@ class Result:
     notes: list = field(default_factory=list)
     base: str = None                                # a shared preset named as the starting point
     heard_as: list = field(default_factory=list)    # words taken as near ones it knows
+    problems: list = field(default_factory=list)    # words a song's recipe uses that aren't known
 
 
 class Interpreter:
@@ -768,6 +919,9 @@ class Interpreter:
             self.result.understood.append(f"{prefix}{word}{entry.label}")
             if entry.note:
                 self.result.notes.append(entry.note)
+        elif entry.kind == "song":
+            self._song(entry, section, negate, prefix)
+            return
         else:   # sound, setting
             if negate:
                 if entry.off is not None:
@@ -780,8 +934,48 @@ class Interpreter:
             self.result.understood.append(f"{prefix}{entry.label}")
             if entry.note:
                 self.result.notes.append(entry.note)
+            if entry.base:
+                if self.profile:
+                    self.result.notes.append(f"a profile can't start from a preset, so {entry.label} was left out")
+                else:
+                    self.result.base = entry.base
         if entry.hue is not None and self.hue is None:
             self.hue = entry.hue
+
+    def _song(self, entry, section, negate, prefix):
+        """A song is its recipe: descriptions of its chords and harp in these same words, each read with
+        its section held. Named for one section ("an Africa harp"), only that part is played."""
+        r = self.result
+        if negate:
+            r.notes.append(f'"not {entry.label}": nothing to undo there; left alone')
+            return
+        if entry.hue is not None and self.hue is None:
+            self.hue = entry.hue
+        marks = (len(r.understood), len(r.notes), list(r.unknown))
+        outer = (self.applied, self.forced, self.pending, self.void_next, self.last_value)
+        self.applied, self.pending, self.void_next = set(), [], False
+        used = []
+        for part, forced in (("both", None), ("chords", "chord"), ("harp", "harp")):
+            text = getattr(entry, part)
+            if not text or (forced and section in ("chord", "harp") and forced != section):
+                continue
+            self.forced = forced
+            used.append(f"{part if part != 'both' else ''}{': ' if part != 'both' else ''}{text}")
+            for clause in self._clauses(normalise(text)):
+                self._clause(clause)
+        r.problems += [(entry.label, w) for w in r.unknown if w not in marks[2]]
+        del r.understood[marks[0]:]
+        del r.notes[marks[1]:]
+        r.unknown = marks[2]
+        self.applied, self.forced, self.pending, self.void_next, self.last_value = outer
+        r.understood.append(f"{prefix}{entry.label} ({'; '.join(used)})")
+        if entry.note:
+            r.notes.append(entry.note)
+        if entry.base:
+            if self.profile:
+                r.notes.append(f"a profile can't start from a preset, so {entry.label} was left out")
+            else:
+                r.base = entry.base
 
     # ---- one control ----
 
@@ -911,6 +1105,7 @@ class Interpreter:
         self.pending = []
         self.void_next = False
         self.last_value = None
+        self.forced = None
         for clause in self._clauses(normalise(text)):
             self._clause(clause)
         color = self.color if self.color is not None else (None if self.profile else self.hue)
@@ -1090,7 +1285,7 @@ class Interpreter:
             if used[i]:
                 i += 1
                 continue
-            if toks[i] in COLORS:
+            if toks[i] in COLORS and not self._find(toks, i, self.phrases):
                 self.color = COLORS[toks[i]]
                 r.understood.append(f"bank color {toks[i]}")
                 used[i] = True
@@ -1309,6 +1504,8 @@ class Interpreter:
     def _section_for(self, i, anchors, entry):
         if entry.home == "global":
             return "global"
+        if self.forced:
+            return self.forced
         near = [a for a in anchors if abs(a[0] - i) <= 4]
         if near:
             return min(near, key=lambda a: (abs(a[0] - i), -(a[0] > i)))[1]
@@ -1344,7 +1541,7 @@ class Interpreter:
     def fix_spelling(self, text):
         """Words close to ones it knows (a typo, or a mishearing) are taken as those, and reported"""
         out = []
-        for t in re.findall(r"[A-Za-z][A-Za-z']*|[^A-Za-z]+", text):
+        for t in re.findall(r"[A-Za-z0-9][A-Za-z0-9']*|[^A-Za-z0-9]+", text):
             w = t.lower()
             if w.isalpha() and len(w) >= 5 and w not in self.known and w not in STOPWORDS:
                 close = difflib.get_close_matches(w, [k for k in self.known if len(k) >= 4], n=1, cutoff=0.84)
@@ -1374,6 +1571,11 @@ def print_vocabulary():
             if e.kind == kind:
                 print(f"  {e.label}: {', '.join(e.words)}")
         print()
+    songs = [e for e in V if e.kind == "song"]
+    print(f"Songs ({len(songs)}; say the title, or the title and artist):")
+    for e in songs:
+        print(f"  {e.label}")
+    print()
     print("Colours: " + ", ".join(COLORS))
     print("Also: 120 bpm, tuned to 432 hz, key of E flat, in A minor, transpose up 2")
     print("\nControls: the mod knob, the modifier with the mod knob, the chord knob, the harp knob, hover, double tap.")
@@ -1397,7 +1599,8 @@ def export_data(params, version):
                    for a, p in params.items()},
         "selectors": sorted(selectors()),
         "vocabulary": [{"words": list(e.words), "kind": e.kind, "label": e.label, "moves": moves(e.moves),
-                        "off": moves(e.off), "opposite": e.opposite, "home": e.home, "hue": e.hue, "note": e.note}
+                        "off": moves(e.off), "opposite": e.opposite, "home": e.home, "hue": e.hue, "note": e.note,
+                        "base": e.base, "chords": e.chords, "harp": e.harp, "both": e.both}
                        for e in V],
         "roles": ROLES, "controls": [list(c) for c in CONTROLS], "knob_addresses": KNOB_ADDRESSES,
         "control_names": CONTROL_NAMES, "tap_pairs": [list(p) for p in TAP_PAIRS], "targets": TARGETS,
@@ -1409,3 +1612,31 @@ def export_data(params, version):
         "action_verbs": sorted(ACTION_VERBS), "stopwords": sorted(STOPWORDS), "number_words": _NUMBER_WORDS,
         "colors": COLORS, "not_in_presets": sorted(NOT_IN_PRESETS),
     }
+
+
+# ---- songs ----
+# songs.json: one line a song, its chords and harp described in these same words, so the list grows
+# without code. A title of one word ("Jump") needs its artist, or "alone": true, so it can't fire on
+# an ordinary word.
+SONGS_JSON = os.path.join(HERE, "songs.json")
+
+
+def load_songs():
+    try:
+        with open(SONGS_JSON) as f:
+            songs = json.load(f)
+    except FileNotFoundError:
+        return
+    for song in songs:
+        title, by = song["song"].replace(".", ""), song.get("by", "").replace(".", "")
+        artists = [by] + ([by[4:]] if by.lower().startswith("the ") else []) if by else []
+        words = [title] if (len(tokens(normalise(title))) >= 2 or song.get("alone")) and not song.get("no_title") else []
+        for b in artists:
+            words += [f"{title} by {b}", f"{b} {title}"]
+        words += song.get("words", [])
+        V.append(Entry(tuple(words), "song", f"{title} ({by})" if by else title, hue=song.get("hue"),
+                       note=song.get("note"), base=song.get("base"), chords=song.get("chords"),
+                       harp=song.get("harp"), both=song.get("both")))
+
+
+load_songs()

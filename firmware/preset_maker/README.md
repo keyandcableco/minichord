@@ -31,9 +31,33 @@ What it understands (`--words` lists everything):
 - **Settings:** pentatonic or blues harp, chromatic, jazzy (Barry Harris), voice leading, sus chords, voicings, temperaments and EDOs, octave up or down, key of E flat, 120 bpm, tuned to 432 Hz, and a colour name for the bank LED.
 - **Controls:** "the mod knob opens the filter", "holding the modifier the mod knob adds vibrato", "hover makes the chords sing", "double tap starts the looper and adds the crunch".
 
+- **Songs:** about 180 of them (see below).
+
 A word goes to the chords or the harp according to which one is named next to it ("plucky harp", "dark chords"). Otherwise it goes where it usually belongs, or to both. Words it doesn't know are listed back to you, not guessed at, and near-misses ("brigter", a mishearing) are taken as the word they're close to and reported. Without `--base`, or a shared preset named in the description ("like Neon Sunset"), it starts from a plain synth.
 
 `--claude` uses Claude over the internet instead of the rules. It understands any wording, but needs an API key and costs a few cents a preset.
+
+## Songs
+
+Name a song and it sets the chords and harp to the closest the minichord gets. Examples: "Jump by Van Halen", "Africa", "a Herbie Hancock Chameleon bass", "Blade Runner", "the Halloween theme". Say a song for one section to take only that part, as in "Van Halen chords with an Africa harp". Add words to tune it, as in "Twin Peaks but darker" or "Purple Rain with less reverb". `--words` lists every song it knows.
+
+Most songs live in `songs.json`, one line each, with the chords and harp described in the same words a description uses:
+
+```json
+{"song": "Don't You Want Me", "by": "The Human League", "chords": "OB-Xa, punchy", "harp": "synth pluck, bright"}
+```
+
+That line answers to "Don't You Want Me", "Don't You Want Me by The Human League" and "Human League Don't You Want Me". A one-word title ("Clocks") also needs its artist, unless the line says `"alone": true`, so an ordinary word can't trigger a song. Other options:
+
+- `"words"`: more names for the song ("miami vice").
+- `"note"`: a tip shown with it.
+- `"base"`: a shared preset to start from.
+- `"both"`: a description that applies to both sections.
+- `"no_title"`: answer only to `words`.
+
+The songs are approximations, built from the minichord's own oscillators, filters and samples. Tune them by ear.
+
+After editing the list, run `parity_test.py`. It checks that every song is found by its name, that every recipe uses only known words, and that no name is taken twice. Then export the data for minicontrol (below).
 
 ## Bulk edit profiles
 
