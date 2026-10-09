@@ -1295,6 +1295,27 @@ void harp_vibrato_settle() {
   envelope_string_vibrato_dc.noteOff();
 }
 
+// A string whose envelopes are done rests: its oscillator and transient oscillator go to amplitude 0
+// (keeping their phase, sending nothing), so the chain after them goes idle; they ran on every block for
+// the envelopes to mute. A pluck wakes it (handle_harp). The string level (41) and transient level (101)
+// written while a string rests would wake its oscillators again, so every 100 ms the resting ones are
+// put back to 0.
+bool string_resting[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
+void harp_strings_settle() {
+  static elapsedMillis since_reassert;
+  bool reassert = since_reassert >= 100;
+  if (reassert) since_reassert = 0;
+  for (uint8_t i = 0; i < 12; i++) {
+    if (string_resting[i]) {
+      if (reassert) { string_waveform_array[i]->amplitude(0); string_transient_waveform_array[i]->amplitude(0); }
+    } else if (!string_enveloppe_array[i]->isActive() && !string_transient_envelope_array[i]->isActive()) {
+      string_resting[i] = true;
+      string_waveform_array[i]->amplitude(0);
+      string_transient_waveform_array[i]->amplitude(0);
+    }
+  }
+}
+
 void handle_harp() {
   harp_sensor.update(harp_array);
   for (int i = 0; i < 12; i++) {
@@ -1302,6 +1323,11 @@ void handle_harp() {
     if (value == 2) {
       set_harp_voice_frequency(i, current_harp_notes[i]);
       AudioNoInterrupts();
+      if (string_resting[i]) {   // its oscillators back before the envelope opens (harp_strings_settle)
+        string_resting[i] = false;
+        string_waveform_array[i]->amplitude(current_sysex_parameters[41] / 100.0);
+        string_transient_waveform_array[i]->amplitude(current_sysex_parameters[101] / 100.0);
+      }
       envelope_string_vibrato_lfo.noteOn();
       envelope_string_vibrato_dc.noteOn();
       string_enveloppe_filter_array[i]->noteOn();
@@ -1585,6 +1611,7 @@ void loop() {
     processMIDI();
   }
   harp_vibrato_settle();
+  harp_strings_settle();
   // Check sysex controller connection
   if (sysex_controler_connected && bitRead(USB1_PORTSC1, 7)) {
     sysex_controler_connected = false;
