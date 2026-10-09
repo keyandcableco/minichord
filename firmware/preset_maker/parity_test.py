@@ -61,6 +61,7 @@ SENTENCES = [
     "waltz rhythm at 100 bpm", "tempo 100 bpm with a waltz rhythm", "tempo 120", "just intonation",
     "meantone tuning", "the Stranger Things theme", "slow vibrato and a long tail", "fast vibrato on the harp",
     "mod knob to the delay mix", "the harp knob does the reverb mix", "short tail, kirnberger tuning",
+    "like Ice Cream, darker", "Mr. Blue Sky", "Digital Love chords with a Do You Feel Like We Do harp",
 ]
 # every song in the list, by its first name, as a preset and a profile
 SENTENCES += [e.words[0] for e in interpret.V if e.kind == "song"]

@@ -1829,8 +1829,13 @@ def load_songs():
         for b in artists:
             words += [f"{title} by {b}", f"{b} {title}"]
         words += song.get("words", [])
+        note = song.get("note")
+        recipe = " ".join(song.get(k) or "" for k in ("chords", "harp", "both")).lower()
+        if "vocoder" in recipe or "talk box" in recipe:   # a recipe's own notes aren't shown, so say it here
+            note = (note + "; " if note else "") + ("this one talks: the vocoder needs a voice coming in over USB "
+                                                    "(usb audio set to 0 or 1 in minicontrol)")
         V.append(Entry(tuple(words), "song", f"{title} ({by})" if by else title, hue=song.get("hue"),
-                       note=song.get("note"), base=song.get("base"), chords=song.get("chords"),
+                       note=note, base=song.get("base"), chords=song.get("chords"),
                        harp=song.get("harp"), both=song.get("both")))
 
 
