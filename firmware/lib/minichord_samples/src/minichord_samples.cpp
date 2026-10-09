@@ -2962,7 +2962,7 @@ static const AudioSynthWavetable::sample_data piano_samples[4] = {
   {sample_piano_42, true, 15, 708.224574f, 2312634368, 2312110080, 722599936, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
   {sample_piano_54, true, 15, 354.112287f, 2312634368, 2312110080, 722599936, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
   {sample_piano_66, true, 15, 177.056143f, 2312634368, 2312110080, 722599936, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
-  {sample_piano_78, true, 15, 88.5280717f, 2312634368, 2312110080, 722599936, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
+  {sample_piano_78, true, 15, 88.2014067f, 2312634368, 2312110080, 722599936, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
 };
 static const uint8_t piano_ranges[] = {48, 60, 72, 127};
 const AudioSynthWavetable::instrument_data piano_instrument = {4, piano_ranges, piano_samples};
@@ -6199,9 +6199,9 @@ PROGMEM const int16_t sample_pizzicato_82[15433] __attribute__((aligned(4))) = {
 static const AudioSynthWavetable::sample_data pizzicato_samples[5] = {
   {sample_pizzicato_40, false, 14, 1589.91041f, 4045930496, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
   {sample_pizzicato_50, false, 14, 892.307049f, 4045930496, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
-  {sample_pizzicato_60, false, 14, 500.790399f, 4045930496, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
+  {sample_pizzicato_60, false, 14, 504.419333f, 4045930496, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
   {sample_pizzicato_70, false, 14, 281.059108f, 4013424640, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
-  {sample_pizzicato_82, false, 14, 140.529554f, 4045406208, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
+  {sample_pizzicato_82, false, 14, 140.968573f, 4045406208, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
 };
 static const uint8_t pizzicato_ranges[] = {45, 55, 65, 76, 127};
 const AudioSynthWavetable::instrument_data pizzicato_instrument = {5, pizzicato_ranges, pizzicato_samples};
@@ -9157,8 +9157,8 @@ PROGMEM const int16_t sample_choir_76[17605] __attribute__((aligned(4))) = {
 static const AudioSynthWavetable::sample_data choir_samples[4] = {
   {sample_choir_44, true, 15, 457.836818f, 2307391488, 2306867200, 1048576000, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
   {sample_choir_54, true, 15, 256.952226f, 2307391488, 2306867200, 1048576000, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
-  {sample_choir_64, true, 15, 144.209561f, 2307391488, 2306867200, 1048576000, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
-  {sample_choir_76, true, 15, 72.1047806f, 2307391488, 2306867200, 1048576000, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
+  {sample_choir_64, true, 15, 145.262954f, 2307391488, 2306867200, 1048576000, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
+  {sample_choir_76, true, 15, 72.8920553f, 2307391488, 2306867200, 1048576000, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
 };
 static const uint8_t choir_ranges[] = {49, 59, 70, 127};
 const AudioSynthWavetable::instrument_data choir_instrument = {4, choir_ranges, choir_samples};
@@ -12516,7 +12516,7 @@ PROGMEM const int16_t sample_strings_82[16005] __attribute__((aligned(4))) = {
 static const AudioSynthWavetable::sample_data strings_samples[5] = {
   {sample_strings_40, true, 14, 1153.67649f, 4195352576, 4194304000, 2097152000, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
   {sample_strings_50, true, 14, 647.479038f, 4195352576, 4194304000, 2097152000, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
-  {sample_strings_60, true, 14, 363.385323f, 4195352576, 4194304000, 2097152000, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
+  {sample_strings_60, true, 14, 362.75617f, 4195352576, 4194304000, 2097152000, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
   {sample_strings_70, true, 14, 203.943117f, 4195352576, 4194304000, 2097152000, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
   {sample_strings_82, true, 14, 101.971559f, 4195352576, 4194304000, 2097152000, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
 };
