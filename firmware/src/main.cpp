@@ -742,7 +742,7 @@ AudioEffectEnvelopeRetrigger *string_enveloppe_array[12] = {&envelope_string_1, 
 AudioEffectEnvelopeRetrigger *string_enveloppe_filter_array[12] = {&envelope_filter_1, &envelope_filter_2, &envelope_filter_3, &envelope_filter_4, &envelope_filter_5, &envelope_filter_6, &envelope_filter_7, &envelope_filter_8, &envelope_filter_9, &envelope_filter_10, &envelope_filter_11, &envelope_filter_12};
 AudioMixer4Lean *string_mixer_array[3] = {&string_mix_1, &string_mix_2, &string_mix_3};
 AudioMixer4Lean *string_mixer_r_array[3] = {&string_mix_1_r, &string_mix_2_r, &string_mix_3_r};   // the right side (see STEREO STRINGS)
-AudioFilterStateVariable *string_filter_array[12] = {&filter_string_1, &filter_string_2, &filter_string_3, &filter_string_4, &filter_string_5, &filter_string_6, &filter_string_7, &filter_string_8, &filter_string_9, &filter_string_10, &filter_string_11, &filter_string_12};
+AudioFilterStateVariableLean *string_filter_array[12] = {&filter_string_1, &filter_string_2, &filter_string_3, &filter_string_4, &filter_string_5, &filter_string_6, &filter_string_7, &filter_string_8, &filter_string_9, &filter_string_10, &filter_string_11, &filter_string_12};
 AudioSynthWaveform *string_transient_waveform_array[12] = {&waveform_transient_1, &waveform_transient_2, &waveform_transient_3, &waveform_transient_4, &waveform_transient_5, &waveform_transient_6, &waveform_transient_7, &waveform_transient_8, &waveform_transient_9, &waveform_transient_10, &waveform_transient_11, &waveform_transient_12};
 AudioEffectEnvelopeRetrigger *string_transient_envelope_array[12] = {&envelope_transient_1, &envelope_transient_2, &envelope_transient_3, &envelope_transient_4, &envelope_transient_5, &envelope_transient_6, &envelope_transient_7, &envelope_transient_8, &envelope_transient_9, &envelope_transient_10, &envelope_transient_11, &envelope_transient_12};
 AudioMixer4Lean *transient_mixer_array[3] = {&transient_mix_1, &transient_mix_2, &transient_mix_3};
@@ -756,7 +756,7 @@ AudioSynthWaveformModulated *chord_osc_3_array[4] = {&voice1_osc3, &voice2_osc3,
 AudioSynthWaveformDc *chord_freq_dc_array[4]= {&voice1_frequency_dc, &voice2_frequency_dc, &voice3_frequency_dc, &voice4_frequency_dc};
 AudioSynthNoiseWhite *chord_noise_array[4] = {&voice1_noise, &voice2_noise, &voice3_noise, &voice4_noise};
 AudioMixer4Lean *chord_voice_mixer_array[4] = {&voice1_mixer, &voice2_mixer, &voice3_mixer, &voice4_mixer};
-AudioFilterStateVariable *chord_voice_filter_array[4] = {&voice1_filter, &voice2_filter, &voice3_filter, &voice4_filter};
+AudioFilterStateVariableLean *chord_voice_filter_array[4] = {&voice1_filter, &voice2_filter, &voice3_filter, &voice4_filter};
 AudioEffectEnvelopeRetrigger *chord_envelope_filter_array[4] = {&voice1_envelope_filter, &voice2_envelope_filter, &voice3_envelope_filter, &voice4_envelope_filter};
 AudioEffectMultiply *chord_tremolo_mult_array[4] = {&voice1_tremolo_mult, &voice2_tremolo_mult, &voice3_tremolo_mult, &voice4_tremolo_mult};
 AudioEffectEnvelopeRetrigger *chord_envelope_array[4] = {&voice1_envelope, &voice2_envelope, &voice3_envelope, &voice4_envelope};
@@ -4278,6 +4278,9 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   // at spread 0 the right chain's mixers are all at 0 and send nothing, so the chain rests
   for (uint8_t k = 0; k < 3; k++) string_mixer_r_array[k]->silent_when_muted(true);
   all_string_mix_r.silent_when_muted(true);
+  // the strings' and the chord voices' own filters: only their low pass goes anywhere
+  for (uint8_t k = 0; k < 12; k++) string_filter_array[k]->lowpass_only(true);
+  for (uint8_t k = 0; k < 4; k++) chord_voice_filter_array[k]->lowpass_only(true);
   apply_string_spreads();             // each string's share of the two sides
   // the ensemble: about 10 ms swept by 3, at a different rate a side
   chord_ensemble_l.begin(chord_ensemble_line_l, 2048, 441, 132, 0.53);

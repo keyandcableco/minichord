@@ -1,5 +1,6 @@
 #include <Audio.h>
 #include "envelope_retrigger.h"   // AudioEffectEnvelope, keeping a noteOff that comes during the retrigger fade (envelope_retrigger.h)
+#include "lean_filter.h"   // AudioFilterStateVariable's sums, the corner once a block while its control holds still (lean_filter.h)
 #include "lean_mixer.h"   // AudioMixer4's arithmetic, without the work on inputs at gain 0 (lean_mixer.h)
 #include <Wire.h>
 #include <SPI.h>
@@ -151,18 +152,18 @@ AudioSynthNoiseWhite     voice1_noise;   //xy=1141.1000061035156,1608.9999923706
 AudioSynthWaveformModulated voice1_osc3;    //xy=1146.1000061035156,1572.9999923706055
 AudioSynthWaveformModulated voice1_osc1;    //xy=1147.1000061035156,1502.9999923706055
 AudioSynthWaveformModulated voice1_osc2;    //xy=1147.1000061035156,1537.9999923706055
-AudioFilterStateVariable filter_string_4; //xy=1240.1000061035156,1068.9999923706055
-AudioFilterStateVariable filter_string_5; //xy=1240.1000061035156,1114.9999923706055
-AudioFilterStateVariable filter_string_1; //xy=1241.1000061035156,933.9999923706055
-AudioFilterStateVariable filter_string_7; //xy=1240.1000061035156,1206.9999923706055
-AudioFilterStateVariable filter_string_2; //xy=1241.1000061035156,978.9999923706055
-AudioFilterStateVariable filter_string_8; //xy=1241.1000061035156,1253.9999923706055
-AudioFilterStateVariable filter_string_3; //xy=1242.1000061035156,1023.9999923706055
-AudioFilterStateVariable filter_string_6; //xy=1243.1000061035156,1163.9999923706055
-AudioFilterStateVariable filter_string_9; //xy=1243.1000061035156,1298.9999923706055
-AudioFilterStateVariable filter_string_11; //xy=1244.1000061035156,1390.9999923706055
-AudioFilterStateVariable filter_string_12; //xy=1244.1000061035156,1436.9999923706055
-AudioFilterStateVariable filter_string_10; //xy=1245.1000061035156,1343.9999923706055
+AudioFilterStateVariableLean     filter_string_4; //xy=1240.1000061035156,1068.9999923706055
+AudioFilterStateVariableLean     filter_string_5; //xy=1240.1000061035156,1114.9999923706055
+AudioFilterStateVariableLean     filter_string_1; //xy=1241.1000061035156,933.9999923706055
+AudioFilterStateVariableLean     filter_string_7; //xy=1240.1000061035156,1206.9999923706055
+AudioFilterStateVariableLean     filter_string_2; //xy=1241.1000061035156,978.9999923706055
+AudioFilterStateVariableLean     filter_string_8; //xy=1241.1000061035156,1253.9999923706055
+AudioFilterStateVariableLean     filter_string_3; //xy=1242.1000061035156,1023.9999923706055
+AudioFilterStateVariableLean     filter_string_6; //xy=1243.1000061035156,1163.9999923706055
+AudioFilterStateVariableLean     filter_string_9; //xy=1243.1000061035156,1298.9999923706055
+AudioFilterStateVariableLean     filter_string_11; //xy=1244.1000061035156,1390.9999923706055
+AudioFilterStateVariableLean     filter_string_12; //xy=1244.1000061035156,1436.9999923706055
+AudioFilterStateVariableLean     filter_string_10; //xy=1245.1000061035156,1343.9999923706055
 AudioMixer4Lean              transient_mix_2; //xy=1272.1000061035156,272.99999237060547
 AudioMixer4Lean              transient_mix_1; //xy=1273.1000061035156,175.99999237060547
 AudioMixer4Lean              transient_mix_3; //xy=1278.1000061035156,374.99999237060547
@@ -189,10 +190,10 @@ AudioMixer4Lean              string_mix_3;   //xy=1498.1000061035156,1326.999992
 AudioMixer4Lean              string_mix_1;   //xy=1501.1000061035156,1014.9999923706055
 AudioMixer4Lean              string_mix_2;   //xy=1515.1000061035156,1143.9999923706055
 AudioSynthWaveform       chords_tremolo_lfo; //xy=1580.1000061035156,1694.9999923706055
-AudioFilterStateVariable voice4_filter;  //xy=1613.1000061035156,2358.9999923706055
-AudioFilterStateVariable voice2_filter;  //xy=1621.1000061035156,1811.9999923706055
-AudioFilterStateVariable voice3_filter;  //xy=1620.1000061035156,2087.9999923706055
-AudioFilterStateVariable voice1_filter;  //xy=1642.1000061035156,1543.9999923706055
+AudioFilterStateVariableLean     voice4_filter;  //xy=1613.1000061035156,2358.9999923706055
+AudioFilterStateVariableLean     voice2_filter;  //xy=1621.1000061035156,1811.9999923706055
+AudioFilterStateVariableLean     voice3_filter;  //xy=1620.1000061035156,2087.9999923706055
+AudioFilterStateVariableLean     voice1_filter;  //xy=1642.1000061035156,1543.9999923706055
 AudioMixer4Lean              all_string_mix; //xy=1715.1000061035156,1143.9999923706055
 AudioMixer4Lean              vocoder_string_return;   // the harp, dry, and vocoded when it carries the vocoder (see VOCODER)
 AudioEffectEnvelopeRetrigger      voice1_envelope; //xy=1798.1000061035156,1694.9999923706055
