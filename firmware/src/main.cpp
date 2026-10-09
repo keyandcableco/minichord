@@ -1968,7 +1968,7 @@ float string_filter_freq(uint8_t i) {
 void apply_string_firmness(uint8_t i) {
   float gain = powf(10.0f, -1.2f * string_softness(i));
   AudioNoInterrupts();
-  string_waveform_array[i]->amplitude(string_level * gain);
+  string_waveform_array[i]->amplitude(harp_voice_source ? 0 : string_level * gain);   // a sample in its place: silent (set_harp_source)
   string_pluck_array[i]->amplitude(string_level * gain);
   harp_sample_array[i]->amplitude(fminf(1, string_level * gain * harp_sample_level));
   string_transient_waveform_array[i]->amplitude(transient_level * gain);
@@ -2048,6 +2048,10 @@ void apply_chord_voice_level(uint8_t i) {
 }
 
 //>>SAMPLES<<
+// A sampled instrument's voices silence their oscillators (and the chords' noise) while it is
+// selected, rather than leaving them running into a mixer input at 0: an oscillator at amplitude
+// 0 keeps its phase but makes no waveform and sends nothing.
+//
 // A section's voices can sound a sampled instrument in place of their oscillators (harp voice,
 // chord voice): piano, pizzicato strings, choir or a string quartet (lib/minichord_samples, made
 // by generator/samples.py). The sample runs through the voice's own envelope, filter and level, so
@@ -2072,6 +2076,7 @@ void set_harp_source(uint8_t source) {
     if (instrument) harp_sample_array[i]->setInstrument(*instrument);
     harp_source_mix_array[i]->gain(0, instrument ? 0 : 1);
     harp_source_mix_array[i]->gain(1, instrument ? 1 : 0);
+    apply_string_firmness(i);   // the oscillator silent while a sample sounds in its place
   }
 }
 
@@ -2083,6 +2088,12 @@ void set_chord_source(uint8_t source) {
     if (instrument) chord_sample_array[i]->setInstrument(*instrument);
     chord_source_mix_array[i]->gain(0, instrument ? 0 : 1);
     chord_source_mix_array[i]->gain(1, instrument ? 1 : 0);
+    // the voice's oscillators and noise silent while a sample sounds in their place, as their
+    // own settings (121, 124, 127) have them otherwise
+    chord_osc_1_array[i]->amplitude(instrument ? 0 : current_sysex_parameters[121] / 100.0);
+    chord_osc_2_array[i]->amplitude(instrument ? 0 : current_sysex_parameters[124] / 100.0);
+    chord_osc_3_array[i]->amplitude(instrument ? 0 : current_sysex_parameters[127] / 100.0);
+    chord_noise_array[i]->amplitude(instrument ? 0 : 0.5);
   }
 }
 
