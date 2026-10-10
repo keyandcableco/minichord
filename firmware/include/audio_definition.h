@@ -1,6 +1,7 @@
 #include <Audio.h>
 #include "lean_filter.h"   // AudioFilterStateVariable's sums, the corner once a block while its control holds still (lean_filter.h)
 #include "lean_mixer.h"   // AudioMixer4's arithmetic, without the work on inputs at gain 0 (lean_mixer.h)
+#include "metronome_click.h"   // the looper's click, silent between ticks (metronome_click.h)
 #include "envelope_retrigger.h"   // AudioEffectEnvelope, keeping a noteOff that comes during the retrigger fade (envelope_retrigger.h)
 #include <Wire.h>
 #include <SPI.h>
@@ -573,6 +574,9 @@ AudioEffectPlateReverb   main_reverb;
 AudioMixer4Lean              stereo_l_mixer;        
 AudioMixer4Lean              stereo_r_mixer;   
 AudioOutputI2S           DAC_out;
+// The looper's click (looper click, 285): into what goes to the speaker and headphones, after the
+// USB recording tap, so a recording never has it
+AudioSynthClick          looper_click_tick;
 #ifdef AUDIO_INTERFACE
 AudioOutputUSB           USB_out;
 // What the host plays to the minichord, into the speaker and headphones when the usb audio setting
@@ -621,6 +625,8 @@ AudioConnection          patchCord2022(main_reverb, 1, stereo_l_mixer, 2);
 #ifndef AUDIO_INTERFACE
 AudioConnection          patchCord2023(stereo_l_mixer, 0, DAC_out, 1);
 AudioConnection          patchCord2024(stereo_r_mixer, 0, DAC_out, 0);
+AudioConnection          clickCord1(looper_click_tick, 0, stereo_l_mixer, 3);
+AudioConnection          clickCord2(looper_click_tick, 0, stereo_r_mixer, 3);
 #endif
 
 // USB audio recording tap; absent when the USB type has no audio interfaces.
@@ -635,6 +641,8 @@ AudioConnection          patchCord2027(USB_in, 1, DAC_l_mixer, 1);
 AudioConnection          patchCord2028(USB_in, 0, DAC_r_mixer, 1);
 AudioConnection          patchCord2029(DAC_l_mixer, 0, DAC_out, 1);
 AudioConnection          patchCord2030(DAC_r_mixer, 0, DAC_out, 0);
+AudioConnection          clickCord1(looper_click_tick, 0, DAC_l_mixer, 2);
+AudioConnection          clickCord2(looper_click_tick, 0, DAC_r_mixer, 2);
 #endif
 
 // the right side of the strings' chain (see STEREO STRINGS), cord for cord the left's
