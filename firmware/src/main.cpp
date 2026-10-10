@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=42; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280)
+int version_ID=43; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -859,6 +859,11 @@ uint8_t acc_follow = 0;         // 0 plays on, 1 only while a chord is held, 2 t
 uint8_t acc_change = 0;         // a new chord comes in: 0 on the next note, 1 on the beat, 2 on the bar
 uint8_t acc_articulation = 100; // % of each written note's length
 uint8_t acc_accents = 100;      // % of the written difference between loud and soft notes
+// MIDI clock out (266): 0 off, 1 on port 1, 2 on port 2, 3 on both; see the clock in acc_tick
+uint8_t midi_clock_out = 0;
+volatile uint8_t midi_clock_started = 0;      // the ports a Start has gone to and no Stop since (bit 0 port 1, bit 1 port 2)
+volatile uint32_t midi_clock_heard_ms = 0;    // when a MIDI clock last came in, rhythm mode or not
+volatile bool midi_clock_heard = false;
 // The rhythm LED's flash: lit on the step or the beat (acc_step, acc_beat), let go by the loop 200 ms on
 // (rythm_led_settle), not by a timer of its own, so the rhythm holds one of the four timer channels
 // and not two, and nothing starts a timer from inside an interrupt
@@ -1030,6 +1035,7 @@ uint midi_buffer_delay=300; //in microseconds, helps compatibility with some har
 #define MIDI_EVT_CC 3
 #define MIDI_EVT_PRESSURE 4   // channel pressure, in velocity
 #define MIDI_EVT_POLY 5       // polyphonic aftertouch: note and pressure
+#define MIDI_EVT_REALTIME 6   // a system real-time message (clock, start, stop): its type in note
 struct midi_event_t {
   uint8_t note;      // note number, or controller number for a CC
   uint8_t velocity;  // velocity, or controller value for a CC
@@ -1142,6 +1148,7 @@ void drain_midi_queue() {
       case MIDI_EVT_CC:       usbMIDI.sendControlChange(e.note, e.velocity, e.channel, e.cable); break;
       case MIDI_EVT_PRESSURE: usbMIDI.sendAfterTouch(e.velocity, e.channel, e.cable); break;
       case MIDI_EVT_POLY:     usbMIDI.sendAfterTouchPoly(e.note, e.velocity, e.channel, e.cable); break;
+      case MIDI_EVT_REALTIME: usbMIDI.sendRealTime(e.note, e.cable); break;
     }
     sent = true;
   }
@@ -1406,6 +1413,7 @@ void acc_midi_stop();
 void acc_midi_clock();
 void acc_snapshot();
 void acc_settings_changed();
+void acc_clock_out_changed();
 uint8_t acc_held_mask();
 void stop_chord_voices(uint8_t mask);
 
@@ -1749,6 +1757,10 @@ void processMIDI(void) {
   }
   if(type==usbMIDI.Stop && rythm_mode){
     acc_midi_stop();
+  }
+  if(type==usbMIDI.Clock){   // the minichord keeps its own clock to itself while another is about
+    midi_clock_heard = true;
+    midi_clock_heard_ms = millis();
   }
   if(type==usbMIDI.Clock && rythm_mode){
     uint32_t us = last_midi_clock_in;
@@ -4345,6 +4357,54 @@ void acc_window(double t0, double t1) {
   }
 }
 
+// MIDI clock out (266): the rhythm's clock on to whatever is plugged in, so a drum machine or a
+// computer plays in time with the minichord. A tick goes out each time the rhythm passes a 24th
+// of a beat (acc_tick, from the same clock that plays the notes, so they stay together); a Start
+// comes just before the tick that begins a bar, so what follows starts its bar with ours; a Stop
+// when rhythm mode ends, the setting changes, or the pattern starts over from a press (and a Start
+// on its first tick). Nothing goes out while another clock is coming in, or has in the last
+// second: the minichord follows that one instead (see the clock in processMIDI), and two clocks
+// would fight.
+static inline bool midi_clock_out_free() {
+  return midi_clock_out && !rythm_clock_synced && !(midi_clock_heard && millis() - midi_clock_heard_ms < 1000);
+}
+
+static void midi_clock_send(uint8_t type, uint8_t ports) {
+  for (uint8_t cable = 0; cable < 2; cable++) {
+    if (ports & (1 << cable)) queue_midi_event(MIDI_EVT_REALTIME, type, 0, 0, 0, cable);
+  }
+}
+
+// a Stop to the ports a Start went to; from the timer, or the loop with it held off
+static void midi_clock_stop() {
+  if (!midi_clock_started) return;
+  midi_clock_send(usbMIDI.Stop, midi_clock_started);
+  midi_clock_started = 0;
+}
+
+// the ticks from t0 up to t1, before the notes there so a receiver has its tick when they arrive
+static void midi_clock_window(double t0, double t1) {
+  if (!midi_clock_out_free()) {
+    midi_clock_stop();
+    return;
+  }
+  uint16_t bar = ACC_BEAT * acc_styles[acc_style_index()].beats_per_bar;
+  for (int64_t t = (int64_t)ceil(t0); t < t1; t++) {
+    if (!midi_clock_started && t % bar == 0) {
+      midi_clock_started = midi_clock_out & 3;
+      midi_clock_send(usbMIDI.Start, midi_clock_started);
+    }
+    midi_clock_send(usbMIDI.Clock, midi_clock_out & 3);
+  }
+}
+
+// The setting changed: a Stop where the clock was going; it starts again on the next bar
+FLASHMEM void acc_clock_out_changed() {
+  noInterrupts();
+  midi_clock_stop();
+  interrupts();
+}
+
 // The rhythm timer, every millisecond
 void acc_tick() {
   uint32_t now = millis();
@@ -4363,6 +4423,7 @@ void acc_tick() {
   if (acc_restart) {
     acc_restart = false;
     acc_pos = 0;
+    midi_clock_stop();   // and a Start on the tick that begins it again
   }
   double step = rythm_bpm * ACC_BEAT / 60000.0;
   double t1 = acc_pos + step;
@@ -4373,6 +4434,7 @@ void acc_tick() {
     if (t1 <= acc_clock_pos) t1 = acc_clock_pos + 1e-6;
   }
   if (t1 <= acc_pos) return;
+  midi_clock_window(acc_pos, t1);
   acc_window(acc_pos, t1);
   acc_pos = t1;
 }
@@ -4403,6 +4465,7 @@ FLASHMEM void acc_end() {
   rythm_timer.end();
   rythm_timer_running = false;
   rythm_clock_synced = false;
+  midi_clock_stop();
   for (uint8_t v = 0; v < 4; v++) acc_voice[v].off_pending = false;
   for (uint8_t r = 0; r < ACC_ROLL_MAX; r++) acc_rolled[r].used = false;
   // voices the rhythm played softer are back to full for the chords (play_single_note does the
