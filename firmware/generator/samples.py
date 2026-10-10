@@ -41,8 +41,12 @@ OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib', 
 INSTRUMENTS = [
     dict(name='piano', title='piano (FluidR3)', rate=22050, notes=[('piano', n) for n in (42, 54, 66, 78)],
          loop=(0.55, 0.25, 0.12)),
-    dict(name='pizzicato', title='pizzicato strings (Musyng Kite)', rate=22050,
-         notes=[('quartet/pizz', n) for n in (40, 50, 60, 70, 82)], one_shot=0.7),
+    # Musyng Kite's pizzicato has a broken key zone, 48 to 62: every note rendered from it sounds two
+    # sections a semitone apart at about the same strength (a layer mapped to the wrong key), so a pluck
+    # there is a minor second. FluidR3_GM's (quartet/pizz-fluid) is clean there and takes its place.
+    dict(name='pizzicato', title='pizzicato strings (Musyng Kite, FluidR3 in the middle)', rate=22050,
+         notes=[('quartet/pizz', 40), ('quartet/pizz-fluid', 50), ('quartet/pizz-fluid', 60), ('quartet/pizz', 70),
+                ('quartet/pizz', 82)], one_shot=0.7),
     dict(name='choir', title='choir aah (Musyng Kite)', rate=16000,
          notes=[('choir/musyng/aah', n) for n in (44, 54, 64, 76)], loop=(0.6, 0.5, 0.2)),
     dict(name='strings', title='string quartet (Musyng Kite): cello, viola, violin', rate=16000,
@@ -55,9 +59,11 @@ TARGET_RMS = 0.2
 # within 5 cents. Offsets under 3 cents are left alone. Measured with the chords' output filter flat:
 # its default 500 Hz band-pass reweights an ensemble's harmonics and moves a fit by several cents
 # (minichord-bench/pizz_tune.py, 2026-10-09).
-# - pizzicato, played once: 100 to 400 ms after the onset, where the ear hears a pluck's pitch, fitted
-#   to the harmonics' peaks; the two methods agree within 1 cent there. The pluck itself and the tail
-#   stay off by more, as a section's do.
+# - pizzicato, played once: the pitch through the whole note, each 60 ms weighted by its energy, so
+#   mostly the pluck and the first 200 ms, which is what a short harp pluck is (a fit to 100-400 ms
+#   alone left the top recording, 82, 13 cents flat in every pluck). A section's players beat, so
+#   short windows scatter by 30 cents once a note has dropped 5-10 dB; the weighting rides over that
+#   (minichord-bench/harp_tune.py measures each note as the harp plays it, 2026-10-10).
 # - choir and string quartet, looped: a loop only makes frequencies at whole multiples of one over its
 #   length (2 Hz for 0.5 s: 33 cents at the choir 44's note), so a fit to the strongest peak snaps to one
 #   of them, and two such fits agree by snapping alike. These are the energy-weighted mean frequency
@@ -67,9 +73,9 @@ TARGET_RMS = 0.2
 # - piano: its fundamentals are within a few cents; its overtones run sharp, as a piano's do, so it is
 #   pitched by the fundamental and the lowest overtones, not by a fit to all of them.
 TUNING_CENTS = {
-    ('quartet/pizz', 50): 19.2,        # the chords' B-flat2 to G3: their middle register
-    ('quartet/pizz', 60): -15.0,       # the harp's C4 to F4
-    ('quartet/pizz', 70): -4.0,
+    ('quartet/pizz-fluid', 60): 10.0,  # the harp's C4 to F4
+    ('quartet/pizz', 70): -4.0,        # the harp's F#4 to E5
+    ('quartet/pizz', 82): -13.0,       # the harp's top
     ('choir/musyng/aah', 54): -5.3,
     ('choir/musyng/aah', 64): -4.2,
     ('choir/musyng/aah', 76): -15.0,
