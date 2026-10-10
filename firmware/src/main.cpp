@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=55; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321)
+int version_ID=56; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -896,6 +896,10 @@ bool modifier_combo_used = false;   // the modifier, held for a combo, isn't a t
 // does. The second press acts as it lands. While held so, the modifier neither sharpens a chord
 // pressed meanwhile nor switches the knobs to their alternates: it is busy holding.
 bool double_tap_hold = false;
+// Revert and panic (see PANIC AND REVERT)
+bool modifier_preset_combo = false;   // the modifier held, down reverts the preset and up is the panic (322)
+const int16_t preset_action_adress = 323;   // the action: 1 revert, 2 panic; the double tap's target
+void preset_action(int16_t action);
 bool modifier_holding = false;      // the modifier is down as a tap and hold's second press
 void acc_fill_request(bool ending);
 void acc_break_request();
@@ -968,6 +972,7 @@ struct midi_in_voice {
 };
 midi_in_voice midi_in_harp[12] = {};
 midi_in_voice midi_in_chord[4] = {};
+void midi_in_release(midi_in_voice *voices, uint8_t i, bool harp);
 float chord_voice_level[4] = {1, 1, 1, 1};   // each chord voice's loudness, from an incoming note's velocity
 float chord_noise_level = 0;                // the chord voices' noise (130), before that
 void apply_chord_voice_level(uint8_t i);
@@ -1844,6 +1849,13 @@ void processMIDI(void) {
   }
   if ((type == usbMIDI.NoteOn || type == usbMIDI.NoteOff || type == usbMIDI.ControlChange)
       && midi_chord_message(type, usbMIDI.getCable(), usbMIDI.getChannel(), usbMIDI.getData1(), usbMIDI.getData2())) {
+    return;
+  }
+  // All Sound Off and All Notes Off (120, 123), as a computer sends them when its transport stops:
+  // the notes it sent in end; the minichord's own playing goes on
+  if (midi_in_plays && type == usbMIDI.ControlChange && (usbMIDI.getData1() == 120 || usbMIDI.getData1() == 123)) {
+    for (uint8_t i = 0; i < 12; i++) if (midi_in_harp[i].owned && !midi_in_harp[i].looped) midi_in_release(midi_in_harp, i, true);
+    for (uint8_t i = 0; i < 4; i++) if (midi_in_chord[i].owned && !midi_in_chord[i].looped) midi_in_release(midi_in_chord, i, false);
     return;
   }
   if (midi_in_plays && (type == usbMIDI.NoteOn || type == usbMIDI.NoteOff || type == usbMIDI.ControlChange)) {
@@ -7156,6 +7168,67 @@ void stop_chord_notes() {
 }
 
 // Lets go of the chord voices in mask (bit i, voice i)
+//>>PANIC AND REVERT<<
+// The panic: every voice stops now, as fast as a palm stops the strings, whatever plays it (the
+// buttons, the rhythm, the looper, notes sent in), and every note the minichord sent ends at the far
+// end, with All Notes Off on all sixteen channels of both ports. The looper and chord memory stop
+// playing, keeping what they hold, since they would only play again. Modes stay as they are:
+// rhythm mode goes on from its next note, hold waits for a chord. Modifier and up (322), the
+// double tap on 323 at 2, or 323 written 2.
+FLASHMEM void panic() {
+  if (looper_state == LOOPER_PLAYING || looper_state == LOOPER_RECORDING || looper_state == LOOPER_COUNTIN) looper_action(3);
+  if (chord_memory_state == CHORD_MEMORY_PLAYING || chord_memory_state == CHORD_MEMORY_RECORDING) chord_memory_action(3);
+  noInterrupts();
+  for (uint8_t v = 0; v < 4; v++) acc_voice[v].off_pending = false;
+  for (uint8_t r = 0; r < ACC_ROLL_MAX; r++) acc_rolled[r].used = false;
+  interrupts();
+  for (uint8_t i = 0; i < 12; i++) {
+    midi_in_harp[i].owned = midi_in_harp[i].key_down = midi_in_harp[i].sustained = false;
+    damp_string(i);
+    pad_voice[i] = -1;
+  }
+  for (uint8_t i = 0; i < 4; i++) {
+    note_timer[i].end();
+    midi_in_chord[i].owned = midi_in_chord[i].key_down = midi_in_chord[i].sustained = false;
+    AudioNoInterrupts();
+    chord_envelope_array[i]->release(palm_mute_release);
+    chord_vibrato_envelope_array[i]->noteOff();
+    chord_vibrato_dc_envelope_array[i]->noteOff();
+    chord_envelope_array[i]->noteOff();
+    chord_envelope_filter_array[i]->noteOff();
+    chord_envelope_array[i]->release(current_sysex_parameters[141]);   // its own release, for the next
+    chord_voice_released[i] = true;
+    AudioInterrupts();
+    if (chord_started_notes[i] != 0) {
+      queue_midi(false, chord_started_notes[i], chord_release_velocity, mpe_chord_channel(i), chord_port);
+      chord_started_notes[i] = 0;
+    }
+  }
+  for (uint8_t port = 0; port < 2; port++) {
+    for (uint8_t channel = 1; channel <= 16; channel++) queue_midi_cc(123, 0, channel, port);
+  }
+  Serial.println("Panic: everything stopped");
+}
+
+// Revert: the preset as it was saved, dropping what the knobs, an editor or the double tap changed
+// since it loaded, and with nothing left to save. Modifier and down (322), the double tap on 323
+// (at 1, or unset), or 323 written 1.
+FLASHMEM void preset_revert() {
+  double_tap_engaged = false;
+  for (uint8_t k = 0; k < double_tap_pairs; k++) double_tap_engaged_adress[k] = -1;
+  flag_save_needed = false;
+  load_config(current_bank_number);
+  set_led_color(bank_led_hue, bank_led_saturation(), 1 - led_attenuation);
+  Serial.println("Preset reverted");
+}
+
+// The action (323), never kept: 1 revert, 2 panic
+FLASHMEM void preset_action(int16_t action) {
+  current_sysex_parameters[preset_action_adress] = 0;
+  if (action == 1) preset_revert();
+  else if (action == 2) panic();
+}
+
 void stop_chord_voices(uint8_t mask) {
   // Cancel pending retrigger timers — prevents NoteOn firing after NoteOff already sent
   for (int i = 0; i < 4; i++) if (mask & (1 << i)) note_timer[i].end();
@@ -7464,6 +7537,12 @@ void toggle_double_tap_target(bool actions = true) {
     chord_memory_step();
     break;
   }
+  // revert or panic, assigned to it: the revert, or the panic with its value at 2
+  for (uint8_t k = 0; k < double_tap_pairs && actions; k++) {
+    if (current_sysex_parameters[double_tap_control_adress[k]] != preset_action_adress) continue;
+    preset_action(current_sysex_parameters[double_tap_value_adress[k]] == 2 ? 2 : 1);
+    return;   // a revert puts the double tap back too: nothing left for it to toggle
+  }
   // rhythm fill, assigned to it: a fill, or a break or the ending if its value says (1-3)
   for (uint8_t k = 0; k < double_tap_pairs && actions; k++) {
     if (current_sysex_parameters[double_tap_control_adress[k]] != rhythm_fill_adress) continue;
@@ -7492,7 +7571,7 @@ void toggle_double_tap_target(bool actions = true) {
     for (uint8_t k = 0; k < double_tap_pairs; k++) {
       int16_t adress = current_sysex_parameters[double_tap_control_adress[k]];
       double_tap_engaged_adress[k] = -1;
-      if (adress == looper_adress || adress == chord_memory_adress || adress == rhythm_fill_adress) continue;   // stepped above
+      if (adress == looper_adress || adress == chord_memory_adress || adress == rhythm_fill_adress || adress == preset_action_adress) continue;   // stepped above
       if (!control_can_tap(adress)) continue;      // 0 means this pair is unassigned
       bool repeat = false;                          // two pairs on one parameter: the first one wins
       for (uint8_t j = 0; j < k; j++) if (double_tap_engaged_adress[j] == adress) repeat = true;
@@ -8157,6 +8236,12 @@ void loop() {
   uint8_t down_transition = down_button.read_transition();
   bool up_state = up_button.read_value();
   bool down_state = down_button.read_value();
+  // the modifier held: down reverts the preset, up is the panic, and neither changes the preset
+  if (modifier_preset_combo && chord_matrix_array[0].read_value() && !(up_state && down_state) && (up_transition == 2 || down_transition == 2)) {
+    modifier_combo_used = true;
+    preset_action(down_transition == 2 ? 1 : 2);
+    up_transition = down_transition = 0;   // consumed: no preset change arms on this press
+  }
   handle_key_change_mode(up_transition, down_transition, up_state, down_state);
   handle_preset_change(up_transition, down_transition, up_state, down_state);
 
