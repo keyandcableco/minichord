@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=52; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313)
+int version_ID=53; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -876,6 +876,17 @@ uint8_t acc_bass_part = 0;      // voice 0: 0 plays the style's part, 1 holds th
 uint8_t acc_chord_part = 0;     // voices 1-3, the same
 uint8_t acc_follow = 0;         // 0 plays on, 1 only while a chord is held, 2 that and the bar starts on the press
 uint8_t acc_change = 0;         // a new chord comes in: 0 on the next note, 1 on the beat, 2 on the bar
+// Variations, fills, breaks, intro and ending (see SECTIONS)
+uint8_t acc_style_b = 0;        // rhythm style B (314): the style a fill switches to and back from, 0 none
+bool rhythm_fill_combo = false; // modifier held with a tap of hold plays a fill (316)
+bool rhythm_intro = false;      // rhythm mode starts with a bar of the style's fill (317)
+bool rhythm_ending = false;     // the long press on hold ends on a fill and a last chord (318)
+bool rhythm_palm_break = false; // a palm mute rests the accompaniment to the bar line (319)
+const int16_t rhythm_fill_adress = 315;   // the action: 1 a fill, 2 a break, 3 the ending; the double tap's target
+bool modifier_combo_used = false;   // the modifier, held for a combo, isn't a tap of the double tap when let go
+void acc_fill_request(bool ending);
+void acc_break_request();
+void rhythm_fill_action(int16_t action);
 uint8_t acc_articulation = 100; // % of each written note's length
 uint8_t acc_accents = 100;      // % of the written difference between loud and soft notes
 uint8_t tap_counts = 0;         // tap tempo counts (281): 0 a tap a beat, 1 a tap an eighth; see acc_tap
@@ -1793,6 +1804,16 @@ void processMIDI(void) {
   // Chord memory, the same way: control change 104 record, 105 play, 106 stop, 107 clear, 108 the next step
   if (type == usbMIDI.ControlChange && usbMIDI.getData1() >= 104 && usbMIDI.getData1() <= 108) {
     if (usbMIDI.getData2() >= 64) chord_memory_action(usbMIDI.getData1() - 103);
+    return;
+  }
+  // Fills from a foot controller or a computer: control change 109 a fill, 110 a break, 111 the
+  // ending; on any channel, as the value rises past 63
+  if (type == usbMIDI.ControlChange && usbMIDI.getData1() >= 109 && usbMIDI.getData1() <= 111) {
+    static bool high[3] = {false, false, false};
+    uint8_t k = usbMIDI.getData1() - 109;
+    bool now = usbMIDI.getData2() >= 64;
+    if (now && !high[k]) rhythm_fill_action(k + 1);
+    high[k] = now;
     return;
   }
   // Rhythm mode from a foot controller or a computer, as the hold button: control change 102 turns
@@ -4407,7 +4428,37 @@ struct acc_rolled_t {
 #define ACC_ROLL_MAX 8
 acc_rolled_t acc_rolled[ACC_ROLL_MAX];
 
-static inline uint8_t acc_style_index() { return acc_style < acc_style_count ? acc_style : 0; }
+// SECTIONS: what the rhythm plays, bar by bar. The main part is style A (rhythm style, 274) or B
+// (314), from the bar line it came in on (acc_origin), so a two-bar pattern starts at its first bar.
+// A fill plays the style's fill bar from where it was asked for up to a bar line (the next one, or
+// the one after if less than a beat is left), then switches to the other style if there is a B; the
+// intro is the fill as the first bar, and the ending a fill and then the chord struck on the bar
+// line, ringing, before rhythm mode turns itself off. A break rests every part up to a bar line. B
+// takes its turn only in A's metre, so bar lines stay where they were for everything that counts
+// them (the clock out, chord memory, the looper).
+volatile bool acc_main_b = false;       // style B is the main part
+volatile double acc_origin = 0;         // the bar line the main part began on
+volatile bool acc_fill_on = false;
+volatile double acc_fill_from = 0, acc_fill_to = 0;
+volatile bool acc_fill_switch = false;  // ...and the other style after it
+volatile bool acc_intro = false;        // the fill playing is the intro
+volatile bool acc_ending = false;       // ...is the ending's
+volatile bool acc_ending_done = false;  // the last chord is struck: the loop turns rhythm mode off
+volatile double acc_rest_to = 0;        // a break: nothing plays before this
+
+static inline uint8_t acc_style_a() { return acc_style < acc_style_count ? acc_style : 0; }
+static inline bool acc_b_valid() {
+  return acc_style_b > 0 && acc_style_b < acc_style_count && acc_styles[acc_style_b].beats_per_bar == acc_styles[acc_style_a()].beats_per_bar;
+}
+static inline uint8_t acc_style_index() { return acc_main_b && acc_b_valid() ? acc_style_b : acc_style_a(); }
+static inline double acc_bar_ticks() { return ACC_BEAT * acc_styles[acc_style_index()].beats_per_bar; }
+// the bar line a fill or a break runs to: the next, or the one after if less than a beat is left
+static inline double acc_section_end(double pos) {
+  double bar = acc_bar_ticks();
+  double to = ceil(pos / bar) * bar;
+  if (to - pos < ACC_BEAT) to += bar;
+  return to;
+}
 static inline int16_t acc_pc(int16_t n) { return ((n % EDO) + EDO) % EDO; }
 // the highest note of pitch class pc at or below ceiling
 static inline int16_t acc_at_or_below(int16_t pc, int16_t ceiling) { return ceiling - acc_pc(ceiling - pc); }
@@ -4591,29 +4642,73 @@ static inline double acc_swung(int64_t t, uint8_t unit) {
   return t;
 }
 
-// Everything that falls from t0 up to t1
-void acc_window(double t0, double t1) {
-  // beats first, so a chord coming in on the beat does before the beat's notes
-  for (int64_t b = (int64_t)ceil(t0 / ACC_BEAT); b * ACC_BEAT < t1; b++) acc_beat(b);
+// The fill's bar line reached: the other style from here, or the ending's last chord
+static void acc_fill_finish() {
+  acc_fill_on = false;
+  acc_intro = false;
+  if (acc_ending) {
+    // the chord on the bar line, every part that plays struck together and left ringing
+    static const acc_event_t last[4] = {{0, 0, ACC_ROOT, 0, 0, 112, 0}, {0, 1, ACC_V2, 0, 0, 100, 0}, {0, 2, ACC_V3, 0, 0, 100, 0}, {0, 3, ACC_V4, 0, 0, 100, 0}};
+    for (uint8_t v = 0; v < 4; v++) acc_event(last[v]);
+    acc_rest_to = 1e15;   // and nothing after it
+    acc_ending_done = true;
+    return;
+  }
+  if (acc_fill_switch) {
+    acc_main_b = !acc_main_b;
+    acc_origin = acc_fill_to;
+  }
+}
+
+// What plays from t0 up to t1, all within one section (acc_window cuts at their edges)
+static void acc_section_window(double t0, double t1) {
+  if (t0 < acc_rest_to) return;
   const acc_style_t &st = acc_styles[acc_style_index()];
+  if (acc_fill_on && t0 >= acc_fill_from && t0 < acc_fill_to) {
+    double bar = acc_fill_to - acc_bar_ticks();   // the fill's bar begins here
+    for (uint8_t e = 0; e < st.fill_count; e++) {
+      const acc_event_t &ev = st.fill[e];
+      double at = acc_swung((int64_t)bar + ev.at, st.swing_unit);
+      if (at >= t0 && at < t1 && at >= acc_fill_from) acc_event(ev);
+    }
+    return;
+  }
+  int64_t origin = (int64_t)acc_origin;
   if (st.count == 0) {
     for (int64_t k = (int64_t)floor(t0 / 12) - 1; k <= (int64_t)floor(t1 / 12) + 1; k++) {
-      if (k < 0) continue;
+      if (k * 12 < origin) continue;
       double at = acc_swung(k * 12, 12);
-      if (at >= t0 && at < t1) acc_step(k % rythm_loop_length);
+      if (at >= t0 && at < t1) acc_step((k - origin / 12) % rythm_loop_length);
     }
     return;
   }
   for (uint8_t e = 0; e < st.count; e++) {
     const acc_event_t &ev = st.events[e];
-    int64_t n = (int64_t)floor((t0 - ev.at) / st.length);
+    int64_t n = (int64_t)floor((t0 - origin - ev.at) / st.length);
     for (int64_t m = n; m <= n + 1; m++) {
-      int64_t t = ev.at + m * st.length;
-      if (t < 0) continue;
+      int64_t t = origin + ev.at + m * st.length;
+      if (t < origin) continue;
       double at = acc_swung(t, st.swing_unit);
       if (at >= t0 && at < t1) acc_event(ev);
     }
   }
+}
+
+// Everything that falls from t0 up to t1
+void acc_window(double t0, double t1) {
+  // beats first, so a chord coming in on the beat does before the beat's notes
+  for (int64_t b = (int64_t)ceil(t0 / ACC_BEAT); b * ACC_BEAT < t1; b++) acc_beat(b);
+  // cut where a section begins or ends inside the window, and move on at a fill's bar line
+  double s = t0;
+  while (s < t1) {
+    if (acc_fill_on && s >= acc_fill_to) acc_fill_finish();
+    double e = t1;
+    double edges[3] = {acc_rest_to, acc_fill_on ? acc_fill_from : -1.0, acc_fill_on ? acc_fill_to : -1.0};
+    for (uint8_t k = 0; k < 3; k++) if (edges[k] > s && edges[k] < e) e = edges[k];
+    acc_section_window(s, e);
+    s = e;
+  }
+  if (acc_fill_on && t1 >= acc_fill_to) acc_fill_finish();
 }
 
 // MIDI clock out (266): the rhythm's clock on to whatever is plugged in, so a drum machine or a
@@ -4683,6 +4778,11 @@ void acc_tick() {
     acc_restart = false;
     acc_pos = 0;
     acc_phase_error = 0;
+    // the pattern from its start on the press: the intro if it hasn't finished, else the main part
+    acc_origin = acc_intro ? acc_bar_ticks() : 0;
+    if (acc_intro) { acc_fill_from = 0; acc_fill_to = acc_origin; }
+    else if (!acc_ending) acc_fill_on = false;
+    acc_rest_to = 0;
     midi_clock_stop();   // and a Start on the tick that begins it again
   }
   double step = rythm_bpm * ACC_BEAT / 60000.0;
@@ -4720,6 +4820,14 @@ FLASHMEM void acc_begin() {
   for (uint8_t r = 0; r < ACC_ROLL_MAX; r++) acc_rolled[r].used = false;
   acc_now = acc_latest;
   acc_hands = current_line >= 0;
+  // style A, or the intro's bar first (the style's fill, as a pickup into it)
+  acc_main_b = false;
+  acc_ending = acc_ending_done = false;
+  acc_rest_to = 0;
+  acc_intro = acc_fill_on = rhythm_intro;
+  acc_fill_switch = false;
+  acc_fill_from = 0;
+  acc_fill_to = acc_origin = rhythm_intro ? acc_bar_ticks() : 0;
   interrupts();
   stop_chord_voices(0xF & ~acc_held_mask());   // what was ringing gives way to the parts
   Serial.print("Rhythm style: ");
@@ -4748,6 +4856,60 @@ FLASHMEM void acc_end() {
     }
     interrupts();
   }
+}
+
+// A fill (or the ending's) from now to a bar line. Asked for again while one plays, a fill is
+// already coming; the ending asked for during a fill makes that fill the ending's, and asked for
+// again ends rhythm mode at once.
+FLASHMEM void acc_fill_request(bool ending) {
+  if (!rythm_mode) return;
+  noInterrupts();
+  if (ending && acc_ending) {
+    interrupts();
+    set_rythm_mode(false);
+    return;
+  }
+  if (acc_ending || (acc_fill_on && !ending)) {
+    interrupts();
+    return;
+  }
+  if (!acc_fill_on) {
+    acc_fill_from = acc_pos;
+    acc_fill_to = acc_section_end(acc_pos);
+  }
+  acc_fill_on = true;
+  acc_intro = false;
+  acc_fill_switch = !ending && acc_b_valid();
+  acc_ending = ending;
+  acc_rest_to = 0;   // a fill ends a break
+  interrupts();
+  Serial.println(ending ? "Rhythm: ending" : "Rhythm: fill");
+}
+
+// A break: every part rests up to a bar line, from now; a fill coming is dropped with it
+FLASHMEM void acc_break_request() {
+  if (!rythm_mode) return;
+  noInterrupts();
+  if (acc_ending) {
+    interrupts();
+    return;
+  }
+  acc_rest_to = acc_section_end(acc_pos);
+  acc_fill_on = false;
+  acc_intro = false;
+  for (uint8_t v = 0; v < 4; v++) acc_voice[v].off_pending = false;
+  for (uint8_t r = 0; r < ACC_ROLL_MAX; r++) acc_rolled[r].used = false;
+  interrupts();
+  stop_chord_voices(0xF & ~acc_held_mask());
+  Serial.println("Rhythm: break");
+}
+
+// The action (315), never kept: 1 a fill, 2 a break, 3 the ending
+FLASHMEM void rhythm_fill_action(int16_t action) {
+  current_sysex_parameters[rhythm_fill_adress] = 0;
+  if (action == 1) acc_fill_request(false);
+  else if (action == 2) acc_break_request();
+  else if (action == 3) acc_fill_request(true);
 }
 
 // A style, part or follow setting changed: the voices the rhythm now plays start from their part
@@ -4786,6 +4948,12 @@ FLASHMEM void acc_midi_clock() {
   if (acc_clock_waiting) {
     acc_clock_waiting = false;
     acc_pos = acc_clock_restart ? 0 : ceil(acc_pos / ACC_BEAT) * ACC_BEAT;
+    if (acc_clock_restart) {   // the pattern from its start (the intro's bar first if it is still to come)
+      acc_origin = acc_intro ? acc_bar_ticks() : 0;
+      if (acc_intro) { acc_fill_from = 0; acc_fill_to = acc_origin; }
+      else if (!acc_ending) acc_fill_on = false;
+      acc_rest_to = 0;
+    }
     acc_clock_pos = acc_pos;
   } else {
     acc_clock_pos = acc_clock_pos + 1;
@@ -5213,6 +5381,11 @@ FLASHMEM void acc_catch_late() {
 
 // From the loop, in rhythm mode, once the chord buttons have been read
 FLASHMEM void acc_update() {
+  if (acc_ending_done) {   // the ending's last chord is struck: rhythm mode goes off, the chord ringing on
+    acc_ending_done = false;
+    set_rythm_mode(false);
+    return;
+  }
   static uint16_t seen = 0;
   bool hands = current_line >= 0 || midi_chord_held || chord_memory_state == CHORD_MEMORY_PLAYING;
   bool caught = false;
@@ -5807,6 +5980,7 @@ void palm_mute() {
     damp_string(i);
     pad_voice[i] = -1;   // a hammer has nothing left to take over
   }
+  if (rythm_mode && rhythm_palm_break) acc_break_request();   // the band stops with the hand
 }
 
 // ---- the zipper plates: a finger between zones ----
@@ -7005,7 +7179,10 @@ void handle_continuous_mode() {
 void handle_hold_button() {
   uint8_t hold_transition = hold_button.read_transition();
   if (hold_transition == 2) {
-    if (!rythm_mode) {
+    if (rythm_mode && rhythm_fill_combo && chord_matrix_array[0].read_value()) {
+      acc_fill_request(false);    // the modifier held: a fill, not a tap of the tempo
+      modifier_combo_used = true;
+    } else if (!rythm_mode) {
       Serial.println("Switching mode");
       continuous_chord = !continuous_chord;
       analogWrite(RYTHM_LED_PIN, 255 * continuous_chord);
@@ -7018,7 +7195,8 @@ void handle_hold_button() {
     since_last_button_push = 0;
   } else if (hold_transition == 1 && since_last_button_push > 800) {
     Serial.println("Long push, switching rhythm mode");
-    set_rythm_mode(!rythm_mode);
+    if (rythm_mode && rhythm_ending) acc_fill_request(true);   // the ending first (again: off at once)
+    else set_rythm_mode(!rythm_mode);
   }
 }
 
@@ -7252,6 +7430,13 @@ void toggle_double_tap_target() {
     chord_memory_step();
     break;
   }
+  // rhythm fill, assigned to it: a fill, or a break or the ending if its value says (1-3)
+  for (uint8_t k = 0; k < double_tap_pairs; k++) {
+    if (current_sysex_parameters[double_tap_control_adress[k]] != rhythm_fill_adress) continue;
+    int16_t action = current_sysex_parameters[double_tap_value_adress[k]];
+    rhythm_fill_action(action >= 1 && action <= 3 ? action : 1);
+    break;
+  }
   if (double_tap_engaged) {
     // Restore to the addresses latched at engage time, last applied first: the
     // assignments can be rewritten while the toggle is held, and each restore
@@ -7273,7 +7458,7 @@ void toggle_double_tap_target() {
     for (uint8_t k = 0; k < double_tap_pairs; k++) {
       int16_t adress = current_sysex_parameters[double_tap_control_adress[k]];
       double_tap_engaged_adress[k] = -1;
-      if (adress == looper_adress || adress == chord_memory_adress) continue;   // stepped above
+      if (adress == looper_adress || adress == chord_memory_adress || adress == rhythm_fill_adress) continue;   // stepped above
       if (!control_can_tap(adress)) continue;      // 0 means this pair is unassigned
       bool repeat = false;                          // two pairs on one parameter: the first one wins
       for (uint8_t j = 0; j < k; j++) if (double_tap_engaged_adress[j] == adress) repeat = true;
@@ -7960,6 +8145,9 @@ void loop() {
     if (modifier_down && !modifier_was_down) {
       press_length = 0;
       modifier_pressed_ms = millis();
+    } else if (!modifier_down && modifier_was_down && modifier_combo_used) {
+      modifier_combo_used = false;   // held for a fill: not a tap
+      tap_count = 0;
     } else if (!modifier_down && modifier_was_down) {
       if (press_length < modifier_tap_max && current_line == -1) {
         if (tap_count == 1 && since_first_tap < modifier_tap_gap) {
