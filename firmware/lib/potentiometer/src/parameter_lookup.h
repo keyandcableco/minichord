@@ -117,6 +117,10 @@ static const ParameterInfo parameter_lookup[] = {
     { 198, 1, 0, 4 }, // octave change
     { 199, 0, 0, 1500 }, // glide chords
     { 265, 1, 0, 4 }, // chord voice
+    { 270, 1, 0, 5 }, // first note voice
+    { 271, 1, 0, 5 }, // second note voice
+    { 272, 1, 0, 5 }, // third note voice
+    { 273, 1, 0, 5 }, // fourth note voice
     { 121, 0, 0, 1 }, // amplitude 1
     { 122, 1, 0, 11 }, // waveform 1
     { 123, 0, 0, 2 }, // frequency multiplier 1

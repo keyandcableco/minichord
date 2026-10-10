@@ -473,12 +473,15 @@ float harp_note_freq[12] = {};
 void calculate_ws_array();
 // sampled instruments (adresses 264, 265): 0 the voice's own oscillators, 1 piano, 2 pizzicato, 3 choir, 4 strings
 uint8_t harp_voice_source = 0;
-uint8_t chord_voice_source = 0;
+uint8_t chord_voice_source = 0;                // the chords as a whole (chord voice, 265)
+uint8_t chord_note_source[4] = {0, 0, 0, 0};   // each note's own (270-273): 0 as the chord voice, else 1 + a source
+uint8_t chord_source_of[4] = {0, 0, 0, 0};     // what each chord voice sounds now, as chord_voice_source counts
 float harp_amplitude = 0;                // the strings' amplitude (41), which a harp sample follows
 const float harp_sample_level = 3.0f;    // a sample's loudness (0.2 RMS) against the strings' oscillators
 const float chord_sample_level = 1.0f;   // and against the chords'
 void set_harp_source(uint8_t source);
 void set_chord_source(uint8_t source);
+void set_chord_note_source(uint8_t i, uint8_t value);
 void chord_sample_start(uint8_t i);
 void rythm_tick_function();
 
@@ -786,7 +789,7 @@ void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
     // chord_voice_filter_array[i]->frequency(1*freq);
     AudioInterrupts();
   }
-  if (chord_voice_source && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(chord_voice_note_freq[i]);
+  if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(chord_voice_note_freq[i]);
 
   // Reached from BOTH the main loop (update_chord_notes) and PIT ISR context
   // (play_single_note, rythm_tick_function), so it must queue rather than send.
@@ -838,15 +841,30 @@ void set_harp_source(uint8_t source) {
   }
 }
 
-void set_chord_source(uint8_t source) {
+// Each chord voice has its own sample player, so each note can sound its own instrument: the chord
+// voice (265) for all four, or a note's own (270-273, counted from the first note as the note levels
+// 131-134 are) in its place, say pizzicato in the bass under a choir. Nothing more runs for it: a
+// voice plays one source either way.
+static void apply_chord_source(uint8_t i) {
+  uint8_t source = chord_note_source[i] ? chord_note_source[i] - 1 : chord_voice_source;
   const AudioSynthWavetable::instrument_data *instrument = sampled_instrument(source);
-  chord_voice_source = instrument ? source : 0;
-  for (int i = 0; i < 4; i++) {
-    chord_sample_array[i]->stop();
-    if (instrument) chord_sample_array[i]->setInstrument(*instrument);
-    chord_source_mix_array[i]->gain(0, instrument ? 0 : 1);
-    chord_source_mix_array[i]->gain(1, instrument ? 1 : 0);
-  }
+  chord_source_of[i] = instrument ? source : 0;
+  chord_sample_array[i]->stop();
+  if (instrument) chord_sample_array[i]->setInstrument(*instrument);
+  chord_source_mix_array[i]->gain(0, instrument ? 0 : 1);
+  chord_source_mix_array[i]->gain(1, instrument ? 1 : 0);
+}
+
+void set_chord_source(uint8_t source) {
+  chord_voice_source = sampled_instrument(source) ? source : 0;
+  for (uint8_t i = 0; i < 4; i++) apply_chord_source(i);
+}
+
+// value as stored: 0 the chord voice, 1 the oscillators, 2 piano, 3 pizzicato, 4 choir, 5 string quartet
+void set_chord_note_source(uint8_t i, uint8_t value) {
+  if (i > 3) return;
+  chord_note_source[i] = value <= 5 ? value : 0;
+  apply_chord_source(i);
 }
 
 // starts a voice's sample at the note it is set to (playing resets the player's amplitude)
@@ -857,7 +875,7 @@ void harp_sample_start(uint8_t i) {
 }
 
 void chord_sample_start(uint8_t i) {
-  if (!chord_voice_source) return;
+  if (!chord_source_of[i]) return;
   chord_sample_array[i]->playFrequency(chord_voice_note_freq[i], 127);
   chord_sample_array[i]->amplitude(chord_sample_level);
 }
@@ -869,10 +887,8 @@ void samples_update() {
       if (harp_sample_array[i]->isPlaying() && !string_enveloppe_array[i]->isActive()) harp_sample_array[i]->stop();
     }
   }
-  if (chord_voice_source) {
-    for (int i = 0; i < 4; i++) {
-      if (chord_sample_array[i]->isPlaying() && !chord_envelope_array[i]->isActive()) chord_sample_array[i]->stop();
-    }
+  for (int i = 0; i < 4; i++) {
+    if (chord_source_of[i] && chord_sample_array[i]->isPlaying() && !chord_envelope_array[i]->isActive()) chord_sample_array[i]->stop();
   }
 }
 

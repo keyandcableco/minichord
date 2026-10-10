@@ -397,6 +397,18 @@ void apply_audio_parameter(int adress, int value) {
       case 265:
         set_chord_source(value);
         break;
+      case 270:
+        set_chord_note_source(0,value);
+        break;
+      case 271:
+        set_chord_note_source(1,value);
+        break;
+      case 272:
+        set_chord_note_source(2,value);
+        break;
+      case 273:
+        set_chord_note_source(3,value);
+        break;
       case 121:
         for (int i=0;i<4;i++){
           chord_osc_1_array[i]->amplitude(value/100.0);
