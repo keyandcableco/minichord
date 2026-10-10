@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=44; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281)
+int version_ID=45; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -860,6 +860,8 @@ uint8_t acc_change = 0;         // a new chord comes in: 0 on the next note, 1 o
 uint8_t acc_articulation = 100; // % of each written note's length
 uint8_t acc_accents = 100;      // % of the written difference between loud and soft notes
 uint8_t tap_counts = 0;         // tap tempo counts (281): 0 a tap a beat, 1 a tap an eighth; see acc_tap
+uint8_t midi_chords = 0;        // MIDI chords (282): in rhythm mode, notes in on the chords' port and channel set its chord (see MIDI CHORDS)
+volatile bool midi_chord_held = false;   // a note (or the pedal) holds a chord sent in, as a button would
 volatile double acc_phase_error = 0;   // 24ths of a beat the rhythm is to catch up (or fall back) to a tap
 // MIDI clock out (266): 0 off, 1 on port 1, 2 on port 2, 3 on both; see the clock in acc_tick
 uint8_t midi_clock_out = 0;
@@ -1416,8 +1418,11 @@ void acc_midi_clock();
 void acc_snapshot();
 void acc_settings_changed();
 void acc_clock_out_changed();
-void acc_tap();
+void acc_tap(bool button = true);
 void acc_tap_reset();
+void set_rythm_mode(bool on);
+bool midi_chord_message(uint8_t type, uint8_t cable, uint8_t channel, uint8_t data1, uint8_t data2);
+void midi_chords_clear();
 uint8_t acc_held_mask();
 void stop_chord_voices(uint8_t mask);
 
@@ -1640,6 +1645,9 @@ FLASHMEM void control_command(uint8_t command, uint8_t parameter) {
       control_command(0, 0);
     } else Serial.println("Nothing pushed");
     break;
+  case 8: // rhythm mode: parameter 0 off, 1 on, 2 the other way, as a long press on hold
+    set_rythm_mode(parameter == 2 ? !rythm_mode : parameter == 1);
+    break;
   case 4: // loading a bank, so a remote can read every preset in turn
     if (parameter < preset_number) {
       Serial.print("Loading bank: ");
@@ -1724,6 +1732,23 @@ void processMIDI(void) {
   // 88 clear, 89 overdub, 90 the next step, on any channel, acting as the value rises past 63
   if (type == usbMIDI.ControlChange && usbMIDI.getData1() >= 85 && usbMIDI.getData1() <= 90) {
     if (usbMIDI.getData2() >= 64) looper_action(usbMIDI.getData1() - 84);
+    return;
+  }
+  // Rhythm mode from a foot controller or a computer, as the hold button: control change 102 turns
+  // it on or off (a long press), 103 is a tap of the tempo; on any channel, as the value rises past 63
+  if (type == usbMIDI.ControlChange && (usbMIDI.getData1() == 102 || usbMIDI.getData1() == 103)) {
+    static bool high[2] = {false, false};
+    uint8_t k = usbMIDI.getData1() - 102;
+    bool now = usbMIDI.getData2() >= 64;
+    if (now && !high[k]) {
+      if (k == 0) set_rythm_mode(!rythm_mode);
+      else if (rythm_mode) acc_tap(false);
+    }
+    high[k] = now;
+    return;
+  }
+  if ((type == usbMIDI.NoteOn || type == usbMIDI.NoteOff || type == usbMIDI.ControlChange)
+      && midi_chord_message(type, usbMIDI.getCable(), usbMIDI.getChannel(), usbMIDI.getData1(), usbMIDI.getData2())) {
     return;
   }
   if (midi_in_plays && (type == usbMIDI.NoteOn || type == usbMIDI.NoteOff || type == usbMIDI.ControlChange)) {
@@ -4171,6 +4196,14 @@ FLASHMEM uint8_t acc_held_mask() {
   return (acc_bass_part == 1 ? 0x1 : 0) | (acc_chord_part == 1 ? 0xE : 0);
 }
 
+// The chord the player has just made, from the buttons or sent in (MIDI CHORDS)
+FLASHMEM void acc_set_latest(const acc_chord_t &c) {
+  noInterrupts();
+  acc_latest = c;
+  acc_latest_serial++;
+  interrupts();
+}
+
 // From the loop, whenever a chord is built (build_chord_notes) or the division changes
 FLASHMEM void acc_snapshot() {
   acc_chord_t c;
@@ -4202,10 +4235,7 @@ FLASHMEM void acc_snapshot() {
   c.second = acc_pc(tones[4] - tones[0]);
   c.fourth = acc_pc(tones[5] - tones[0]);
   c.sixth = acc_pc(tones[6] - tones[0]);
-  noInterrupts();
-  acc_latest = c;
-  acc_latest_serial++;
-  interrupts();
+  acc_set_latest(c);
 }
 
 static inline void acc_take_chord() {
@@ -4476,6 +4506,7 @@ FLASHMEM void acc_begin() {
 
 // and goes off
 FLASHMEM void acc_end() {
+  midi_chords_clear();
   rythm_timer.end();
   rythm_timer_running = false;
   rythm_clock_synced = false;
@@ -4571,7 +4602,7 @@ static float tap_beat(uint8_t taps) {
   return (tap_us[taps - 1] - tap_us[taps - 1 - intervals]) / 1000.0f * per_beat / intervals;
 }
 
-FLASHMEM void acc_tap() {
+FLASHMEM void acc_tap(bool button) {
   uint32_t now = micros();
   if (rythm_clock_synced || (tap_count > 0 && now - tap_us[tap_count - 1] > 2000000)) tap_count = 0;
   if (tap_count == TAP_RUN) {   // keep the latest
@@ -4598,7 +4629,7 @@ FLASHMEM void acc_tap() {
   rythm_bpm = 60000.0f / beat_ms;
   noInterrupts();
   // where the tap was: the button is believed after 10 ms of steady contact (the debouncer)
-  double at = acc_pos - 10 * rythm_bpm * ACC_BEAT / 60000.0;
+  double at = acc_pos - (button ? 10 : 0) * rythm_bpm * ACC_BEAT / 60000.0;
   // the nearest beat, or with eighths the nearest eighth as the shuffle places it
   double beat = floor(at / ACC_BEAT) * ACC_BEAT;
   double nearest = (at - beat < ACC_BEAT / 2) ? beat : beat + ACC_BEAT;
@@ -4610,6 +4641,149 @@ FLASHMEM void acc_tap() {
   interrupts();
   Serial.print("Updating the BPM to: ");
   Serial.println(rythm_bpm);
+}
+
+//>>MIDI CHORDS<<
+// With MIDI chords (282) on, in rhythm mode, notes sent in on the chords' port and channel play the
+// accompaniment rather than its voices: what is held is read as a chord -- its root and kind, the
+// bass under it -- and the rhythm plays that, in the voicing the notes were in, as it would a chord
+// from the buttons. A note held (or the sustain pedal) is a hand on the buttons, for rhythm follows
+// hands; the chord part's held voices (rhythm chords 1) sound it. So a computer, a keyboard or a
+// sequencer can drive the styles. The harp keeps following the buttons. Outside rhythm mode, or
+// with the setting off, notes in do what they did (MIDI in plays, 8).
+uint32_t midi_chord_keys[4];        // notes down, a bit each
+uint32_t midi_chord_sustained[4];   // let go of under the pedal
+bool midi_chord_pedal = false;
+
+// Chord kinds, as sets of semitones above the root, and their tones as the rhythm names them
+struct midi_chord_kind { uint16_t tones; int8_t third, fifth, seventh, sixth; };   // tones: bit n, n semitones up
+const midi_chord_kind midi_chord_kinds[] = {
+  {0x091, 4, 7, 12, 9},     // major
+  {0x089, 3, 7, 12, 8},     // minor
+  {0x491, 4, 7, 10, 9},     // seventh
+  {0x891, 4, 7, 11, 9},     // major seventh
+  {0x489, 3, 7, 10, 8},     // minor seventh
+  {0x291, 4, 7, 12, 9},     // sixth
+  {0x289, 3, 7, 12, 9},     // minor sixth
+  {0x049, 3, 6, 12, 8},     // diminished
+  {0x249, 3, 6, 9, 9},      // diminished seventh
+  {0x449, 3, 6, 10, 8},     // half diminished
+  {0x111, 4, 8, 12, 9},     // augmented
+  {0x0A1, 5, 7, 12, 9},     // sus4
+  {0x085, 2, 7, 12, 9},     // sus2
+  {0x4A1, 5, 7, 10, 9},     // seventh sus4
+  {0x889, 3, 7, 11, 8},     // minor major seventh
+  {0x081, 4, 7, 12, 9},     // a bare fifth: taken as major
+};
+
+static inline int16_t semitones_to_steps(int s) { return (int16_t)lroundf(s * EDO / 12.0f); }
+
+// What is held, read as a chord and handed to the rhythm
+FLASHMEM void midi_chord_update() {
+  int16_t notes[128];
+  uint8_t count = 0;
+  for (uint8_t n = 0; n < 128; n++) {
+    if ((midi_chord_keys[n / 32] | midi_chord_sustained[n / 32]) & (1UL << (n % 32))) notes[count++] = n;
+  }
+  midi_chord_held = count > 0;
+  if (!count) return;   // let go: the rhythm keeps the last chord, as with the buttons
+  uint16_t pcs = 0;
+  for (uint8_t i = 0; i < count; i++) pcs |= 1 << (notes[i] % 12);
+  int bass = notes[0] % 12;
+  // the reading that explains the most of what is held and adds the least: every root held, every
+  // kind; a tie goes to the root in the bass, then to the simpler kind (earlier in the list)
+  int best_root = bass, best_kind = 0, best_score = -1000;
+  for (int r = 0; r < 12; r++) {
+    if (!(pcs & (1 << r))) continue;
+    uint16_t rel = ((pcs >> r) | (pcs << (12 - r))) & 0xFFF;
+    for (uint8_t k = 0; k < sizeof(midi_chord_kinds) / sizeof(midi_chord_kinds[0]); k++) {
+      uint16_t t = midi_chord_kinds[k].tones;
+      int score = 4 * __builtin_popcount(t & rel) - 3 * __builtin_popcount(t & ~rel) - 2 * __builtin_popcount(rel & ~t) + (r == bass ? 1 : 0);
+      if (score > best_score) { best_score = score; best_root = r; best_kind = k; }
+    }
+  }
+  const midi_chord_kind &kind = midi_chord_kinds[best_kind];
+  acc_chord_t c;
+  c.valid = true;
+  // the voicing: the notes as they are held (the lowest and the top three of more than four), in
+  // the chord voices' numbering, so the chords' MIDI out gives back the notes sent in
+  int16_t v[4];
+  uint8_t used = 0;
+  for (uint8_t i = 0; i < count && used < 4; i++) {
+    uint8_t pick = (count <= 4 || i == 0) ? i : count - 3 + (used - 1);
+    v[used++] = (int16_t)lroundf((notes[pick] - midi_base_note_transposed) * EDO / 12.0f);
+  }
+  if (used == 1) {   // one note: the chord it is the root of, above it
+    v[1] = v[0] + semitones_to_steps(kind.third);
+    v[2] = v[0] + semitones_to_steps(kind.fifth);
+    v[3] = v[0] + EDO;
+    used = 4;
+  }
+  for (uint8_t i = used, j = 0; i < 4; i++, j++) v[i] = v[j] + EDO;   // fewer: the lowest again an octave up
+  for (uint8_t i = 1; i < 4; i++) {
+    for (uint8_t j = i; j > 0 && v[j] < v[j - 1]; j--) { int16_t t = v[j]; v[j] = v[j - 1]; v[j - 1] = t; }
+  }
+  for (uint8_t i = 0; i < 4; i++) c.v[i] = v[i];
+  c.root = acc_pc(semitones_to_steps(best_root) - semitones_to_steps(midi_base_note_transposed % 12));
+  c.bass = acc_pc(semitones_to_steps(bass) - semitones_to_steps(midi_base_note_transposed % 12));
+  c.third = semitones_to_steps(kind.third);
+  c.fifth = semitones_to_steps(kind.fifth);
+  c.seventh = semitones_to_steps(kind.seventh);
+  c.second = semitones_to_steps(2);
+  c.fourth = semitones_to_steps(5);
+  c.sixth = semitones_to_steps(kind.sixth);
+  acc_set_latest(c);
+  // rhythm style 0 plays its seven notes: the voicing, then the second, fourth and sixth above the root
+  int16_t root = acc_at_or_below(c.root, c.v[0]);
+  int16_t seven[7] = {c.v[0], c.v[1], c.v[2], c.v[3], (int16_t)(root + c.second + EDO), (int16_t)(root + c.fourth + EDO), (int16_t)(root + c.sixth + EDO)};
+  noInterrupts();
+  for (uint8_t i = 0; i < 7; i++) {
+    while (seven[i] < 0) seven[i] += EDO;
+    current_applied_chord_notes[i] = seven[i];
+  }
+  interrupts();
+  // the voices holding the chord sound it: moved there if they are, started if not
+  uint8_t held = acc_held_mask();
+  for (uint8_t i = 0; i < 4; i++) {
+    if (!(held & (1 << i))) continue;
+    if (chord_envelope_array[i]->isActive() && !chord_voice_released[i]) {
+      noInterrupts();
+      set_chord_voice_frequency(i, c.v[i]);
+      interrupts();
+    } else {
+      play_single_note(i, &note_timer[i]);
+      set_chord_voice_frequency(i, c.v[i]);
+    }
+  }
+}
+
+// A note or the pedal on the chords' port and channel, in rhythm mode with MIDI chords on: taken
+// here, and true; anything else is left to the rest of processMIDI
+FLASHMEM bool midi_chord_message(uint8_t type, uint8_t cable, uint8_t channel, uint8_t data1, uint8_t data2) {
+  if (!midi_chords || !rythm_mode || cable != chord_port || channel != chord_channel) return false;
+  uint32_t bit = 1UL << (data1 % 32);
+  uint8_t word = data1 / 32;
+  if (type == usbMIDI.NoteOn && data2 > 0) {
+    midi_chord_keys[word] |= bit;
+    midi_chord_sustained[word] &= ~bit;
+  } else if (type == usbMIDI.NoteOn || type == usbMIDI.NoteOff) {
+    midi_chord_keys[word] &= ~bit;
+    if (midi_chord_pedal) midi_chord_sustained[word] |= bit;
+  } else if (type == usbMIDI.ControlChange && data1 == 64) {
+    midi_chord_pedal = data2 >= 64;
+    if (!midi_chord_pedal) for (uint8_t w = 0; w < 4; w++) midi_chord_sustained[w] = 0;
+  } else {
+    return false;
+  }
+  midi_chord_update();
+  return true;
+}
+
+// MIDI chords turned off, or rhythm mode ending: nothing sent in is held any more
+FLASHMEM void midi_chords_clear() {
+  for (uint8_t w = 0; w < 4; w++) midi_chord_keys[w] = midi_chord_sustained[w] = 0;
+  midi_chord_pedal = false;
+  midi_chord_held = false;
 }
 
 // A chord that arrives just after notes of the part fell due -- meant for the beat, a moment late --
@@ -4639,7 +4813,7 @@ FLASHMEM void acc_catch_late() {
 // From the loop, in rhythm mode, once the chord buttons have been read
 FLASHMEM void acc_update() {
   static uint16_t seen = 0;
-  bool hands = current_line >= 0;
+  bool hands = current_line >= 0 || midi_chord_held;
   bool caught = false;
   if (hands != acc_hands) {
     acc_hands = hands;
@@ -6285,16 +6459,22 @@ void handle_hold_button() {
     since_last_button_push = 0;
   } else if (hold_transition == 1 && since_last_button_push > 800) {
     Serial.println("Long push, switching rhythm mode");
-    rythm_mode = !rythm_mode;
-    continuous_chord = false;
-    analogWrite(RYTHM_LED_PIN, 255 * continuous_chord);
-    if (rythm_mode) {
-      Serial.println("Starting rhythm timers");
-      acc_begin();
-    } else {
-      Serial.println("Stopping rhythm timers");
-      acc_end();
-    }
+    set_rythm_mode(!rythm_mode);
+  }
+}
+
+// Rhythm mode on or off: a long press on hold, control command 8, control change 102
+FLASHMEM void set_rythm_mode(bool on) {
+  if (on == rythm_mode) return;
+  rythm_mode = on;
+  continuous_chord = false;
+  analogWrite(RYTHM_LED_PIN, 255 * continuous_chord);
+  if (rythm_mode) {
+    Serial.println("Starting rhythm timers");
+    acc_begin();
+  } else {
+    Serial.println("Stopping rhythm timers");
+    acc_end();
   }
 }
 
