@@ -743,6 +743,9 @@ void apply_audio_parameter(int adress, int value) {
       case 280:
         acc_accents=value;
         break;
+      case 281:
+        tap_counts=value;
+        break;
       case 192:
         chords_main_filter.frequency(value);
         break;
