@@ -2,7 +2,7 @@
 
 The sampled instruments the harp and chord voices can play (harp voice, 264; chord voice, 265): piano, pizzicato strings, choir and a string quartet, as `AudioSynthWavetable::instrument_data`.
 
-`src/minichord_samples.cpp` is generated; don't edit it. To rebuild it, run `generator/samples.py` with a folder of one-note-per-file recordings laid out as the Minichord Lab's `samples/` is (`piano/`, `quartet/{pizz,cello,viola,violin}/`, `choir/musyng/aah/`, each note named by its MIDI number). It needs ffmpeg and numpy:
+`src/minichord_samples.cpp` is generated; don't edit it. To rebuild it, run `generator/samples.py` with a folder of one-note-per-file recordings laid out as the Minichord Lab's `samples/` is (`piano/`, `quartet/{pizz,cello,viola,violin}/`, `choir/musyng/aah/`, each note named by its MIDI number), plus `quartet/pizz-fluid/`: FluidR3_GM's `pizzicato_strings-mp3` from the same project, named the same way (Musyng Kite's pizzicato is two sections a semitone apart from 48 to 62, so the middle of the range comes from FluidR3). It needs ffmpeg and numpy:
 
     python3 generator/samples.py ~/minichord-lab/samples
 
