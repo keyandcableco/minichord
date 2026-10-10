@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=47; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287)
+int version_ID=48; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -942,12 +942,14 @@ volatile bool looper_overdub = false;
 volatile uint32_t rythm_beat_ms = 0;   // when the rhythm's latest beat began (its even steps), for the looper
 volatile uint32_t rythm_beat_count = 0;   // beats the rhythm has begun, and whether the latest began a bar (the looper's click)
 volatile bool rythm_beat_bar = false;
-// The looper in time (283-286), see LOOPER
+// The looper in time (283-286, 288), see LOOPER
 uint8_t looper_quantize = 0;     // 0 off, 1 quarter notes, 2 eighths, 3 sixteenths, 4 eighth triplets
 uint8_t looper_count_in = 0;     // bars of count-in before a recording: 0, 1 or 2
 uint8_t looper_click = 0;        // 0 off, 1 the count-in, 2 and the recording, 3 and the playing
 uint8_t looper_click_level = 50;
+uint8_t looper_length = 0;       // bars a recording runs before it closes by itself; 0 as long as it is played (288)
 uint32_t looper_click_flash_ms = 0;   // the latest tick, for the count-in's LED
+uint8_t loop_phrase_bars = 0;    // the recording's phrase in bars, from looper length; an early step shortens it
 // Chord memory (287), see CHORD MEMORY
 enum { CHORD_MEMORY_EMPTY, CHORD_MEMORY_RECORDING, CHORD_MEMORY_PLAYING, CHORD_MEMORY_STOPPED };
 volatile uint8_t chord_memory_state = CHORD_MEMORY_EMPTY;
@@ -2550,7 +2552,10 @@ void midi_in_settle() {
 // (in rhythm mode the first bar line at least that far off), and a note played up to 100 ms before
 // it, reaching for the downbeat, starts the loop. Looper click ticks the beats, higher on a bar's
 // first, on the speaker and headphones only (after the USB recording tap): through the count-in,
-// and the recording, and the playing, as it says. Looper quantize moves each note's start to the
+// and the recording, and the playing, as it says. Looper length (288) sets the phrase in bars: the
+// recording closes by itself that many bars from its start and plays on without a gap. A step
+// before then closes it on the nearest bar line, recording on till it if it is still to come
+// (stop closes it at once). Looper quantize moves each note's start to the
 // nearest quarter, eighth (where the shuffle puts the off one), sixteenth or eighth triplet of the
 // loop, and its let-go and retunes with it, so it keeps its length: the first pass's notes as the
 // loop closes, when its length is known (one reaching for the downbeat at the end starts the
@@ -2606,9 +2611,10 @@ static bool looper_on_beat() {
 }
 // whether the looper keeps a beat: the rhythm's, or its own from the loop's start
 static bool looper_timed() {
-  return looper_on_beat() || looper_quantize || looper_count_in || looper_click;
+  return looper_on_beat() || looper_quantize || looper_count_in || looper_click || looper_length || loop_phrase_bars;
 }
 static float looper_beat_ms() { return 60000.0f / rythm_bpm; }
+static float looper_bar_ms() { return looper_beat_ms() * acc_beats_per_bar(); }
 
 // the nearest point of looper quantize's grid to t, ms from the loop's start (on a beat)
 static int32_t looper_grid_snap(int32_t t) {
@@ -2814,6 +2820,7 @@ FLASHMEM void looper_clear() {
   looper_stop();
   loop_event_count = 0;
   loop_length_ms = 0;
+  loop_phrase_bars = 0;
   looper_state = LOOPER_EMPTY;
   looper_show();
 }
@@ -2831,6 +2838,7 @@ FLASHMEM static void looper_begin_recording() {
 FLASHMEM void looper_record(uint32_t at) {
   looper_clear();
   for (uint8_t v = 0; v < 16; v++) { loop_open[v] = false; loop_voice[v] = -1; loop_quantize_shift[v] = 0; }
+  loop_phrase_bars = looper_length;
   if (looper_count_in && looper_timed()) {   // the count-in's bars first: the recording starts on the bar line after
     uint32_t bars = (uint32_t)lroundf(looper_count_in * acc_beats_per_bar() * looper_beat_ms());
     loop_start_ms = looper_on_beat() ? acc_bar_ms_after(bars - (uint32_t)(looper_beat_ms() / 2)) : at + bars;
@@ -2841,11 +2849,20 @@ FLASHMEM void looper_record(uint32_t at) {
   looper_begin_recording();
 }
 
-// Recording to playing: the loop closes at at
-FLASHMEM void looper_close(uint32_t at) {
+// Recording to playing: the loop closes at at (with looper length, on a bar line; now, there even
+// if it is still to come, for stop)
+FLASHMEM void looper_close(uint32_t at, bool now = false) {
   if (looper_state != LOOPER_RECORDING) return;
   int32_t length = (int32_t)(at - loop_start_ms);
-  if (looper_timed()) {
+  if (loop_phrase_bars) {                              // a phrase in bars ends on a bar line, the nearest
+    float bar = looper_bar_ms();
+    uint8_t bars = min(max(1L, lroundf(length / bar)), (long)loop_phrase_bars);
+    length = (int32_t)(bars * bar);
+    if (!now && (int32_t)(millis() - loop_start_ms) < length) {   // still to come: recording on till it
+      loop_phrase_bars = bars;
+      return;
+    }
+  } else if (looper_timed()) {
     float beat = looper_beat_ms();
     length = (int32_t)(max(1L, lroundf(length / beat)) * beat);
   }
@@ -2915,7 +2932,7 @@ FLASHMEM void looper_action(int16_t action) {
   switch (action) {
     case 1: if (looper_state == LOOPER_RECORDING) looper_close(millis()); else if (looper_state == LOOPER_COUNTIN) looper_clear(); else looper_record(millis()); break;
     case 2: looper_play(); break;
-    case 3: if (looper_state == LOOPER_RECORDING) looper_close(millis()); looper_stop(); break;
+    case 3: if (looper_state == LOOPER_RECORDING) looper_close(millis(), true); looper_stop(); break;
     case 4: looper_clear(); break;
     case 5: looper_overdub_toggle(); break;
     case 6: looper_step(millis()); break;
@@ -2961,6 +2978,10 @@ FLASHMEM static void looper_click_update() {
 void looper_update() {
   looper_click_update();
   if (looper_state == LOOPER_COUNTIN && (int32_t)(millis() - loop_start_ms) >= 0) looper_begin_recording();
+  if (looper_state == LOOPER_RECORDING && loop_phrase_bars) {   // the phrase's bars are up: it closes by itself
+    int32_t phrase = (int32_t)(loop_phrase_bars * looper_bar_ms());
+    if ((int32_t)(millis() - loop_start_ms) >= phrase) looper_close(loop_start_ms + phrase);
+  }
   if (looper_state != LOOPER_PLAYING || loop_length_ms == 0) return;
   uint32_t now = millis();
   if ((int32_t)(now - loop_start_ms) < 0) return;
