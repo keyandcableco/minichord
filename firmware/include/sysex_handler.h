@@ -327,6 +327,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 289:
         koto_press=value;
         break;
+      case 302:
+        hammer_on=value;
+        break;
       case 252:
         touch_velocity=value;
         break;
@@ -1106,6 +1109,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 214: lo=1; hi=250; return true;
       case 216: lo=0; hi=1; return true;
       case 289: lo=0; hi=12; return true;
+      case 302: lo=0; hi=1; return true;
       case 252: lo=0; hi=100; return true;
       case 253: lo=0; hi=2; return true;
       case 263: lo=0; hi=100; return true;

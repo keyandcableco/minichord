@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=50; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301)
+int version_ID=51; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -538,6 +538,14 @@ uint8_t koto_press = 0;
 bool string_pressing[12] = {false, false, false, false, false, false, false, false, false, false, false, false};   // a finger is on this ringing string
 bool string_pressed[12] = {false, false, false, false, false, false, false, false, false, false, false, false};    // ...and has bent it, so its lift plucks nothing
 int16_t press_rest[12] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};   // the lightest it has read since settling, which a press is measured from
+// Hammer-on: plucking on touch, a finger landing beside a string still held down takes that string
+// over: it moves to the new pad's note without being plucked again, as a guitarist's finger
+// hammering onto the next fret does, and on along the strip as the finger slides. Lifting the pad
+// it sounds while another of its pads is held pulls it off to that one; lifting the last lets it
+// ring out. On the stock strip and the plates of twelve zones. See hammer_land().
+bool hammer_on = false;
+int8_t pad_voice[12] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};   // the string each held pad has hold of, -1 none
+uint32_t voice_plucked_ms[12] = {0};   // when each string was last plucked
 // Pads arriving this soon after a palm mute are part of the palm. A slap's
 // last finger or the heel of the hand can trail the rest by a hundred ms or
 // more; plucking on touch the window is kept short so a strum can follow the
@@ -5776,7 +5784,10 @@ void damp_string(uint8_t i) {
 }
 
 void palm_mute() {
-  for (uint8_t i = 0; i < 12; i++) damp_string(i);
+  for (uint8_t i = 0; i < 12; i++) {
+    damp_string(i);
+    pad_voice[i] = -1;   // a hammer has nothing left to take over
+  }
 }
 
 // ---- the zipper plates: a finger between zones ----
@@ -5804,7 +5815,93 @@ bool harp_positions_active() {
 // Whether voice i has a finger on it: on a zipper plate or the ribbon a touch
 // sounding it, otherwise its own pad.
 bool string_held(uint8_t i) {
-  return (harp_positions_active() || harp_ribbon_active()) ? harp_voice_held[i] : harp_array[i].read_value();
+  return (harp_positions_active() || harp_ribbon_active()) ? harp_voice_held[i] : harp_array[harp_voice_position[i]].read_value();
+}
+
+// ---- hammer-on ----
+// A strum lands on each string beside one plucked a moment before, still held, so only a string
+// that has rung this long is taken over: longer than a slow strum's 150 ms from string to string.
+// A slide goes on from there, since the string it moves is the one plucked long ago.
+const uint16_t hammer_after_ms = 180;
+
+bool hammer_active() {
+  return hammer_on && !harp_pluck_on_lift && !harp_ribbon_active() && !harp_positions_active() && harp_plate != 2;
+}
+
+// String v moves to pad p's note without a pluck. Over midi the new note starts before the old one
+// ends, so a synth that plays legato slides or hammers too; the looper hears a retune.
+void hammer_to(uint8_t v, uint8_t p) {
+  harp_voice_position[v] = p;
+  current_harp_notes[v] = calculate_note_harp(p, chord_context_slashed, chord_context_sharp);
+  set_harp_voice_frequency(v, current_harp_notes[v]);
+  uint8_t old = harp_started_notes[v];
+  if (old != 0 && old != midi_base_note_transposed + midi_out_note(current_harp_notes[v])) {
+    uint8_t channel = harp_started_channel[v], port = harp_started_port[v];
+    harp_started_notes[v] = 0;
+    harp_midi_on(v);
+    queue_midi(false, old, harp_release_velocity, channel, port);
+    if (touch_pressure) send_string_pressure(v, string_firmness[v]);
+  }
+  looper_capture(LOOP_RETUNE, v, string_note_freq[v], 1 - sqrtf(string_softness(v)), harp_started_notes[v], harp_note_velocity(v));
+  cantus_follow(v);
+}
+
+// Pad p lands: beside a held string that has rung long enough, it takes that string over (the
+// one plucked last, if there are two). Whether it did.
+bool hammer_land(uint8_t p) {
+  int8_t taken = -1;
+  for (int8_t q = p - 1; q <= p + 1; q += 2) {
+    if (q < 0 || q > 11 || !harp_array[q].read_value()) continue;
+    int8_t v = pad_voice[q];
+    if (v < 0 || midi_in_harp[v].owned || !string_enveloppe_array[v]->isActive()) continue;
+    if (millis() - voice_plucked_ms[v] < hammer_after_ms) continue;
+    if (taken < 0 || voice_plucked_ms[v] > voice_plucked_ms[taken]) taken = v;
+  }
+  if (taken < 0) return false;
+  pad_voice[p] = taken;
+  hammer_to(taken, p);
+  return true;
+}
+
+// Pad p plucks its own string, which no other pad has hold of from now on.
+void hammer_pluck(uint8_t p) {
+  for (uint8_t x = 0; x < 12; x++) if (pad_voice[x] == p) pad_voice[x] = -1;
+  pad_voice[p] = p;
+  voice_plucked_ms[p] = millis();
+  if (harp_voice_position[p] != p) {
+    harp_voice_position[p] = p;
+    current_harp_notes[p] = calculate_note_harp(p, chord_context_slashed, chord_context_sharp);
+  }
+}
+
+// Pad p lifts. Only the pad a string sounds lets it go: back to the last landed of its other pads
+// still held (a pull-off), or to ring out.
+void hammer_lift(uint8_t p, const uint32_t *landed) {
+  int8_t v = pad_voice[p];
+  pad_voice[p] = -1;
+  if (v < 0 || harp_voice_position[v] != p) return;
+  int8_t back = -1;
+  for (uint8_t x = 0; x < 12; x++) {
+    if (pad_voice[x] != v || !harp_array[x].read_value()) continue;
+    if (back < 0 || landed[x] > landed[back]) back = x;
+  }
+  if (back >= 0 && !midi_in_harp[v].owned && string_enveloppe_array[v]->isActive()) hammer_to(v, back);
+  else release_string(v);
+}
+
+// Hammer-on on or off, or the strip read another way. Going off, strings moved by a hammer ring
+// out from where they are (a pad lifted later lets go of its own string, not the one it moved),
+// and every pad has its own string again. Going on, each pad held has hold of its own; the ribbon
+// and zipper plates put their strings back themselves as they go off.
+FLASHMEM void hammer_reset(bool on) {
+  for (uint8_t i = 0; i < 12; i++) {
+    if (!on && harp_voice_position[i] != i) {
+      if (harp_array[harp_voice_position[i]].read_value()) release_string(i);
+      harp_voice_position[i] = i;
+      current_harp_notes[i] = calculate_note_harp(i, chord_context_slashed, chord_context_sharp);
+    }
+    pad_voice[i] = on && harp_array[i].read_value() ? i : -1;
+  }
 }
 
 // Tune voice p % 12 to position p, as it plays now.
@@ -6347,6 +6444,13 @@ void handle_harp() {
     for (int i = 0; i < 12; i++) clear &= !harp_array[i].read_value();
     if (clear) harp_sensor.apply_thresholds();
   }
+  // before the ribbon and zipper plates take the strings over, so a hammered string is let go first
+  static bool hammer_was = false;
+  bool hammer = hammer_active();
+  if (hammer != hammer_was) {
+    hammer_reset(hammer);
+    hammer_was = hammer;
+  }
   static bool positions_were_active = false;
   static bool ribbon_was_active = false;
   static uint8_t plate_was = 0;
@@ -6468,14 +6572,22 @@ void handle_harp() {
         koto_follow(i, pad_strength[i], now - pad_landed[i]);
       }
     } else if (value == 2) {
-      string_plucked[i] = false;
-      pluck_strength = pad_strength[i];
-      pluck_strum = strum_softness(i);
-      pluck_string(i);
+      if (!hammer || !hammer_land(i)) {
+        string_plucked[i] = false;
+        pluck_strength = pad_strength[i];
+        pluck_strum = strum_softness(i);
+        if (hammer) hammer_pluck(i);
+        pluck_string(i);
+      }
     } else if (value == 1) {
-      release_string(i);
+      if (hammer) hammer_lift(i, pad_landed);
+      else release_string(i);
     }
-    if (!harp_pluck_on_lift && harp_array[i].read_value() && !string_palmed[i]) press_string(i, pad_strength[i]);
+    // a held pad presses the string it sounds; one a hammer has moved on from presses nothing
+    if (!harp_pluck_on_lift && harp_array[i].read_value() && !string_palmed[i]) {
+      int8_t v = hammer ? pad_voice[i] : i;
+      if (v >= 0 && harp_voice_position[v] == i) press_string(v, pad_strength[i]);
+    }
   }
   pluck_strength = -1;   // a pluck from anywhere else is full
   pluck_strum = -1;
