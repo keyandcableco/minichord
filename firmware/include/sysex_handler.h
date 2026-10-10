@@ -120,6 +120,18 @@ void apply_audio_parameter(int adress, int value) {
       case 256:
         looper_action(value);
         break;
+      case 283:
+        looper_quantize=value;
+        break;
+      case 284:
+        looper_count_in=value;
+        break;
+      case 285:
+        looper_click=value;
+        break;
+      case 286:
+        looper_click_level=value;
+        break;
       case 4:
         chord_pot.set_alternate_default(value);chord_pot.force_update();
         break;
