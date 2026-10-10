@@ -75,6 +75,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 29, 0, 0, 100 }, // pan
     { 200, 0, 0, 511 }, // double tap control
     { 201, 0, 0, 4095 }, // double tap value
+    { 321, 1, 0, 1 }, // double tap hold
     { 209, 0, 0, 511 }, // double tap control 2
     { 210, 0, 0, 4095 }, // double tap value 2
     { 211, 0, 0, 511 }, // double tap control 3

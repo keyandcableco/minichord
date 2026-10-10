@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=54; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320)
+int version_ID=55; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -891,6 +891,12 @@ bool rhythm_ending = false;     // the long press on hold ends on a fill and a l
 bool rhythm_palm_break = false; // a palm mute rests the accompaniment to the bar line (319)
 const int16_t rhythm_fill_adress = 315;   // the action: 1 a fill, 2 a break, 3 the ending; the double tap's target
 bool modifier_combo_used = false;   // the modifier, held for a combo, isn't a tap of the double tap when let go
+// Tap and hold (321): a tap of the modifier and then a press held flips the double tap's settings
+// while it is held, and back as it lets go; let go as quickly as a tap, it latches as a double tap
+// does. The second press acts as it lands. While held so, the modifier neither sharpens a chord
+// pressed meanwhile nor switches the knobs to their alternates: it is busy holding.
+bool double_tap_hold = false;
+bool modifier_holding = false;      // the modifier is down as a tap and hold's second press
 void acc_fill_request(bool ending);
 void acc_break_request();
 void rhythm_fill_action(int16_t action);
@@ -5759,7 +5765,7 @@ void handle_chords_button() {
   if (sharp_transition > 1 && current_line != -1) {
     button_pushed = true;
   }
-  sharp_active = chord_matrix_array[0].read_value() && !alt_chord_layout;
+  sharp_active = chord_matrix_array[0].read_value() && !alt_chord_layout && !modifier_holding;
 
   static elapsedMillis open_for[22];   // how long each chord button has read open
   for (int i = 1; i < 22; i++) {
@@ -7440,24 +7446,26 @@ void trigger_chord_notes() {
 }
 
 
-// Applies the chosen values, or puts back what was there before.
-void toggle_double_tap_target() {
+// Applies the chosen values, or puts back what was there before. The actions (the looper, chord
+// memory, a rhythm fill) take their step only when asked to: a tap and hold letting go puts the
+// values back and leaves them be.
+void toggle_double_tap_target(bool actions = true) {
   // The looper, assigned to the double tap, takes its next step, from where the second tap landed;
   // with the pair's value at 7 the step goes to a looper on the computer instead (see LOOPER)
-  for (uint8_t k = 0; k < double_tap_pairs; k++) {
+  for (uint8_t k = 0; k < double_tap_pairs && actions; k++) {
     if (current_sysex_parameters[double_tap_control_adress[k]] != looper_adress) continue;
     if (current_sysex_parameters[double_tap_value_adress[k]] == 7) looper_send_step(millis() - modifier_pressed_ms);
     else looper_step(modifier_pressed_ms);
     break;
   }
   // chord memory, assigned to it, takes its next step
-  for (uint8_t k = 0; k < double_tap_pairs; k++) {
+  for (uint8_t k = 0; k < double_tap_pairs && actions; k++) {
     if (current_sysex_parameters[double_tap_control_adress[k]] != chord_memory_adress) continue;
     chord_memory_step();
     break;
   }
   // rhythm fill, assigned to it: a fill, or a break or the ending if its value says (1-3)
-  for (uint8_t k = 0; k < double_tap_pairs; k++) {
+  for (uint8_t k = 0; k < double_tap_pairs && actions; k++) {
     if (current_sysex_parameters[double_tap_control_adress[k]] != rhythm_fill_adress) continue;
     int16_t action = current_sysex_parameters[double_tap_value_adress[k]];
     rhythm_fill_action(action >= 1 && action <= 3 ? action : 1);
@@ -8153,7 +8161,7 @@ void loop() {
   handle_preset_change(up_transition, down_transition, up_state, down_state);
 
   // Handle potentiometer updates
-  bool alternate = knob_layer || chord_matrix_array[0].read_value();   // on knob layer 1 the alternates, whatever the modifier does
+  bool alternate = knob_layer || (chord_matrix_array[0].read_value() && !modifier_holding);   // on knob layer 1 the alternates, whatever the modifier does
   flag_save_needed |= chord_pot.update_parameter(alternate);
   flag_save_needed |= harp_pot.update_parameter(alternate);
   flag_save_needed |= mod_pot.update_parameter(alternate);
@@ -8172,6 +8180,15 @@ void loop() {
     if (modifier_down && !modifier_was_down) {
       press_length = 0;
       modifier_pressed_ms = millis();
+      // tap and hold: the second press acts as it lands, and its let-go says whether it was a tap
+      if (double_tap_hold && tap_count == 1 && since_first_tap < modifier_tap_gap && current_line == -1) {
+        tap_count = 0;
+        modifier_holding = true;
+        toggle_double_tap_target();
+      }
+    } else if (!modifier_down && modifier_was_down && modifier_holding) {
+      modifier_holding = false;
+      if (press_length >= modifier_tap_max) toggle_double_tap_target(false);   // held: back as it was; a tap stays
     } else if (!modifier_down && modifier_was_down && modifier_combo_used) {
       modifier_combo_used = false;   // held for a fill: not a tap
       tap_count = 0;
