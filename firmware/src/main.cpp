@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=46; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286)
+int version_ID=47; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -948,6 +948,13 @@ uint8_t looper_count_in = 0;     // bars of count-in before a recording: 0, 1 or
 uint8_t looper_click = 0;        // 0 off, 1 the count-in, 2 and the recording, 3 and the playing
 uint8_t looper_click_level = 50;
 uint32_t looper_click_flash_ms = 0;   // the latest tick, for the count-in's LED
+// Chord memory (287), see CHORD MEMORY
+enum { CHORD_MEMORY_EMPTY, CHORD_MEMORY_RECORDING, CHORD_MEMORY_PLAYING, CHORD_MEMORY_STOPPED };
+volatile uint8_t chord_memory_state = CHORD_MEMORY_EMPTY;
+const int16_t chord_memory_adress = 287;
+void chord_memory_action(int16_t action);
+void chord_memory_step();
+void chord_memory_record_chord();
 uint32_t acc_bar_ms_after(uint32_t at_least);
 uint8_t acc_beats_per_bar();
 uint32_t modifier_pressed_ms = 0;      // when the modifier was last pressed: a double tap's second tap lands then
@@ -1744,6 +1751,11 @@ void processMIDI(void) {
     if (usbMIDI.getData2() >= 64) looper_action(usbMIDI.getData1() - 84);
     return;
   }
+  // Chord memory, the same way: control change 104 record, 105 play, 106 stop, 107 clear, 108 the next step
+  if (type == usbMIDI.ControlChange && usbMIDI.getData1() >= 104 && usbMIDI.getData1() <= 108) {
+    if (usbMIDI.getData2() >= 64) chord_memory_action(usbMIDI.getData1() - 103);
+    return;
+  }
   // Rhythm mode from a foot controller or a computer, as the hold button: control change 102 turns
   // it on or off (a long press), 103 is a tap of the tempo; on any channel, as the value rises past 63
   if (type == usbMIDI.ControlChange && (usbMIDI.getData1() == 102 || usbMIDI.getData1() == 103)) {
@@ -1998,6 +2010,14 @@ void step_led_animation() {
     if (looper_state == LOOPER_RECORDING) set_led_color(0, 1.0, pulse * (1 - led_attenuation));
     else if (looper_overdub) set_led_color(40, 1.0, pulse * (1 - led_attenuation));
     else set_led_color(120, 1.0, 1 - led_attenuation);
+  } else if (chord_memory_state == CHORD_MEMORY_RECORDING || chord_memory_state == CHORD_MEMORY_PLAYING) {
+    // chord memory: violet pulsing while recording, steady while playing
+    if (led_anim_timer < 60) return;
+    led_anim_timer = 0;
+    static uint8_t memory_led_step = 0;
+    memory_led_step = (memory_led_step + 1) % 16;
+    float pulse = chord_memory_state == CHORD_MEMORY_PLAYING || memory_led_step < 8 ? 1.0 : 0.3;
+    set_led_color(285, 1.0, pulse * (1 - led_attenuation));
   } else if (double_tap_engaged) {
     if (led_anim_timer < 60) return;
     led_anim_timer = 0;
@@ -4296,6 +4316,7 @@ struct acc_chord_t {
 acc_chord_t acc_latest = {};    // as the player last made it (from the loop, acc_snapshot)
 acc_chord_t acc_now = {};       // as the rhythm plays it (taken from acc_latest as rhythm chord change says)
 volatile uint16_t acc_latest_serial = 0;
+uint16_t acc_serial_from_memory = 0xFFFF;   // the snapshot chord memory made, which the late catch leaves alone
 
 double acc_pos = 0;                     // where the rhythm has got to, in 24ths of a beat since it began: every note before it has played
 volatile double acc_clock_pos = 0;      // under a MIDI clock, where its latest tick fell
@@ -4803,6 +4824,168 @@ FLASHMEM void acc_tap(bool button) {
   Serial.println(rythm_bpm);
 }
 
+//>>CHORD MEMORY<<
+// The Omnichord's chord memory: a progression recorded in time with the rhythm, then played back by
+// itself, the accompaniment and the harp following it, so both hands are free for the strings.
+// It keeps what the buttons said, not what sounded -- the root's button, the chord, the sharp, the
+// slash -- and plays each back the way a press does (update_chord_notes and update_harp_notes), so
+// a change of key, voicing, style or division while it plays is heard in it.
+//
+// Driven through setting 287, never kept (1 record, 2 play, 3 stop, 4 clear, 5 the next step),
+// control changes 104-108 the same on any channel, and the double tap assigned to it, which steps:
+// record, play, stop, record anew. It runs in rhythm mode, and turns it on if it is off.
+// Recording starts on a bar line (one just passed, within a quarter of a beat, counts) with the
+// chord as it is, and each chord the buttons make goes in on the nearest beat; it closes on the
+// nearest bar line, a bar at least, and plays on from there. Playing, each chord goes in a little
+// ahead of its beat, so the rhythm has it there, and a chord pressed meanwhile stands until the
+// next; the rhythm sounds as if a chord were held. Stopped, it keeps the progression to play again
+// from the next bar line.
+struct chord_moment {
+  double at;                  // 24ths of a beat from the start
+  int8_t fundamental;
+  uint8_t (*chord)[7];
+  bool sharp, slashed;
+  uint8_t slash;
+};
+#define CHORD_MEMORY_MAX 64
+chord_moment chord_memory[CHORD_MEMORY_MAX];
+uint8_t chord_memory_count = 0;
+double chord_memory_start = 0;   // the rhythm's position (acc_pos) where it begins
+double chord_memory_length = 0;
+int16_t chord_memory_played = -1;   // the moment last put in, -1 none
+bool chord_memory_replaying = false;   // putting a moment in: not a chord to record
+
+void update_chord_notes();
+void update_harp_notes();
+void trigger_chord_notes();
+
+FLASHMEM static double chord_memory_pos() {
+  noInterrupts();
+  double p = acc_pos;
+  interrupts();
+  return p;
+}
+FLASHMEM static double chord_memory_bar() { return ACC_BEAT * acc_styles[acc_style_index()].beats_per_bar; }
+
+// the bank's colour back once it neither records nor plays (step_led_animation shows those)
+FLASHMEM static void chord_memory_show() {
+  if (chord_memory_state != CHORD_MEMORY_RECORDING && chord_memory_state != CHORD_MEMORY_PLAYING && looper_state != LOOPER_RECORDING && looper_state != LOOPER_PLAYING) {
+    set_led_color(bank_led_hue, bank_led_saturation(), 1 - led_attenuation);
+  }
+}
+
+// The chord the buttons just made, while recording: in on the nearest beat, the latest on a beat winning
+FLASHMEM void chord_memory_record_chord() {
+  if (chord_memory_state != CHORD_MEMORY_RECORDING || chord_memory_replaying) return;
+  double at = round((chord_memory_pos() - chord_memory_start) / ACC_BEAT) * ACC_BEAT;
+  if (at < 0) at = 0;   // before the first bar line: the chord it starts with
+  chord_moment m = {at, fundamental, current_chord, sharp_active, slash_chord, slash_value};
+  while (chord_memory_count > 0 && chord_memory[chord_memory_count - 1].at >= at) chord_memory_count--;
+  if (chord_memory_count < CHORD_MEMORY_MAX) chord_memory[chord_memory_count++] = m;
+}
+
+// A moment put in, as a press would: the live flags it needs for a moment, then back
+FLASHMEM static void chord_memory_apply(const chord_moment &m) {
+  bool sharp = sharp_active, slashed = slash_chord;
+  uint8_t slash = slash_value;
+  fundamental = m.fundamental;
+  current_chord = m.chord;
+  sharp_active = m.sharp;
+  slash_chord = m.slashed;
+  slash_value = m.slash;
+  chord_memory_replaying = true;
+  button_pushed = true;
+  update_chord_notes();
+  update_harp_notes();
+  acc_serial_from_memory = acc_latest_serial;
+  trigger_chord_notes();   // the held voices, if any (and it lets button_pushed go)
+  chord_memory_replaying = false;
+  sharp_active = sharp;
+  slash_chord = slashed;
+  slash_value = slash;
+}
+
+// the next bar line from now, or one just passed within a quarter of a beat
+FLASHMEM static double chord_memory_bar_line() {
+  double bar = chord_memory_bar(), pos = chord_memory_pos();
+  double last = floor(pos / bar) * bar;
+  return pos - last <= ACC_BEAT / 4 ? last : last + bar;
+}
+
+FLASHMEM static void chord_memory_record() {
+  if (!rythm_mode) set_rythm_mode(true);
+  chord_memory_count = 0;
+  chord_memory_start = chord_memory_bar_line();
+  chord_memory_state = CHORD_MEMORY_RECORDING;
+  if (acc_latest.valid) {   // the chord as it is begins it
+    chord_moment m = {0, fundamental, current_chord, chord_context_sharp, chord_context_slashed, slash_value};
+    chord_memory[chord_memory_count++] = m;
+  }
+}
+
+// Recording to playing: closed on the nearest bar line, a bar at least, and on from there
+FLASHMEM static void chord_memory_close() {
+  double bar = chord_memory_bar();
+  double bars = round((chord_memory_pos() - chord_memory_start) / bar);
+  if (bars < 1) bars = 1;
+  chord_memory_length = bars * bar;
+  while (chord_memory_count > 0 && chord_memory[chord_memory_count - 1].at >= chord_memory_length) chord_memory_count--;
+  if (chord_memory_count == 0) { chord_memory_state = CHORD_MEMORY_EMPTY; chord_memory_show(); return; }
+  chord_memory_played = -1;
+  chord_memory_state = CHORD_MEMORY_PLAYING;
+}
+
+FLASHMEM static void chord_memory_play() {
+  if (chord_memory_state == CHORD_MEMORY_RECORDING) { chord_memory_close(); return; }
+  if (chord_memory_state != CHORD_MEMORY_STOPPED) return;
+  if (!rythm_mode) set_rythm_mode(true);
+  chord_memory_start = chord_memory_bar_line();
+  chord_memory_played = -1;
+  chord_memory_state = CHORD_MEMORY_PLAYING;
+}
+
+FLASHMEM static void chord_memory_stop() {
+  if (chord_memory_state == CHORD_MEMORY_RECORDING) chord_memory_close();
+  if (chord_memory_state == CHORD_MEMORY_PLAYING) chord_memory_state = CHORD_MEMORY_STOPPED;
+  chord_memory_show();
+}
+
+FLASHMEM void chord_memory_step() {
+  switch (chord_memory_state) {
+    case CHORD_MEMORY_RECORDING: chord_memory_close(); break;
+    case CHORD_MEMORY_PLAYING: chord_memory_stop(); break;
+    default: chord_memory_record(); break;
+  }
+}
+
+FLASHMEM void chord_memory_action(int16_t action) {
+  current_sysex_parameters[chord_memory_adress] = 0;   // an action, never a value to keep
+  switch (action) {
+    case 1: if (chord_memory_state == CHORD_MEMORY_RECORDING) chord_memory_close(); else chord_memory_record(); break;
+    case 2: chord_memory_play(); break;
+    case 3: chord_memory_stop(); break;
+    case 4: chord_memory_state = CHORD_MEMORY_EMPTY; chord_memory_count = 0; chord_memory_show(); break;
+    case 5: chord_memory_step(); break;
+  }
+}
+
+// From the loop: the moment due a little ahead puts its chord in
+FLASHMEM void chord_memory_update() {
+  if (chord_memory_state != CHORD_MEMORY_PLAYING) return;
+  if (!rythm_mode) { chord_memory_state = CHORD_MEMORY_STOPPED; chord_memory_show(); return; }
+  double ahead = 10 * rythm_bpm * ACC_BEAT / 60000.0;   // 10 ms
+  double rel = chord_memory_pos() + ahead - chord_memory_start;
+  if (rel < 0) return;   // waiting for its bar line
+  rel = fmod(rel, chord_memory_length);
+  int16_t due = -1;
+  for (uint8_t i = 0; i < chord_memory_count; i++) if (chord_memory[i].at <= rel) due = i;
+  if (due < 0) due = chord_memory_count - 1;   // before the first: the last carries over the join
+  if (due != chord_memory_played) {
+    chord_memory_played = due;
+    chord_memory_apply(chord_memory[due]);
+  }
+}
+
 //>>MIDI CHORDS<<
 // With MIDI chords (282) on, in rhythm mode, notes sent in on the chords' port and channel play the
 // accompaniment rather than its voices: what is held is read as a chord -- its root and kind, the
@@ -4973,7 +5156,7 @@ FLASHMEM void acc_catch_late() {
 // From the loop, in rhythm mode, once the chord buttons have been read
 FLASHMEM void acc_update() {
   static uint16_t seen = 0;
-  bool hands = current_line >= 0 || midi_chord_held;
+  bool hands = current_line >= 0 || midi_chord_held || chord_memory_state == CHORD_MEMORY_PLAYING;
   bool caught = false;
   if (hands != acc_hands) {
     acc_hands = hands;
@@ -4993,7 +5176,8 @@ FLASHMEM void acc_update() {
   }
   if (acc_latest_serial != seen) {
     seen = acc_latest_serial;
-    if (!caught && acc_style_index() != 0) acc_catch_late();
+    // not a chord memory puts in a little ahead of its beat: the notes just before it are the last chord's
+    if (!caught && acc_style_index() != 0 && seen != acc_serial_from_memory) acc_catch_late();
   }
 }
 
@@ -6507,6 +6691,7 @@ void update_chord_notes() {
     // a singer holds a common tone, and lets it go otherwise.
     if (cantus_pc >= 0 && !cantus_is_chord_tone()) cantus_pc = -1;
     build_chord_notes();
+    chord_memory_record_chord();
     Serial.println("Updating frequencies");
     if (!rythm_mode && !trigger_chord && !retrigger_chord) {
       for (int i = 0; i < 4; i++) {
@@ -6847,6 +7032,12 @@ void toggle_double_tap_target() {
     else looper_step(modifier_pressed_ms);
     break;
   }
+  // chord memory, assigned to it, takes its next step
+  for (uint8_t k = 0; k < double_tap_pairs; k++) {
+    if (current_sysex_parameters[double_tap_control_adress[k]] != chord_memory_adress) continue;
+    chord_memory_step();
+    break;
+  }
   if (double_tap_engaged) {
     // Restore to the addresses latched at engage time, last applied first: the
     // assignments can be rewritten while the toggle is held, and each restore
@@ -6868,7 +7059,7 @@ void toggle_double_tap_target() {
     for (uint8_t k = 0; k < double_tap_pairs; k++) {
       int16_t adress = current_sysex_parameters[double_tap_control_adress[k]];
       double_tap_engaged_adress[k] = -1;
-      if (adress == looper_adress) continue;       // stepped above
+      if (adress == looper_adress || adress == chord_memory_adress) continue;   // stepped above
       if (!control_can_tap(adress)) continue;      // 0 means this pair is unassigned
       bool repeat = false;                          // two pairs on one parameter: the first one wins
       for (uint8_t j = 0; j < k; j++) if (double_tap_engaged_adress[j] == adress) repeat = true;
@@ -7306,6 +7497,7 @@ void loop() {
     trigger_chord_notes();
   }
   if (rythm_mode) acc_update();   // after the chord is built, so a press is heard with its chord
+  chord_memory_update();
 
   // Handle chord button transitions
   handle_chords_button();

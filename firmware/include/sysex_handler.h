@@ -102,6 +102,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 286:
         looper_click_level=value;
         break;
+      case 287:
+        chord_memory_action(value);
+        break;
       case 29:
         pan=value/100.0;apply_audio_parameter(85, current_sysex_parameters[85]);apply_audio_parameter(184, current_sysex_parameters[184]);
         break;
@@ -992,6 +995,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 284: lo=0; hi=2; return true;
       case 285: lo=0; hi=3; return true;
       case 286: lo=0; hi=100; return true;
+      case 287: lo=0; hi=5; return true;
       case 29: lo=0; hi=100; return true;
       case 200: lo=0; hi=511; return true;
       case 201: lo=0; hi=4095; return true;
