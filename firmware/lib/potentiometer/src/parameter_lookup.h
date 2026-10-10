@@ -49,6 +49,18 @@ static const ParameterInfo parameter_lookup[] = {
     { 286, 0, 0, 100 }, // looper click level
     { 288, 1, 0, 16 }, // looper length
     { 287, 1, 0, 5 }, // chord memory
+    { 290, 0, 0, 16383 }, // name 1
+    { 291, 0, 0, 16383 }, // name 2
+    { 292, 0, 0, 16383 }, // name 3
+    { 293, 0, 0, 16383 }, // name 4
+    { 294, 0, 0, 16383 }, // name 5
+    { 295, 0, 0, 16383 }, // name 6
+    { 296, 0, 0, 16383 }, // name 7
+    { 297, 0, 0, 16383 }, // name 8
+    { 298, 0, 0, 16383 }, // name 9
+    { 299, 0, 0, 16383 }, // name 10
+    { 300, 0, 0, 16383 }, // name 11
+    { 301, 0, 0, 16383 }, // name 12
     { 29, 0, 0, 100 }, // pan
     { 200, 0, 0, 511 }, // double tap control
     { 201, 0, 0, 4095 }, // double tap value
