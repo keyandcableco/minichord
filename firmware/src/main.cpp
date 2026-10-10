@@ -12,7 +12,7 @@
 #include <potentiometer.h>
 
 //>>SOFWTARE VERSION 
-int version_ID=11; //to be read 00.03, stored at adress 7 in memory
+int version_ID=12; //to be read 00.03, stored at adress 7 in memory
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -374,6 +374,10 @@ uint8_t acc_articulation = 100; // % of each written note's length
 uint8_t acc_accents = 100;      // % of the written difference between loud and soft notes
 uint8_t tap_counts = 0;         // tap tempo counts (281): 0 a tap a beat, 1 a tap an eighth; see acc_tap
 volatile double acc_phase_error = 0;   // 24ths of a beat the rhythm is to catch up (or fall back) to a tap
+// Chord memory (287), see CHORD MEMORY
+enum { CHORD_MEMORY_EMPTY, CHORD_MEMORY_RECORDING, CHORD_MEMORY_PLAYING, CHORD_MEMORY_STOPPED };
+volatile uint8_t chord_memory_state = CHORD_MEMORY_EMPTY;
+const int16_t chord_memory_adress = 287;
 
 uint8_t rythm_limit_change_to_every = 2; // when we allow the chord change
 elapsedMillis since_last_button_push;
@@ -475,6 +479,10 @@ void calculate_ws_array();
 void acc_settings_changed();
 void acc_tap();
 void acc_tap_reset();
+void set_rythm_mode(bool on);
+void chord_memory_record_chord();
+void chord_memory_action(int16_t action);
+void chord_memory_update();
 void apply_acc_voice_gain(uint8_t i, float gain);
 void acc_midi_start();
 void acc_midi_stop();
@@ -639,6 +647,12 @@ void processMIDI(void) {
         }
       }
     }
+  }
+  // Chord memory from a foot controller or a computer: control change 104 record, 105 play, 106
+  // stop, 107 clear, 108 the next step, on any channel, acting as the value rises past 63
+  if (type == usbMIDI.ControlChange && usbMIDI.getData1() >= 104 && usbMIDI.getData1() <= 108) {
+    if (usbMIDI.getData2() >= 64) chord_memory_action(usbMIDI.getData1() - 103);
+    return;
   }
   // Following a MIDI clock (24 a beat), see ACCOMPANIMENT: Start begins the pattern on the next
   // clock, as MIDI has it; Stop, or the clock going quiet for half a second (rythm_clock_watch),
@@ -1131,6 +1145,7 @@ struct acc_chord_t {
 acc_chord_t acc_latest = {};    // as the player last made it (from the loop, acc_snapshot)
 acc_chord_t acc_now = {};       // as the rhythm plays it (taken from acc_latest as rhythm chord change says)
 volatile uint16_t acc_latest_serial = 0;
+uint16_t acc_serial_from_memory = 0xFFFF;   // the snapshot chord memory made, which the late catch leaves alone
 
 double acc_pos = 0;                     // where the rhythm has got to, in 24ths of a beat since it began: every note before it has played
 volatile double acc_clock_pos = 0;      // under a MIDI clock, where its latest tick fell
@@ -1565,6 +1580,174 @@ FLASHMEM void acc_tap() {
   Serial.println(rythm_bpm);
 }
 
+//>>CHORD MEMORY<<
+// The Omnichord's chord memory: a progression recorded in time with the rhythm, then played back by
+// itself, the accompaniment and the harp following it, so both hands are free for the strings.
+// It keeps what the buttons said, not what sounded -- the root's button, the chord, the sharp, the
+// slash -- and plays each back the way a press does (update_chord_notes and update_harp_notes), so
+// a change of key, voicing, style or division while it plays is heard in it.
+//
+// Driven through setting 287, never kept (1 record, 2 play, 3 stop, 4 clear, 5 the next step), and
+// control changes 104-108 the same on any channel, so a foot controller can work it. It runs in
+// rhythm mode, and turns it on if it is off.
+// Recording starts on a bar line (one just passed, within a quarter of a beat, counts) with the
+// chord as it is, and each chord the buttons make goes in on the nearest beat; it closes on the
+// nearest bar line, a bar at least, and plays on from there. Playing, each chord goes in a little
+// ahead of its beat, so the rhythm has it there, and a chord pressed meanwhile stands until the
+// next; the rhythm sounds as if a chord were held. Stopped, it keeps the progression to play again
+// from the next bar line.
+struct chord_moment {
+  double at;                  // 24ths of a beat from the start
+  int8_t fundamental;
+  uint8_t (*chord)[7];
+  bool sharp, slashed;
+  uint8_t slash;
+};
+#define CHORD_MEMORY_MAX 64
+chord_moment chord_memory[CHORD_MEMORY_MAX];
+uint8_t chord_memory_count = 0;
+double chord_memory_start = 0;   // the rhythm's position (acc_pos) where it begins
+double chord_memory_length = 0;
+int16_t chord_memory_played = -1;   // the moment last put in, -1 none
+bool chord_memory_replaying = false;   // putting a moment in: not a chord to record
+
+void update_chord_notes();
+void update_harp_notes();
+void trigger_chord_notes();
+
+FLASHMEM static double chord_memory_pos() {
+  noInterrupts();
+  double p = acc_pos;
+  interrupts();
+  return p;
+}
+FLASHMEM static double chord_memory_bar() { return ACC_BEAT * acc_styles[acc_style_index()].beats_per_bar; }
+
+// The LED: violet, pulsing while it records, steady while it plays; the bank's colour otherwise.
+// From the loop, unless the low battery's blink has it.
+FLASHMEM static void chord_memory_show() {
+  static uint8_t shown = 0xFF;   // what it shows: 0 the bank, 1 recording bright, 2 dim, 3 playing
+  uint8_t want = chord_memory_state == CHORD_MEMORY_PLAYING ? 3
+               : chord_memory_state == CHORD_MEMORY_RECORDING ? ((millis() / 480) % 2 ? 2 : 1) : 0;
+  if (want == shown || led_blinking_flag) return;
+  shown = want;
+  if (want == 0) set_led_color(bank_led_hue, 1.0, 1 - led_attenuation);
+  else set_led_color(285, 1.0, (want == 2 ? 0.3 : 1.0) * (1 - led_attenuation));
+}
+
+// The chord the buttons just made, while recording: in on the nearest beat, the latest on a beat winning
+FLASHMEM void chord_memory_record_chord() {
+  if (chord_memory_state != CHORD_MEMORY_RECORDING || chord_memory_replaying) return;
+  double at = round((chord_memory_pos() - chord_memory_start) / ACC_BEAT) * ACC_BEAT;
+  if (at < 0) at = 0;   // before the first bar line: the chord it starts with
+  chord_moment m = {at, fundamental, current_chord, sharp_active, slash_chord, slash_value};
+  while (chord_memory_count > 0 && chord_memory[chord_memory_count - 1].at >= at) chord_memory_count--;
+  if (chord_memory_count < CHORD_MEMORY_MAX) chord_memory[chord_memory_count++] = m;
+}
+
+// A moment put in, as a press would: the live flags it needs for a moment, then back
+FLASHMEM static void chord_memory_apply(const chord_moment &m) {
+  bool sharp = sharp_active, slashed = slash_chord;
+  uint8_t slash = slash_value;
+  fundamental = m.fundamental;
+  current_chord = m.chord;
+  sharp_active = m.sharp;
+  slash_chord = m.slashed;
+  slash_value = m.slash;
+  chord_memory_replaying = true;
+  button_pushed = true;
+  update_chord_notes();
+  update_harp_notes();
+  acc_serial_from_memory = acc_latest_serial;
+  trigger_chord_notes();   // the held voices, if any (and it lets button_pushed go)
+  chord_memory_replaying = false;
+  sharp_active = sharp;
+  slash_chord = slashed;
+  slash_value = slash;
+}
+
+// the next bar line from now, or one just passed within a quarter of a beat
+FLASHMEM static double chord_memory_bar_line() {
+  double bar = chord_memory_bar(), pos = chord_memory_pos();
+  double last = floor(pos / bar) * bar;
+  return pos - last <= ACC_BEAT / 4 ? last : last + bar;
+}
+
+FLASHMEM static void chord_memory_record() {
+  if (!rythm_mode) set_rythm_mode(true);
+  chord_memory_count = 0;
+  chord_memory_start = chord_memory_bar_line();
+  chord_memory_state = CHORD_MEMORY_RECORDING;
+  if (acc_latest.valid) {   // the chord as it is begins it
+    chord_moment m = {0, fundamental, current_chord, sharp_active, slash_chord, slash_value};
+    chord_memory[chord_memory_count++] = m;
+  }
+}
+
+// Recording to playing: closed on the nearest bar line, a bar at least, and on from there
+FLASHMEM static void chord_memory_close() {
+  double bar = chord_memory_bar();
+  double bars = round((chord_memory_pos() - chord_memory_start) / bar);
+  if (bars < 1) bars = 1;
+  chord_memory_length = bars * bar;
+  while (chord_memory_count > 0 && chord_memory[chord_memory_count - 1].at >= chord_memory_length) chord_memory_count--;
+  if (chord_memory_count == 0) { chord_memory_state = CHORD_MEMORY_EMPTY; chord_memory_show(); return; }
+  chord_memory_played = -1;
+  chord_memory_state = CHORD_MEMORY_PLAYING;
+}
+
+FLASHMEM static void chord_memory_play() {
+  if (chord_memory_state == CHORD_MEMORY_RECORDING) { chord_memory_close(); return; }
+  if (chord_memory_state != CHORD_MEMORY_STOPPED) return;
+  if (!rythm_mode) set_rythm_mode(true);
+  chord_memory_start = chord_memory_bar_line();
+  chord_memory_played = -1;
+  chord_memory_state = CHORD_MEMORY_PLAYING;
+}
+
+FLASHMEM static void chord_memory_stop() {
+  if (chord_memory_state == CHORD_MEMORY_RECORDING) chord_memory_close();
+  if (chord_memory_state == CHORD_MEMORY_PLAYING) chord_memory_state = CHORD_MEMORY_STOPPED;
+  chord_memory_show();
+}
+
+FLASHMEM static void chord_memory_step() {
+  switch (chord_memory_state) {
+    case CHORD_MEMORY_RECORDING: chord_memory_close(); break;
+    case CHORD_MEMORY_PLAYING: chord_memory_stop(); break;
+    default: chord_memory_record(); break;
+  }
+}
+
+FLASHMEM void chord_memory_action(int16_t action) {
+  current_sysex_parameters[chord_memory_adress] = 0;   // an action, never a value to keep
+  switch (action) {
+    case 1: if (chord_memory_state == CHORD_MEMORY_RECORDING) chord_memory_close(); else chord_memory_record(); break;
+    case 2: chord_memory_play(); break;
+    case 3: chord_memory_stop(); break;
+    case 4: chord_memory_state = CHORD_MEMORY_EMPTY; chord_memory_count = 0; chord_memory_show(); break;
+    case 5: chord_memory_step(); break;
+  }
+}
+
+// From the loop: the moment due a little ahead puts its chord in
+FLASHMEM void chord_memory_update() {
+  chord_memory_show();
+  if (chord_memory_state != CHORD_MEMORY_PLAYING) return;
+  if (!rythm_mode) { chord_memory_state = CHORD_MEMORY_STOPPED; chord_memory_show(); return; }
+  double ahead = 10 * rythm_bpm * ACC_BEAT / 60000.0;   // 10 ms
+  double rel = chord_memory_pos() + ahead - chord_memory_start;
+  if (rel < 0) return;   // waiting for its bar line
+  rel = fmod(rel, chord_memory_length);
+  int16_t due = -1;
+  for (uint8_t i = 0; i < chord_memory_count; i++) if (chord_memory[i].at <= rel) due = i;
+  if (due < 0) due = chord_memory_count - 1;   // before the first: the last carries over the join
+  if (due != chord_memory_played) {
+    chord_memory_played = due;
+    chord_memory_apply(chord_memory[due]);
+  }
+}
+
 // A chord that arrives just after notes of the part fell due -- meant for the beat, a moment late --
 // moves them to it, or plays them, if the hands were off when they fell due. With the chord coming
 // in on the beat or the bar, it takes that beat or bar if it is this late for it, not the next.
@@ -1592,7 +1775,7 @@ FLASHMEM void acc_catch_late() {
 // From the loop, in rhythm mode, once the chord buttons have been read
 FLASHMEM void acc_update() {
   static uint16_t seen = 0;
-  bool hands = current_line >= 0;
+  bool hands = current_line >= 0 || chord_memory_state == CHORD_MEMORY_PLAYING;
   bool caught = false;
   if (hands != acc_hands) {
     acc_hands = hands;
@@ -1612,7 +1795,8 @@ FLASHMEM void acc_update() {
   }
   if (acc_latest_serial != seen) {
     seen = acc_latest_serial;
-    if (!caught && acc_style_index() != 0) acc_catch_late();
+    // not a chord memory puts in a little ahead of its beat: the notes just before it are the last chord's
+    if (!caught && acc_style_index() != 0 && seen != acc_serial_from_memory) acc_catch_late();
   }
 }
 
@@ -1932,6 +2116,7 @@ void update_chord_notes() {
       current_chord_notes[i] = calculate_note_chord(i, slash_chord, sharp_active);
     }
     acc_snapshot();
+    chord_memory_record_chord();
     Serial.println("Updating frequencies");
     if (!rythm_mode && !trigger_chord && !retrigger_chord) {
       for (int i = 0; i < 4; i++) {
@@ -2039,16 +2224,22 @@ void handle_hold_button() {
     since_last_button_push = 0;
   } else if (hold_transition == 1 && since_last_button_push > 800) {
     Serial.println("Long push, switching rhythm mode");
-    rythm_mode = !rythm_mode;
-    continuous_chord = false;
-    analogWrite(RYTHM_LED_PIN, 255 * continuous_chord);
-    if (rythm_mode) {
-      Serial.println("Starting rhythm timers");
-      acc_begin();
-    } else {
-      Serial.println("Stopping rhythm timers");
-      acc_end();
-    }
+    set_rythm_mode(!rythm_mode);
+  }
+}
+
+// Rhythm mode on or off: a long press on hold, or chord memory starting
+void set_rythm_mode(bool on) {
+  if (on == rythm_mode) return;
+  rythm_mode = on;
+  continuous_chord = false;
+  analogWrite(RYTHM_LED_PIN, 255 * continuous_chord);
+  if (rythm_mode) {
+    Serial.println("Starting rhythm timers");
+    acc_begin();
+  } else {
+    Serial.println("Stopping rhythm timers");
+    acc_end();
   }
 }
 
@@ -2156,6 +2347,7 @@ void loop() {
     trigger_chord_notes();
   }
   if (rythm_mode) acc_update();   // after the chord is built, so a press is heard with its chord
+  chord_memory_update();
 
   // Handle chord button transitions
   handle_chords_button();

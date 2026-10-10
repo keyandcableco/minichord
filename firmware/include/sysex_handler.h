@@ -746,6 +746,9 @@ void apply_audio_parameter(int adress, int value) {
       case 281:
         tap_counts=value;
         break;
+      case 287:
+        chord_memory_action(value);
+        break;
       case 192:
         chords_main_filter.frequency(value);
         break;

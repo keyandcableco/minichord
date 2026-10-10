@@ -210,6 +210,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 279, 0, 10, 200 }, // rhythm articulation
     { 280, 0, 0, 100 }, // rhythm accents
     { 281, 1, 0, 1 }, // tap tempo counts
+    { 287, 1, 0, 5 }, // chord memory
     { 192, 0, 0, 5000 }, // frequency
     { 193, 0, 1, 5 }, // resonance
     { 194, 0, 0, 1 }, // lowpass
