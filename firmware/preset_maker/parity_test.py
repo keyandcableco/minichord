@@ -64,6 +64,9 @@ SENTENCES = [
     "like Ice Cream, darker", "Mr. Blue Sky", "Digital Love chords with a Do You Feel Like We Do harp",
     "pizzicato strings on chords", "bowed strings on the chords and a plucky harp", "pizzicato strings",
     "string section chords", "a harp of pizzicato strings", "strings that are bright",
+    "choir on top, pizzicato in the bass", "piano bass with choir above", "each note a different instrument",
+    "pizzicato strings and choir on the chords", "the bass is piano and the top note is choir, darker",
+    "strings in the middle, piano on the bass note", "a choir top with a plucky harp", "mixed instruments, lots of reverb",
 ]
 # every song in the list, by its first name, as a preset and a profile
 SENTENCES += [e.words[0] for e in interpret.V if e.kind == "song"]

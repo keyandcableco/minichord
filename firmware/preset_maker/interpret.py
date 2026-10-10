@@ -43,6 +43,7 @@ ROLES = {
     "mult1": {"chord": 123}, "mult2": {"chord": 126}, "mult3": {"chord": 129},
     "noise": {"chord": 130},
     "note1": {"chord": 131}, "note2": {"chord": 132}, "note3": {"chord": 133}, "note4": {"chord": 134},
+    "voice1": {"chord": 270}, "voice2": {"chord": 271}, "voice3": {"chord": 272}, "voice4": {"chord": 273},
     "ribbon_span": {"harp": 246}, "ribbon_snap": {"harp": 247}, "ribbon_glide": {"harp": 248},
     "vib_attack": {"chord": 164, "harp": 65},
     "transient_wave": {"harp": 100}, "transient_attack": {"harp": 102}, "transient_decay": {"harp": 104},
@@ -757,6 +758,40 @@ TAP = {"resonance": 4.0, "reverb": 0.9, "reverb_size": 1.0, "delay_mix": 0.45, "
 # Words between an effect and its amount ("reverb at 40%"), and waveforms by name ("chord waveform 1 sawtooth")
 AMOUNT_FILLERS = {"to", "at", "of", "is", "set", "=", "around", "about"}
 WAVE_NAMES = {"sine": 0, "sawtooth": 9, "saw": 9, "square": 11, "triangle": 3, "pulse": 4}
+# Each chord note's own instrument (firmware 41, 270-273): the note voice's number is the chord voice's plus
+# one, so 0 can mean "as the chord voice". Positions count as the note levels do, first the bass.
+NOTE_INSTRUMENTS = {"pizzicato strings": 3, "plucked strings": 3, "pizz strings": 3, "pizzicato": 3, "pizz": 3,
+                    "string quartet": 5, "bowed strings": 5, "strings": 5, "violins": 5, "violin": 5, "cellos": 5,
+                    "cello": 5, "choir": 4, "voices": 4, "vocals": 4, "vocal": 4, "aahs": 4, "piano": 2, "pianos": 2,
+                    "oscillators": 1, "synth voice": 1, "own synth": 1}
+NOTE_POSITIONS = {"bass note": [0], "bottom note": [0], "lowest note": [0], "low note": [0], "first note": [0],
+                  "bass": [0], "bottom": [0], "second note": [1], "tenor": [1], "third note": [2], "alto": [2],
+                  "fourth note": [3], "top note": [3], "highest note": [3], "high note": [3], "soprano": [3],
+                  "top": [3], "middle notes": [1, 2], "middle two": [1, 2], "inner voices": [1, 2], "middle": [1, 2],
+                  "above": [1, 2, 3], "upper notes": [1, 2, 3], "upper voices": [1, 2, 3]}
+NOTE_VOICE_NAMES = {1: "its own synth", 2: "piano", 3: "pizzicato", 4: "choir", 5: "string quartet"}
+NOTE_NAMES = ("bass note", "second note", "third note", "top note")
+EVERY_NOTE = [5, 2, 4, 3]   # "each note a different instrument": cello-ish quartet, piano, choir, pizzicato on top
+NOTE_VOICES_NOTE = ("each chord note's instrument: the first is the bass and the fourth the top in the stock voicing; "
+                    "chord spacing without voice leading can reorder them. Needs firmware 41")
+
+
+def _alternation(words):
+    return "|".join(re.escape(w) for w in sorted(words, key=len, reverse=True))
+
+
+NOTE_PATTERNS = (   # (regex, which group is the instrument, which the position)
+    (r"\b(" + _alternation(NOTE_INSTRUMENTS) + r")\s+(?:on|in|at|for|as|playing)\s+(?:the\s+)?("
+     + _alternation(NOTE_POSITIONS) + r")\b", 1, 2),
+    (r"\b(" + _alternation(NOTE_INSTRUMENTS) + r")\s+(" + _alternation(NOTE_POSITIONS) + r")\b", 1, 2),
+    (r"\b(?:the\s+)?(" + _alternation(NOTE_POSITIONS) + r")\s+(?:is\s+|on\s+|in\s+|as\s+|played\s+by\s+|gets\s+)?"
+     r"(?:the\s+)?(" + _alternation(NOTE_INSTRUMENTS) + r")\b", 2, 1),
+)
+NOTE_SPLIT = (r"\b(" + _alternation(NOTE_INSTRUMENTS) + r")\s+and\s+(" + _alternation(NOTE_INSTRUMENTS)
+              + r")\s+(?:on\s+|in\s+|for\s+)?(?:the\s+)?chords?\b")
+NOTE_EVERY = (r"\b(?:each|every)\s+(?:chord\s+)?note\s+(?:is\s+)?(?:a\s+|on\s+a\s+)?different\s+instrument\b|"
+              r"\bdifferent\s+instruments?\s+(?:on|for)\s+(?:each|every)\s+note\b|\bmixed\s+instruments\b")
+
 # A control named with one of these and no setting is cleared: "turn off hover", "unassign the mod knob"
 CLEAR_WORDS = {"off", "unassign", "unassigned", "disable", "disabled", "nothing", "none", "remove", "clear",
                "cleared", "free", "no"}
@@ -1326,7 +1361,7 @@ class Interpreter:
         s = " ".join(toks)
         if any(re.search(p, s) for p, _ in CONTROLS):
             return True
-        return any(self._find(toks, i, self.section_phrases) for i in range(len(toks)))
+        return any(self._find(toks, i, self.section_phrases) and not self._covered(toks, i) for i in range(len(toks)))
 
     def _find(self, toks, i, table):
         for n in range(min(self.longest, len(toks) - i), 0, -1):
@@ -1428,6 +1463,7 @@ class Interpreter:
         if not controls and follows and self.pending:
             controls, carried = self.pending, True
         if not controls:
+            self._note_voices(s, take_span)
             self._switches(toks, used)
             self._named_numbers(toks, used)
         # sections
@@ -1622,6 +1658,39 @@ class Interpreter:
             take_span(m)
 
 
+    def _note_voices(self, s, take_span):
+        """An instrument for some of the chord's notes: "choir on top", "piano bass", "pizzicato strings and choir
+        on the chords" (the bass and top one, the middle two the other), "each note a different instrument" """
+        r = self.result
+        sets = []
+        for m in re.finditer(NOTE_EVERY, s):
+            sets.append((list(range(4)), None, m))
+        for m in re.finditer(NOTE_SPLIT, s):
+            sets.append(([0, 3], NOTE_INSTRUMENTS[m.group(1)], m))
+            sets.append(([1, 2], NOTE_INSTRUMENTS[m.group(2)], m))
+        for pattern, gi, gp in NOTE_PATTERNS:
+            for m in re.finditer(pattern, s):
+                sets.append((NOTE_POSITIONS[m.group(gp)], NOTE_INSTRUMENTS[m.group(gi)], m))
+        done = []
+        for notes, voice, m in sets:
+            if any(m.start() < e and s0 < m.end() for s0, e in done if (s0, e) != (m.start(), m.end())):
+                continue   # a shorter reading inside a longer one already taken
+            done.append((m.start(), m.end()))
+            take_span(m)
+            for n in notes:
+                v = EVERY_NOTE[n] if voice is None else voice
+                self._put(270 + n, v, f"{NOTE_NAMES[n]} voice")
+            if voice is None:
+                r.understood.append("chords: each note a different instrument (" + ", ".join(
+                    f"{NOTE_NAMES[n]} {NOTE_VOICE_NAMES[EVERY_NOTE[n]]}" for n in range(4)) + ")")
+            else:
+                r.understood.append(f"chords: {NOTE_VOICE_NAMES[voice]} on the " +
+                                    " and ".join(NOTE_NAMES[n] for n in notes))
+        if done:
+            self._move(MIN("cutoff", 3000), "chord", 1, "for the sampled notes")
+            if NOTE_VOICES_NOTE not in r.notes:
+                r.notes.append(NOTE_VOICES_NOTE)
+
     def _switches(self, toks, used):
         """Settings named as on or off: "make sure ribbon mode is on", "turn off MPE" """
         i = 0
@@ -1808,6 +1877,10 @@ def export_data(params, version):
         "action_verbs": sorted(ACTION_VERBS), "stopwords": sorted(STOPWORDS), "number_words": _NUMBER_WORDS,
         "colors": COLORS, "not_in_presets": sorted(NOT_IN_PRESETS), "clear_words": sorted(CLEAR_WORDS),
         "amount_fillers": sorted(AMOUNT_FILLERS), "wave_names": WAVE_NAMES,
+        "note_instruments": NOTE_INSTRUMENTS, "note_positions": NOTE_POSITIONS,
+        "note_voice_names": {str(k): v for k, v in NOTE_VOICE_NAMES.items()}, "note_names": list(NOTE_NAMES),
+        "every_note": EVERY_NOTE, "note_voices_note": NOTE_VOICES_NOTE,
+        "note_patterns": [list(p) for p in NOTE_PATTERNS], "note_split": NOTE_SPLIT, "note_every": NOTE_EVERY,
     }
 
 
