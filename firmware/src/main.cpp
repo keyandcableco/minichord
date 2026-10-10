@@ -12,7 +12,7 @@
 #include <potentiometer.h>
 
 //>>SOFWTARE VERSION 
-int version_ID=11; //to be read 00.03, stored at adress 7 in memory
+int version_ID=12; //to be read 00.03, stored at adress 7 in memory
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -212,6 +212,18 @@ const uint8_t palm_spread_ms = 40;   // plucking on lift, a palm's pads land wit
 // harpist's finger does. 0 plucks on touch, as before.
 bool harp_pluck_on_lift = false;
 bool string_plucked[12] = {false, false, false, false, false, false, false, false, false, false, false, false};   // plucked on lift, not yet ringing out
+// Koto press: plucking on lift, a finger on a ringing string presses it rather
+// than stopping it, as a koto player presses a string beside the bridge, and
+// the string bends up as far as it is pressed: this many semitones at a full
+// press, 0 off. Easing off lets it back down. Lifting a finger that pressed
+// lets the string ring on at its own pitch; one that only rested plucks it
+// again. See koto_follow().
+uint8_t koto_press = 0;
+bool string_pressing[12] = {false, false, false, false, false, false, false, false, false, false, false, false};   // a finger is on this ringing string
+bool string_pressed[12] = {false, false, false, false, false, false, false, false, false, false, false, false};    // ...and has bent it, so its lift plucks nothing
+int16_t press_rest[12] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};   // the lightest it has read since settling, which a press is measured from
+float string_bend[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};                 // semitones a press holds each string above its note
+uint16_t harp_voice_current_note[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};  // the note each string sounds, which a press bends
 bool string_palmed[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
 //>>SYSEX PARAMETERS<<
 // SYSEX midi message are used to control up to 512 synthesis parameters, in two pages of 256.
@@ -865,7 +877,8 @@ void apply_string_firmness(uint8_t i) {
 }
 
 void set_harp_voice_frequency(uint8_t i, uint16_t current_note) {
-  float note_freq =  pow(2,harp_octave_change)*c_frequency/4 * pow(2, (current_note+transpose_semitones) / 12.0);
+  harp_voice_current_note[i] = current_note;
+  float note_freq =  pow(2,harp_octave_change)*c_frequency/4 * pow(2, (current_note+transpose_semitones+string_bend[i]) / 12.0);
   float transient_freq =  64.0*c_frequency/4 *pow(2, ((current_note+transpose_semitones)%12+transient_note_level) / 12.0);
   string_note_freq[i] = note_freq;
   AudioNoInterrupts();
@@ -1562,6 +1575,30 @@ void palm_mute() {
   for (uint8_t i = 0; i < 12; i++) damp_string(i);
 }
 
+// ---- koto press: bending a ringing string by pressing it ----
+// A finger is measured from the lightest it has read since it settled, so
+// resting on a string bends nothing however firm the resting finger is, and a
+// finger easing off as it lifts brings the pitch back down with it.
+const uint8_t koto_settle_ms = 30;   // a finger pressing down is still landing this long
+const int16_t koto_dead = 30;        // strength above the rest that still bends nothing, a finger flattening
+const int16_t koto_span = 250;       // strength above that for a full press (a light finger reads 100-200, a hard one 430-490)
+const float koto_pressed = 0.1;      // of a full press, past which the finger has pressed, and its lift plucks nothing
+
+// Bend string i this many semitones above the note it sounds.
+void koto_bend(uint8_t i, float semitones) {
+  if (fabsf(semitones - string_bend[i]) < 0.005f) return;
+  string_bend[i] = semitones;
+  set_harp_voice_frequency(i, harp_voice_current_note[i]);
+}
+
+void koto_follow(uint8_t i, int16_t strength, uint32_t held_ms) {
+  if (held_ms < koto_settle_ms) return;
+  if (press_rest[i] < 0 || strength < press_rest[i]) press_rest[i] = strength;
+  float amount = constrain((strength - press_rest[i] - koto_dead) / (float)koto_span, 0.0f, 1.0f);
+  if (amount >= koto_pressed) string_pressed[i] = true;
+  koto_bend(i, koto_press * amount);
+}
+
 void handle_harp() {
   harp_sensor.update(harp_array);
   // When each pad last landed, for the palm when plucking on lift.
@@ -1616,7 +1653,14 @@ void handle_harp() {
   // string sounds as firmly as it was held at its firmest.
   static int16_t pad_strength[12] = {0};
   static int16_t pad_firmest[12] = {0};
-  if (touch_velocity || touch_pressure) {
+  // A press let go of by a change of mode: the string goes back to its pitch.
+  for (int i = 0; i < 12; i++) {
+    if (string_pressing[i] && (!harp_pluck_on_lift || !koto_press)) {
+      string_pressing[i] = false;
+      koto_bend(i, 0);
+    }
+  }
+  if (touch_velocity || touch_pressure || (koto_press && harp_pluck_on_lift)) {
     bool any = false;
     for (int i = 0; i < 12; i++) any |= harp_array[i].read_value();
     if (any) {
@@ -1635,12 +1679,27 @@ void handle_harp() {
       // the finger leaves it. Nothing sounds while a pad is held, so strings can
       // be placed ahead of time, under a chord yet to come, and lifted together
       // or one by one.
+      // With koto press a finger on a ringing string presses it instead, and
+      // bends it as far as it is pressed.
       if (value == 2) {
         pad_firmest[i] = pad_strength[i];
-        damp_string(i);
+        if (koto_press && string_enveloppe_array[i]->isActive()) {
+          string_pressing[i] = true;
+          string_pressed[i] = false;
+          press_rest[i] = -1;
+        } else {
+          damp_string(i);
+        }
       } else if (value == 1) {
-        pluck_string(i, pad_firmest[i], strum_softness(i));
-        string_plucked[i] = true;
+        bool pressed = string_pressing[i] && string_pressed[i];
+        if (string_pressing[i]) koto_bend(i, 0);
+        string_pressing[i] = false;
+        if (!pressed) {
+          pluck_string(i, pad_firmest[i], strum_softness(i));
+          string_plucked[i] = true;
+        }
+      } else if (string_pressing[i] && harp_array[i].read_value()) {
+        koto_follow(i, pad_strength[i], now - pad_landed[i]);
       }
     } else if (value == 2) {
       string_plucked[i] = false;

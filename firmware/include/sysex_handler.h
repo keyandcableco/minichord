@@ -201,6 +201,9 @@ void apply_audio_parameter(int adress, int value) {
       case 216:
         harp_pluck_on_lift=value;
         break;
+      case 289:
+        koto_press=value;
+        break;
       case 49:
         string_filter_base_freq=value;
         break;
