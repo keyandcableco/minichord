@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=48; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288)
+int version_ID=49; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -528,6 +528,16 @@ uint16_t string_release = 1000;    // the strings' own release, put back after a
 // harpist's finger does. 0 plucks on touch, as before.
 bool harp_pluck_on_lift = false;
 bool string_plucked[12] = {false, false, false, false, false, false, false, false, false, false, false, false};   // plucked on lift, not yet ringing out
+// Koto press: plucking on lift, a finger on a ringing string presses it rather
+// than stopping it, as a koto player presses a string beside the bridge, and
+// the string bends up as far as it is pressed: this many semitones at a full
+// press, 0 off. Easing off lets it back down. Lifting a finger that pressed
+// lets the string ring on at its own pitch; one that only rested plucks it
+// again. On the stock strip and the plates of twelve zones. See koto_follow().
+uint8_t koto_press = 0;
+bool string_pressing[12] = {false, false, false, false, false, false, false, false, false, false, false, false};   // a finger is on this ringing string
+bool string_pressed[12] = {false, false, false, false, false, false, false, false, false, false, false, false};    // ...and has bent it, so its lift plucks nothing
+int16_t press_rest[12] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};   // the lightest it has read since settling, which a press is measured from
 // Pads arriving this soon after a palm mute are part of the palm. A slap's
 // last finger or the heel of the hand can trail the rest by a hundred ms or
 // more; plucking on touch the window is kept short so a strum can follow the
@@ -6300,6 +6310,30 @@ void handle_wheel() {
   sent = value;
 }
 
+// ---- koto press: bending a ringing string by pressing it ----
+// A finger is measured from the lightest it has read since it settled, so
+// resting on a string bends nothing however firm the resting finger is, and a
+// finger easing off as it lifts brings the pitch back down with it.
+const uint8_t koto_settle_ms = 30;   // a finger pressing down is still landing this long
+const int16_t koto_dead = 30;        // strength above the rest that still bends nothing, a finger flattening
+const int16_t koto_span = 250;       // strength above that for a full press (a light finger reads 100-200, a hard one 430-490)
+const float koto_pressed = 0.1;      // of a full press, past which the finger has pressed, and its lift plucks nothing
+
+// Bend voice i this many semitones above the note it sounds.
+void koto_bend(uint8_t i, float semitones) {
+  if (fabsf(semitones - harp_voice_glide[i]) < 0.005f) return;
+  harp_voice_glide[i] = semitones;
+  set_harp_voice_frequency(i, harp_voice_current_note[i]);
+}
+
+void koto_follow(uint8_t i, int16_t strength, uint32_t held_ms) {
+  if (held_ms < koto_settle_ms) return;
+  if (press_rest[i] < 0 || strength < press_rest[i]) press_rest[i] = strength;
+  float amount = constrain((strength - press_rest[i] - koto_dead) / (float)koto_span, 0.0f, 1.0f);
+  if (amount >= koto_pressed) string_pressed[i] = true;
+  koto_bend(i, koto_press * amount);
+}
+
 void handle_harp() {
   harp_sensor.update(harp_array);
   if (harp_sensor.thresholds_pending()) {
@@ -6377,7 +6411,14 @@ void handle_harp() {
   static int16_t pad_strength[12] = {0};
   static int16_t pad_firmest[12] = {0};
   bool stock = !positions && !ribbon;
-  if (stock && (touch_velocity || touch_pressure)) {
+  // A press let go of by a change of mode: the string goes back to its pitch.
+  for (int i = 0; i < 12; i++) {
+    if (string_pressing[i] && (!stock || !harp_pluck_on_lift || !koto_press)) {
+      string_pressing[i] = false;
+      koto_bend(i, 0);
+    }
+  }
+  if (stock && (touch_velocity || touch_pressure || (koto_press && harp_pluck_on_lift))) {
     bool any = false;
     for (int i = 0; i < 12; i++) any |= harp_array[i].read_value() || harp_array[i].read_raw();
     if (any) {
@@ -6396,14 +6437,29 @@ void handle_harp() {
       // the finger leaves it. Nothing sounds while a pad is held, so strings can
       // be placed ahead of time, under a chord yet to come, and lifted together
       // or one by one.
+      // With koto press a finger on a ringing string presses it instead, and
+      // bends it as far as it is pressed.
       if (value == 2) {
         pad_firmest[i] = pad_strength[i];
-        damp_string(i);
+        if (koto_press && string_enveloppe_array[i]->isActive() && !midi_in_harp[i].owned) {
+          string_pressing[i] = true;
+          string_pressed[i] = false;
+          press_rest[i] = -1;
+        } else {
+          damp_string(i);
+        }
       } else if (value == 1) {
-        pluck_strength = pad_firmest[i];
-        pluck_strum = strum_softness(i);
-        pluck_string(i);
-        string_plucked[i] = true;
+        bool pressed = string_pressing[i] && string_pressed[i];
+        if (string_pressing[i]) koto_bend(i, 0);
+        string_pressing[i] = false;
+        if (!pressed) {
+          pluck_strength = pad_firmest[i];
+          pluck_strum = strum_softness(i);
+          pluck_string(i);
+          string_plucked[i] = true;
+        }
+      } else if (string_pressing[i] && harp_array[i].read_value()) {
+        koto_follow(i, pad_strength[i], now - pad_landed[i]);
       }
     } else if (value == 2) {
       string_plucked[i] = false;
