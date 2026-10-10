@@ -12,7 +12,7 @@
 #include <potentiometer.h>
 
 //>>SOFWTARE VERSION 
-int version_ID=11; //to be read 00.03, stored at adress 7 in memory
+int version_ID=12; //to be read 00.03, stored at adress 7 in memory
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 debouncer chord_matrix_array[22];
@@ -374,6 +374,11 @@ uint8_t acc_articulation = 100; // % of each written note's length
 uint8_t acc_accents = 100;      // % of the written difference between loud and soft notes
 uint8_t tap_counts = 0;         // tap tempo counts (281): 0 a tap a beat, 1 a tap an eighth; see acc_tap
 volatile double acc_phase_error = 0;   // 24ths of a beat the rhythm is to catch up (or fall back) to a tap
+// MIDI clock out (266): 0 off, 1 on port 1, 2 on port 2, 3 on both; see the clock in acc_tick
+uint8_t midi_clock_out = 0;
+volatile uint8_t midi_clock_started = 0;      // the ports a Start has gone to and no Stop since (bit 0 port 1, bit 1 port 2)
+volatile uint32_t midi_clock_heard_ms = 0;    // when a MIDI clock last came in, rhythm mode or not
+volatile bool midi_clock_heard = false;
 
 uint8_t rythm_limit_change_to_every = 2; // when we allow the chord change
 elapsedMillis since_last_button_push;
@@ -410,6 +415,7 @@ struct midi_event_t {
   uint8_t channel;
   uint8_t cable;
   bool note_on;
+  uint8_t realtime;  // a system real-time message (clock, start, stop), its type; 0 for a note
 };
 volatile midi_event_t midi_queue[MIDI_QUEUE_SIZE];
 volatile uint8_t midi_queue_head = 0; // written by producers
@@ -429,6 +435,23 @@ void queue_midi(bool note_on, uint8_t note, uint8_t velocity, uint8_t channel, u
     midi_queue[midi_queue_head].channel = channel;
     midi_queue[midi_queue_head].cable = cable;
     midi_queue[midi_queue_head].note_on = note_on;
+    midi_queue[midi_queue_head].realtime = 0;
+    midi_queue_head = next;
+  } else {
+    midi_queue_dropped++;
+  }
+  if (!primask) __enable_irq();
+}
+
+// The same for a system real-time message: usbMIDI.Clock, Start or Stop
+void queue_midi_realtime(uint8_t type, uint8_t cable) {
+  uint32_t primask;
+  __asm__ volatile("mrs %0, primask" : "=r"(primask));
+  __disable_irq();
+  uint8_t next = (midi_queue_head + 1) & (MIDI_QUEUE_SIZE - 1);
+  if (next != midi_queue_tail) {
+    midi_queue[midi_queue_head].cable = cable;
+    midi_queue[midi_queue_head].realtime = type;
     midi_queue_head = next;
   } else {
     midi_queue_dropped++;
@@ -449,7 +472,12 @@ void drain_midi_queue() {
     e.channel = midi_queue[midi_queue_tail].channel;
     e.cable = midi_queue[midi_queue_tail].cable;
     e.note_on = midi_queue[midi_queue_tail].note_on;
+    e.realtime = midi_queue[midi_queue_tail].realtime;
     midi_queue_tail = (midi_queue_tail + 1) & (MIDI_QUEUE_SIZE - 1);
+    if (e.realtime) {   // a clock goes straight out: the pacing is for synths reading notes
+      usbMIDI.sendRealTime(e.realtime, e.cable);
+      continue;
+    }
     if (sent) delayMicroseconds(midi_buffer_delay); // pacing for slower hardware synths
     if (e.note_on) {
       usbMIDI.sendNoteOn(e.note, e.velocity, e.channel, e.cable);
@@ -475,6 +503,7 @@ void calculate_ws_array();
 void acc_settings_changed();
 void acc_tap();
 void acc_tap_reset();
+void acc_clock_out_changed();
 void apply_acc_voice_gain(uint8_t i, float gain);
 void acc_midi_start();
 void acc_midi_stop();
@@ -650,6 +679,10 @@ void processMIDI(void) {
   }
   if(type==usbMIDI.Stop && rythm_mode){
     acc_midi_stop();
+  }
+  if(type==usbMIDI.Clock){   // the minichord keeps its own clock to itself while another is about
+    midi_clock_heard = true;
+    midi_clock_heard_ms = millis();
   }
   if(type==usbMIDI.Clock && rythm_mode){
     uint32_t us = last_midi_clock_in;
@@ -1363,6 +1396,54 @@ void acc_window(double t0, double t1) {
   }
 }
 
+// MIDI clock out (266): the rhythm's clock on to whatever is plugged in, so a drum machine or a
+// computer plays in time with the minichord. A tick goes out each time the rhythm passes a 24th
+// of a beat (acc_tick, from the same clock that plays the notes, so they stay together); a Start
+// comes just before the tick that begins a bar, so what follows starts its bar with ours; a Stop
+// when rhythm mode ends, the setting changes, or the pattern starts over from a press (and a Start
+// on its first tick). Nothing goes out while another clock is coming in, or has in the last
+// second: the minichord follows that one instead (see the clock in processMIDI), and two clocks
+// would fight.
+static inline bool midi_clock_out_free() {
+  return midi_clock_out && !rythm_clock_synced && !(midi_clock_heard && millis() - midi_clock_heard_ms < 1000);
+}
+
+static void midi_clock_send(uint8_t type, uint8_t ports) {
+  for (uint8_t cable = 0; cable < 2; cable++) {
+    if (ports & (1 << cable)) queue_midi_realtime(type, cable);
+  }
+}
+
+// a Stop to the ports a Start went to; from the timer, or the loop with it held off
+static void midi_clock_stop() {
+  if (!midi_clock_started) return;
+  midi_clock_send(usbMIDI.Stop, midi_clock_started);
+  midi_clock_started = 0;
+}
+
+// the ticks from t0 up to t1, before the notes there so a receiver has its tick when they arrive
+static void midi_clock_window(double t0, double t1) {
+  if (!midi_clock_out_free()) {
+    midi_clock_stop();
+    return;
+  }
+  uint16_t bar = ACC_BEAT * acc_styles[acc_style_index()].beats_per_bar;
+  for (int64_t t = (int64_t)ceil(t0); t < t1; t++) {
+    if (!midi_clock_started && t % bar == 0) {
+      midi_clock_started = midi_clock_out & 3;
+      midi_clock_send(usbMIDI.Start, midi_clock_started);
+    }
+    midi_clock_send(usbMIDI.Clock, midi_clock_out & 3);
+  }
+}
+
+// The setting changed: a Stop where the clock was going; it starts again on the next bar
+FLASHMEM void acc_clock_out_changed() {
+  noInterrupts();
+  midi_clock_stop();
+  interrupts();
+}
+
 // The rhythm timer, every millisecond
 void acc_tick() {
   uint32_t now = millis();
@@ -1386,6 +1467,7 @@ void acc_tick() {
     acc_restart = false;
     acc_pos = 0;
     acc_phase_error = 0;
+    midi_clock_stop();   // and a Start on the tick that begins it again
   }
   double step = rythm_bpm * ACC_BEAT / 60000.0;
   if (acc_phase_error != 0) {   // toward a tap: up to 30% quicker or slower until there (acc_tap)
@@ -1403,6 +1485,7 @@ void acc_tick() {
     if (t1 <= acc_clock_pos) t1 = acc_clock_pos + 1e-6;
   }
   if (t1 <= acc_pos) return;
+  midi_clock_window(acc_pos, t1);
   acc_window(acc_pos, t1);
   acc_pos = t1;
 }
@@ -1435,6 +1518,7 @@ FLASHMEM void acc_end() {
   rythm_timer.end();
   rythm_timer_running = false;
   rythm_clock_synced = false;
+  midi_clock_stop();
   for (uint8_t v = 0; v < 4; v++) acc_voice[v].off_pending = false;
   for (uint8_t r = 0; r < ACC_ROLL_MAX; r++) acc_rolled[r].used = false;
   // voices the rhythm played softer are back to full for the chords (play_single_note does the

@@ -126,6 +126,9 @@ void apply_audio_parameter(int adress, int value) {
       case 7:
         current_sysex_parameters[7]=version_ID;
         break;
+      case 266:
+        midi_clock_out=value; acc_clock_out_changed();
+        break;
       case 2:
         string_gain.amplitude(value/100.0,100);  harp_attack_velocity=value/100.0*127;
         break;
