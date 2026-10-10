@@ -57,7 +57,7 @@ ROLES = {
     "rhythm_length": {"global": 188}, "swing": {"global": 190}, "rhythm_note": {"global": 191},
     "rhythm_style": {"global": 274}, "rhythm_bass": {"global": 275}, "rhythm_chords": {"global": 276},
     "rhythm_follow": {"global": 277}, "rhythm_change": {"global": 278}, "rhythm_artic": {"global": 279},
-    "rhythm_accents": {"global": 280},
+    "rhythm_accents": {"global": 280}, "midi_clock": {"global": 266},
     **{f"rhythm{i}": {"global": 220 + i} for i in range(16)},
     "lfo_wave": {"chord": 152}, "lfo_freq": {"chord": 153}, "lfo_amount": {"chord": 154},
     "glide": {"chord": 199}, "ensemble": {"chord": 259},
@@ -504,6 +504,23 @@ add("bright leds, brighter leds, full brightness, leds bright, leds at full", "s
     home="global", moves=(EXACT("led", 0.0),))
 add("leds off, no leds, turn off the leds, lights off, turn off the lights, dark leds", "setting", "LEDs off",
     home="global", moves=(EXACT("led", 1.0),))
+# MIDI clock out (firmware 43, 266): rhythm mode's tempo sent as clock. Clock in isn't a setting: in rhythm
+# mode the minichord always follows a clock coming in, so asking it to follow one turns its own off
+CLOCK_NOTE = "MIDI clock goes out in rhythm mode, which is turned on at the instrument"
+for words, label, value, note in (
+        ("send clock, send midi clock, clock out, midi clock out, send the tempo, tempo out, sync out, "
+         "sync my drum machine, sync the drum machine, drive my drum machine, drive the drum machine, sync the daw, "
+         "sync my daw, drive my sequencer, drive the sequencer, be the master clock, master clock, "
+         "minichord is the master, the minichord is the master", "MIDI clock out on both ports", 3, CLOCK_NOTE),
+        ("clock on port 1, clock out on port 1, clock on the chord port", "MIDI clock out on port 1", 1, CLOCK_NOTE),
+        ("clock on port 2, clock out on port 2, clock on the harp port", "MIDI clock out on port 2", 2, CLOCK_NOTE),
+        ("no clock, no midi clock, stop sending clock, dont send clock, dont send midi clock, no clock out",
+         "no MIDI clock out", 0, None),
+        ("follow my daw, follow the daw, sync to the computer, sync to my daw, sync to the daw, slave to the clock, "
+         "follow the clock, follow midi clock, follow an external clock, external clock", "no MIDI clock out", 0,
+         "in rhythm mode the minichord follows a clock coming in by itself; its own clock out is set off so it "
+         "doesn't send one too")):
+    add(words, "setting", label, home="global", moves=(EXACT("midi_clock", value),), note=note)
 add("twin peaks, laura palmer, badalamenti, angelo badalamenti, david lynch", "sound",
     "Twin Peaks (Ben's Twin Green preset)", base="Twin Green", hue=120)
 
@@ -852,8 +869,9 @@ ON_OFF = {"ribbon": 245, "ribbon mode": 245, "harp ribbon": 245, "mpe": 110, "mp
           "single port": 108, "note off on lift": 215, "harp note off on lift": 215, "barry harris mode": 33,
           "barry harris": 33, "voice leading": 111, "chord layout": 39, "alternate chord layout": 39,
           "alternate layout": 39, "alt layout": 39, "alternate chords": 39, "retrigger chords": 21,
-          "palm mute": 213, "touch pressure": 253, "pressure": 253, "looper": None}
-ON_VALUE = {213: 5}
+          "palm mute": 213, "touch pressure": 253, "pressure": 253, "looper": None,
+          "midi clock out": 266, "clock out": 266, "midi clock": 266}
+ON_VALUE = {213: 5, 266: 3}
 # What has to be on for a control's setting to be heard
 PREPARE = {"delay_mix": DELAY_READY, "delay_time": (MIN("delay_mix", 0.3), IFZERO("delay_filter", 3000),
                                                      IFZERO("delay_feedback", 0.4)),

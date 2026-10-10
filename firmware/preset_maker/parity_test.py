@@ -62,6 +62,8 @@ SENTENCES = [
     "meantone tuning", "the Stranger Things theme", "slow vibrato and a long tail", "fast vibrato on the harp",
     "mod knob to the delay mix", "the harp knob does the reverb mix", "short tail, kirnberger tuning",
     "like Ice Cream, darker", "Mr. Blue Sky", "Digital Love chords with a Do You Feel Like We Do harp",
+    "walking bass at 120 bpm, drive my drum machine", "send midi clock", "clock on the harp port",
+    "follow my daw", "turn off clock out", "no clock", "midi clock out 2", "sync the daw with a boogie at 140 bpm",
     "jazz walking bass under a pad, swing, chord changes on the bar", "a waltz with a pizzicato bass",
     "boogie woogie with no bass, only while I hold a chord", "travis picking, staccato rhythm, even rhythm",
     "sync start bossa nova", "held chords over the bass with a habanera", "just the bass, ballad, on the beat",
