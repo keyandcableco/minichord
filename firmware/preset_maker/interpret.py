@@ -58,6 +58,8 @@ ROLES = {
     "rhythm_style": {"global": 274}, "rhythm_bass": {"global": 275}, "rhythm_chords": {"global": 276},
     "rhythm_follow": {"global": 277}, "rhythm_change": {"global": 278}, "rhythm_artic": {"global": 279},
     "rhythm_accents": {"global": 280}, "midi_clock": {"global": 266},
+    "loop_quantize": {"global": 283}, "loop_countin": {"global": 284}, "loop_click": {"global": 285},
+    "click_level": {"global": 286}, "chord_memory": {"global": 287}, "looper_pc": {"global": 256},
     **{f"rhythm{i}": {"global": 220 + i} for i in range(16)},
     "lfo_wave": {"chord": 152}, "lfo_freq": {"chord": 153}, "lfo_amount": {"chord": 154},
     "glide": {"chord": 199}, "ensemble": {"chord": 259},
@@ -452,7 +454,7 @@ add("delayed vibrato, vibrato that grows, growing vibrato, vibrato fades in", "e
     moves={"chord": (SET("vib_amount", 0.2), EXACT("vib_attack", 800)) + VIBRATO_READY,
            "harp": (SET("vib_amount", 0.2), IFZERO("vib_freq", 5), EXACT("vib_attack", 800))},
     off={"chord": (EXACT("vib_attack", 1),), "harp": (EXACT("vib_attack", 1),)})
-add("key click, click, clicky, clicks, hammer, hammered, percussive click", "effect", "key click", home="harp",
+add("key click, clicky, hammer, hammered, percussive click", "effect", "key click", home="harp",
     moves={"harp": (SET("transient", 0.3), EXACT("transient_wave", 5), EXACT("transient_attack", 0),
                     EXACT("transient_decay", 20))}, off={"harp": (EXACT("transient", 0),)})
 add("telephone, phone, old radio, am radio, radio, megaphone, transistor radio", "quality", "telephone", hue=60,
@@ -521,6 +523,37 @@ for words, label, value, note in (
          "in rhythm mode the minichord follows a clock coming in by itself; its own clock out is set off so it "
          "doesn't send one too")):
     add(words, "setting", label, home="global", moves=(EXACT("midi_clock", value),), note=note)
+# The looper in time (firmware 46): quantize, count-in, click and its level
+LOOPER_NOTE = "the looper is worked live: the double tap, minicontrol's looper buttons, or control changes"
+for words, label, value in (
+        ("quantize the loop, quantized looper, quantized loop, loop in time, tighten the loop, quantize, quantized, "
+         "quantize to eighths", "looper quantized to eighths", 2),
+        ("quantize to quarters, quantized to quarters, quantize to the beat", "looper quantized to quarter notes", 1),
+        ("quantize to sixteenths, quantized to sixteenths", "looper quantized to sixteenths", 3),
+        ("quantize to triplets, quantized to triplets, triplet loop, loop in triplets", "looper quantized to triplets", 4),
+        ("loop as played, no quantize, loose loop, unquantized, not quantized", "looper as played", 0)):
+    add(words, "setting", label, home="global", moves=(EXACT("loop_quantize", value),), note=LOOPER_NOTE)
+for words, label, value in (
+        ("count me in, count in, countin, a bar of count in, one bar count in, one bar of count in", "one bar's count-in", 1),
+        ("two bar count in, two bars count in, count in two bars, two bars of count in", "two bars' count-in", 2),
+        ("no count in, record straight away, record at once, no countin", "no count-in", 0)):
+    add(words, "setting", label, home="global", moves=(EXACT("loop_countin", value),), note=LOOPER_NOTE)
+add("click, metronome, click track", "effect", "looper click", home="global",
+    moves=(EXACT("loop_click", 2), SET("click_level", 50)), off=(EXACT("loop_click", 0),),
+    note="the click sounds on the speaker and headphones only, never in what goes out over USB")
+for words, label, value in (
+        ("click only for the count in, click for the count in, metronome for the count in", "click for the count-in", 1),
+        ("click all the time, metronome all the time, always click, click throughout, click while it loops, "
+         "metronome while it loops, click while it plays", "click all the time", 3),
+        ("no click, no metronome, click off, metronome off", "no click", 0)):
+    add(words, "setting", label, home="global", moves=(EXACT("loop_click", value),))
+for words, label, value in (("quiet click, soft click, quieter click, gentle click", "a quiet click", 25),
+                            ("loud click, louder click, loud metronome", "a loud click", 80)):
+    add(words, "setting", label, home="global", moves=(MIN("loop_click", 2), EXACT("click_level", value)))
+add("chord memory, chord memories, omnichord memory", "setting", "chord memory (played live)", home="global",
+    note="chord memory records a progression in time with rhythm mode and plays it back by itself, so both hands are "
+         "free for the strings. It's played live, not kept in a preset: say \"double tap works the chord memory\", "
+         "or use minicontrol's chord memory buttons")
 add("twin peaks, laura palmer, badalamenti, angelo badalamenti, david lynch", "sound",
     "Twin Peaks (Ben's Twin Green preset)", base="Twin Green", hue=120)
 
@@ -790,6 +823,9 @@ TARGETS = {
     "transpose": "transpose, transposes, transposition",
     "key": "key, key signature, key sig, chord key signature",
     "looper": "looper, loop, loops, record, recording, recorder",
+    "looper_pc": "computer looper, looper on the computer, the computers looper, daw looper, lab looper, labs looper",
+    "chord_memory": "chord memory, chord memories, omnichord memory, progression memory, record chords, records chords, "
+                    "record a progression, records the chords, record the chords",
     "chromatic": "chromatic",
     "lift": "pluck on lift, lift",
     "scale": "scale, pentatonic, harp mode, scalar harp mode, scalar mode, harp scale, scale mode",
@@ -815,7 +851,7 @@ SWEEP = {"cutoff": {"chord": (150, 4000), "harp": (80, 2000)}, "resonance": (0.7
 TAP = {"resonance": 4.0, "reverb": 0.9, "reverb_size": 1.0, "delay_mix": 0.45, "delay_time": 500, "vib_amount": 0.3,
        "trem_amount": 0.6, "crunch": 0.6, "glide": 400, "vowel": 100, "formant": 90, "vocoder": 80, "attack": 1000,
        "release": 3500, "sustain": 1.0, "decay": 2000, "spread": 90, "ensemble": 80, "level": 1.6, "lfo_amount": 0.7,
-       "noise": 0.15, "string_model": 100, "wave": 9, "looper": 7, "chromatic": 1, "lift": 1, "scale": 2, "barry": 1,
+       "noise": 0.15, "string_model": 100, "wave": 9, "looper": 6, "looper_pc": 7, "chord_memory": 5, "chromatic": 1, "lift": 1, "scale": 2, "barry": 1,
        "voice_leading": 1, "touch": 80, "palm_mute": 5, "transpose": 7, "tempo": 140, "ribbon": 1, "mpe": 1,
        "midi_in": 1, "knob_midi": 1, "knob_layer": 1, "layout": 1, "key": 1}
 # Words between an effect and its amount ("reverb at 40%"), and waveforms by name ("chord waveform 1 sawtooth")
@@ -890,7 +926,8 @@ WEAK = {"slightly", "bit", "little", "subtle", "subtly", "touch", "hint", "light
 NEGATE = {"no", "not", "without", "zero", "remove", "removed", "off", "kill", "lose", "drop", "stop", "never",
           "isnt", "dont", "doesnt", "less"}
 MORE = {"more", "extra", "increase", "increased", "add", "boost", "bigger"}
-ACTION_VERBS = {"assign", "assigns", "assigned", "map", "maps", "mapped", "route", "routes", "routed", "link",
+ACTION_VERBS = {"works", "work", "runs", "run", "operates", "operate", "drives", "steps", "step", "triggers",
+                "trigger", "fires", "assign", "assigns", "assigned", "map", "maps", "mapped", "route", "routes", "routed", "link",
                 "links", "linked", "point", "points", "turns", "turn", "adds", "add", "makes", "make", "starts", "start", "opens", "open", "sweeps",
                 "sweep", "controls", "control", "changes", "change", "brings", "bring", "gives", "give", "does",
                 "do", "kicks", "switches", "switch", "toggles", "toggle", "sets", "set", "mutes", "mute"}
@@ -908,7 +945,7 @@ mean means anyway kind course whatever there's theres it'd isnt also all any som
 would'nt wouldnt want wanted wish hope going gonna wanna let lets please thanks thank sounds sound right left
 know see try trying tried able unless otherwise case bank banks color led leds light lights assign assigns
 rhythm rhythms tuning tunings intonation theme themes song songs tune tunes track soundtrack music intro riff
-mix level amount
+mix level amount loop looper loops looping
 assigned map maps mapped route routes routed link links linked point points build built separate profile profiles based
 temperament alternate setting settings options option actually basically something like really much bit amount level levels stuff start
 starts starting play plays playing played sounds both everything whole overall little touch hint lot add adds
@@ -1301,6 +1338,12 @@ class Interpreter:
         slot = "" if index == 0 else f" (slot {index + 1})"
         if role == "looper":
             self.result.understood.append(f"double tap{slot} → the looper: record, play, stop, then a new recording")
+        elif role == "looper_pc":
+            self.result.understood.append(f"double tap{slot} → a looper on the computer (control change 90 over USB); "
+                                          "the minichord's own looper is left alone")
+        elif role == "chord_memory":
+            self.result.understood.append(f"double tap{slot} → the chord memory: record a progression in time, then it "
+                                          "plays back by itself (it turns rhythm mode on)")
         else:
             self.result.understood.append(f"double tap{slot} → {label} to {value:g}, and back on the next double tap")
         if index > 0 and not self.tap_note:
@@ -1350,7 +1393,7 @@ class Interpreter:
         if role == "octave":
             return max(p["min_value"], cur - 1) if down else min(p["max_value"], cur + 1)
         if role in TAP:
-            return 0 if down and role not in ("looper",) else TAP[role]
+            return 0 if down and role not in ("looper", "looper_pc", "chord_memory") else TAP[role]
         return p["max_value"]
 
     # ---- a whole description ----
@@ -1392,7 +1435,7 @@ class Interpreter:
         return self.result
 
     def _clauses(self, text):
-        parts = re.split(r"(?<!\d)\.|\.(?!\d)|[,;:!?\n]+|\bbut\b|(?<!only )\bwhile\b|\bwhereas\b|\bthen\b|\bexcept\b", text)
+        parts = re.split(r"(?<!\d)\.|\.(?!\d)|[,;:!?\n]+|\bbut\b|(?<!only )(?<!click )(?<!metronome )\bwhile\b|\bwhereas\b|\bthen\b|\bexcept\b", text)
         out = []
         for part in parts:
             toks = tokens(part)

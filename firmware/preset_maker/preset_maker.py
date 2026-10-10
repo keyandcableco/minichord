@@ -272,7 +272,7 @@ def apply_changes(values, changes, params, report_all=False):
             target = int(round(c["value"]))
             if target != 0:
                 t = params.get(target)
-                ok = t is not None and target not in LOCKED and t["group"] != "hidden" or target == 256
+                ok = t is not None and target not in LOCKED and t["group"] != "hidden" or target in (256, 287)
                 if a in KNOB_TARGETS:
                     ok = ok and target != 256 and t["controls"] == "all"
                 else:
