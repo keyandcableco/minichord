@@ -51,21 +51,28 @@ INSTRUMENTS = [
 ]
 TARGET_RMS = 0.2
 # Recordings that sound away from the note they are named for, in cents, measured on the minichord
-# (the recording played at its own note, so at the speed it was recorded) and from its spectrum,
-# the two agreeing within 5 cents. Only those that agree are here: a plucked or sung ensemble's pitch
-# drifts as it sounds (the choir 44 and 54), and a guess would be worse than the name. Offsets under
-# 3 cents are left alone.
-# The pizzicato is measured where the ear hears a pluck's pitch, 100 to 400 ms after its onset, with
-# the chords' output filter flat (its 500 Hz band-pass reweights an ensemble's harmonics by several
-# cents); the two methods agree within 1 cent there (minichord-bench/pizz_tune.py, 2026-10-09). The
-# pluck itself and the tail stay off by more, as a section's do.
+# (the recording played at its own note, so at the speed it was recorded) and offline, the two agreeing
+# within 5 cents. Offsets under 3 cents are left alone. Measured with the chords' output filter flat:
+# its default 500 Hz band-pass reweights an ensemble's harmonics and moves a fit by several cents
+# (minichord-bench/pizz_tune.py, 2026-10-09).
+# - pizzicato, played once: 100 to 400 ms after the onset, where the ear hears a pluck's pitch, fitted
+#   to the harmonics' peaks; the two methods agree within 1 cent there. The pluck itself and the tail
+#   stay off by more, as a section's do.
+# - choir and string quartet, looped: a loop only makes frequencies at whole multiples of one over its
+#   length (2 Hz for 0.5 s: 33 cents at the choir 44's note), so a fit to the strongest peak snaps to one
+#   of them, and two such fits agree by snapping alike. These are the energy-weighted mean frequency
+#   around each harmonic over a held loop instead, on the minichord, and offline over the stretch the
+#   loop repeats (for the choir 76, whose crossfade brings in earlier singing, over the loop as built).
+#   The string quartet is within 4 cents throughout, so none (the viola's earlier +3 left it 4 flat).
+# - piano: its fundamentals are within a few cents; its overtones run sharp, as a piano's do, so it is
+#   pitched by the fundamental and the lowest overtones, not by a fit to all of them.
 TUNING_CENTS = {
     ('quartet/pizz', 50): 19.2,        # the chords' B-flat2 to G3: their middle register
     ('quartet/pizz', 60): -15.0,       # the harp's C4 to F4
     ('quartet/pizz', 70): -4.0,
-    ('choir/musyng/aah', 64): -12.6,
-    ('choir/musyng/aah', 76): -18.8,
-    ('quartet/viola', 60): 3.0,
+    ('choir/musyng/aah', 54): -5.3,
+    ('choir/musyng/aah', 64): -4.2,
+    ('choir/musyng/aah', 76): -15.0,
     ('piano', 78): 6.4,
 }
 
