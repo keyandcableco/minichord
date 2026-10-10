@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=51; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302)
+int version_ID=52; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -995,6 +995,8 @@ uint8_t vocoder_carrier = 0;     // what the incoming sound shapes: 0 the chords
 uint8_t vocoder_consonants = 30; // 0-100: the incoming sound's hiss blended in, for words
 void vocoder_set();
 void vocoder_setup();
+void phone_setup();
+void phone_update();
 // Strum velocity (address 263), see strum_softness
 uint8_t strum_velocity = 0;      // 0-100: how much softer a slow strum plays than a fast one, 0 off
 float pluck_strum = -1;          // strum velocity's say on the plucks made now, -1 none (as pluck_strength)
@@ -1164,6 +1166,22 @@ int16_t hover_value = 0;       // what that setting reaches with a hand 2 cm abo
 uint8_t hover_reach = 7;       // how high above the plate hover begins, roughly in centimetres (251)
 bool hover_reapply = true;     // apply again even if the value hasn't changed
 void hover_set_target(int16_t adress);
+
+// The phone follower: what plays into the minichord over USB moves settings, keeps rhythm mode on
+// its beat, and plays on its kicks (see PHONE)
+struct phone_follow_slot {
+  int16_t target;        // the setting it moves (303, 307), 0 for none
+  int16_t value;         // what that setting reaches with the music at its loudest (304, 308)
+  uint8_t band;          // what it listens to: 0 the whole sound, 1 the bass (the kick), 2 the treble (305, 309)
+  uint16_t release_ms;   // how slowly it falls back as the music drops (306, 310)
+  bool reapply;
+};
+phone_follow_slot phone_follow[2] = {{0, 0, 0, 200, true}, {0, 0, 0, 200, true}};
+bool phone_beat = false;       // rhythm mode follows the music's beat (311)
+bool phone_kick_stab = false;  // each kick strikes the held chord again (312)
+uint8_t phone_kick_note = 0;   // each kick sends this midi note, 0 none (313)
+void phone_set_target(uint8_t slot, int16_t adress);
+void phone_set();
 
 // Called from loop() only. The single point at which this firmware talks to usbMIDI.
 void drain_midi_queue() {
@@ -5489,6 +5507,7 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   set_chord_ensemble(0);
 
   vocoder_setup();
+  phone_setup();
 
   // initialising the rest of the hardware
   chord_matrix.setup();
@@ -7596,6 +7615,292 @@ void vocoder_update() {
   }
 }
 
+//>>PHONE<<
+// The phone follower. Whatever plays into the minichord over USB (a phone, a computer), heard or
+// not (USB audio 0 or 1), is measured three ways each block (2.9 ms): the whole sound, under 150 Hz
+// (the kick) and over 6 kHz (the hats), each as a level in dB.
+//
+// Loud is the music's own: each band is read against the loudest it has been lately (falling 6 dB
+// over 5 s), over phone_range_db below that, so the phone's volume doesn't matter and a quiet song
+// swings as far as a loud one; under phone_floor_db is silence.
+//
+// Two followers move a setting each, the way hover does: from the preset's value with the music
+// quiet to their own value at its loudest. Each rises with the music and falls back over its
+// release: short for a filter that opens on each hat, a few hundred ms for chords ducking under
+// the kick and swelling back.
+//
+// A kick is the bass band jumping phone_kick_jump_db over three blocks, near the top of its range,
+// at most once each phone_kick_gap_ms. It can strike the held chord again (outside rhythm mode,
+// which has its own time) and send a midi note on the chord channel.
+//
+// The beat: how much the three bands rise, summed, every two blocks over the last six seconds, and
+// every half second the period at which that most resembles itself (70 to 180 bpm, leaning toward
+// the rhythm's own tempo where a song could be heard at half or twice it) and where its beats fall,
+// the kicks counting most. In rhythm mode the rhythm takes that tempo and is drawn toward those
+// beats, as taps draw it (acc_tap); a MIDI clock coming in has the rhythm instead. It finds the
+// beat, not the bar: the pattern's first beat lands on whichever beat it was on. Tuned on a model
+// of this code run on drum tracks at known tempos and on recordings: tempo within 0.3%, beats
+// placed within 30 ms nearly always, kicks found 5 ms after they land and bass notes passed over.
+const float phone_floor_db = -60;       // quieter than this is no music
+const float phone_range_db = 24;        // a follower's swing below the music's recent loudest
+const float phone_peak_fall_db = 6.0f * 2.9f / 5000.0f;   // a block's fall of the recent loudest: 6 dB in 5 s
+const float phone_kick_jump_db = 6;     // a kick's rise over three blocks
+const float phone_kick_near_db = 6;     // ...to within this of the bass's recent loudest: a bass line's notes stay under it
+const uint16_t phone_kick_gap_ms = 120; // kicks closer than this are one
+const uint8_t phone_kick_note_ms = 30;  // a kick note's length
+const uint8_t phone_follow_cc = 26;     // with knobs send midi on, the followers go out as 26 and 27 on the chord channel
+#define PHONE_OSS 1024                  // the beat's memory, a value each two blocks: 5.9 s
+const float phone_oss_ms = 2 * 128 * 1000.0f / AUDIO_SAMPLE_RATE_EXACT;
+const float phone_bpm_low = 70, phone_bpm_high = 180;
+const float phone_beat_sure = 0.25f;    // how much the music must resemble itself a beat on to have one: music 0.3-0.7, speech under 0.25
+const float phone_beat_lead_ms = 8;     // a beat is found this late (the rise counted in the blocks after it)
+const float phone_kick_weight = 2;      // a kick's say in where the beats fall, against the rise's spread
+DMAMEM float phone_oss[PHONE_OSS];
+DMAMEM float phone_work[PHONE_OSS];    // a still copy to search, without its mean
+DMAMEM uint8_t phone_kicks[PHONE_OSS];      // a kick in that slot
+DMAMEM uint8_t phone_kick_work[PHONE_OSS];  // ...as copied
+uint16_t phone_oss_at = 0;             // where the next value goes
+uint32_t phone_oss_ms_at = 0;          // when the last one went in
+float phone_band_db[3] = {-100, -100, -100};
+float phone_peak_db[3] = {-100, -100, -100};
+float phone_follow_position[2] = {0, 0};
+float phone_bpm = 0;                   // the music's tempo as found, 0 none
+bool phone_listening = false;
+
+// The input on only while something listens: muted, its filters and meters rest
+void phone_set() {
+  phone_listening = phone_follow[0].target || phone_follow[1].target || phone_beat || phone_kick_stab || phone_kick_note;
+  phone_in.gain(0, phone_listening ? 0.5f : 0);
+  phone_in.gain(1, phone_listening ? 0.5f : 0);
+}
+
+FLASHMEM void phone_setup() {
+  phone_in.silent_when_muted(true);
+  phone_bass.setLowpass(0, 150, 0.707);
+  phone_bass.setLowpass(1, 150, 0.707);
+  phone_treble.setHighpass(0, 6000, 0.707);
+  phone_treble.setHighpass(1, 6000, 0.707);
+  for (uint16_t n = 0; n < PHONE_OSS; n++) { phone_oss[n] = 0; phone_kicks[n] = 0; }
+  phone_set();
+}
+
+// A follower's setting changes: the old one back as the preset has it
+void phone_set_target(uint8_t slot, int16_t adress) {
+  phone_follow_slot &f = phone_follow[slot];
+  if (adress == f.target) return;
+  if (control_can_sweep(f.target)) apply_audio_parameter(f.target, current_sysex_parameters[f.target]);
+  f.target = adress;
+  f.reapply = true;
+  phone_set();
+}
+
+// A kick: the held chord again, and its note
+static void phone_kick(float strength) {
+  static elapsedMillis since;
+  static bool note_on = false;
+  if (strength < 0) {   // from the loop: the note's end
+    if (note_on && since >= phone_kick_note_ms) {
+      queue_midi(false, phone_kick_note, 0, chord_channel, chord_port);
+      note_on = false;
+    }
+    return;
+  }
+  if (phone_kick_stab && !rythm_mode && current_line >= 0) trigger_chord = true;
+  if (phone_kick_note) {
+    if (note_on) queue_midi(false, phone_kick_note, 0, chord_channel, chord_port);
+    queue_midi(true, phone_kick_note, (uint8_t)constrain(lroundf(64 + 63 * strength), 1, 127), chord_channel, chord_port);
+    note_on = true;
+    since = 0;
+  }
+}
+
+// The beat in the last six seconds: its period and where its last beat fell, if it has one. The
+// search is spread over the loop's passes (phone_search), a few lags each, so no pass waits long.
+#define PHONE_LAG_MAX 300            // twice the longest beat's lag (70 bpm: 148), and room
+static int16_t phone_lag_low, phone_lag_high, phone_lag_next = -1;
+static float phone_ac[PHONE_LAG_MAX];   // resemblance at each lag
+static uint32_t phone_search_ms;     // when the copy searched was taken
+
+static float phone_resemblance(int16_t lag) {
+  float s = 0;
+  for (int16_t n = lag; n < PHONE_OSS; n++) s += phone_work[n] * phone_work[n - lag];
+  return s / (PHONE_OSS - lag);
+}
+
+FLASHMEM static void phone_found(float lag, float sure) {
+  static float candidate = 0;
+  if (sure < phone_beat_sure) { phone_bpm = 0; candidate = 0; return; }
+  float bpm = 60000.0f / (lag * phone_oss_ms);
+  // a tempo near the one held moves it halfway; another must be found twice running to take over
+  if (phone_bpm > 0 && fabsf(bpm - phone_bpm) < 0.04f * phone_bpm) phone_bpm += (bpm - phone_bpm) * 0.5f;
+  else if (candidate > 0 && fabsf(bpm - candidate) < 0.04f * candidate) { phone_bpm = bpm; candidate = 0; }
+  else { candidate = bpm; return; }
+  // where the beats fall: the phase whose beats, back through the copy, land on the most rise,
+  // the latest beats counting most
+  // A kick counts for more: the off-beats have their hats and bass notes too, the beats their kicks.
+  float period = 60000.0f / (phone_bpm * phone_oss_ms);
+  float kick = phone_kick_weight * sqrtf(fmaxf(phone_ac[0], 0));
+  int16_t best = 0;
+  float best_sum = -1e9f;
+  for (int16_t phase = 0; phase < (int16_t)period; phase++) {
+    float sum = 0, weight = 1;
+    for (float back = phase; back < PHONE_OSS - 2; back += period, weight *= 0.85f) {
+      int16_t n = PHONE_OSS - 1 - (int16_t)lroundf(back);
+      int16_t m = n + (n < PHONE_OSS - 1);
+      sum += weight * (phone_work[n] + 0.5f * (phone_work[n - 1] + phone_work[m]) + kick * (phone_kick_work[n] + phone_kick_work[n - 1] + phone_kick_work[m]));
+    }
+    if (sum > best_sum) { best_sum = sum; best = phase; }
+  }
+  uint32_t beat_ms = phone_search_ms - (uint32_t)lroundf(best * phone_oss_ms + phone_beat_lead_ms);
+  if (!(phone_beat && rythm_mode) || rythm_clock_synced) return;
+  rythm_bpm = constrain(phone_bpm, 30.0f, 300.0f);
+  // The rhythm drawn halfway to a beat close by (an eighth of a beat); one further off (an off-beat
+  // taken for the beat, now and then) only once three searches running find it, then all the way.
+  static uint8_t jumps = 0;
+  static double jump_error = 0;
+  noInterrupts();
+  double at = acc_pos - (millis() - beat_ms) * (double)rythm_bpm * ACC_BEAT / 60000.0;
+  interrupts();
+  double beat = floor(at / ACC_BEAT) * ACC_BEAT;
+  double error = ((at - beat < ACC_BEAT / 2) ? beat : beat + ACC_BEAT) - at;
+  double correction = 0;
+  if (fabs(error) < ACC_BEAT / 8) { correction = error / 2; jumps = 0; }
+  else {
+    jumps = (jumps && fabs(error - jump_error) < ACC_BEAT / 8) ? jumps + 1 : 1;
+    jump_error = error;
+    if (jumps >= 3) { correction = error; jumps = 0; }
+  }
+  noInterrupts();
+  acc_phase_error = correction;
+  interrupts();
+}
+
+// A few lags of the search each pass; a new search each half second
+static void phone_search() {
+  if (!phone_beat) { phone_bpm = 0; return; }
+  if (phone_lag_next < 0) {
+    static elapsedMillis since;
+    if (since < 500) return;
+    since = 0;
+    float mean = 0;
+    for (uint16_t n = 0; n < PHONE_OSS; n++) mean += phone_oss[n];
+    mean /= PHONE_OSS;
+    for (uint16_t n = 0; n < PHONE_OSS; n++) {   // oldest first
+      phone_work[n] = phone_oss[(phone_oss_at + n) % PHONE_OSS] - mean;
+      phone_kick_work[n] = phone_kicks[(phone_oss_at + n) % PHONE_OSS];
+    }
+    phone_search_ms = phone_oss_ms_at;
+    phone_lag_low = (int16_t)floorf(60000.0f / (phone_bpm_high * phone_oss_ms));
+    phone_lag_high = (int16_t)ceilf(60000.0f / (phone_bpm_low * phone_oss_ms));
+    phone_ac[0] = phone_resemblance(0);
+    phone_lag_next = phone_lag_low;
+    return;
+  }
+  for (uint8_t k = 0; k < 8 && phone_lag_next <= 2 * phone_lag_high + 1; k++, phone_lag_next++) {
+    phone_ac[phone_lag_next] = phone_resemblance(phone_lag_next);
+  }
+  if (phone_lag_next <= 2 * phone_lag_high + 1) return;
+  phone_lag_next = -1;
+  if (phone_ac[0] <= 0) { phone_found(0, 0); return; }
+  // each lag with its double (a beat's resemblance carries on to the next), leaning toward the
+  // rhythm's own tempo (the preset's, or one tapped), so the player says whether a song is 75 or
+  // 150, 87 or 174; 120 where it's out of reach
+  float centre = (rythm_bpm >= phone_bpm_low && rythm_bpm <= phone_bpm_high) ? rythm_bpm : 120.0f;
+  int16_t best = phone_lag_low;
+  float best_score = -1e9f;
+  for (int16_t lag = phone_lag_low; lag <= phone_lag_high; lag++) {
+    float bpm = 60000.0f / (lag * phone_oss_ms);
+    float octaves = log2f(bpm / centre);
+    float score = (phone_ac[lag] + 0.5f * phone_ac[2 * lag]) * expf(-0.5f * octaves * octaves);
+    if (score > best_score) { best_score = score; best = lag; }
+  }
+  float lag = best;
+  if (best > phone_lag_low && best < phone_lag_high) {   // between lags, from the curve through its neighbours
+    float a = phone_ac[best - 1], b = phone_ac[best], c = phone_ac[best + 1];
+    float d = a - 2 * b + c;
+    if (d < 0) lag += constrain(0.5f * (a - c) / d, -0.5f, 0.5f);
+  }
+  phone_found(lag, phone_ac[best] / phone_ac[0]);
+}
+
+// Called from loop()
+void phone_update() {
+  phone_kick(-1);
+  if (!phone_listening) return;
+  static bool block = false;    // the second of a pair of blocks, for the beat's memory
+  static float rise = 0;
+  static float bass_back[3] = {-100, -100, -100};   // the bass three blocks back
+  static uint8_t bass_at = 0;
+  static elapsedMillis since_kick;
+  static uint8_t kicked = 0;
+  if (phone_level[0].available() && phone_level[1].available() && phone_level[2].available()) {
+    for (uint8_t k = 0; k < 3; k++) {
+      float r = phone_level[k].read();
+      float db = r > 0.00001f ? 20 * log10f(r) : -100;
+      if (db > phone_floor_db && db > phone_band_db[k]) rise += (k == 2 ? 0.5f : 1.0f) * fminf(db - phone_band_db[k], 20);
+      phone_band_db[k] = db;
+      phone_peak_db[k] = fmaxf(db, fmaxf(phone_peak_db[k] - phone_peak_fall_db, phone_floor_db));
+    }
+    float bass = phone_band_db[1];
+    if (bass > phone_floor_db && bass - bass_back[bass_at] > phone_kick_jump_db && bass > phone_peak_db[1] - phone_kick_near_db && since_kick >= phone_kick_gap_ms) {
+      since_kick = 0;
+      kicked = 1;
+      phone_kick(constrain(1 - (phone_peak_db[1] - bass) / phone_kick_near_db, 0.0f, 1.0f));
+    }
+    bass_back[bass_at] = bass;
+    bass_at = (bass_at + 1) % 3;
+    block = !block;
+    if (!block) {
+      phone_oss[phone_oss_at] = rise;
+      phone_kicks[phone_oss_at] = kicked;
+      phone_oss_at = (phone_oss_at + 1) % PHONE_OSS;
+      phone_oss_ms_at = millis();
+      rise = 0;
+      kicked = 0;
+    }
+    for (uint8_t s = 0; s < 2; s++) {
+      phone_follow_slot &f = phone_follow[s];
+      float db = phone_band_db[f.band], top = phone_peak_db[f.band];
+      float live = top <= phone_floor_db ? 0 : constrain((db - (top - phone_range_db)) / phone_range_db, 0.0f, 1.0f);
+      float &p = phone_follow_position[s];
+      p += (live - p) * (live > p ? 0.5f : 1 - expf(-2.9f / fmaxf(f.release_ms, 10)));
+    }
+  }
+  phone_search();
+
+  static elapsedMillis since_apply;
+  if (since_apply < 5) return;
+  since_apply = 0;
+  for (uint8_t s = 0; s < 2; s++) {
+    phone_follow_slot &f = phone_follow[s];
+    float p = phone_follow_position[s];
+    if (control_can_sweep(f.target)) {
+      static int16_t applied[2] = {0, 0};
+      static elapsedMillis since_refresh[2];
+      int16_t from = current_sysex_parameters[f.target];
+      int16_t to = f.value;
+      int16_t lo, hi;
+      if (parameter_range(f.target, lo, hi)) to = constrain(to, lo, hi);
+      int16_t value = (int16_t)lroundf(from + (to - from) * p);
+      // a preset load or an editor puts the stored value back: while it's up, apply it again now and then
+      if (p > 0.001f && since_refresh[s] > 250) f.reapply = true;
+      if (value != applied[s] || f.reapply) {
+        apply_audio_parameter(f.target, value);
+        applied[s] = value;
+        f.reapply = false;
+        since_refresh[s] = 0;
+      }
+    }
+    static int16_t sent[2] = {-1, -1};
+    if (!knob_midi || !f.target) sent[s] = -1;
+    else {
+      int16_t cc = (int16_t)lroundf(p * 127);
+      if (cc != sent[s]) queue_midi_cc(phone_follow_cc + s, cc, chord_channel, chord_port);
+      sent[s] = cc;
+    }
+  }
+}
+
 void loop() {
   usb_audio_update();
   // Process incoming MIDI messages
@@ -7701,6 +8006,7 @@ void loop() {
   handle_harp();
   looper_update();
   vocoder_update();
+  phone_update();
   samples_update();
   // The only point at which this firmware transmits MIDI. Must stay last, and must
   // stay in loop() -- see the MIDI OUTPUT QUEUE comment above.

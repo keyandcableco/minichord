@@ -87,6 +87,39 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 262:
         vocoder_consonants=value; vocoder_set();
         break;
+      case 303:
+        phone_set_target(0,constrain(value,0,parameter_size-1));
+        break;
+      case 304:
+        phone_follow[0].value=value; phone_follow[0].reapply=true;
+        break;
+      case 305:
+        phone_follow[0].band=constrain(value,0,2);
+        break;
+      case 306:
+        phone_follow[0].release_ms=constrain(value,10,2000);
+        break;
+      case 307:
+        phone_set_target(1,constrain(value,0,parameter_size-1));
+        break;
+      case 308:
+        phone_follow[1].value=value; phone_follow[1].reapply=true;
+        break;
+      case 309:
+        phone_follow[1].band=constrain(value,0,2);
+        break;
+      case 310:
+        phone_follow[1].release_ms=constrain(value,10,2000);
+        break;
+      case 311:
+        phone_beat=value; phone_set();
+        break;
+      case 312:
+        phone_kick_stab=value; phone_set();
+        break;
+      case 313:
+        phone_kick_note=value; phone_set();
+        break;
       case 266:
         midi_clock_out=value; acc_clock_out_changed();
         break;
@@ -1035,6 +1068,17 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 260: lo=0; hi=100; return true;
       case 261: lo=0; hi=2; return true;
       case 262: lo=0; hi=100; return true;
+      case 303: lo=0; hi=511; return true;
+      case 304: lo=0; hi=4095; return true;
+      case 305: lo=0; hi=2; return true;
+      case 306: lo=10; hi=2000; return true;
+      case 307: lo=0; hi=511; return true;
+      case 308: lo=0; hi=4095; return true;
+      case 309: lo=0; hi=2; return true;
+      case 310: lo=10; hi=2000; return true;
+      case 311: lo=0; hi=1; return true;
+      case 312: lo=0; hi=1; return true;
+      case 313: lo=0; hi=127; return true;
       case 266: lo=0; hi=3; return true;
       case 283: lo=0; hi=4; return true;
       case 284: lo=0; hi=2; return true;

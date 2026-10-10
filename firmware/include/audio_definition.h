@@ -586,6 +586,12 @@ AudioInputUSB            USB_in;
 AudioMixer4Lean              DAC_l_mixer;
 AudioMixer4Lean              DAC_r_mixer;
 #endif
+// The phone follower (main.cpp, PHONE): what the host plays, measured whole, under 150 Hz (the
+// kick) and over 6 kHz (the hats). After USB_in, so each block is measured as it arrives.
+AudioMixer4Lean              phone_in;          // both sides, while anything listens; silent otherwise
+AudioFilterBiquad        phone_bass;
+AudioFilterBiquad        phone_treble;
+AudioAnalyzeRMS          phone_level[3];    // whole, bass, treble
 
 AudioConnection          patchCord2000(string_filter_mixer, 0, string_multiplier, 0);
 AudioConnection          patchCord2001(string_gain, 0, string_multiplier, 1);
@@ -643,7 +649,14 @@ AudioConnection          patchCord2029(DAC_l_mixer, 0, DAC_out, 1);
 AudioConnection          patchCord2030(DAC_r_mixer, 0, DAC_out, 0);
 AudioConnection          clickCord1(looper_click_tick, 0, DAC_l_mixer, 2);
 AudioConnection          clickCord2(looper_click_tick, 0, DAC_r_mixer, 2);
+AudioConnection          phoneCord1(USB_in, 0, phone_in, 0);
+AudioConnection          phoneCord2(USB_in, 1, phone_in, 1);
 #endif
+AudioConnection          phoneCord3(phone_in, 0, phone_level[0], 0);
+AudioConnection          phoneCord4(phone_in, 0, phone_bass, 0);
+AudioConnection          phoneCord5(phone_bass, 0, phone_level[1], 0);
+AudioConnection          phoneCord6(phone_in, 0, phone_treble, 0);
+AudioConnection          phoneCord7(phone_treble, 0, phone_level[2], 0);
 
 // the right side of the strings' chain (see STEREO STRINGS), cord for cord the left's
 AudioConnection          patchCord141_r(filter_string_4, 0, string_mix_1_r, 3);
