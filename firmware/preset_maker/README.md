@@ -29,6 +29,7 @@ What it understands (`--words` lists everything):
 - **Qualities:** dark/bright, warm/cold, soft/punchy, short/long, spacey/dry, lo-fi, detuned, fat/thin, eerie, calm and more. Each one works with "very", "slightly", "more", "less" and "not".
 - **Effects:** reverb, delay, distortion, fuzz, tremolo, vibrato, ensemble chorus, stereo spread, glide, vocoder, singing vowels, touch velocity, pressure, palm mute and pluck on lift. Each one works with "lots of", "a touch of", "more", "less" and "no".
 - **Settings:** pentatonic or blues harp, chromatic, jazzy (Barry Harris), voice leading, sus chords, voicings, temperaments and EDOs, octave up or down, key of E flat, 120 bpm, tuned to 432 Hz, and a colour name for the bank LED.
+- **Rhythm mode** (firmware 42): the accompaniment styles, among them Alberti bass, waltz, boom-chick ("country rhythm"), walking bass ("jazz rhythm"), boogie, Travis picking, strummed guitar, bossa nova, arpeggios, ballad, reggae, 6/8 and habanera; and how they play: "no bass", "held bass", "held chords over the bass", "just the bass", "only while I hold a chord", "sync start", "chord changes on the bar", "staccato rhythm", "even rhythm", "swing". They play when rhythm mode is on, which is switched at the instrument.
 - **Controls:** "the mod knob opens the filter", "holding the modifier the mod knob adds vibrato", "hover makes the chords sing", "double tap starts the looper and adds the crunch".
 
 - **Songs:** about 180 of them (see below).

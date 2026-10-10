@@ -55,6 +55,9 @@ ROLES = {
     "pan": {"global": 29}, "reverb_hidamp": {"global": 25}, "reverb_lowpass": {"global": 27},
     "vocoder_carrier": {"global": 261}, "vocoder_consonants": {"global": 262}, "formant_size": {"chord": 239},
     "rhythm_length": {"global": 188}, "swing": {"global": 190}, "rhythm_note": {"global": 191},
+    "rhythm_style": {"global": 274}, "rhythm_bass": {"global": 275}, "rhythm_chords": {"global": 276},
+    "rhythm_follow": {"global": 277}, "rhythm_change": {"global": 278}, "rhythm_artic": {"global": 279},
+    "rhythm_accents": {"global": 280},
     **{f"rhythm{i}": {"global": 220 + i} for i in range(16)},
     "lfo_wave": {"chord": 152}, "lfo_freq": {"chord": 153}, "lfo_amount": {"chord": 154},
     "glide": {"chord": 199}, "ensemble": {"chord": 259},
@@ -232,7 +235,8 @@ def rhythm(steps, length=16, swing=None):
     """A rhythm-mode pattern: each step a sum of voices (1, 2, 4, 8 the chord's four from the bottom;
     16, 32, 64 three more, higher), two steps a beat"""
     steps = (list(steps) * 16)[:16]
-    moves = tuple(EXACT(f"rhythm{i}", v) for i, v in enumerate(steps)) + (EXACT("rhythm_length", length),)
+    moves = tuple(EXACT(f"rhythm{i}", v) for i, v in enumerate(steps)) + (EXACT("rhythm_length", length),
+                                                                         EXACT("rhythm_style", 0))
     return moves + ((EXACT("swing", swing),) if swing else ())
 
 
@@ -380,17 +384,59 @@ add("orchestra hit, orchestra hits, orch hit, orchestral hit", "sound", "orchest
     "chord": (EXACT("voice", 4),) + env(1, 300, 0.0, 300) + (EXACT("cutoff", 4000), SET("crunch", 0.1), SET("reverb", 0.4)),
     "harp": (EXACT("voice", 4),) + env(1, 300, 0.0, 300) + (EXACT("cutoff", 4000),)})
 RHYTHM_NOTE = "rhythm patterns play in rhythm mode, which is turned on at the instrument"
+# Written accompaniment parts that follow the held chord (firmware 42, rhythm style 274); 0 is the 16-step
+# pattern (220-235), which the two that have no style of their own still write
 for words, label, moves in (
-        ("arpeggio, arpeggios, arpeggiated, arpeggiator, arp up, rolling arpeggio", "arpeggio up", rhythm([1, 2, 4, 8])),
+        ("alberti bass, alberti, classical left hand, mozart left hand", "Alberti bass", (EXACT("rhythm_style", 1),)),
+        ("waltz, oom pah pah, three four, 3 4 time, three four time, 3 4", "waltz", (EXACT("rhythm_style", 2),)),
+        ("boom chick, two beat, country rhythm, country beat, johnny cash beat, oom pah, march, two step",
+         "boom-chick", (EXACT("rhythm_style", 3),)),
+        ("walking bass, swing bass, jazz rhythm, jazz walking bass, walking bass line", "walking bass",
+         (EXACT("rhythm_style", 4),)),
+        ("boogie, boogie woogie, rock and roll, rock n roll, rock and roll rhythm, chuck berry rhythm, "
+         "shuffle rhythm guitar", "boogie", (EXACT("rhythm_style", 5),)),
+        ("travis picking, fingerpicking, finger picking, fingerpicked, fingerstyle, finger style", "Travis picking",
+         (EXACT("rhythm_style", 6),)),
+        ("strummed guitar, strummed guitar rhythm, campfire, campfire strum, down up strum, strumming pattern",
+         "strummed guitar", (EXACT("rhythm_style", 7),)),
+        ("bossa, bossa nova, samba", "bossa nova", (EXACT("rhythm_style", 8),)),
+        ("arpeggio, arpeggios, arpeggiated, arpeggiator, arp up, rolling arpeggio, arpeggio up", "arpeggio up",
+         (EXACT("rhythm_style", 9),)),
+        ("arpeggio up and down, arp up and down, up and down arpeggio, up down arpeggio", "arpeggio up and down",
+         (EXACT("rhythm_style", 10),)),
+        ("ballad, ballad rhythm, pop piano, piano pulse", "ballad", (EXACT("rhythm_style", 11),)),
+        ("offbeat, offbeats, reggae, skank, ska", "reggae offbeat", (EXACT("rhythm_style", 12),)),
+        ("six eight, 6 8, 6 8 time, six eight time, compound time, 6 8 arpeggio", "6/8 arpeggio",
+         (EXACT("rhythm_style", 13),)),
+        ("habanera, tango, carmen rhythm", "habanera", (EXACT("rhythm_style", 14),)),
         ("arpeggio down, arp down, falling arpeggio", "arpeggio down", rhythm([8, 4, 2, 1])),
-        ("arpeggio up and down, arp up and down, up and down arpeggio", "arpeggio up and down",
-         rhythm([1, 2, 4, 8, 4, 2], 12)),
-        ("alberti bass, alberti", "Alberti bass", rhythm([1, 8, 4, 8])),
-        ("waltz, oom pah pah, three four, 3 4 time, three four time", "waltz", rhythm([1, 0, 14, 0, 14, 0], 6)),
-        ("march, oom pah, two step", "march", rhythm([1, 0, 14, 0])),
-        ("offbeat, offbeats, reggae, skank, ska", "offbeat chords", rhythm([0, 14])),
         ("straight eighths, eighths, pulsing chords, driving eighths, rock eighths", "straight eighths", rhythm([15]))):
-    add(words, "setting", f"{label} rhythm", home="global", moves=moves, note=RHYTHM_NOTE)
+    add(words, "setting", f"{label} rhythm", home="global", moves=moves, off=(EXACT("rhythm_style", 0),),
+        note=RHYTHM_NOTE)
+# How the style plays (firmware 42): its bass and chord parts, whether it follows the hands, when a chord
+# change lands, how long and how accented its notes are
+for words, label, role, value in (
+        ("no bass, without bass, without the bass, no bass line, no bass part, bass rests", "no bass in the rhythm",
+         "rhythm_bass", 2),
+        ("held bass, pedal bass, drone bass, pedal tone, bass held", "a held bass", "rhythm_bass", 1),
+        ("held chords over the bass, chords held over the bass, bass under held chords, bass line under held chords, "
+         "hold the chords, pad over the bass, walking bass under a pad", "chords held over the bass", "rhythm_chords", 1),
+        ("just the bass, bass line alone, bass alone, no chords, without chords, only the bass", "the bass alone",
+         "rhythm_chords", 2),
+        ("only while i hold a chord, only while i hold, only while holding, only when i hold a chord, "
+         "stops when i let go, stop when i let go",
+         "rhythm only while a chord is held", "rhythm_follow", 1),
+        ("sync start, starts when i press, start when i press, starts with the chord, omnichord style, "
+         "omnichord sync", "rhythm starts with the press", "rhythm_follow", 2),
+        ("change chords on the beat, chord changes on the beat, on the beat", "chord changes on the beat",
+         "rhythm_change", 1),
+        ("on the bar, on the downbeat, quantized to the bar, chord changes on the bar, change chords on the bar",
+         "chord changes on the bar", "rhythm_change", 2),
+        ("staccato rhythm, detached rhythm, short rhythm notes, detached", "short rhythm notes", "rhythm_artic", 50),
+        ("legato rhythm, smooth rhythm, connected rhythm, connected", "long rhythm notes", "rhythm_artic", 150),
+        ("even rhythm, flat dynamics, no accents, unaccented, even dynamics", "even accents", "rhythm_accents", 0),
+        ("accented, accents, accented rhythm, punchy rhythm", "strong accents", "rhythm_accents", 100)):
+    add(words, "setting", label, home="global", moves=(EXACT(role, value),), note=RHYTHM_NOTE)
 add("swing, swung, swinging, shuffle feel, shuffled", "setting", "swing", home="global",
     moves=(EXACT("swing", 1.25),), off=(EXACT("swing", 1.0),), note=RHYTHM_NOTE)
 add("straight time, no swing", "setting", "straight time", home="global", moves=(EXACT("swing", 1.0),))
@@ -482,11 +528,11 @@ add("hushed, quieter level", "quality", "quieter", opposite="louder", moves=(SCA
 add("short, shorter, staccato, percussive, snappy, snappier, tight, tighter, clipped, choppy, short tail, "
     "short release, shorter tail", "quality", "shorter",
     opposite="longer", moves=(SCALE("decay", 0.4), SET("sustain", 0.0), SCALE("release", 0.35),
-                               SCALE("string_decay", 0.4)))
+                               SCALE("string_decay", 0.4), SET("rhythm_artic", 50)))
 add("long, longer, sustained, sustaining, ringing, legato, lingering, endless, held, long tail, long release, "
     "longer tail, long decay", "quality", "longer",
     opposite="shorter", moves=(SET("sustain", 0.85), SCALE("release", 2.5), SCALE("decay", 2.0),
-                                SCALE("string_decay", 2.0)))
+                                SCALE("string_decay", 2.0), SET("rhythm_artic", 150)))
 add("slow attack, swell, swells, swelling, fade in, fades in, fading in, bowed, slow fade", "quality",
     "slow attack", opposite="fast attack", moves=(SET("attack", 800),))
 add("fast attack, instant, immediate, quick attack, sharp attack", "quality", "fast attack",
@@ -1328,7 +1374,7 @@ class Interpreter:
         return self.result
 
     def _clauses(self, text):
-        parts = re.split(r"(?<!\d)\.|\.(?!\d)|[,;:!?\n]+|\bbut\b|\bwhile\b|\bwhereas\b|\bthen\b|\bexcept\b", text)
+        parts = re.split(r"(?<!\d)\.|\.(?!\d)|[,;:!?\n]+|\bbut\b|(?<!only )\bwhile\b|\bwhereas\b|\bthen\b|\bexcept\b", text)
         out = []
         for part in parts:
             toks = tokens(part)
@@ -1533,7 +1579,7 @@ class Interpreter:
 
     def _covered(self, toks, i):
         """Whether a vocabulary phrase starting before i runs over it ("septimal chords")"""
-        for j in range(max(0, i - 3), i):
+        for j in range(max(0, i - self.longest + 1), i):
             hit = self._find(toks, j, self.phrases)
             if hit and j + hit[1] > i:
                 return True
