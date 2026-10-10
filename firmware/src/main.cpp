@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=40; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range)
+int version_ID=41; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -949,11 +949,14 @@ void vocoder_setup();
 uint8_t strum_velocity = 0;      // 0-100: how much softer a slow strum plays than a fast one, 0 off
 float pluck_strum = -1;          // strum velocity's say on the plucks made now, -1 none (as pluck_strength)
 
-// Sampled voices (addresses 264, 265), see SAMPLES
+// Sampled voices (addresses 264, 265, and 270-273 for each chord note), see SAMPLES
 uint8_t harp_voice_source = 0;    // 0 the harp's own synth, 1 piano, 2 pizzicato, 3 choir, 4 strings
-uint8_t chord_voice_source = 0;   // the same, for the chords
+uint8_t chord_voice_source = 0;   // the same, for the chords as a whole (chord voice, 265)
+uint8_t chord_note_source[4] = {0, 0, 0, 0};   // each note's own (270-273): 0 as the chord voice, else 1 + a source
+uint8_t chord_source_of[4] = {0, 0, 0, 0};     // what each chord voice sounds now, as chord_voice_source counts
 void set_harp_source(uint8_t source);
 void set_chord_source(uint8_t source);
+void set_chord_note_source(uint8_t i, uint8_t value);
 void harp_sample_start(uint8_t i);
 void chord_sample_start(uint8_t i);
 const float harp_sample_level = 3.0f;    // a sample's loudness (0.2 RMS) against the strings' (string_level, 0.15 of a saw)
@@ -1787,7 +1790,7 @@ bool chord_voice_resting[4] = {false, false, false, false};
 // the voice's oscillators and noise as they should be: their own settings while it sounds the
 // synth, silent while it rests or a sample sounds in their place
 void chord_voice_sources(uint8_t i) {
-  bool synth = !chord_voice_resting[i] && !chord_voice_source;
+  bool synth = !chord_voice_resting[i] && !chord_source_of[i];
   chord_osc_1_array[i]->amplitude(synth ? current_sysex_parameters[121] / 100.0 : 0);
   chord_osc_2_array[i]->amplitude(synth ? current_sysex_parameters[124] / 100.0 : 0);
   chord_osc_3_array[i]->amplitude(synth ? current_sysex_parameters[127] / 100.0 : 0);
@@ -2011,7 +2014,7 @@ void set_chord_voice_frequency(uint8_t i, uint16_t current_note) {
     queue_midi(true, midi_base_note_transposed+midi_out_note(current_note),chord_attack_velocity,mpe_chord_channel(i), chord_port);
     chord_started_notes[i]=midi_base_note_transposed+ midi_out_note(current_note);
   }
-  if (chord_voice_source && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(chord_voice_note_freq[i]);
+  if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(chord_voice_note_freq[i]);
   if (chord_envelope_array[i]->isActive() && !chord_voice_released[i]) {   // a chord change under a held chord
     looper_capture(LOOP_RETUNE, 12 + i, chord_voice_note_freq[i], 1, chord_started_notes[i], chord_attack_velocity);
   }
@@ -2143,16 +2146,31 @@ FLASHMEM void set_harp_source(uint8_t source) {
   }
 }
 
-FLASHMEM void set_chord_source(uint8_t source) {
+// Each chord voice has its own sample player, so each note can sound its own instrument: the chord
+// voice (265) for all four, or a note's own (270-273, counted from the first note as the note levels
+// 131-134 are) in its place, say pizzicato in the bass under a choir. Nothing more runs for it: a
+// voice plays one source either way.
+FLASHMEM static void apply_chord_source(uint8_t i) {
+  uint8_t source = chord_note_source[i] ? chord_note_source[i] - 1 : chord_voice_source;
   const AudioSynthWavetable::instrument_data *instrument = sampled_instrument(source);
-  chord_voice_source = instrument ? source : 0;
-  for (uint8_t i = 0; i < 4; i++) {
-    chord_sample_array[i]->stop();
-    if (instrument) chord_sample_array[i]->setInstrument(*instrument);
-    chord_source_mix_array[i]->gain(0, instrument ? 0 : 1);
-    chord_source_mix_array[i]->gain(1, instrument ? 1 : 0);
-    chord_voice_sources(i);   // the oscillators and noise silent while a sample sounds in their place
-  }
+  chord_source_of[i] = instrument ? source : 0;
+  chord_sample_array[i]->stop();
+  if (instrument) chord_sample_array[i]->setInstrument(*instrument);
+  chord_source_mix_array[i]->gain(0, instrument ? 0 : 1);
+  chord_source_mix_array[i]->gain(1, instrument ? 1 : 0);
+  chord_voice_sources(i);   // the oscillators and noise silent while a sample sounds in their place
+}
+
+FLASHMEM void set_chord_source(uint8_t source) {
+  chord_voice_source = sampled_instrument(source) ? source : 0;
+  for (uint8_t i = 0; i < 4; i++) apply_chord_source(i);
+}
+
+// value as stored: 0 the chord voice, 1 the synth, 2 piano, 3 pizzicato, 4 choir, 5 string quartet
+FLASHMEM void set_chord_note_source(uint8_t i, uint8_t value) {
+  if (i > 3) return;
+  chord_note_source[i] = value <= 5 ? value : 0;
+  apply_chord_source(i);
 }
 
 // Starts harp voice i's sample at the frequency it sounds; its level follows (apply_string_firmness)
@@ -2162,7 +2180,7 @@ void harp_sample_start(uint8_t i) {
 }
 
 void chord_sample_start(uint8_t i) {
-  if (!chord_voice_source) return;
+  if (!chord_source_of[i]) return;
   chord_sample_array[i]->playFrequency(chord_voice_note_freq[i], 127);
   chord_sample_array[i]->amplitude(fminf(1, chord_voice_level[i] * chord_sample_level));
 }
@@ -2172,8 +2190,8 @@ void samples_update() {
   if (harp_voice_source) {
     for (uint8_t i = 0; i < 12; i++) if (harp_sample_array[i]->isPlaying() && !string_enveloppe_array[i]->isActive()) harp_sample_array[i]->stop();
   }
-  if (chord_voice_source) {
-    for (uint8_t i = 0; i < 4; i++) if (chord_sample_array[i]->isPlaying() && !chord_envelope_array[i]->isActive()) chord_sample_array[i]->stop();
+  for (uint8_t i = 0; i < 4; i++) {
+    if (chord_source_of[i] && chord_sample_array[i]->isPlaying() && !chord_envelope_array[i]->isActive()) chord_sample_array[i]->stop();
   }
 }
 
@@ -2200,7 +2218,7 @@ void midi_in_tune_chord(uint8_t i) {
   chord_osc_2_array[i]->frequency(osc_2_freq_multiplier * f);
   chord_osc_3_array[i]->frequency(osc_3_freq_multiplier * f);
   chord_freq_dc_array[i]->amplitude(0, 0);
-  if (chord_voice_source && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(f);
+  if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(f);
   AudioInterrupts();
 }
 

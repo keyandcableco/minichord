@@ -539,6 +539,18 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 265:
         set_chord_source(value);
         break;
+      case 270:
+        set_chord_note_source(0,value);
+        break;
+      case 271:
+        set_chord_note_source(1,value);
+        break;
+      case 272:
+        set_chord_note_source(2,value);
+        break;
+      case 273:
+        set_chord_note_source(3,value);
+        break;
       case 121:
         for (int i=0;i<4;i++){
           chord_osc_1_array[i]->amplitude(value/100.0);
@@ -1069,6 +1081,10 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 114: lo=0; hi=1; return true;
       case 115: lo=0; hi=5; return true;
       case 265: lo=0; hi=4; return true;
+      case 270: lo=0; hi=5; return true;
+      case 271: lo=0; hi=5; return true;
+      case 272: lo=0; hi=5; return true;
+      case 273: lo=0; hi=5; return true;
       case 121: lo=0; hi=100; return true;
       case 122: lo=0; hi=11; return true;
       case 123: lo=50; hi=200; return true;
