@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=56; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323)
+int version_ID=57; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -823,6 +823,15 @@ int8_t chord_shuffling_array[6][7] = {
     {20, 21, 22, 23, 24, 25, 26}};//two octave up
 int8_t chord_shuffling_selection = 0;
 uint8_t chord_inversion = 0; // 0 = root position, 1-3 = successive inversions
+// Pressing the held chord again in hold mode (324): 0 strikes it again, as before; 1 climbs it an
+// inversion each press, to root position an octave up and then back to where it began; 2 climbs that
+// far and comes back down; 3 an octave up, and back on the next. The climb is a live step on top of
+// chord inversion, never kept, and starts over with any other chord. See inversion_repress().
+uint8_t repress_mode = 0;
+uint8_t inversion_step = 0;
+int8_t inversion_direction = 1;
+bool inversion_stepped = false;  // this build is a step: the voicing as climbed, not led
+bool chord_repressed = false;    // a chord button pressed, for update_chord_notes to see
 // Automatic voice leading. When on, the four chord voices are placed to move as
 // little as possible from the chord already sounding, instead of being built
 // upward from the root every time. The range is how far, in semitones, the
@@ -3227,8 +3236,9 @@ int16_t chord_tone_offset(uint8_t level, uint8_t voice) {
   // Spacing needs the voices in pitch order, so it uses the same sorted path as
   // inversion. At inversion 0 that reorders which oscillator plays which note
   // without changing the notes themselves, so nothing sounds different.
-  if ((chord_inversion > 0 || chord_spacing > 0) && voice < 4 && level % 10 < 4) {
-    return inverted_voice_offset(current_chord, voice, chord_inversion);
+  uint8_t inversion = chord_inversion + inversion_step;
+  if ((inversion > 0 || chord_spacing > 0) && voice < 4 && level % 10 < 4) {
+    return inverted_voice_offset(current_chord, voice, inversion);
   }
   return (*current_chord)[level % 10];
 }
@@ -5810,6 +5820,7 @@ void handle_chords_button() {
     if (key_change_mode) continue;
     if (value > 1 && !inhibit_button) {
       button_pushed = true;
+      chord_repressed = true;
       Serial.print("Button pushed: ");
       Serial.println(i);
       if (current_line == -1) {
@@ -7087,7 +7098,7 @@ void build_chord_notes() {
   // A slash chord names its own bass: it is led too, but with the bass kept on
   // the note the player asked for (apply_slash_voice_leading()). With slash
   // voice on, the plain chord is led and the slash applied to it after.
-  if (voice_leading) {
+  if (voice_leading && !inversion_stepped) {   // a step climbs from the voicing there was: the next chord leads from it
     uint8_t led[4];
     bool ok = (chord_context_slashed && !by_voice) ? apply_slash_voice_leading(led)
                                                    : apply_voice_leading(chord_context_sharp, led);
@@ -7115,10 +7126,43 @@ void refresh_chord_voicing() {
   }
 }
 
+// The held chord pressed again in hold mode climbs it a step (repress_mode); any other chord starts
+// over from chord inversion. Same chord is the same line, kind, sharp and slash; again is a press with
+// no other chord button down (chord_legato), so rolling onto it from another doesn't count.
+void inversion_repress() {
+  static int8_t line = -1;
+  static uint8_t (*chord)[7] = nullptr;
+  static bool sharp = false, slashed = false;
+  static uint8_t slash = 0;
+  bool same = line == fundamental && chord == current_chord && sharp == chord_context_sharp
+              && slashed == chord_context_slashed && (!slashed || slash == slash_value);
+  inversion_stepped = false;
+  if (!same) {
+    inversion_step = 0;
+    inversion_direction = 1;
+  } else if (chord_repressed && !chord_legato && continuous_chord && !rythm_mode && repress_mode) {
+    uint8_t tones[4];
+    uint8_t top = max(collect_chord_tones(current_chord, tones), (uint8_t)1);   // an octave of inversions
+    switch (repress_mode) {
+      case 1: inversion_step = inversion_step >= top ? 0 : inversion_step + 1; break;
+      case 2:
+        if (inversion_step >= top) inversion_direction = -1;
+        else if (inversion_step == 0) inversion_direction = 1;
+        inversion_step += inversion_direction;
+        break;
+      case 3: inversion_step = inversion_step ? 0 : top; break;
+    }
+    inversion_stepped = true;
+  }
+  chord_repressed = false;
+  line = fundamental; chord = current_chord; sharp = chord_context_sharp; slashed = chord_context_slashed; slash = slash_value;
+}
+
 void update_chord_notes() {
   if (button_pushed) {
     chord_context_sharp = sharp_active;
     chord_context_slashed = slash_chord;
+    inversion_repress();
     // A chord change keeps the cantus when the new chord has its note, the way
     // a singer holds a common tone, and lets it go otherwise.
     if (cantus_pc >= 0 && !cantus_is_chord_tone()) cantus_pc = -1;

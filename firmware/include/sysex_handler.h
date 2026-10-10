@@ -623,6 +623,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 37:
         chord_inversion=value; refresh_chord_voicing();
         break;
+      case 324:
+        repress_mode=value;
+        break;
       case 38:
         chord_spacing=value; refresh_chord_voicing();
         break;
@@ -1262,6 +1265,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 199: lo=0; hi=1500; return true;
       case 320: lo=0; hi=1; return true;
       case 37: lo=0; hi=3; return true;
+      case 324: lo=0; hi=3; return true;
       case 38: lo=0; hi=4; return true;
       case 111: lo=0; hi=2; return true;
       case 112: lo=0; hi=24; return true;
