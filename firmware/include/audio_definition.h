@@ -1,4 +1,5 @@
 #include <Audio.h>
+#include "phone_deck.h"
 #include "lean_filter.h"   // AudioFilterStateVariable's sums, the corner once a block while its control holds still (lean_filter.h)
 #include "lean_mixer.h"   // AudioMixer4's arithmetic, without the work on inputs at gain 0 (lean_mixer.h)
 #include "metronome_click.h"   // the looper's click, silent between ticks (metronome_click.h)
@@ -592,6 +593,15 @@ AudioMixer4Lean              phone_in;          // both sides, while anything li
 AudioFilterBiquad        phone_bass;
 AudioFilterBiquad        phone_treble;
 AudioAnalyzeRMS          phone_level[3];    // whole, bass, treble
+// The DJ box (main.cpp, PHONE DJ): the song on its way to the speaker through the deck (the tape stop,
+// and the ring the harp grabs from), a filter each side (low pass one way, high pass the other) and an
+// echo in time with the beat, sent from both sides and fed back
+AudioPhoneDeck           phone_deck;
+AudioFilterStateVariable phone_dj_filter[2];
+AudioMixer4Lean              phone_dj_dry[2];   // the song, its low pass and its high pass
+AudioMixer4Lean              phone_echo_in;     // both sides, and the echo fed back
+AudioEffectDelay         phone_echo;
+AudioMixer4Lean              phone_dj_out[2];   // the song through the filter, and the echo
 
 AudioConnection          patchCord2000(string_filter_mixer, 0, string_multiplier, 0);
 AudioConnection          patchCord2001(string_gain, 0, string_multiplier, 1);
@@ -643,8 +653,10 @@ AudioConnection          patchCord2026(stereo_r_mixer, 0, USB_out, 0);
 // DAC channel its recording channel comes from (0 to 0, 1 to 1)
 AudioConnection          patchCord2023(stereo_l_mixer, 0, DAC_l_mixer, 0);
 AudioConnection          patchCord2024(stereo_r_mixer, 0, DAC_r_mixer, 0);
-AudioConnection          patchCord2027(USB_in, 1, DAC_l_mixer, 1);
-AudioConnection          patchCord2028(USB_in, 0, DAC_r_mixer, 1);
+AudioConnection          patchCord2027(phone_dj_out[1], 0, DAC_l_mixer, 1);   // the song, through the DJ box
+AudioConnection          patchCord2028(phone_dj_out[0], 0, DAC_r_mixer, 1);
+AudioConnection          djCord1(USB_in, 0, phone_deck, 0);
+AudioConnection          djCord2(USB_in, 1, phone_deck, 1);
 AudioConnection          patchCord2029(DAC_l_mixer, 0, DAC_out, 1);
 AudioConnection          patchCord2030(DAC_r_mixer, 0, DAC_out, 0);
 AudioConnection          clickCord1(looper_click_tick, 0, DAC_l_mixer, 2);
@@ -657,6 +669,22 @@ AudioConnection          phoneCord4(phone_in, 0, phone_bass, 0);
 AudioConnection          phoneCord5(phone_bass, 0, phone_level[1], 0);
 AudioConnection          phoneCord6(phone_in, 0, phone_treble, 0);
 AudioConnection          phoneCord7(phone_treble, 0, phone_level[2], 0);
+AudioConnection          djCord3(phone_deck, 0, phone_dj_filter[0], 0);
+AudioConnection          djCord4(phone_deck, 1, phone_dj_filter[1], 0);
+AudioConnection          djCord5(phone_deck, 0, phone_dj_dry[0], 0);
+AudioConnection          djCord6(phone_deck, 1, phone_dj_dry[1], 0);
+AudioConnection          djCord7(phone_dj_filter[0], 0, phone_dj_dry[0], 1);
+AudioConnection          djCord8(phone_dj_filter[0], 2, phone_dj_dry[0], 2);
+AudioConnection          djCord9(phone_dj_filter[1], 0, phone_dj_dry[1], 1);
+AudioConnection          djCord10(phone_dj_filter[1], 2, phone_dj_dry[1], 2);
+AudioConnection          djCord11(phone_dj_dry[0], 0, phone_dj_out[0], 0);
+AudioConnection          djCord12(phone_dj_dry[1], 0, phone_dj_out[1], 0);
+AudioConnection          djCord13(phone_dj_dry[0], 0, phone_echo_in, 0);
+AudioConnection          djCord14(phone_dj_dry[1], 0, phone_echo_in, 1);
+AudioConnection          djCord15(phone_echo, 0, phone_echo_in, 2);
+AudioConnection          djCord16(phone_echo_in, 0, phone_echo, 0);
+AudioConnection          djCord17(phone_echo, 0, phone_dj_out[0], 1);
+AudioConnection          djCord18(phone_echo, 0, phone_dj_out[1], 1);
 
 // the right side of the strings' chain (see STEREO STRINGS), cord for cord the left's
 AudioConnection          patchCord141_r(filter_string_4, 0, string_mix_1_r, 3);

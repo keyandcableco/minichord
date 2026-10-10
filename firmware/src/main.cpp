@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=58; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326)
+int version_ID=59; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1034,6 +1034,7 @@ uint8_t vocoder_consonants = 30; // 0-100: the incoming sound's hiss blended in,
 void vocoder_set();
 void vocoder_setup();
 void phone_setup();
+void phone_dj_setup();
 void phone_update();
 // Strum velocity (address 263), see strum_softness
 uint8_t strum_velocity = 0;      // 0-100: how much softer a slow strum plays than a fast one, 0 off
@@ -1224,6 +1225,15 @@ bool phone_kick_stab = false;  // each kick strikes the held chord again (312)
 uint8_t phone_kick_note = 0;   // each kick sends this midi note, 0 none (313)
 void phone_set_target(uint8_t slot, int16_t adress);
 void phone_set();
+// The DJ box and the harp that plays the song (see PHONE DJ)
+uint8_t phone_dj_filter_value = 100;   // 327: below 100 a low pass closing, above a high pass opening, 100 neither
+uint8_t phone_dj_resonance = 30;       // 328
+uint8_t phone_echo_send = 0;           // 329
+uint8_t phone_echo_time = 1;           // 330: 0 an eighth, 1 a dotted eighth, 2 a quarter, 3 a sixteenth, 4 an eighth triplet
+uint8_t phone_echo_feedback = 45;      // 331
+uint8_t phone_strum = 0;               // 333: 0 off, 1 down on every beat, 2 down and up in eighths
+void phone_dj_set();
+void phone_deck_action(int16_t action);
 
 // Called from loop() only. The single point at which this firmware talks to usbMIDI.
 void drain_midi_queue() {
@@ -2342,12 +2352,29 @@ void apply_chord_voice_level(uint8_t i) {
 // the preset shapes it as it does the synth, and the voice's pitch (the ribbon, a retune, a chord
 // change) moves it. Its own envelope only passes it on; once the voice's envelope is done it stops,
 // so a voice not sounding costs nothing.
+// The song: a second of whatever plays into the minichord, grabbed from the phone deck (phone_grab)
+// and played as an instrument, voice source 5. Kept at the deck's rate, a third of the audio rate, one
+// shot, and pitched so a string at middle C plays it as it was. The struct never changes: only the
+// sound in its buffer does.
+#define SONG_SAMPLE_LENGTH 14706   // a second at 14706 Hz
+DMAMEM int16_t phone_ring[SONG_SAMPLE_LENGTH] __attribute__((aligned(4)));
+DMAMEM int16_t song_pcm[SONG_SAMPLE_LENGTH] __attribute__((aligned(4)));
+static const AudioSynthWavetable::sample_data song_samples[1] = {{
+  song_pcm, false, 14, (float)(1 << 18) * (1.0f / AudioPhoneDeck::DECIMATE) / 261.6256f,
+  (uint32_t)(SONG_SAMPLE_LENGTH - 1) << 18, 0, 0, 65535,
+  0, 1, 0, 1, 110, 0,                       // its envelope passes it on, as the instruments' do
+  0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0}};
+static const uint8_t song_ranges[] = {127};
+const AudioSynthWavetable::instrument_data song_instrument = {1, song_ranges, song_samples};
+bool song_grabbed = false;
+
 static const AudioSynthWavetable::instrument_data *sampled_instrument(uint8_t source) {
   switch (source) {
     case 1: return &piano_instrument;
     case 2: return &pizzicato_instrument;
     case 3: return &choir_instrument;
     case 4: return &strings_instrument;
+    case 5: return &song_instrument;
   }
   return nullptr;
 }
@@ -5721,6 +5748,7 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
 
   vocoder_setup();
   phone_setup();
+  phone_dj_setup();
 
   // initialising the rest of the hardware
   chord_matrix.setup();
@@ -8027,7 +8055,7 @@ bool phone_listening = false;
 
 // The input on only while something listens: muted, its filters and meters rest
 void phone_set() {
-  phone_listening = phone_follow[0].target || phone_follow[1].target || phone_beat || phone_kick_stab || phone_kick_note;
+  phone_listening = phone_follow[0].target || phone_follow[1].target || phone_beat || phone_kick_stab || phone_kick_note || phone_strum;
   phone_in.gain(0, phone_listening ? 0.5f : 0);
   phone_in.gain(1, phone_listening ? 0.5f : 0);
 }
@@ -8085,6 +8113,9 @@ static float phone_resemblance(int16_t lag) {
   return s / (PHONE_OSS - lag);
 }
 
+uint32_t phone_beat_anchor_ms = 0;   // a beat of the music, as last found
+float phone_beat_period_ms = 0;
+
 FLASHMEM static void phone_found(float lag, float sure) {
   static float candidate = 0;
   if (sure < phone_beat_sure) { phone_bpm = 0; candidate = 0; return; }
@@ -8110,6 +8141,8 @@ FLASHMEM static void phone_found(float lag, float sure) {
     if (sum > best_sum) { best_sum = sum; best = phase; }
   }
   uint32_t beat_ms = phone_search_ms - (uint32_t)lroundf(best * phone_oss_ms + phone_beat_lead_ms);
+  phone_beat_anchor_ms = beat_ms;   // for the harp's strum on the beat
+  phone_beat_period_ms = 60000.0f / phone_bpm;
   if (!(phone_beat && rythm_mode) || rythm_clock_synced) return;
   rythm_bpm = constrain(phone_bpm, 30.0f, 300.0f);
   // The rhythm drawn halfway to a beat close by (an eighth of a beat); one further off (an off-beat
@@ -8135,7 +8168,7 @@ FLASHMEM static void phone_found(float lag, float sure) {
 
 // A few lags of the search each pass; a new search each half second
 static void phone_search() {
-  if (!phone_beat) { phone_bpm = 0; return; }
+  if (!phone_beat && !phone_strum) { phone_bpm = 0; return; }
   if (phone_lag_next < 0) {
     static elapsedMillis since;
     if (since < 500) return;
@@ -8181,9 +8214,11 @@ static void phone_search() {
   phone_found(lag, phone_ac[best] / phone_ac[0]);
 }
 
+void phone_dj_update();
 // Called from loop()
 void phone_update() {
   phone_kick(-1);
+  phone_dj_update();
   if (!phone_listening) return;
   static bool block = false;    // the second of a pair of blocks, for the beat's memory
   static float rise = 0;
@@ -8256,6 +8291,124 @@ void phone_update() {
       if (cc != sent[s]) queue_midi_cc(phone_follow_cc + s, cc, chord_channel, chord_port);
       sent[s] = cc;
     }
+  }
+}
+
+//>>PHONE DJ<<
+// The song through the minichord on its way to the speaker (USB audio 1, play along), as a DJ's
+// mixer has it: a filter (one control, low pass below the middle and high pass above it, the song as
+// it is in the middle), an echo in time (sent from the song and fed back, at a beat's division of the
+// music's tempo as found, or the rhythm's), and the deck's tape stop. And the harp plays the song: a
+// grab takes its last second for the strings to play (voice source 5), and the strum plays the held
+// chord on the strings on every beat the music has, or down and up in eighths.
+const uint16_t phone_tape_stop_ms = 800;
+const uint16_t phone_echo_max_ms = 500;    // its delay line comes out of the audio memory: 500 ms is 173 blocks
+
+void phone_dj_set() {
+  int16_t v = phone_dj_filter_value;
+  float q = 0.707f + phone_dj_resonance / 100.0f * 3.3f;
+  bool low = v < 98, high = v > 102;
+  for (uint8_t c = 0; c < 2; c++) {
+    if (low) phone_dj_filter[c].frequency(16000.0f * powf(200.0f / 16000.0f, (100 - v) / 100.0f));
+    if (high) phone_dj_filter[c].frequency(20.0f * powf(4000.0f / 20.0f, (v - 100) / 100.0f));
+    phone_dj_filter[c].resonance(q);
+    phone_dj_dry[c].gain(0, low || high ? 0 : 1);
+    phone_dj_dry[c].gain(1, low ? 1 : 0);
+    phone_dj_dry[c].gain(2, high ? 1 : 0);
+    phone_dj_out[c].gain(0, 1);
+    phone_dj_out[c].gain(1, 1);
+  }
+  float send = phone_echo_send / 100.0f;
+  phone_echo_in.gain(0, send * 0.5f);
+  phone_echo_in.gain(1, send * 0.5f);
+  phone_echo_in.gain(2, min(phone_echo_feedback, (uint8_t)90) / 100.0f);
+}
+
+FLASHMEM void phone_dj_setup() {
+  phone_deck.begin(phone_ring, SONG_SAMPLE_LENGTH);
+  for (uint8_t c = 0; c < 2; c++) phone_dj_filter[c].octaveControl(0);
+  phone_echo.delay(0, 250);
+  for (uint8_t k = 1; k < 8; k++) phone_echo.disable(k);
+  phone_dj_set();
+}
+
+// A second of the song onto the harp: from the deck, as loud as it goes, and the harp set to play it
+FLASHMEM void phone_grab() {
+  AudioNoInterrupts();
+  for (uint8_t i = 0; i < 12; i++) if (harp_voice_source == 5) harp_sample_array[i]->stop();
+  phone_deck.grab(song_pcm, SONG_SAMPLE_LENGTH);
+  AudioInterrupts();
+  int32_t peak = 1;
+  for (uint32_t k = 0; k < SONG_SAMPLE_LENGTH; k++) peak = max(peak, (int32_t)abs(song_pcm[k]));
+  float g = 29000.0f / peak;
+  if (g > 1) for (uint32_t k = 0; k < SONG_SAMPLE_LENGTH; k++) song_pcm[k] = (int16_t)(song_pcm[k] * g);
+  song_grabbed = true;
+  if (harp_voice_source != 5) {
+    current_sysex_parameters[264] = 5;
+    set_harp_source(5);
+  }
+  Serial.println("Phone: a second of the song grabbed onto the harp");
+}
+
+// The action (332), never kept: 1 the tape stop (and the song back in, the next time), 2 a grab
+FLASHMEM void phone_deck_action(int16_t action) {
+  current_sysex_parameters[332] = 0;
+  if (action == 1) {
+    if (phone_deck.live()) phone_deck.stop(phone_tape_stop_ms);
+    else phone_deck.start();
+  } else if (action == 2) phone_grab();
+}
+
+// A string the strum plucks: as a finger lifting would, so it rings out by itself
+static void phone_strum_pluck(uint8_t i) {
+  if (harp_array[i].read_value() || midi_in_harp[i].owned) return;   // a finger on it, or a note sent in
+  if (harp_voice_position[i] != i && !harp_ribbon_active() && !harp_positions_active()) {   // a hammer had moved it
+    harp_voice_position[i] = i;
+    current_harp_notes[i] = calculate_note_harp(i, chord_context_slashed, chord_context_sharp);
+  }
+  pluck_strength = -1;
+  pluck_strum = -1;
+  pluck_string(i);
+  string_plucked[i] = true;
+}
+
+void phone_dj_update() {
+  // the echo's time follows the tempo: the music's as found, or the rhythm's
+  static elapsedMillis since_time;
+  if (phone_echo_send && since_time > 100) {
+    since_time = 0;
+    static const float beats[5] = {0.5f, 0.75f, 1.0f, 0.25f, 1.0f / 3};
+    float bpm = phone_bpm > 0 ? phone_bpm : rythm_bpm;
+    float ms = constrain(60000.0f / bpm * beats[min(phone_echo_time, (uint8_t)4)], 30.0f, (float)phone_echo_max_ms);
+    static float set_ms = 0;
+    if (fabsf(ms - set_ms) > 2) { phone_echo.delay(0, ms); set_ms = ms; }
+  }
+  // the strum: six strings in the middle of the harp, a string every 12 ms, low to high on the beat
+  static int8_t queue[6];
+  static uint32_t due[6];
+  static uint8_t queued = 0;
+  static uint32_t last_at = 0;
+  uint32_t now = millis();
+  for (uint8_t k = 0; k < queued; k++) {
+    if ((int32_t)(now - due[k]) < 0) continue;
+    phone_strum_pluck(queue[k]);
+    queue[k] = queue[--queued];
+    due[k] = due[queued];
+    k--;
+  }
+  if (!phone_strum || phone_bpm <= 0 || phone_beat_period_ms <= 0 || current_line < 0 || queued) return;
+  float unit = phone_beat_period_ms / (phone_strum == 2 ? 2 : 1);
+  int32_t since = (int32_t)(now - phone_beat_anchor_ms);
+  uint32_t index = (uint32_t)floorf(since / unit);
+  uint32_t at = phone_beat_anchor_ms + (uint32_t)lroundf(index * unit);
+  // right on a beat (or an eighth), and once: the beat found moves every half second, so it is told
+  // by its time, not its count. Counted from a beat, an even one is on the beat: a down strum
+  if (since < 0 || now - at > 30 || (int32_t)(at - last_at) < (int32_t)(unit / 2)) return;
+  last_at = at;
+  bool down = phone_strum == 1 || index % 2 == 0;
+  for (uint8_t k = 0; k < 6; k++) {
+    queue[queued] = down ? 3 + k : 8 - k;
+    due[queued++] = now + k * 12;
   }
 }
 
