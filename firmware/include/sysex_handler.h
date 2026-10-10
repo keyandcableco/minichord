@@ -551,6 +551,27 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 273:
         set_chord_note_source(3,value);
         break;
+      case 274:
+        acc_style=value; acc_settings_changed();
+        break;
+      case 275:
+        acc_bass_part=value; acc_settings_changed();
+        break;
+      case 276:
+        acc_chord_part=value; acc_settings_changed();
+        break;
+      case 277:
+        acc_follow=value; acc_settings_changed();
+        break;
+      case 278:
+        acc_change=value;
+        break;
+      case 279:
+        acc_articulation=value;
+        break;
+      case 280:
+        acc_accents=value;
+        break;
       case 121:
         for (int i=0;i<4;i++){
           chord_osc_1_array[i]->amplitude(value/100.0);
@@ -830,7 +851,7 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         ws_sin_param=value;calculate_ws_array(); chord_waveshape.shape(wave_shape,257);
         break;
       case 187:
-        rythm_bpm=constrain(value,30,300);recalculate_timer();
+        rythm_bpm=constrain(value,30,300);
         break;
       case 188:
         rythm_loop_length=constrain(value,1,16);
@@ -839,7 +860,7 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         rythm_limit_change_to_every=constrain(value,1,8);
         break;
       case 190:
-        shuffle=value/100.0;recalculate_timer();
+        shuffle=value/100.0;
         break;
       case 191:
         note_pushed_duration=value;
@@ -1085,6 +1106,13 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 271: lo=0; hi=5; return true;
       case 272: lo=0; hi=5; return true;
       case 273: lo=0; hi=5; return true;
+      case 274: lo=0; hi=14; return true;
+      case 275: lo=0; hi=2; return true;
+      case 276: lo=0; hi=2; return true;
+      case 277: lo=0; hi=2; return true;
+      case 278: lo=0; hi=2; return true;
+      case 279: lo=10; hi=200; return true;
+      case 280: lo=0; hi=100; return true;
       case 121: lo=0; hi=100; return true;
       case 122: lo=0; hi=11; return true;
       case 123: lo=50; hi=200; return true;
