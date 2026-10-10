@@ -6198,10 +6198,10 @@ PROGMEM const int16_t sample_pizzicato_82[15433] __attribute__((aligned(4))) = {
 
 static const AudioSynthWavetable::sample_data pizzicato_samples[5] = {
   {sample_pizzicato_40, false, 14, 1589.91041f, 4045930496, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
-  {sample_pizzicato_50, false, 14, 892.307049f, 4045930496, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
-  {sample_pizzicato_60, false, 14, 504.419333f, 4045930496, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
-  {sample_pizzicato_70, false, 14, 281.059108f, 4013424640, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
-  {sample_pizzicato_82, false, 14, 140.968573f, 4045406208, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
+  {sample_pizzicato_50, false, 14, 882.46572f, 4045930496, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
+  {sample_pizzicato_60, false, 14, 505.148269f, 4045930496, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
+  {sample_pizzicato_70, false, 14, 281.709244f, 4013424640, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
+  {sample_pizzicato_82, false, 14, 140.529554f, 4045406208, 0, 0, 65535, 0, 1, 0, 1, 110, 0, 0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0},
 };
 static const uint8_t pizzicato_ranges[] = {45, 55, 65, 76, 127};
 const AudioSynthWavetable::instrument_data pizzicato_instrument = {5, pizzicato_ranges, pizzicato_samples};
