@@ -6313,10 +6313,14 @@ void handle_wheel() {
 // ---- koto press: bending a ringing string by pressing it ----
 // A finger is measured from the lightest it has read since it settled, so
 // resting on a string bends nothing however firm the resting finger is, and a
-// finger easing off as it lifts brings the pitch back down with it.
+// finger easing off as it lifts brings the pitch back down with it. A full
+// press is a fixed firmness, not a fixed amount above the rest: measured from
+// the rest, a finger that landed firmly had to push past a hard press to reach
+// the top of the bend.
 const uint8_t koto_settle_ms = 30;   // a finger pressing down is still landing this long
 const int16_t koto_dead = 30;        // strength above the rest that still bends nothing, a finger flattening
-const int16_t koto_span = 250;       // strength above that for a full press (a light finger reads 100-200, a hard one 430-490)
+const int16_t koto_full = 380;       // strength of a full press: firm, short of a hard one (a light finger reads 100-200, a hard one 430-490)
+const int16_t koto_span_min = 100;   // strength from the slack to a full press, at least, for a finger that lands firm
 const float koto_pressed = 0.1;      // of a full press, past which the finger has pressed, and its lift plucks nothing
 
 // Bend voice i this many semitones above the note it sounds.
@@ -6329,7 +6333,8 @@ void koto_bend(uint8_t i, float semitones) {
 void koto_follow(uint8_t i, int16_t strength, uint32_t held_ms) {
   if (held_ms < koto_settle_ms) return;
   if (press_rest[i] < 0 || strength < press_rest[i]) press_rest[i] = strength;
-  float amount = constrain((strength - press_rest[i] - koto_dead) / (float)koto_span, 0.0f, 1.0f);
+  int16_t span = max(koto_full - press_rest[i] - koto_dead, koto_span_min);
+  float amount = constrain((strength - press_rest[i] - koto_dead) / (float)span, 0.0f, 1.0f);
   if (amount >= koto_pressed) string_pressed[i] = true;
   koto_bend(i, koto_press * amount);
 }
