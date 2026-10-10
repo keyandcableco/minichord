@@ -608,6 +608,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 199:
         glide_length=value;
         break;
+      case 320:
+        fingered_glide=value;
+        break;
       case 37:
         chord_inversion=value; refresh_chord_voicing();
         break;
@@ -1245,6 +1248,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 120: lo=0; hi=5; return true;
       case 198: lo=0; hi=4; return true;
       case 199: lo=0; hi=1500; return true;
+      case 320: lo=0; hi=1; return true;
       case 37: lo=0; hi=3; return true;
       case 38: lo=0; hi=4; return true;
       case 111: lo=0; hi=2; return true;

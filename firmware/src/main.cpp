@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=53; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319)
+int version_ID=54; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -840,6 +840,13 @@ int16_t chord_note_ceiling = 96;  // eight octaves above the base; both move wit
 // retrigger release for chord delayed note
 int chord_retrigger_release=0;
 int glide_length=0;
+// Fingered glide (320): the chords glide only into a chord the fingers move to while still holding
+// the last, as a monosynth's fingered portamento does; a chord struck afresh starts on its pitch.
+// Legato is any change of the chord buttons or the modifier made with a chord button held through
+// it: rolling onto the next chord, sharpening it, adding or letting go of a slash's bass, a column's
+// kind changed by a second button. Not in rhythm mode, whose notes are its own (glide as set).
+bool fingered_glide = false;
+bool chord_legato = true;   // the latest change was made with a chord button held through it
 // strings filter parameters
 float string_filter_keytrack = 0;
 int string_filter_base_freq = 0;
@@ -2161,8 +2168,9 @@ void set_chord_voice_frequency(uint8_t i, int16_t current_note) {
     float glide_offset = (temperament_selection == 0)
       ? note_delta/24.0
       : log2f(note_freq / middle_freq) / 2.0f;
-    chord_freq_dc_array[i]->amplitude(glide_offset,glide_length);
-    mpe_chord_note_change(i, 12.0f * log2f(note_freq), glide_length, current_note);
+    uint16_t glide = (fingered_glide && !rythm_mode && !chord_legato) ? 0 : glide_length;   // struck afresh: there at once
+    chord_freq_dc_array[i]->amplitude(glide_offset,glide);
+    mpe_chord_note_change(i, 12.0f * log2f(note_freq), glide, current_note);
     // chord_voice_filter_array[i]->frequency(1*freq);
     AudioInterrupts();
   }else{
@@ -5728,6 +5736,24 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   digitalWrite(_MUTE_PIN, HIGH);
 }
 
+// Whether the chord buttons' latest change was legato (fingered glide): with a button held through it
+void chord_legato_watch() {
+  static uint32_t was = 0;
+  static bool modifier_was = false;
+  uint32_t now = 0;
+  for (uint8_t i = 1; i < 22; i++) {
+    if (chord_matrix_array[i].read_value() && !(key_selection_buttons & (1UL << i))) now |= 1UL << i;
+  }
+  bool modifier = chord_matrix_array[0].read_value();
+  if (now != was || modifier != modifier_was) {
+    uint32_t held_through = now & was;   // down before and still down
+    if (now & ~was) chord_legato = held_through != 0;           // a press: legato if another stayed down
+    else if (held_through) chord_legato = true;                 // a let-go or the modifier, under a held chord
+  }
+  was = now;
+  modifier_was = modifier;
+}
+
 void handle_chords_button() {
   int sharp_transition = chord_matrix_array[0].read_transition();
   if (sharp_transition > 1 && current_line != -1) {
@@ -8110,6 +8136,7 @@ void loop() {
   down_button.set(digitalRead(DOWN_PGM_PIN));
   LBO_flag.set(digitalRead(BATT_LBO_PIN));
   chord_matrix.update(chord_matrix_array);
+  chord_legato_watch();
 
   // Handle low battery indicator
   handle_low_battery();
