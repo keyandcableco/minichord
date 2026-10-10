@@ -37,7 +37,8 @@ RESERVED = {382, 383, 510, 511}                 # can't be written: their low by
 LOCKED = {0, 1, 2, 3, 4, 5, 6, 7, 241, 242, 243, 244, 256}
 # Settings whose value is the address of another setting, and which kind of control each one is
 KNOB_TARGETS = {10: "chord knob, alternate", 12: "harp knob, alternate", 14: "mod knob, main",
-                16: "mod knob, alternate", 249: "hover"}
+                16: "mod knob, alternate", 249: "hover", 303: "the phone's sound, 1", 307: "the phone's sound, 2",
+                325: "hover, alternate"}
 TAP_TARGETS = {200: "double tap", 209: "double tap, 2nd", 211: "double tap, 3rd"}
 SECTIONS = {"global_parameter": "global", "harp_parameter": "harp", "chord_parameter": "chord"}
 
@@ -272,7 +273,8 @@ def apply_changes(values, changes, params, report_all=False):
             target = int(round(c["value"]))
             if target != 0:
                 t = params.get(target)
-                ok = t is not None and target not in LOCKED and t["group"] != "hidden" or target in (256, 287)
+                # the double tap's actions are hidden settings: the looper, chord memory, a rhythm fill, revert or panic
+                ok = t is not None and target not in LOCKED and t["group"] != "hidden" or target in (256, 287, 315, 323)
                 if a in KNOB_TARGETS:
                     ok = ok and target != 256 and t["controls"] == "all"
                 else:

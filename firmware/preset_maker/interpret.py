@@ -58,6 +58,13 @@ ROLES = {
     "rhythm_style": {"global": 274}, "rhythm_bass": {"global": 275}, "rhythm_chords": {"global": 276},
     "rhythm_follow": {"global": 277}, "rhythm_change": {"global": 278}, "rhythm_artic": {"global": 279},
     "rhythm_accents": {"global": 280}, "midi_clock": {"global": 266},
+    # firmware 51-58
+    "hammer_on": {"harp": 302}, "phone_beat": {"global": 311}, "kick_stab": {"global": 312},
+    "kick_note": {"global": 313}, "style_b": {"global": 314}, "rhythm_fill": {"global": 315},
+    "rhythm_break": {"global": 315}, "rhythm_ending": {"global": 315}, "fill_combo": {"global": 316},
+    "rhythm_intro": {"global": 317}, "rhythm_end_on": {"global": 318}, "palm_break": {"global": 319},
+    "fingered_glide": {"chord": 320}, "tap_hold": {"global": 321}, "revert_panic": {"global": 322},
+    "revert": {"global": 323}, "panic": {"global": 323}, "press_again": {"chord": 324},
     "loop_quantize": {"global": 283}, "loop_countin": {"global": 284}, "loop_click": {"global": 285},
     "click_level": {"global": 286}, "chord_memory": {"global": 287}, "looper_pc": {"global": 256},
     "loop_length": {"global": 288},
@@ -389,7 +396,7 @@ add("orchestra hit, orchestra hits, orch hit, orchestral hit", "sound", "orchest
 RHYTHM_NOTE = "rhythm patterns play in rhythm mode, which is turned on at the instrument"
 # Written accompaniment parts that follow the held chord (firmware 42, rhythm style 274); 0 is the 16-step
 # pattern (220-235), which the two that have no style of their own still write
-for words, label, moves in (
+RHYTHM_STYLE_WORDS = (
         ("alberti bass, alberti, classical left hand, mozart left hand", "Alberti bass", (EXACT("rhythm_style", 1),)),
         ("waltz, oom pah pah, three four, 3 4 time, three four time, 3 4", "waltz", (EXACT("rhythm_style", 2),)),
         ("boom chick, two beat, country rhythm, country beat, johnny cash beat, oom pah, march, two step",
@@ -413,9 +420,24 @@ for words, label, moves in (
          (EXACT("rhythm_style", 13),)),
         ("habanera, tango, carmen rhythm", "habanera", (EXACT("rhythm_style", 14),)),
         ("arpeggio down, arp down, falling arpeggio", "arpeggio down", rhythm([8, 4, 2, 1])),
-        ("straight eighths, eighths, pulsing chords, driving eighths, rock eighths", "straight eighths", rhythm([15]))):
+        ("straight eighths, eighths, pulsing chords, driving eighths, rock eighths", "straight eighths", rhythm([15])))
+for words, label, moves in RHYTHM_STYLE_WORDS:
     add(words, "setting", f"{label} rhythm", home="global", moves=moves, off=(EXACT("rhythm_style", 0),),
         note=RHYTHM_NOTE)
+# Rhythm style B (firmware 53, 314): the style a fill switches to and back from, "a verse in Travis picking and a
+# chorus strummed". It must count the bar as style A does
+SECTIONS_NOTE = ("fills switch between the two styles: the double tap on rhythm fill, or the modifier held with a tap "
+                 "of hold; style B must have style A's beats to the bar")
+for words, label, moves in RHYTHM_STYLE_WORDS:
+    style = next((m[2] for m in moves if m[1] == "rhythm_style"), None)
+    if not style:
+        continue
+    names = [w.strip() for w in words.split(",")][:3]
+    phrases = [f"{form.format(n)}" for n in names for form in
+               ("style b {}", "b section {}", "b style {}", "{} for the chorus", "{} in the chorus", "chorus in {}",
+                "fills switch to {}", "fill into {}", "{} as style b", "second style {}")]
+    add(", ".join(phrases), "setting", f"style B {label}", home="global", moves=(EXACT("style_b", style),),
+        note=SECTIONS_NOTE)
 # How the style plays (firmware 42): its bass and chord parts, whether it follows the hands, when a chord
 # change lands, how long and how accented its notes are
 for words, label, role, value in (
@@ -524,6 +546,63 @@ for words, label, value, note in (
          "in rhythm mode the minichord follows a clock coming in by itself; its own clock out is set off so it "
          "doesn't send one too")):
     add(words, "setting", label, home="global", moves=(EXACT("midi_clock", value),), note=note)
+# Firmware 51-58: the harp's hammer-on, the phone follower's settings, rhythm sections, fingered glide, the double
+# tap held, revert and panic, the held chord pressed again
+add("hammer on, hammer ons, hammer-ons, hammering on, hammer-on, pull offs, pull-offs, hammer ons and pull offs, "
+    "legato harp, harp legato, slide between strings, slide between the strings, fretted slide, finger slides",
+    "setting", "hammer-on", home="harp", moves=(EXACT("hammer_on", 1), EXACT("lift", 0), EXACT("ribbon", 0)),
+    off=(EXACT("hammer_on", 0),),
+    note="a finger landing beside a held string takes it over, and slides on; it plucks on touch, without the ribbon")
+PHONE_NOTE = "the phone's sound is what plays into the minichord over USB (USB audio 0 or 1)"
+add("follow my phone, follow the phone, follow the music, lock to the phone, lock to my phone, lock to the music, "
+    "sync to my phone, sync to the phone, sync to the music, phone beat, beat from my phone, beat from the phone, "
+    "tempo from my phone, tempo from the phone, follow the song, follow the beat of the music, play along with my phone",
+    "setting", "rhythm follows the phone's beat", home="global", moves=(EXACT("phone_beat", 1),), off=(EXACT("phone_beat", 0),),
+    note=PHONE_NOTE + "; it follows in rhythm mode, turned on at the instrument")
+add("stab on every kick, stabs on every kick, stab on the kick, stabs on the kick, chords on every kick, chord on every kick, "
+    "chords on the kick, hit on every kick, hits on the kick, restrike on the kick, kick stab, kick stabs",
+    "setting", "the held chord struck on every kick", home="global", moves=(EXACT("kick_stab", 1),),
+    off=(EXACT("kick_stab", 0),), note=PHONE_NOTE)
+add("kick to midi, kicks to midi, send the kick as midi, send kicks as midi, kick out as midi, midi kick, kick note, "
+    "kick drum to midi, trigger my drum machine from the kick, kick triggers my drum machine",
+    "setting", "each kick sent as MIDI note 36", home="global", moves=(EXACT("kick_note", 36),),
+    off=(EXACT("kick_note", 0),), note=PHONE_NOTE)
+add("fills on modifier and hold, modifier and hold fills, modifier hold fill, fill on modifier and hold, fill button",
+    "setting", "a fill on the modifier and hold", home="global", moves=(EXACT("fill_combo", 1),),
+    off=(EXACT("fill_combo", 0),), note=RHYTHM_NOTE)
+add("rhythm intro, an intro, with an intro, intro fill, pickup bar, a pickup bar, start with a fill, count in with a fill",
+    "setting", "a rhythm intro", home="global", moves=(EXACT("rhythm_intro", 1),), off=(EXACT("rhythm_intro", 0),),
+    note=RHYTHM_NOTE)
+add("rhythm ending, a rhythm ending, proper ending, a proper ending, end on a chord, end on the chord, end with a fill, "
+    "ending fill, outro, an outro, end the rhythm properly",
+    "setting", "a rhythm ending on the long press", home="global", moves=(EXACT("rhythm_end_on", 1),),
+    off=(EXACT("rhythm_end_on", 0),), note=RHYTHM_NOTE)
+add("palm break, palm stops the band, palm stops the rhythm, palm mute stops the rhythm, stop with the palm, "
+    "band stops with the palm, stop hits, palm breaks",
+    "setting", "the palm stops the rhythm to the bar line", home="global",
+    moves=(EXACT("palm_break", 1), MIN("palm_mute", 5)), off=(EXACT("palm_break", 0),), note=RHYTHM_NOTE)
+add("fingered glide, fingered portamento, legato glide, legato portamento, glide only when legato, glide when i roll, "
+    "glide only when i roll, glide only on overlapping chords, portamento only when legato",
+    "setting", "fingered glide", home="chord", moves=(EXACT("fingered_glide", 1), IFZERO("glide", 300)),
+    off=(EXACT("fingered_glide", 0),),
+    note="the chords glide only when the fingers roll from one chord to the next; a chord struck afresh lands")
+add("double tap hold, double tap and hold, momentary double tap, momentary double taps, tap and hold, tap then hold, "
+    "momentary modifier, hold for the effect",
+    "setting", "the double tap held, momentary", home="global", moves=(EXACT("tap_hold", 1),),
+    off=(EXACT("tap_hold", 0),), note="tap the modifier, then press and hold: the double tap's settings while held")
+add("revert and panic, panic button, a panic button, modifier panic, modifier and down reverts, revert gesture, "
+    "revert button, undo button",
+    "setting", "modifier with down reverts, with up panics", home="global", moves=(EXACT("revert_panic", 1),),
+    off=(EXACT("revert_panic", 0),))
+for words, label, value in (
+        ("climb the inversions, climbing inversions, inversion climb, press again to climb, press again for the next "
+         "inversion, repress climbs, re press climbs, walk up the inversions", "pressing the held chord climbs its inversions", 1),
+        ("climb and come back down, inversions up and down, ping pong inversions, climb the inversions and back",
+         "pressing the held chord climbs its inversions and back down", 2),
+        ("press again for an octave, octave on repress, press again octave up, repress for an octave",
+         "pressing the held chord goes up an octave and back", 3)):
+    add(words, "setting", label, home="chord", moves=(EXACT("press_again", value),), off=(EXACT("press_again", 0),),
+        note="with hold on: the chord ringing, pressed again")
 # The looper in time (firmware 46): quantize, count-in, click and its level
 LOOPER_NOTE = "the looper is worked live: the double tap, minicontrol's looper buttons, or control changes"
 for words, label, value in (
@@ -781,11 +860,17 @@ COLORS = {"red": 0, "orange": 30, "amber": 40, "gold": 50, "golden": 50, "yellow
 CONTROLS = (   # (pattern, control), tried in order; a match is taken out of the clause
     (r"\bdouble ?tap(?:s)?(?: control| slot| pair| setting)? (?:number )?(?:1|2|3|one|two|three)\b|"
      r"\b(?:first|second|third|1st|2nd|3rd) double ?tap(?: control| slot| pair| setting)?\b", "tap_n"),
-    (r"\balternate hover\b|\bsecond hover\b|\bhover alternate\b", "alt_hover"),
+    (r"\balternate hover\b|\bsecond hover\b|\bhover alternate\b|"
+     r"\b(?:holding|hold|with) (?:the )?modifier(?: held| button)?,? hover(?:ing|s)?\b|"
+     r"\bhover(?:ing|s)? (?:with|holding) (?:the )?modifier(?: held| button)?\b", "alt_hover"),
+    # the sound coming in over USB, moving a setting: "the kick ducks the chords", "the hats open the filter"
+    (r"\b(?:the )?(?:phone(?:s)?|music|backing track|track|kick drum|kicks?|bass drum|hi ?hats?|hats|cymbals)(?: sound| audio)?\b"
+     r"(?= (?:ducks?|pumps?|opens?|closes?|moves?|drives?|swells?|mutes?|quiets?|brightens?|darkens?|works?|runs?|"
+     r"shapes?|makes?|wobbles?|sweeps?|controls?|push(?:es)?|turns?|raises?|lowers?)\b)", "phone"),
     (r"\b(?:alternate|alt|second function)s? (?:pots|knobs|potentiometers|dials|functions) (?:for|on|of) (?:the )?"
      r"chords? and (?:the )?harp\b|\bchord and harp (?:knob|pot)s?(?:'| )?alternates?\b", "two_knobs"),
-    (r"\bdouble ?tap(?:s|ping|ped)?\b(?: (?:on )?(?:the )?modifier(?: button)?)?|\btap(?:ping)? twice\b|\btwo taps\b",
-     "tap"),
+    (r"(?<!momentary )\bdouble ?tap(?:s|ping|ped)?\b(?! (?:and )?hold\b)(?: (?:on )?(?:the )?modifier(?: button)?)?|"
+     r"\btap(?:ping)? twice\b|\btwo taps\b", "tap"),
     (r"\bhover(?:ing|s)?\b|\bhands? (?:held )?(?:over|above)(?: the (?:harp|plate|strings))?\b|"
      r"\bwav(?:e|ing) (?:a |my |your )?hands?\b|\bproximity\b", "hover"),
     (r"\b(?:(?:holding|hold|with|plus) )?(?:the )?modifier(?: held| button)?(?: and| plus| with)?(?: the)? "
@@ -803,8 +888,11 @@ CONTROLS = (   # (pattern, control), tried in order; a match is taken out of the
 )
 KNOB_ADDRESSES = {"mod": (14, 15), "mod_alt": (16, 17), "chord_knob": (10, 11), "harp_knob": (12, 13)}
 CONTROL_NAMES = {"mod": "mod knob", "mod_alt": "modifier + mod knob", "chord_knob": "modifier + chord knob",
-                 "harp_knob": "modifier + harp knob", "hover": "hover", "tap": "double tap"}
+                 "harp_knob": "modifier + harp knob", "hover": "hover", "tap": "double tap",
+                 "alt_hover": "alternate hover", "phone": "the phone's sound"}
 TAP_PAIRS = ((200, 201), (209, 210), (211, 212))
+PHONE_SLOTS = ((303, 304, 305, 306), (307, 308, 309, 310))   # control, value, band, release
+PHONE_BANDS = ({"kick", "kicks", "drum", "bass", "low", "bassline"}, {"hats", "hat", "hi", "cymbals", "treble", "high"})
 
 # What a control can be given, by the words for it
 TARGETS = {
@@ -831,7 +919,7 @@ TARGETS = {
     "spread": "spread, stereo, width, panning",
     "ensemble": "ensemble, chorus, shimmer",
     "tempo": "tempo, bpm, speed",
-    "level": "volume, level, loudness, mute, mutes, silence, silences",
+    "level": "volume, level, loudness, mute, mutes, silence, silences, duck, ducks, ducking, pump, pumps, pumping",
     "lfo_amount": "wah, sweep, wobble, wub",
     "noise": "noise, breath, air",
     "transpose": "transpose, transposes, transposition",
@@ -853,6 +941,11 @@ TARGETS = {
     "voice_leading": "voice leading",
     "touch": "touch, velocity",
     "palm_mute": "palm mute",
+    "rhythm_fill": "fill, fills, a fill, plays a fill, drum fill, rhythm fill",
+    "rhythm_break": "break, breaks, a break, stop the band, stops the band",
+    "rhythm_ending": "ending, the ending, ends the song, end the song, outro",
+    "revert": "revert, reverts, undo, undoes, put the preset back, puts the preset back",
+    "panic": "panic, panics, all notes off, stop everything, stops everything",
 }
 # Where a knob sweeps each role, (low, high) in parameters.json units; its centre is stored in the preset
 SWEEP = {"cutoff": {"chord": (150, 4000), "harp": (80, 2000)}, "resonance": (0.7, 4.5), "reverb": (0, 0.9),
@@ -867,7 +960,10 @@ TAP = {"resonance": 4.0, "reverb": 0.9, "reverb_size": 1.0, "delay_mix": 0.45, "
        "release": 3500, "sustain": 1.0, "decay": 2000, "spread": 90, "ensemble": 80, "level": 1.6, "lfo_amount": 0.7,
        "noise": 0.15, "string_model": 100, "wave": 9, "looper": 6, "looper_pc": 7, "chord_memory": 5, "chromatic": 1, "lift": 1, "scale": 2, "barry": 1,
        "voice_leading": 1, "touch": 80, "palm_mute": 5, "transpose": 7, "tempo": 140, "ribbon": 1, "mpe": 1,
-       "midi_in": 1, "knob_midi": 1, "knob_layer": 1, "layout": 1, "key": 1}
+       "midi_in": 1, "knob_midi": 1, "knob_layer": 1, "layout": 1, "key": 1,
+       "rhythm_fill": 1, "rhythm_break": 2, "rhythm_ending": 3, "revert": 1, "panic": 2}
+# the double tap's actions, which take a step rather than toggle a value
+TAP_ACTIONS = {"looper", "looper_pc", "chord_memory", "rhythm_fill", "rhythm_break", "rhythm_ending", "revert", "panic"}
 # Words between an effect and its amount ("reverb at 40%"), and waveforms by name ("chord waveform 1 sawtooth")
 AMOUNT_FILLERS = {"to", "at", "of", "is", "set", "=", "around", "about"}
 WAVE_NAMES = {"sine": 0, "sawtooth": 9, "saw": 9, "square": 11, "triangle": 3, "pulse": 4}
@@ -920,8 +1016,11 @@ ON_OFF = {"ribbon": 245, "ribbon mode": 245, "harp ribbon": 245, "mpe": 110, "mp
           "barry harris": 33, "voice leading": 111, "chord layout": 39, "alternate chord layout": 39,
           "alternate layout": 39, "alt layout": 39, "alternate chords": 39, "retrigger chords": 21,
           "palm mute": 213, "touch pressure": 253, "pressure": 253, "looper": None,
-          "midi clock out": 266, "clock out": 266, "midi clock": 266}
-ON_VALUE = {213: 5, 266: 3}
+          "midi clock out": 266, "clock out": 266, "midi clock": 266,
+          "phone beat": 311, "kick stab": 312, "kick stabs": 312,
+          "kick note": 313, "rhythm intro": 317, "rhythm ending": 318, "palm break": 319,
+          "double tap hold": 321, "tap and hold": 321, "revert and panic": 322, "panic button": 322}
+ON_VALUE = {213: 5, 266: 3, 313: 36}
 # What has to be on for a control's setting to be heard
 PREPARE = {"delay_mix": DELAY_READY, "delay_time": (MIN("delay_mix", 0.3), IFZERO("delay_filter", 3000),
                                                      IFZERO("delay_feedback", 0.4)),
@@ -944,7 +1043,9 @@ ACTION_VERBS = {"works", "work", "runs", "run", "operates", "operate", "drives",
                 "trigger", "fires", "assign", "assigns", "assigned", "map", "maps", "mapped", "route", "routes", "routed", "link",
                 "links", "linked", "point", "points", "turns", "turn", "adds", "add", "makes", "make", "starts", "start", "opens", "open", "sweeps",
                 "sweep", "controls", "control", "changes", "change", "brings", "bring", "gives", "give", "does",
-                "do", "kicks", "switches", "switch", "toggles", "toggle", "sets", "set", "mutes", "mute"}
+                "do", "kicks", "switches", "switch", "toggles", "toggle", "sets", "set", "mutes", "mute",
+                "moves", "move", "closes", "close", "swells", "swell", "shapes", "shape", "brightens", "darkens",
+                "raises", "lowers", "pushes", "quiets"}
 STOPWORDS = set("""a an the and or with of to in on for it its it's is are be been being am that this these those
 i i'd i'm id im me my we our us you your want wants wanted would like likes please make makes making sound sounds
 sounding preset patch some something kind sort so very really just also too as well should could can have has
@@ -1324,14 +1425,39 @@ class Interpreter:
                 self.result.understood.append(f"{names} → {label}, about {lo:g} to {hi:g}")
             return
         value = self._tap_value(role, a, words)
-        if control == "hover":
+        if control in ("hover", "alt_hover"):
             if role == "looper" or p["controls"] != "all":
                 self.result.notes.append(f"hover can't move {label}; try the double tap")
                 return
-            self._put(249, a, f"hover → {label}")
-            self._put_raw(250, value, "hover value")
-            self.last_value = (250, a)
-            self.result.understood.append(f"hover → {label}, toward {value:g} with a hand 2 cm over the plate")
+            ca, va = (249, 250) if control == "hover" else (325, 326)
+            self._put(ca, a, f"{names} → {label}")
+            self._put_raw(va, value, f"{names} value")
+            self.last_value = (va, a)
+            held = "" if control == "hover" else ", with the modifier held"
+            self.result.understood.append(f"{names} → {label}, toward {value:g} with a hand 2 cm over the plate{held}")
+            return
+        if control == "phone":
+            if p["controls"] != "all":
+                self.result.notes.append(f"the phone's sound can't move {label}; try the double tap")
+                return
+            if self.next_phone >= len(PHONE_SLOTS):
+                self.result.notes.append(f"the phone's sound has two followers; {label} was left out")
+                return
+            ca, va, ba, ra = PHONE_SLOTS[self.next_phone]
+            self.next_phone += 1
+            ws = set(words)
+            band = 1 if PHONE_BANDS[0] & ws else 2 if PHONE_BANDS[1] & ws else 0
+            release = 40 if band == 2 else 250 if role == "level" else 120
+            self._put(ca, a, f"the phone's sound → {label}")
+            self._put_raw(va, value, "phone follow value")
+            self._put(ba, band, "phone follow band")
+            self._put(ra, release, "phone follow release")
+            self.last_value = (va, a)
+            what = ("the whole sound", "the kick (bass)", "the hats (treble)")[band]
+            self.result.understood.append(f"the phone's sound, {what} → {label}, toward {value:g} at its loudest, "
+                                          f"back over {release} ms")
+            if PHONE_NOTE not in self.result.notes:
+                self.result.notes.append(PHONE_NOTE)
             return
         # double tap: three slots, all flipped by the one double tap
         if index is None:
@@ -1358,6 +1484,14 @@ class Interpreter:
         elif role == "chord_memory":
             self.result.understood.append(f"double tap{slot} → the chord memory: record a progression in time, then it "
                                           "plays back by itself (it turns rhythm mode on)")
+        elif role in ("rhythm_fill", "rhythm_break", "rhythm_ending"):
+            what = {"rhythm_fill": "a fill into the next bar line (and style B, if set)",
+                    "rhythm_break": "a break: the rhythm rests to the bar line",
+                    "rhythm_ending": "the ending: a fill, the last chord, and rhythm mode off"}[role]
+            self.result.understood.append(f"double tap{slot} → {what}")
+        elif role in ("revert", "panic"):
+            self.result.understood.append(f"double tap{slot} → " + ("the preset back as it was saved" if role == "revert"
+                                          else "the panic: every voice stopped, All Notes Off"))
         else:
             self.result.understood.append(f"double tap{slot} → {label} to {value:g}, and back on the next double tap")
         if index > 0 and not self.tap_note:
@@ -1372,9 +1506,13 @@ class Interpreter:
                 self._put(c, 0, "double tap cleared")
             slot = f" slot {int(control[4:]) + 1}" if ":" in control else ""
             self.result.understood.append(f"double tap{slot} does nothing")
-        elif control == "hover":
-            self._put(249, 0, "hover cleared")
-            self.result.understood.append("hover does nothing")
+        elif control in ("hover", "alt_hover"):
+            self._put(249 if control == "hover" else 325, 0, f"{CONTROL_NAMES[control]} cleared")
+            self.result.understood.append(f"{CONTROL_NAMES[control]} does nothing")
+        elif control == "phone":
+            for slot in PHONE_SLOTS:
+                self._put(slot[0], 0, "phone follower cleared")
+            self.result.understood.append("the phone's sound moves nothing")
         else:
             self._put(KNOB_ADDRESSES[control][0], 0, f"{CONTROL_NAMES[control]} cleared")
             self.result.understood.append(f"{CONTROL_NAMES[control]} does nothing")
@@ -1394,7 +1532,8 @@ class Interpreter:
         p = self.params[a]
         cur = self._get(a)
         down = {"dark", "darker", "close", "closes", "muffle", "muffles", "muffled", "down", "lower", "less", "off",
-                "mute", "mutes", "silence", "silences", "kill", "kills", "cut", "cuts"} & set(words)
+                "mute", "mutes", "silence", "silences", "kill", "kills", "cut", "cuts", "duck", "ducks", "ducking",
+                "pump", "pumps", "pumping"} & set(words)
         if role == "cutoff":
             lo, hi = SWEEP["cutoff"]["harp" if a == 49 else "chord"]
             if down:
@@ -1407,7 +1546,7 @@ class Interpreter:
         if role == "octave":
             return max(p["min_value"], cur - 1) if down else min(p["max_value"], cur + 1)
         if role in TAP:
-            return 0 if down and role not in ("looper", "looper_pc", "chord_memory") else TAP[role]
+            return 0 if down and role not in TAP_ACTIONS else TAP[role]
         return p["max_value"]
 
     # ---- a whole description ----
@@ -1422,6 +1561,7 @@ class Interpreter:
         self.color = None
         self.taps_used = 0
         self.next_tap = 0
+        self.next_phone = 0
         self.tap_note = False
         self.applied = set()
         self.touched = set()
@@ -1554,12 +1694,7 @@ class Interpreter:
                 if not idx or any(used[i] for i in idx):
                     continue
                 take_span(m)
-                if control == "alt_hover":
-                    note = "there's only one hover, so an alternate hover can't be set"
-                    if note not in r.notes:
-                        r.notes.append(note)
-                    saw_alt_hover = True
-                elif control == "two_knobs":
+                if control == "two_knobs":
                     found += [(idx[0], "chord_knob"), (idx[0] + 0.5, "harp_knob")]
                 elif control == "tap_n":
                     words = m.group(0).split()
@@ -1990,6 +2125,8 @@ def export_data(params, version):
                        for e in V],
         "roles": ROLES, "controls": [list(c) for c in CONTROLS], "knob_addresses": KNOB_ADDRESSES,
         "control_names": CONTROL_NAMES, "tap_pairs": [list(p) for p in TAP_PAIRS], "targets": TARGETS,
+        "phone_slots": [list(p) for p in PHONE_SLOTS], "phone_bands": [sorted(b) for b in PHONE_BANDS],
+        "phone_note": PHONE_NOTE, "tap_actions": sorted(TAP_ACTIONS),
         "multi_targets": {k: list(v) for k, v in MULTI_TARGETS.items()}, "on_off": ON_OFF,
         "on_value": {str(k): v for k, v in ON_VALUE.items()}, "sweep": SWEEP, "tap": TAP,
         "prepare": {k: [list(x) for x in v] for k, v in PREPARE.items()},
