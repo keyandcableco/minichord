@@ -150,9 +150,11 @@ add("piano, pianos, grand piano, acoustic piano, upright piano, keys", "sound", 
 add("choir, choirs, voices, vocal, vocals, aahs, ahhs, oohs, singers", "sound", "choir", home="chord", hue=280,
     moves=(EXACT("voice", 3),) + env(250, 500, 0.9, 1200) + (EXACT("cutoff", 4000), EXACT("string_model", 0)))
 add("string section, string quartet, string ensemble, orchestral strings, orchestra, orchestral, violin, violins, "
-    "cello, cellos, viola, quartet", "sound", "string quartet", home="chord", hue=20,
+    "cello, cellos, viola, quartet, bowed strings, bowed string, strings section, real strings, sampled strings, "
+    "violin strings, cello strings, string orchestra, chamber strings, legato strings", "sound", "string quartet", home="chord", hue=20,
     moves=(EXACT("voice", 4),) + env(200, 500, 0.9, 900) + (EXACT("cutoff", 4000), EXACT("string_model", 0)))
-add("pizzicato, pizz, plucked strings", "sound", "pizzicato", home="harp", hue=15,
+add("pizzicato, pizz, plucked strings, pizzicato strings, pizz strings, pizzicato string, plucked string section",
+    "sound", "pizzicato", home="harp", hue=15,
     moves=(EXACT("voice", 2),) + env(1, 600, 0.0, 400) + (EXACT("cutoff", 4000), EXACT("string_model", 0)))
 add("guitar, guitars, acoustic guitar, nylon, folk, ukulele, uke, lute", "sound", "guitar", home="harp", hue=30, moves={
     "harp": synth_harp(0, 90) + env(1, 3000, 0.6, 900) + (EXACT("string_decay", 3.0), EXACT("string_damping", 40)),

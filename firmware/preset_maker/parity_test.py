@@ -62,6 +62,8 @@ SENTENCES = [
     "meantone tuning", "the Stranger Things theme", "slow vibrato and a long tail", "fast vibrato on the harp",
     "mod knob to the delay mix", "the harp knob does the reverb mix", "short tail, kirnberger tuning",
     "like Ice Cream, darker", "Mr. Blue Sky", "Digital Love chords with a Do You Feel Like We Do harp",
+    "pizzicato strings on chords", "bowed strings on the chords and a plucky harp", "pizzicato strings",
+    "string section chords", "a harp of pizzicato strings", "strings that are bright",
 ]
 # every song in the list, by its first name, as a preset and a profile
 SENTENCES += [e.words[0] for e in interpret.V if e.kind == "song"]
