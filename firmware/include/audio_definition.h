@@ -1,5 +1,6 @@
 #include <Audio.h>
 #include "phone_deck.h"
+#include "drum_machine.h"
 #include "lean_filter.h"   // AudioFilterStateVariable's sums, the corner once a block while its control holds still (lean_filter.h)
 #include "lean_mixer.h"   // AudioMixer4's arithmetic, without the work on inputs at gain 0 (lean_mixer.h)
 #include "metronome_click.h"   // the looper's click, silent between ticks (metronome_click.h)
@@ -602,6 +603,8 @@ AudioMixer4Lean              phone_dj_dry[2];   // the song, its low pass and it
 AudioMixer4Lean              phone_echo_in;     // both sides, and the echo fed back
 AudioEffectDelay         phone_echo;
 AudioMixer4Lean              phone_dj_out[2];   // the song through the filter, and the echo
+// The drum machine (main.cpp, DRUMS): thirteen synthesized voices, into the last mix beside the reverb
+AudioDrumMachine         drum_machine;
 
 AudioConnection          patchCord2000(string_filter_mixer, 0, string_multiplier, 0);
 AudioConnection          patchCord2001(string_gain, 0, string_multiplier, 1);
@@ -647,6 +650,8 @@ AudioConnection          clickCord2(looper_click_tick, 0, stereo_r_mixer, 3);
 
 // USB audio recording tap; absent when the USB type has no audio interfaces.
 #ifdef AUDIO_INTERFACE
+AudioConnection          drumCord1(drum_machine, 0, stereo_l_mixer, 3);   // input 3 is the click's without USB audio
+AudioConnection          drumCord2(drum_machine, 1, stereo_r_mixer, 3);
 AudioConnection          patchCord2025(stereo_l_mixer, 0, USB_out, 1);
 AudioConnection          patchCord2026(stereo_r_mixer, 0, USB_out, 0);
 // the headphone/speaker path: the minichord, and the host's sound beside it, each USB channel to the

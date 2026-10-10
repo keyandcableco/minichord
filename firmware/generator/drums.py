@@ -1,0 +1,355 @@
+#!/usr/bin/env python3
+"""Builds include/drum_patterns.h: the drum machine's kits and grooves (see DRUMS in main.cpp and
+include/drum_machine.h for the voices). Run it after changing a kit or a groove:
+    python3 drums.py
+
+A kit is the thirteen voices' settings over a plain default for each, so a kit only says what it
+changes. Every voice is synthesized: a pitched body that falls from tone_bend times its pitch to it,
+and a burst of noise and square-wave metal through a filter, each with its own decay (in ms, to -60 dB).
+
+A groove is written as a grid, a line a voice, a character a step, bars separated by |:
+    . rest   g a whisper   o a ghost   x a hit   X an accent   r a roll: two hits in the step
+steps is how many to the beat: 4 sixteenths, 3 triplets (shuffle, swing, 12/8), 2 eighths. The voices:
+    K kick  S snare  R rim (claves, ka)  C clap  H hat (triangle)  O open hat  Y cymbal (crash, ride)
+    T low tom  U high tom  L low conga (bayan)  M high conga (bongo, dayan)  B bell  Z shaker
+A groove's fill is a bar: its first half the groove's own, its second the fill, written out or one of
+the families below. Grooves are re-played in our own sounds, not sampled; the famous ones are named for
+the style they recall ("amen-style").
+"""
+import os
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(HERE, '..', 'include', 'drum_patterns.h')
+
+VOICES = ['KICK', 'SNARE', 'RIM', 'CLAP', 'HAT', 'OPEN', 'CYMBAL', 'TOM_LO', 'TOM_HI', 'CONGA_LO', 'CONGA_HI',
+          'BELL', 'SHAKER']
+LETTER = dict(zip('KSRCHOYTULMBZ', range(13)))
+# General MIDI's drum map, channel 10: kick, side stick, snare, clap, closed and open hat, crash, low and
+# high tom, low and high conga, cowbell, maracas
+GM_NOTE = [36, 38, 37, 39, 42, 46, 49, 45, 50, 64, 63, 56, 70]
+VELOCITY = {'g': 30, 'o': 56, 'x': 96, 'X': 124}
+
+# ---- kits ----------------------------------------------------------------------------------------
+def V(**kw):
+    v = dict(tone_hz=0, tone_bend=1.0, bend_ms=10, tone_ms=100, tone_level=1.0, noise_level=0, metal_level=0,
+             metal_hz=540, metal_ratio=1.4815, metal_count=2, filter=1, filter_hz=2000, filter_q=0.7, noise_ms=50,
+             retrigs=0, retrig_ms=10, level=0.8, pan=0.0, choke=0, follow=0)
+    v.update(kw)
+    return v
+
+DEFAULT = {
+    'KICK': V(tone_hz=55, tone_bend=3.0, bend_ms=12, tone_ms=350, noise_level=0.15, filter=0, filter_hz=3000, noise_ms=8, level=1.0),
+    'SNARE': V(tone_hz=185, tone_bend=1.4, bend_ms=15, tone_ms=120, tone_level=0.6, noise_level=0.9, filter=2, filter_hz=1500,
+               noise_ms=180, level=0.8, pan=0.05),
+    'RIM': V(tone_hz=1700, tone_ms=30, tone_level=0.7, noise_level=0.3, filter=1, filter_hz=3000, filter_q=3, noise_ms=20, level=0.6, pan=0.1),
+    'CLAP': V(noise_level=1.0, filter=1, filter_hz=1200, filter_q=1.5, noise_ms=220, retrigs=3, retrig_ms=9, level=0.8, pan=-0.05),
+    'HAT': V(noise_level=0.4, metal_level=0.7, metal_hz=410, metal_count=4, filter=2, filter_hz=8000, filter_q=0.9, noise_ms=45,
+             level=0.5, pan=0.3, choke=1),
+    'OPEN': V(noise_level=0.4, metal_level=0.7, metal_hz=410, metal_count=4, filter=2, filter_hz=8000, filter_q=0.9, noise_ms=320,
+              level=0.5, pan=0.3, choke=1),
+    'CYMBAL': V(noise_level=0.6, metal_level=0.6, metal_hz=380, metal_count=4, filter=2, filter_hz=5500, noise_ms=1400, level=0.5, pan=-0.3),
+    'TOM_LO': V(tone_hz=98, tone_bend=1.6, bend_ms=40, tone_ms=380, noise_level=0.1, filter=0, filter_hz=2000, noise_ms=15, level=0.8, pan=-0.25),
+    'TOM_HI': V(tone_hz=150, tone_bend=1.6, bend_ms=35, tone_ms=320, noise_level=0.1, filter=0, filter_hz=2500, noise_ms=15, level=0.8, pan=0.2),
+    'CONGA_LO': V(tone_hz=196, tone_bend=1.15, bend_ms=15, tone_ms=260, noise_level=0.12, filter=1, filter_hz=2000, noise_ms=12,
+                  level=0.7, pan=-0.35),
+    'CONGA_HI': V(tone_hz=294, tone_bend=1.12, bend_ms=12, tone_ms=200, noise_level=0.12, filter=1, filter_hz=2500, noise_ms=12,
+                  level=0.7, pan=0.35),
+    'BELL': V(metal_level=1.0, metal_hz=540, metal_ratio=1.4815, metal_count=2, filter=1, filter_hz=900, filter_q=1.5, noise_ms=180,
+              level=0.45, pan=0.2),
+    'SHAKER': V(noise_level=1.0, filter=2, filter_hz=6500, noise_ms=55, level=0.35, pan=-0.2),
+}
+
+def kit(name, bits=16, hold=1, drive=1.0, **voices):
+    v = {k: dict(DEFAULT[k]) for k in VOICES}
+    for k, change in voices.items():
+        v[k].update(change)
+    return dict(name=name, bits=bits, hold=hold, drive=drive, voices=v)
+
+KITS = [
+    kit('808', KICK=dict(tone_hz=50, tone_bend=2.2, bend_ms=18, tone_ms=900, noise_level=0.05),
+        SNARE=dict(tone_hz=238, tone_level=0.5, filter_hz=2000, noise_ms=160),
+        RIM=dict(tone_hz=1000, noise_level=0),
+        HAT=dict(metal_hz=205.3, noise_level=0.2, filter_hz=7500, noise_ms=40),
+        OPEN=dict(metal_hz=205.3, noise_level=0.2, filter_hz=7500, noise_ms=380),
+        CYMBAL=dict(metal_hz=205.3, noise_ms=1800),
+        TOM_LO=dict(tone_bend=1.3, noise_level=0), TOM_HI=dict(tone_bend=1.3, noise_level=0),
+        CONGA_LO=dict(tone_hz=220, noise_level=0), CONGA_HI=dict(tone_hz=330, noise_level=0)),
+    kit('909', drive=1.3, KICK=dict(tone_hz=55, tone_bend=4.0, bend_ms=8, tone_ms=420, noise_level=0.3, filter_hz=6000, noise_ms=6),
+        SNARE=dict(tone_hz=200, noise_level=0.9, filter_hz=1200, noise_ms=220),
+        HAT=dict(noise_level=0.9, metal_level=0.2, filter_hz=9000, noise_ms=50),
+        OPEN=dict(noise_level=0.9, metal_level=0.2, filter_hz=9000, noise_ms=400),
+        CYMBAL=dict(noise_level=0.8, metal_level=0.3, noise_ms=1600)),
+    kit('CR-78', KICK=dict(tone_hz=70, tone_bend=1.5, tone_ms=200, noise_level=0),
+        SNARE=dict(tone_hz=330, tone_ms=60, noise_level=0.5, filter=1, filter_hz=3000, filter_q=1, noise_ms=100),
+        RIM=dict(tone_hz=2000, noise_level=0),
+        HAT=dict(metal_level=0.9, metal_hz=600, noise_level=0.1, filter_hz=7000, noise_ms=30, level=0.4),
+        OPEN=dict(metal_level=0.9, metal_hz=600, noise_level=0.1, filter_hz=7000, noise_ms=250, level=0.4),
+        BELL=dict(metal_hz=700, metal_ratio=1.5), SHAKER=dict(noise_ms=40),
+        CONGA_LO=dict(tone_hz=250, noise_level=0), CONGA_HI=dict(tone_hz=370, noise_level=0)),
+    kit('studio', KICK=dict(tone_hz=60, tone_bend=1.8, tone_ms=300, noise_level=0.25, filter_hz=4000, noise_ms=15),
+        SNARE=dict(tone_hz=190, tone_ms=140, noise_level=1.0, filter=1, filter_hz=2500, filter_q=0.6, noise_ms=230),
+        HAT=dict(noise_level=0.7, metal_level=0.3, filter_hz=7000, noise_ms=60),
+        OPEN=dict(noise_level=0.7, metal_level=0.3, filter_hz=7000, noise_ms=500),
+        CYMBAL=dict(noise_level=0.7, metal_level=0.4, filter_hz=4000, noise_ms=1800),
+        TOM_LO=dict(tone_hz=90, tone_ms=450), TOM_HI=dict(tone_hz=140, tone_ms=400)),
+    kit('brushes', KICK=dict(tone_hz=60, tone_bend=1.4, tone_ms=250, noise_level=0.05, level=0.7),
+        SNARE=dict(tone_level=0.15, noise_level=0.8, filter=0, filter_hz=4000, noise_ms=350, level=0.5),
+        RIM=dict(tone_hz=1500, level=0.45),
+        HAT=dict(noise_level=0.5, metal_level=0.2, filter_hz=6000, noise_ms=40, level=0.35),
+        CYMBAL=dict(noise_level=0.3, metal_level=0.7, filter=1, filter_hz=5000, filter_q=1.5, noise_ms=900, level=0.45),
+        TOM_LO=dict(tone_ms=300, level=0.6), TOM_HI=dict(tone_ms=260, level=0.6), SHAKER=dict(filter_hz=5000, noise_ms=90)),
+    kit('boom bap', bits=10, hold=2, drive=1.4, KICK=dict(tone_hz=52, tone_bend=2.5, tone_ms=400, noise_level=0.2),
+        SNARE=dict(tone_hz=180, noise_level=1.0, filter=1, filter_hz=1800, filter_q=0.8, noise_ms=200, level=0.9),
+        HAT=dict(noise_level=0.6, metal_level=0.3, filter_hz=6000, noise_ms=40),
+        OPEN=dict(noise_level=0.6, metal_level=0.3, filter_hz=6000, noise_ms=300)),
+    kit('world percussion', KICK=dict(tone_hz=70, tone_bend=1.2, bend_ms=30, tone_ms=500, noise_level=0.05, level=0.9),
+        SNARE=dict(tone_hz=520, tone_bend=1.05, tone_ms=90, tone_level=0.8, noise_level=0.4, filter=1, filter_hz=3500, filter_q=2, noise_ms=40),
+        RIM=dict(tone_hz=2500, tone_ms=50, noise_level=0, level=0.5),
+        HAT=dict(metal_level=0.8, metal_hz=3200, metal_ratio=2.76, metal_count=2, noise_level=0, filter=1, filter_hz=6000,
+                 filter_q=4, noise_ms=250, level=0.25),
+        OPEN=dict(metal_level=0.8, metal_hz=3200, metal_ratio=2.76, metal_count=2, noise_level=0, filter=1, filter_hz=6000,
+                  filter_q=4, noise_ms=900, level=0.25),
+        TOM_LO=dict(tone_hz=330, tone_bend=1.1, tone_ms=300, metal_level=0.2, noise_level=0, filter=1, filter_hz=3000, noise_ms=120),
+        TOM_HI=dict(tone_hz=440, tone_bend=1.1, tone_ms=260, metal_level=0.2, noise_level=0, filter=1, filter_hz=3500, noise_ms=120),
+        CONGA_LO=dict(tone_hz=175, tone_ms=300, noise_level=0.1), CONGA_HI=dict(tone_hz=262, tone_ms=260, noise_level=0.1),
+        BELL=dict(metal_hz=900, metal_ratio=1.5)),
+    kit('tabla and doumbek', KICK=dict(tone_hz=95, tone_bend=1.15, bend_ms=25, tone_ms=420, noise_level=0.08, level=0.9),
+        SNARE=dict(tone_hz=640, tone_bend=1.0, tone_ms=110, tone_level=0.7, noise_level=0.5, filter=1, filter_hz=4000, filter_q=2.5,
+                   noise_ms=45, level=0.7),
+        RIM=dict(tone_hz=900, tone_ms=25, noise_level=0.4, filter=1, filter_hz=2500, filter_q=2, noise_ms=20, level=0.45),
+        CONGA_LO=dict(tone_hz=90, tone_bend=0.8, bend_ms=120, tone_ms=500, noise_level=0.05, level=0.85),   # bayan: the pitch rising
+        CONGA_HI=dict(tone_hz=523, tone_bend=1.02, tone_ms=520, metal_level=0.15, metal_hz=1046, metal_ratio=2.0, noise_level=0.1,
+                      filter=1, filter_hz=3000, noise_ms=40, level=0.6)),                                       # dayan: ringing
+    kit('trap', drive=1.6, KICK=dict(tone_hz=45, tone_bend=1.6, bend_ms=25, tone_ms=1400, tone_level=0.9, noise_level=0.1, follow=1),
+        SNARE=dict(tone_hz=210, noise_level=0.8, filter=1, filter_hz=1600, noise_ms=180),
+        CLAP=dict(noise_ms=260),
+        HAT=dict(noise_level=0.8, metal_level=0.2, filter_hz=9000, noise_ms=25, level=0.45),
+        OPEN=dict(noise_level=0.8, metal_level=0.2, filter_hz=9000, noise_ms=250, level=0.45)),
+    kit('house', drive=1.2, KICK=dict(tone_hz=52, tone_bend=3.0, bend_ms=10, tone_ms=380, noise_level=0.2),
+        CLAP=dict(filter_hz=1100, noise_ms=250),
+        HAT=dict(noise_level=0.9, metal_level=0.1, filter_hz=9000, noise_ms=35),
+        OPEN=dict(noise_level=0.9, metal_level=0.1, filter_hz=9000, noise_ms=220),
+        SHAKER=dict(noise_ms=45)),
+    kit('glitch', bits=6, hold=4, drive=1.5, KICK=dict(tone_hz=50, tone_bend=2.5, tone_ms=300),
+        SNARE=dict(tone_hz=300, noise_ms=90), HAT=dict(metal_hz=205.3, noise_ms=20), OPEN=dict(metal_hz=205.3, noise_ms=150),
+        CLAP=dict(retrigs=5, retrig_ms=6), CYMBAL=dict(noise_ms=700)),
+]
+KIT_INDEX = {k['name']: i for i, k in enumerate(KITS)}
+
+# ---- fills ----------------------------------------------------------------------------------------
+def ramp(n, lo=60, hi=120):
+    return [round(lo + (hi - lo) * i / max(n - 1, 1)) for i in range(n)]
+
+def fill_family(family, n):
+    """The second half of a fill bar, n steps: {voice: [(step, velocity)]}"""
+    v = ramp(n)
+    third = max(n // 3, 1)
+    f = {}
+    def put(letter, step, vel):
+        f.setdefault(letter, []).append((step, vel))
+    if family == 'toms':
+        for i in range(n):
+            put('S' if i < third else 'U' if i < 2 * third else 'T', i, v[i])
+        put('K', n - 1, 110)
+    elif family == 'snare_roll':
+        for i in range(n):
+            put('S', i, v[i])
+        put('S', n - 0.5, 120)
+    elif family == 'congas':
+        for i in range(n):
+            put('M' if i % 2 == 0 else 'L', i, v[i])
+        put('L', n - 1, 120)
+    elif family == 'timbales':
+        put('B', 0, 110)
+        for i in range(n):
+            put('U' if i % 2 == 0 else 'T', i, v[i])
+    elif family == 'tabla':
+        for i in range(n):
+            put('M', i, v[i])
+            if i % 2 == 1:
+                put('M', i + 0.5, v[i] - 20)
+        put('L', 0, 100)
+        put('L', n - 1, 120)
+    elif family == 'doumbek':
+        for i in range(n):
+            put('S', i, v[i])
+            put('R', i + 0.5, 40)
+        put('K', 0, 110)
+        put('K', n - 1, 120)
+    elif family == 'trap_roll':
+        for i in range(n):
+            put('H', i, 80)
+            put('H', i + 0.5, 70)
+        put('S', n - 2, 110)
+        put('S', n - 1, 124)
+    elif family == 'brush':
+        for i in range(n):
+            put('S', i, round(30 + 50 * i / max(n - 1, 1)))
+        put('K', n - 1, 90)
+    elif family == 'ride':
+        put('Y', 0, 100)
+        for i in range(n):
+            put('S', i, v[i])
+        put('K', n - 1, 110)
+    else:
+        raise ValueError(family)
+    return f
+
+# ---- grooves --------------------------------------------------------------------------------------
+GROOVES = []
+def G(name, kit, beats=4, steps=4, swing=12, fill='toms', **lines):
+    GROOVES.append(dict(name=name, kit=KIT_INDEX[kit], beats=beats, steps=steps, swing=swing, fill=fill, lines=lines))
+
+# Western standards
+G('rock', 'studio', K='x.......x.x.....', S='....x.......x...', H='x.x.x.x.x.x.x.x.')
+G('pop eighths', 'studio', K='x.....x.x.......', S='....x.......x...', H='x.o.x.o.x.o.x.o.')
+G('pop sixteenths', 'studio', fill='snare_roll', K='x.......x.x.....', S='....x.......x...', H='xoxoxoxoxoxoxoxo')
+G('ballad', 'studio', K='x.........x.....', R='....x.......x...', H='x.o.x.o.x.o.x.o.')
+G('funk', 'studio', swing=6, fill='snare_roll', K='x..x..x...x..x..', S='....x..o.o..x..o', H='xoxoxoxoxoxoxoxo')
+G('disco', '909', fill='snare_roll', K='x...x...x...x...', C='....x.......x...', H='x...x...x...x...', O='..x...x...x...x.')
+G('motown', 'studio', K='x.....x.x.......', S='....X.......X...', Z='....x.......x...', H='x.x.x.x.x.x.x.x.')
+G('shuffle', 'studio', steps=3, swing=0, fill='ride', K='x.....x.....', S='...x.....x..', H='x.xx.xx.xx.x')
+G('jazz swing', 'brushes', steps=3, swing=0, fill='ride', Y='x..x.xx..x.x', H='...x.....x..', K='g..g..g..g..', S='......o.....')
+G('waltz', 'brushes', beats=3, fill='brush', K='x...........', S='....o...o...', H='x.x.x.x.x.x.')
+G('march', 'studio', fill='snare_roll', S='x.xxx.x.x.xxx.x.', K='x.......x.......', Y='x.......x.......')
+G('second line', 'studio', fill='snare_roll', K='x..x..x...x.x...', S='..x..xx.x.xx.x.x', H='x.x.x.x.x.x.x.x.')
+G('country two-beat', 'studio', fill='snare_roll', K='x.......x.......', S='o.o.X.o.o.o.X.o.', H='x.x.x.x.x.x.x.x.')
+G('folk', 'brushes', fill='brush', K='x.......x.......', R='....x.......x...', Z='x.x.x.x.x.x.x.x.')
+G('six eight', 'studio', beats=3, steps=2, swing=0, K='x.....', S='...x..', H='xxxxxx')
+G('habanera', 'studio', beats=2, K='x...x...', R='...x..x.', H='x.x.x.x.')
+G('house', 'house', fill='snare_roll', K='x...x...x...x...', C='....x.......x...', O='..x...x...x...x.', Z='oooooooooooooooo')
+G('trap', 'trap', swing=0, fill='trap_roll', K='x......x..x.....', S='........x.......', H='x.x.x.x.xrx.x.rr')
+# Breaks and hip hop, re-played
+G('amen-style break', 'boom bap', fill='snare_roll',
+  K='x.x.......xx....|x.x.......x.....', S='....x..x.x..x..x|....x..x.x....x.', H='x.x.x.x.x.x.x.x.|x.x.x.x.x.x.x.x.')
+G('funky drummer-style', 'boom bap', swing=6, fill='snare_roll',
+  K='x.x...x...x..x..', S='....x..o.o.ox..o', H='xxxxxxx.xxxxx.xx', O='.......x.....x..')
+G('think-style break', 'boom bap', fill='snare_roll', K='x.....x...x.....', S='....x.......x...', H='xxxxxxxxxxxxxxxx')
+G('boom bap', 'boom bap', swing=6, fill='snare_roll', K='x......x..x.....', S='....x.......x...', H='x.x.x.x.x.x.x.x.')
+G('drum and bass', 'studio', fill='snare_roll', K='x.........x.....', S='....x.......x...', H='xxxxxxxxxxxxxxxx')
+G('lo-fi', 'boom bap', swing=6, fill='brush', K='x.....x...x.....', S='....x.......x..o', H='x.xox.xox.xox.xo')
+# Latin and Caribbean
+G('son clave', 'world percussion', fill='congas', R='x..x..x...x.x...', K='...x.......x....', M='....o.....x...xx',
+  L='..........xx....', B='x...x...x...x...')
+G('rumba clave', 'world percussion', fill='congas', R='x..x...x..x.x...', K='...x.......x....', M='....o.....x...xx',
+  L='..........xx....', Z='xoxoxoxoxoxoxoxo')
+G('bossa nova', 'brushes', fill='brush', R='x..x..x...x..x..|..x..x..x..x....', K='x..xx..xx..xx..x|x..xx..xx..xx..x',
+  H='x.x.x.x.x.x.x.x.|x.x.x.x.x.x.x.x.')
+G('samba', 'world percussion', fill='snare_roll', K='x.......X.......', Z='XxxxXxxxXxxxXxxx', B='x.x..x.x.x..x.x.',
+  R='x..x..x...x..x..', S='..x...x...x...xx')
+G('cumbia', 'world percussion', fill='congas', K='x.......x.......', Z='x.xxx.xxx.xxx.xx', M='..x...x...x...x.', L='x.......x.......')
+G('baiao', 'world percussion', fill='timbales', K='x..x..x.x..x..x.', H='xoxxxoxxxoxxxoxx')
+G('salsa', 'world percussion', fill='timbales', B='x.x.x.xxx.x.x.xx', R='..x.x...x..x..x.', M='....o.......o...',
+  L='......xx......xx', K='...x.......x....')
+G('one drop', 'studio', K='........x.......', R='........x.......', H='x.x.x.x.x.x.x.x.')
+G('dembow', '808', fill='snare_roll', K='x...x...x...x...', S='...x..x....x..x.', H='x.x.x.x.x.x.x.x.')
+G('soca', '909', fill='snare_roll', K='x...x...x...x...', S='....x.......x...', O='..x...x...x...x.', B='x.xx.xx.x.xx.xx.')
+# Africa, the Middle East and India
+G('afrobeat', 'studio', K='x.....x...x..x..', S='o.o.x.o.o.o.x.o.', H='x.x.x.x.x.x.x.x.', Z='xxxxxxxxxxxxxxxx',
+  B='x.x..x.x..x.x..x')
+G('12/8 bell', 'world percussion', steps=3, swing=0, fill='congas', B='x.x.xx.x.x.x', Z='xxxxxxxxxxxx', L='x.....x.....',
+  M='...x.....x..', K='x.....x.....')
+G('highlife', 'world percussion', fill='congas', B='x..x..x.x..x..x.', K='x.......x.......', M='..x...x...x...x.',
+  Z='x.x.x.x.x.x.x.x.', R='x..x..x...x.x...')
+G('maqsum', 'tabla and doumbek', fill='doumbek', K='x.......x.......', S='..x...x.....x...', R='o...o.o...o...o.')
+G('baladi', 'tabla and doumbek', fill='doumbek', K='x.x.....x.......', S='......x.....x...', R='o...o...o...o.o.')
+G('saidi', 'tabla and doumbek', fill='doumbek', K='x.....x.x.......', S='..x.........x...', R='o...o...o...o...')
+G('kehrwa', 'tabla and doumbek', fill='tabla', L='x.x.......o.x...', M='x...x.o.x...x.x.')
+G('dadra', 'tabla and doumbek', beats=3, steps=2, swing=0, fill='tabla', L='xx.x..', M='xxx.xx')
+G('teental', 'tabla and doumbek', fill='tabla', L='xxxxxxxx....xxxx', M='Xxxxxxxxxxxxxxxx')
+
+# Each accompaniment style's own drum part (rhythm style 274, its 0 to 14), a groove above by name
+STYLE_PARTS = ['rock', 'pop eighths', 'waltz', 'country two-beat', 'jazz swing', 'shuffle', 'folk', 'pop eighths',
+               'bossa nova', 'pop sixteenths', 'pop sixteenths', 'ballad', 'one drop', 'six eight', 'habanera']
+
+# ---- building ---------------------------------------------------------------------------------------
+def events_of(lines, beats, steps):
+    """{letter: grid} -> sorted [(at in 24ths, voice, velocity)], and the bars"""
+    unit = 24 // steps
+    bar_steps = beats * steps
+    out, bars = [], None
+    for letter, grid in lines.items():
+        parts = grid.split('|')
+        bars = bars or len(parts)
+        assert len(parts) == bars, f'{letter}: {len(parts)} bars, not {bars}'
+        for b, part in enumerate(parts):
+            assert len(part) == bar_steps, f'{letter}: bar {b + 1} has {len(part)} steps, not {bar_steps}: {part!r}'
+            for i, c in enumerate(part):
+                at = (b * bar_steps + i) * unit
+                if c == '.':
+                    continue
+                if c == 'r':
+                    out += [(at, LETTER[letter], 84), (at + unit // 2, LETTER[letter], 84)]
+                else:
+                    out.append((at, LETTER[letter], VELOCITY[c]))
+    return sorted(out), bars
+
+def fill_of(g):
+    beats, steps = g['beats'], g['steps']
+    unit = 24 // steps
+    bar_steps = beats * steps
+    fill_beats = max(beats // 2, 1)
+    start = (beats - fill_beats) * steps          # the step the fill takes over at
+    first = {k: v.split('|')[0][:start] + '.' * (bar_steps - start) for k, v in g['lines'].items()}
+    ev, _ = events_of(first, beats, steps)
+    for letter, hits in fill_family(g['fill'], bar_steps - start).items():
+        for step, vel in hits:
+            at = round((start + step) * unit)
+            if at < bar_steps * unit:
+                ev.append((at, LETTER[letter], min(127, max(1, vel))))
+    return sorted(ev)
+
+def c_kit(k):
+    vs = []
+    for name in VOICES:
+        v = k['voices'][name]
+        f = lambda x: ('%.6g' % x) + ('' if any(c in '%.6g' % x for c in '.e') else '.0') + 'f'
+        vs.append('    {%s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %s, %s, %s, %d, %s, %s, %s, %d, %d},   // %s' % (
+            f(v['tone_hz']), f(v['tone_bend']), f(v['bend_ms']), f(v['tone_ms']), f(v['tone_level']), f(v['noise_level']),
+            f(v['metal_level']), f(v['metal_hz']), f(v['metal_ratio']), v['metal_count'], v['filter'], f(v['filter_hz']),
+            f(v['filter_q']), f(v['noise_ms']), v['retrigs'], f(v['retrig_ms']), f(v['level']), f(v['pan']), v['choke'],
+            v['follow'], name.lower()))
+    return '  {"%s", %d, %d, %.3ff, {\n%s\n  }},' % (k['name'], k['bits'], k['hold'], k['drive'], '\n'.join(vs))
+
+def main():
+    lines = ['// generated by generator/drums.py - do not edit: change the kits and grooves there and run it',
+             '#ifndef DRUM_PATTERNS_H', '#define DRUM_PATTERNS_H', '#include "drum_machine.h"', '',
+             'struct drum_event_t { uint16_t at; uint8_t voice; uint8_t velocity; };   // at in 24ths of a beat',
+             'struct drum_groove_t {',
+             '  const char *name;',
+             '  uint8_t kit;            // its own kit, in drum_kits',
+             '  uint8_t beats_per_bar;',
+             '  uint8_t swing_unit;     // what the shuffle swings: 12 eighths, 6 sixteenths, 0 nothing (triplet grooves)',
+             '  uint16_t length;        // 24ths of a beat',
+             '  uint16_t count;',
+             '  const drum_event_t *events;',
+             '  uint16_t fill_count;    // its fill bar',
+             '  const drum_event_t *fill;',
+             '};', '']
+    lines.append('const uint8_t drum_gm_note[DRUM_VOICES] = {%s};' % ', '.join(map(str, GM_NOTE)))
+    lines.append('const drum_kit_t drum_kits[] PROGMEM = {')
+    lines += [c_kit(k) for k in KITS]
+    lines += ['};', 'const uint8_t drum_kit_count = sizeof(drum_kits) / sizeof(drum_kit_t);', '']
+    entries = []
+    for i, g in enumerate(GROOVES):
+        ev, bars = events_of(g['lines'], g['beats'], g['steps'])
+        fill = fill_of(g)
+        lines.append('static const drum_event_t drum_groove_%d[] PROGMEM = {%s};   // %s' % (
+            i, ', '.join('{%d, %d, %d}' % e for e in ev), g['name']))
+        lines.append('static const drum_event_t drum_fill_%d[] PROGMEM = {%s};' % (i, ', '.join('{%d, %d, %d}' % e for e in fill)))
+        entries.append('  {"%s", %d, %d, %d, %d, %d, drum_groove_%d, %d, drum_fill_%d},' % (
+            g['name'], g['kit'], g['beats'], g['swing'], bars * g['beats'] * 24, len(ev), i, len(fill), i))
+    lines += ['', '// drum groove (335) 1 is the first', 'const drum_groove_t drum_grooves[] PROGMEM = {'] + entries + [
+        '};', 'const uint8_t drum_groove_count = sizeof(drum_grooves) / sizeof(drum_groove_t);', '']
+    index = {g['name']: i for i, g in enumerate(GROOVES)}
+    lines.append("// each accompaniment style's own drum part, by rhythm style (274)")
+    lines.append('const uint8_t style_drum_groove[] = {%s};' % ', '.join(str(index[n]) for n in STYLE_PARTS))
+    lines += ['', '#endif', '']
+    with open(OUT, 'w') as f:
+        f.write('\n'.join(lines))
+    print(f'{len(KITS)} kits, {len(GROOVES)} grooves written to {os.path.relpath(OUT)}')
+    print('grooves:', ', '.join(f'{i + 1} {g["name"]}' for i, g in enumerate(GROOVES)))
+    print('kits:', ', '.join(f'{i + 1} {k["name"]}' for i, k in enumerate(KITS)))
+
+if __name__ == '__main__':
+    main()

@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=59; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5)
+int version_ID=60; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -912,6 +912,20 @@ void preset_action(int16_t action);
 bool modifier_holding = false;      // the modifier is down as a tap and hold's second press
 void acc_fill_request(bool ending);
 void acc_break_request();
+// Drums (334-343, see DRUMS)
+bool drums_on = false;            // 334: rhythm mode plays drums
+uint8_t drum_groove = 0;          // 335: 0 the rhythm style's own drum part, else a groove (drum_patterns.h, from 1)
+uint8_t drum_groove_b = 0;        // 336: with style B: 0 as style A has it (the style's own, or the groove), else a groove
+uint8_t drum_kit = 0;             // 337: 0 the groove's own kit, else a kit (from 1)
+uint8_t drum_level = 70;          // 338
+uint8_t drum_humanize = 0;        // 339: up to 15 ms late and 20% softer at 100
+uint8_t drum_midi = 0;            // 340: each hit out on channel 10: 0 off, 1 port 1, 2 port 2
+bool count_in = false;            // 341: a bar of sticks before rhythm mode begins
+bool drums_only = false;          // 342: the accompaniment rests, the drums play
+bool harp_drums = false;          // 343: the harp's strings play the kit
+void drum_pad(uint8_t string, int16_t strength);
+float touch_firmness(float strength);
+void drums_set();
 void rhythm_fill_action(int16_t action);
 uint8_t acc_articulation = 100; // % of each written note's length
 uint8_t acc_accents = 100;      // % of the written difference between loud and soft notes
@@ -1035,6 +1049,7 @@ void vocoder_set();
 void vocoder_setup();
 void phone_setup();
 void phone_dj_setup();
+void drums_update();
 void phone_update();
 // Strum velocity (address 263), see strum_softness
 uint8_t strum_velocity = 0;      // 0-100: how much softer a slow strum plays than a fast one, 0 off
@@ -4449,6 +4464,7 @@ uint8_t harp_string_note(uint8_t i, bool slashed, bool sharp) {
  * time, or with the bar starting from the press.
  */
 #include "accompaniment_styles.h"
+#include "drum_patterns.h"
 
 #define ACC_NO_NOTE -32768
 
@@ -4512,6 +4528,7 @@ volatile bool acc_intro = false;        // the fill playing is the intro
 volatile bool acc_ending = false;       // ...is the ending's
 volatile bool acc_ending_done = false;  // the last chord is struck: the loop turns rhythm mode off
 volatile double acc_rest_to = 0;        // a break: nothing plays before this
+volatile double acc_countin_to = 0;     // the count-in's bar: sticks, and nothing else, before this
 
 static inline uint8_t acc_style_a() { return acc_style < acc_style_count ? acc_style : 0; }
 static inline bool acc_b_valid() {
@@ -4705,18 +4722,137 @@ void acc_beat(int64_t b) {
 // Where a note written at t (24ths of a beat from the start) plays: the second of each pair of
 // swing units moves by the shuffle, later above 1 and earlier below, as the old steps did
 static inline double acc_swung(int64_t t, uint8_t unit) {
+  if (!unit) return t;   // a triplet groove: nothing to swing
   if (t % unit == 0 && (t / unit) % 2 == 1) return t + (shuffle - 1) * unit;
   return t;
 }
 
+//>>DRUMS<<
+// Rhythm mode's drums: a synthesized kit (include/drum_machine.h) playing a groove (drum_patterns.h, from
+// generator/drums.py) on the rhythm's own clock, so everything that moves the rhythm moves them: tap
+// tempo, a MIDI clock, the phone's beat, the shuffle. The groove is the rhythm style's own drum part, or
+// one chosen (335), and style B's or another one (336) after a fill; the kit is the groove's, or one
+// chosen (337). They ride the sections: the groove's own fill bar in a fill, the intro and the ending's
+// lead-in, silence in a break, a crash on the bar line a fill lands on and the ending's last hit. Each hit
+// takes the rhythm's accents, a humanize (late by up to 15 ms, softer by up to 20%) and, on a kit whose
+// kick follows, the chord's root as its pitch (an 808 bass); and goes out on channel 10 if asked
+// (General MIDI's drum map). The harp's strings can play the kit too (drum_pad).
+struct drum_off_t { uint8_t note, port; uint32_t at; };
+static drum_off_t drum_offs[32];
+static volatile uint8_t drum_off_head = 0, drum_off_tail = 0;
+static uint32_t drum_random = 0x9E3779B9;
+static inline uint32_t drum_rand() { drum_random ^= drum_random << 13; drum_random ^= drum_random >> 17; drum_random ^= drum_random << 5; return drum_random; }
+
+static const drum_groove_t *drum_groove_playing() {
+  bool b = acc_main_b && acc_b_valid();
+  uint8_t g;
+  if (b && drum_groove_b) g = drum_groove_b - 1;
+  else if (drum_groove) g = drum_groove - 1;
+  else g = style_drum_groove[b ? acc_style_b : acc_style_a()];
+  return &drum_grooves[min(g, (uint8_t)(drum_groove_count - 1))];
+}
+
+static const drum_kit_t *drum_kit_wanted() {
+  uint8_t k = drum_kit ? drum_kit - 1 : drum_groove_playing()->kit;
+  return &drum_kits[min(k, (uint8_t)(drum_kit_count - 1))];
+}
+
+// A hit, from the rhythm's timer or the loop: velocity 1-127 as written (or played)
+void drum_strike(uint8_t v, uint8_t velocity, bool written = true) {
+  float vel = written ? (127 - (127 - velocity) * acc_accents / 100.0f) / 127.0f : velocity / 127.0f;
+  uint32_t delay = 0;
+  if (drum_humanize) {
+    delay = drum_rand() % (uint32_t)(drum_humanize * 0.15f * AUDIO_SAMPLE_RATE_EXACT / 1000.0f + 1);
+    vel *= 1.0f - (drum_rand() % 1000) / 1000.0f * drum_humanize * 0.002f;
+  }
+  float pitch = 0;
+  const drum_kit_t *kit = drum_machine.currentKit();
+  if (kit && kit->v[v].follow && acc_now.valid) {
+    int16_t pc = ((acc_now.root + transpose_steps) % EDO + EDO) % EDO;
+    pitch = c_frequency / 4 * temper_ratio(pc);   // C1 to B1: an 808's bass
+  }
+  drum_machine.hit(v, vel, pitch, delay);
+  if (drum_midi) {
+    uint8_t port = drum_midi == 2 ? 1 : 0;
+    uint8_t note = drum_gm_note[v];
+    queue_midi(true, note, (uint8_t)constrain(lroundf(vel * 127), 1, 127), 10, port);
+    uint32_t primask = drum_primask();
+    __disable_irq();
+    uint8_t next = (drum_off_head + 1) % 32;
+    if (next != drum_off_tail) { drum_offs[drum_off_head] = {note, port, millis() + 40}; drum_off_head = next; }
+    if (!primask) __enable_irq();
+  }
+}
+
+// The count-in: a stick on each beat of its bar, the first louder
+static void drum_countin_window(double t0, double t1) {
+  uint8_t beats = acc_styles[acc_style_index()].beats_per_bar;
+  for (int64_t b = (int64_t)ceil(t0 / ACC_BEAT); b * ACC_BEAT < t1 && b * ACC_BEAT < acc_countin_to; b++) {
+    drum_strike(DRUM_RIM, b % beats == 0 ? 124 : 90, false);
+  }
+}
+
+// What the drums play from t0 to t1, within one section, as acc_section_window has it
+static void drum_section_window(double t0, double t1) {
+  if (!drums_on || (acc_follow && !acc_hands)) return;
+  const drum_groove_t &g = *drum_groove_playing();
+  if (acc_fill_on && t0 >= acc_fill_from && t0 < acc_fill_to) {
+    double bar = acc_fill_to - acc_bar_ticks();
+    for (uint16_t e = 0; e < g.fill_count; e++) {
+      const drum_event_t &ev = g.fill[e];
+      double at = acc_swung((int64_t)bar + ev.at, g.swing_unit);
+      if (at >= t0 && at < t1 && at >= acc_fill_from) drum_strike(ev.voice, ev.velocity);
+    }
+    return;
+  }
+  int64_t origin = (int64_t)acc_origin;
+  for (uint16_t e = 0; e < g.count; e++) {
+    const drum_event_t &ev = g.events[e];
+    int64_t n = (int64_t)floor((t0 - origin - ev.at) / g.length);
+    for (int64_t m = n; m <= n + 1; m++) {
+      int64_t t = origin + ev.at + m * g.length;
+      if (t < origin) continue;
+      double at = acc_swung(t, g.swing_unit);
+      if (at >= t0 && at < t1) drum_strike(ev.voice, ev.velocity);
+    }
+  }
+}
+
+// The harp's strings as the kit's first twelve voices, low string the kick, as firmly as touched
+void drum_pad(uint8_t string, int16_t strength) {
+  float firm = strength > 0 ? touch_firmness(strength) : 1.0f;
+  drum_strike(string, (uint8_t)lroundf(127 * (0.35f + 0.65f * firm)), false);
+}
+
+// From the loop: the kit the groove (or the setting) wants, and the MIDI notes to end
+FLASHMEM void drums_update() {
+  const drum_kit_t *want = drum_kit_wanted();
+  if (want != drum_machine.currentKit()) drum_machine.setKit(want);
+  uint32_t now = millis();
+  while (drum_off_tail != drum_off_head && (int32_t)(now - drum_offs[drum_off_tail].at) >= 0) {
+    queue_midi(false, drum_offs[drum_off_tail].note, 0, 10, drum_offs[drum_off_tail].port);
+    drum_off_tail = (drum_off_tail + 1) % 32;
+  }
+}
+
+FLASHMEM void drums_set() {
+  drum_machine.level(drum_level / 100.0f);
+}
+
 // The fill's bar line reached: the other style from here, or the ending's last chord
+static bool acc_intro_was = false;   // the fill finishing was the intro: no crash to land it, the groove just begins
 static void acc_fill_finish() {
+  acc_intro_was = acc_intro;
   acc_fill_on = false;
   acc_intro = false;
+  if (drums_on && !(acc_follow && !acc_hands) && !acc_intro_was) {   // the bar line a fill lands on: a crash and the kick
+    drum_strike(DRUM_CYMBAL, 118);
+    drum_strike(DRUM_KICK, 118);
+  }
   if (acc_ending) {
     // the chord on the bar line, every part that plays struck together and left ringing
     static const acc_event_t last[4] = {{0, 0, ACC_ROOT, 0, 0, 112, 0}, {0, 1, ACC_V2, 0, 0, 100, 0}, {0, 2, ACC_V3, 0, 0, 100, 0}, {0, 3, ACC_V4, 0, 0, 100, 0}};
-    for (uint8_t v = 0; v < 4; v++) acc_event(last[v]);
+    if (!(drums_on && drums_only)) for (uint8_t v = 0; v < 4; v++) acc_event(last[v]);
     acc_rest_to = 1e15;   // and nothing after it
     acc_ending_done = true;
     return;
@@ -4729,7 +4865,10 @@ static void acc_fill_finish() {
 
 // What plays from t0 up to t1, all within one section (acc_window cuts at their edges)
 static void acc_section_window(double t0, double t1) {
+  if (t0 < acc_countin_to) { drum_countin_window(t0, t1); return; }
   if (t0 < acc_rest_to) return;
+  drum_section_window(t0, t1);
+  if (drums_on && drums_only) return;   // the accompaniment rests
   const acc_style_t &st = acc_styles[acc_style_index()];
   if (acc_fill_on && t0 >= acc_fill_from && t0 < acc_fill_to) {
     double bar = acc_fill_to - acc_bar_ticks();   // the fill's bar begins here
@@ -4770,8 +4909,8 @@ void acc_window(double t0, double t1) {
   while (s < t1) {
     if (acc_fill_on && s >= acc_fill_to) acc_fill_finish();
     double e = t1;
-    double edges[3] = {acc_rest_to, acc_fill_on ? acc_fill_from : -1.0, acc_fill_on ? acc_fill_to : -1.0};
-    for (uint8_t k = 0; k < 3; k++) if (edges[k] > s && edges[k] < e) e = edges[k];
+    double edges[4] = {acc_rest_to, acc_fill_on ? acc_fill_from : -1.0, acc_fill_on ? acc_fill_to : -1.0, acc_countin_to};
+    for (uint8_t k = 0; k < 4; k++) if (edges[k] > s && edges[k] < e) e = edges[k];
     acc_section_window(s, e);
     s = e;
   }
@@ -4850,6 +4989,7 @@ void acc_tick() {
     if (acc_intro) { acc_fill_from = 0; acc_fill_to = acc_origin; }
     else if (!acc_ending) acc_fill_on = false;
     acc_rest_to = 0;
+    acc_countin_to = 0;   // the press is the count
     midi_clock_stop();   // and a Start on the tick that begins it again
   }
   double step = rythm_bpm * ACC_BEAT / 60000.0;
@@ -4893,8 +5033,9 @@ FLASHMEM void acc_begin() {
   acc_rest_to = 0;
   acc_intro = acc_fill_on = rhythm_intro;
   acc_fill_switch = false;
-  acc_fill_from = 0;
-  acc_fill_to = acc_origin = rhythm_intro ? acc_bar_ticks() : 0;
+  acc_countin_to = count_in ? acc_bar_ticks() : 0;   // a bar of sticks first, if asked
+  acc_fill_from = acc_countin_to;
+  acc_fill_to = acc_origin = acc_countin_to + (rhythm_intro ? acc_bar_ticks() : 0);
   interrupts();
   stop_chord_voices(0xF & ~acc_held_mask());   // what was ringing gives way to the parts
   Serial.print("Rhythm style: ");
@@ -5020,6 +5161,7 @@ FLASHMEM void acc_midi_clock() {
       if (acc_intro) { acc_fill_from = 0; acc_fill_to = acc_origin; }
       else if (!acc_ending) acc_fill_on = false;
       acc_rest_to = 0;
+      acc_countin_to = 0;   // a Start counts itself in
     }
     acc_clock_pos = acc_pos;
   } else {
@@ -5749,6 +5891,8 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   vocoder_setup();
   phone_setup();
   phone_dj_setup();
+  drum_machine.setKit(&drum_kits[0]);
+  drums_set();
 
   // initialising the rest of the hardware
   chord_matrix.setup();
@@ -6808,7 +6952,7 @@ void handle_harp() {
       koto_bend(i, 0);
     }
   }
-  if (stock && (touch_velocity || touch_pressure || (koto_press && harp_pluck_on_lift))) {
+  if (stock && (touch_velocity || touch_pressure || (koto_press && harp_pluck_on_lift) || harp_drums)) {
     bool any = false;
     for (int i = 0; i < 12; i++) any |= harp_array[i].read_value() || harp_array[i].read_raw();
     if (any) {
@@ -6818,6 +6962,10 @@ void handle_harp() {
   }
   for (int i = 0; i < 12 && stock; i++) {
     int value = harp_array[i].read_transition();
+    if (harp_drums) {   // the strings are the kit's pads: a hit on the touch, nothing pitched
+      if (value == 2 && !string_palmed[i]) drum_pad(i, pad_strength[i]);
+      continue;
+    }
     if (value == 2 && string_palmed[i]) {
       // landed under the palm: silent until lifted
     } else if (value == 1 && string_palmed[i]) {
@@ -8537,6 +8685,7 @@ void loop() {
   looper_update();
   vocoder_update();
   phone_update();
+  drums_update();
   samples_update();
   // The only point at which this firmware transmits MIDI. Must stay last, and must
   // stay in loop() -- see the MIDI OUTPUT QUEUE comment above.

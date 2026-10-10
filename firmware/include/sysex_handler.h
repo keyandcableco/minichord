@@ -734,6 +734,36 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 319:
         rhythm_palm_break=value;
         break;
+      case 334:
+        drums_on=value;
+        break;
+      case 335:
+        drum_groove=value;
+        break;
+      case 336:
+        drum_groove_b=value;
+        break;
+      case 337:
+        drum_kit=value;
+        break;
+      case 338:
+        drum_level=value; drums_set();
+        break;
+      case 339:
+        drum_humanize=value;
+        break;
+      case 340:
+        drum_midi=value;
+        break;
+      case 341:
+        count_in=value;
+        break;
+      case 342:
+        drums_only=value;
+        break;
+      case 343:
+        harp_drums=value;
+        break;
       case 121:
         for (int i=0;i<4;i++){
           chord_osc_1_array[i]->amplitude(value/100.0);
@@ -1329,6 +1359,16 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 317: lo=0; hi=1; return true;
       case 318: lo=0; hi=1; return true;
       case 319: lo=0; hi=1; return true;
+      case 334: lo=0; hi=1; return true;
+      case 335: lo=0; hi=43; return true;
+      case 336: lo=0; hi=43; return true;
+      case 337: lo=0; hi=11; return true;
+      case 338: lo=0; hi=100; return true;
+      case 339: lo=0; hi=100; return true;
+      case 340: lo=0; hi=2; return true;
+      case 341: lo=0; hi=1; return true;
+      case 342: lo=0; hi=1; return true;
+      case 343: lo=0; hi=1; return true;
       case 121: lo=0; hi=100; return true;
       case 122: lo=0; hi=11; return true;
       case 123: lo=50; hi=200; return true;
