@@ -60,6 +60,7 @@ ROLES = {
     "rhythm_accents": {"global": 280}, "midi_clock": {"global": 266},
     "loop_quantize": {"global": 283}, "loop_countin": {"global": 284}, "loop_click": {"global": 285},
     "click_level": {"global": 286}, "chord_memory": {"global": 287}, "looper_pc": {"global": 256},
+    "loop_length": {"global": 288},
     **{f"rhythm{i}": {"global": 220 + i} for i in range(16)},
     "lfo_wave": {"chord": 152}, "lfo_freq": {"chord": 153}, "lfo_amount": {"chord": 154},
     "glide": {"chord": 199}, "ensemble": {"chord": 259},
@@ -538,6 +539,19 @@ for words, label, value in (
         ("two bar count in, two bars count in, count in two bars, two bars of count in", "two bars' count-in", 2),
         ("no count in, record straight away, record at once, no countin", "no count-in", 0)):
     add(words, "setting", label, home="global", moves=(EXACT("loop_countin", value),), note=LOOPER_NOTE)
+# The looper's phrase in bars (firmware 48): the recording closes by itself on the bar line
+for value, names in ((1, ("one", "1")), (2, ("two", "2")), (3, ("three", "3")), (4, ("four", "4")),
+                     (6, ("six", "6")), (8, ("eight", "8")), (12, ("twelve", "12")), (16, ("sixteen", "16"))):
+    bar = "bar" if value == 1 else "bars"
+    words = ", ".join(w for n in names for w in (
+        f"{n} bar loop", f"{n} bar loops", f"{n} bar phrase", f"loop of {n} {bar}", f"loops of {n} {bar}",
+        f"{n} {bar} long loop", f"loop {n} {bar}", f"loops {n} {bar} long", f"loop {n} {bar} long"))
+    if value == 1:
+        words += ", a bar long loop, loop of a bar, loops of a bar, loop a bar long, loops a bar long"
+    add(words, "setting", f"loops of {value} {bar}, closing by themselves on the bar line", home="global",
+        moves=(EXACT("loop_length", value),), note=LOOPER_NOTE)
+add("loop as long as I play, free length loop, loop length off, no loop length, any length loop",
+    "setting", "loops as long as they are played", home="global", moves=(EXACT("loop_length", 0),), note=LOOPER_NOTE)
 add("click, metronome, click track", "effect", "looper click", home="global",
     moves=(EXACT("loop_click", 2), SET("click_level", 50)), off=(EXACT("loop_click", 0),),
     note="the click sounds on the speaker and headphones only, never in what goes out over USB")

@@ -16,6 +16,8 @@ import preset_maker as pm
 import interpret
 
 SENTENCES = [
+    "four bar loops with a click and count me in", "an 8 bar loop, quantize the loop", "a bar long loop",
+    "loops of 2 bars at 90 bpm", "loop as long as I play",
     "warm pad chords, plucky harp spread across the stereo field, the mod knob opens the filter, double tap starts the looper",
     "a dark eerie drone with lots of reverb and a music box harp, hover makes the chords sing",
     "jazzy electric piano chords in the key of E flat, a touch-sensitive guitar harp with palm mute, the mod knob "
