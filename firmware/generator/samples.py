@@ -53,11 +53,16 @@ TARGET_RMS = 0.2
 # Recordings that sound away from the note they are named for, in cents, measured on the minichord
 # (the recording played at its own note, so at the speed it was recorded) and from its spectrum,
 # the two agreeing within 5 cents. Only those that agree are here: a plucked or sung ensemble's pitch
-# drifts as it sounds (the pizzicato 40 and 50, the choir 44 and 54), and a guess would be worse
-# than the name. Offsets under 3 cents are left alone.
+# drifts as it sounds (the choir 44 and 54), and a guess would be worse than the name. Offsets under
+# 3 cents are left alone.
+# The pizzicato is measured where the ear hears a pluck's pitch, 100 to 400 ms after its onset, with
+# the chords' output filter flat (its 500 Hz band-pass reweights an ensemble's harmonics by several
+# cents); the two methods agree within 1 cent there (minichord-bench/pizz_tune.py, 2026-10-09). The
+# pluck itself and the tail stay off by more, as a section's do.
 TUNING_CENTS = {
-    ('quartet/pizz', 60): -12.5,       # the harp's C4 to F4 in pizzicato
-    ('quartet/pizz', 82): -5.4,
+    ('quartet/pizz', 50): 19.2,        # the chords' B-flat2 to G3: their middle register
+    ('quartet/pizz', 60): -15.0,       # the harp's C4 to F4
+    ('quartet/pizz', 70): -4.0,
     ('choir/musyng/aah', 64): -12.6,
     ('choir/musyng/aah', 76): -18.8,
     ('quartet/viola', 60): 3.0,
