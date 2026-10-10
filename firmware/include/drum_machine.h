@@ -75,6 +75,12 @@ public:
       s.left = cosf(a) * p.level;
       s.right = sinf(a) * p.level;
       s.retrig_samples = (uint32_t)(p.retrig_ms * fs / 1000.0f);
+      // what the per-sample loops read, here in RAM rather than from the kit in flash
+      s.bend_span = p.tone_bend - 1.0f;
+      s.noise_level = p.noise_level;
+      s.metal_level = p.metal_level;
+      s.metal_count = p.metal_count == 4 ? 4 : 2;
+      s.filter = p.filter;
       s.active = false;
     }
     crush_step = k->bits < 16 ? (float)(1 << (16 - k->bits)) / 32768.0f : 0;
@@ -115,58 +121,63 @@ public:
     audio_block_t *l = allocate(), *r = allocate();
     if (!l || !r) { if (l) release(l); if (r) release(r); return; }
     float out_l[AUDIO_BLOCK_SAMPLES] = {0}, out_r[AUDIO_BLOCK_SAMPLES] = {0};
+    const float inv_fs = 1.0f / AUDIO_SAMPLE_RATE_EXACT;
+    float x[AUDIO_BLOCK_SAMPLES];
     for (uint8_t i = 0; i < DRUM_VOICES; i++) {
       voice_t &s = voice[i];
       if (!s.active) continue;
-      const drum_voice_t &p = kit->v[i];
-      for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) {
-        float x = 0;
-        if (s.tone_amp > 0.0001f) {
-          float f = s.tone_hz * (1.0f + (p.tone_bend - 1.0f) * s.bend);
-          s.bend *= s.bend_decay;
-          s.phase += f / AUDIO_SAMPLE_RATE_EXACT;
-          s.phase -= (int32_t)s.phase;
-          float idx = s.phase * 256.0f;
+      for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) x[n] = 0;
+      // the body, a block at a time, while it's above -60 dB
+      if (s.tone_amp > SILENT) {
+        float phase = s.phase, amp = s.tone_amp, bend = s.bend;
+        const float base = s.tone_hz * inv_fs, span = s.bend_span * base, td = s.tone_decay, bd = s.bend_decay;
+        for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) {
+          phase += base + span * bend;
+          bend *= bd;
+          phase -= (int32_t)phase;
+          float idx = phase * 256.0f;
           int32_t i0 = (int32_t)idx;
-          float fr = idx - i0;
-          float sine = (AudioWaveformSine[i0] + (AudioWaveformSine[i0 + 1] - AudioWaveformSine[i0]) * fr) * (1.0f / 32767.0f);
-          x += sine * s.tone_amp;
-          s.tone_amp *= s.tone_decay;
+          float a = AudioWaveformSine[i0], b = AudioWaveformSine[i0 + 1];
+          x[n] = (a + (b - a) * (idx - i0)) * (1.0f / 32767.0f) * amp;
+          amp *= td;
         }
-        if (s.retrigs && ++s.retrig_count >= s.retrig_samples) {   // a clap: struck again
-          s.retrig_count = 0;
-          s.retrigs--;
-          s.noise_amp = s.noise_start;
-        }
-        if (s.noise_amp > 0.0001f) {
-          float burst = 0;
-          if (p.noise_level > 0) {
-            noise ^= noise << 13; noise ^= noise >> 17; noise ^= noise << 5;
-            burst += (int32_t)noise * (1.0f / 2147483648.0f) * p.noise_level;
-          }
-          if (p.metal_level > 0) {
-            float m = 0;
-            uint8_t count = p.metal_count == 4 ? 4 : 2;
-            for (uint8_t k = 0; k < count; k++) {
-              s.metal_phase[k] += s.metal_inc[k];
-              if (s.metal_phase[k] >= 1.0f) s.metal_phase[k] -= 1.0f;
-              m += s.metal_phase[k] < 0.5f ? 1.0f : -1.0f;
-            }
-            burst += m / count * p.metal_level;
-          }
-          float v3 = burst - s.ic2;
-          float v1 = s.a1 * s.ic1 + s.a2 * v3;
-          float v2 = s.ic2 + s.a2 * s.ic1 + s.a3 * v3;
-          s.ic1 = 2 * v1 - s.ic1;
-          s.ic2 = 2 * v2 - s.ic2;
-          float y = p.filter == 0 ? v2 : p.filter == 1 ? v1 * s.k : burst - s.k * v1 - v2;
-          x += y * s.noise_amp;
-          s.noise_amp *= s.noise_decay;
-        }
-        out_l[n] += x * s.left;
-        out_r[n] += x * s.right;
+        s.phase = phase; s.tone_amp = amp; s.bend = bend;
       }
-      if (s.tone_amp <= 0.0001f && s.noise_amp <= 0.0001f && !s.retrigs) s.active = false;
+      // the burst: noise and metal through the filter, a clap's strikes again
+      if (s.noise_amp > SILENT || s.retrigs) {
+        float amp = s.noise_amp, ic1 = s.ic1, ic2 = s.ic2;
+        const float a1 = s.a1, a2 = s.a2, a3 = s.a3, k = s.k, nd = s.noise_decay;
+        const float nl = s.noise_level * (1.0f / 2147483648.0f), ml = s.metal_level / s.metal_count;
+        const uint8_t mc = s.metal_level > 0 ? s.metal_count : 0, type = s.filter;
+        uint32_t r = noise;
+        for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) {
+          if (s.retrigs && ++s.retrig_count >= s.retrig_samples) { s.retrig_count = 0; s.retrigs--; amp = s.noise_start; }
+          float burst = 0;
+          if (nl != 0) { r ^= r << 13; r ^= r >> 17; r ^= r << 5; burst = (int32_t)r * nl; }
+          if (mc) {
+            float m = 0;
+            for (uint8_t j = 0; j < mc; j++) {
+              float ph = s.metal_phase[j] + s.metal_inc[j];
+              if (ph >= 1.0f) ph -= 1.0f;
+              s.metal_phase[j] = ph;
+              m += ph < 0.5f ? 1.0f : -1.0f;
+            }
+            burst += m * ml;
+          }
+          float v3 = burst - ic2;
+          float v1 = a1 * ic1 + a2 * v3;
+          float v2 = ic2 + a2 * ic1 + a3 * v3;
+          ic1 = 2 * v1 - ic1;
+          ic2 = 2 * v2 - ic2;
+          float y = type == 0 ? v2 : type == 1 ? v1 * k : burst - k * v1 - v2;
+          x[n] += y * amp;
+          amp *= nd;
+        }
+        noise = r; s.noise_amp = amp; s.ic1 = ic1; s.ic2 = ic2;
+      }
+      const float left = s.left, right = s.right;
+      for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) { out_l[n] += x[n] * left; out_r[n] += x[n] * right; }
+      if (s.tone_amp <= SILENT && s.noise_amp <= SILENT && !s.retrigs) s.active = false;
     }
     // the kit's grit and drive, the level, and a soft clip so a pile of hits rounds off rather than cracks
     float drive = kit->drive, g = gain * 26000.0f;
@@ -192,6 +203,7 @@ public:
 
 private:
   static const uint8_t QUEUE = 32, PENDING = 32;
+  static constexpr float SILENT = 0.001f;   // -60 dB: a voice under it is done
   struct hit_t { uint8_t voice; float velocity, pitch; uint32_t delay; };
   struct voice_t {
     bool active;
@@ -200,6 +212,8 @@ private:
     float metal_phase[4], metal_inc[4];
     float ic1, ic2, k, a1, a2, a3;
     float left, right;
+    float bend_span, noise_level, metal_level;
+    uint8_t metal_count, filter;
     uint8_t retrigs;
     uint32_t retrig_count, retrig_samples;
   };
