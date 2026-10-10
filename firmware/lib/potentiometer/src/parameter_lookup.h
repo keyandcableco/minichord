@@ -93,6 +93,8 @@ static const ParameterInfo parameter_lookup[] = {
     { 117, 1, 0, 1 }, // knob layer
     { 249, 0, 0, 511 }, // hover control
     { 250, 0, 0, 4095 }, // hover value
+    { 325, 0, 0, 511 }, // hover alternate control
+    { 326, 0, 0, 4095 }, // hover alternate value
     { 251, 1, 3, 10 }, // hover reach
     { 256, 1, 0, 7 }, // looper
     { 4, 0, 0, 1024 }, // chord alternate value

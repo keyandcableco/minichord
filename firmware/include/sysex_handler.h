@@ -240,6 +240,12 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 250:
         hover_value=value; hover_reapply=true;
         break;
+      case 325:
+        hover_alt_target=constrain(value,0,parameter_size-1); hover_reapply=true;
+        break;
+      case 326:
+        hover_alt_value=value; hover_reapply=true;
+        break;
       case 251:
         hover_reach=value ? constrain(value,3,10) : 7;
         break;
@@ -1152,6 +1158,8 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 117: lo=0; hi=1; return true;
       case 249: lo=0; hi=511; return true;
       case 250: lo=0; hi=4095; return true;
+      case 325: lo=0; hi=511; return true;
+      case 326: lo=0; hi=4095; return true;
       case 251: lo=3; hi=10; return true;
       case 256: lo=0; hi=7; return true;
       case 4: lo=0; hi=1024; return true;

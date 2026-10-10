@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=57; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324)
+int version_ID=58; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1203,6 +1203,10 @@ int16_t hover_target = 0;      // the setting hover moves (address 249), 0 for n
 int16_t hover_value = 0;       // what that setting reaches with a hand 2 cm above the plate (250)
 uint8_t hover_reach = 7;       // how high above the plate hover begins, roughly in centimetres (251)
 bool hover_reapply = true;     // apply again even if the value hasn't changed
+// Alternate hover (325, 326): what hover moves on the knobs' alternate layer, the modifier held or
+// knob layer 1, as each knob has its alternate. 0 keeps hover on its own setting on both layers.
+int16_t hover_alt_target = 0;
+int16_t hover_alt_value = 0;
 void hover_set_target(int16_t adress);
 
 // The phone follower: what plays into the minichord over USB moves settings, keeps rhythm mode on
@@ -7822,7 +7826,7 @@ void hover_set_target(int16_t adress) {
   hover_reapply = true;
 }
 
-void handle_hover() {
+void handle_hover(bool alternate) {
   static elapsedMicros since_read;
   if (since_read < 2000) return;                   // the chip has a new reading each millisecond; every other one is plenty
   since_read = 0;
@@ -7868,18 +7872,28 @@ void handle_hover() {
   static elapsedMillis since_apply;
   if (since_apply < 10) return;
   since_apply = 0;
-  if (hover_can_move(hover_target)) {
+  // the alternate layer's setting while it is up, if hover has one; the setting it leaves goes back
+  // as the preset has it, as when the hand leaves
+  bool alt = alternate && hover_alt_target != 0;
+  int16_t target = alt ? hover_alt_target : hover_target;
+  static int16_t moving = 0;
+  if (target != moving) {
+    if (hover_can_move(moving)) apply_audio_parameter(moving, current_sysex_parameters[moving]);
+    moving = target;
+    hover_reapply = true;
+  }
+  if (hover_can_move(target)) {
     static int16_t applied = 0;
     static elapsedMillis since_refresh;
-    int16_t from = current_sysex_parameters[hover_target];
-    int16_t to = hover_value;
+    int16_t from = current_sysex_parameters[target];
+    int16_t to = alt ? hover_alt_value : hover_value;
     int16_t lo, hi;
-    if (parameter_range(hover_target, lo, hi)) to = constrain(to, lo, hi);
+    if (parameter_range(target, lo, hi)) to = constrain(to, lo, hi);
     int16_t value = (int16_t)lroundf(from + (to - from) * hover_position);
     // a preset load or an editor puts the stored value back: while hover is up, apply it again now and then
     if (hover_position > 0 && since_refresh > 250) hover_reapply = true;
     if (value != applied || hover_reapply) {
-      apply_audio_parameter(hover_target, value);
+      apply_audio_parameter(target, value);
       applied = value;
       hover_reapply = false;
       since_refresh = 0;
@@ -8295,7 +8309,7 @@ void loop() {
   flag_save_needed |= harp_pot.update_parameter(alternate);
   flag_save_needed |= mod_pot.update_parameter(alternate);
   if (knob_midi) send_knob_ccs();
-  handle_hover();
+  handle_hover(alternate);
 
   // Two quick taps of the modifier toggle whatever the player has assigned to
   // the gesture. Only when no chord button is down, so it never competes with
