@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=43; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266)
+int version_ID=44; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -859,6 +859,8 @@ uint8_t acc_follow = 0;         // 0 plays on, 1 only while a chord is held, 2 t
 uint8_t acc_change = 0;         // a new chord comes in: 0 on the next note, 1 on the beat, 2 on the bar
 uint8_t acc_articulation = 100; // % of each written note's length
 uint8_t acc_accents = 100;      // % of the written difference between loud and soft notes
+uint8_t tap_counts = 0;         // tap tempo counts (281): 0 a tap a beat, 1 a tap an eighth; see acc_tap
+volatile double acc_phase_error = 0;   // 24ths of a beat the rhythm is to catch up (or fall back) to a tap
 // MIDI clock out (266): 0 off, 1 on port 1, 2 on port 2, 3 on both; see the clock in acc_tick
 uint8_t midi_clock_out = 0;
 volatile uint8_t midi_clock_started = 0;      // the ports a Start has gone to and no Stop since (bit 0 port 1, bit 1 port 2)
@@ -1414,6 +1416,8 @@ void acc_midi_clock();
 void acc_snapshot();
 void acc_settings_changed();
 void acc_clock_out_changed();
+void acc_tap();
+void acc_tap_reset();
 uint8_t acc_held_mask();
 void stop_chord_voices(uint8_t mask);
 
@@ -4423,9 +4427,17 @@ void acc_tick() {
   if (acc_restart) {
     acc_restart = false;
     acc_pos = 0;
+    acc_phase_error = 0;
     midi_clock_stop();   // and a Start on the tick that begins it again
   }
   double step = rythm_bpm * ACC_BEAT / 60000.0;
+  if (acc_phase_error != 0) {   // toward a tap: up to 30% quicker or slower until there (acc_tap)
+    double c = acc_phase_error;
+    if (c > 0.3 * step) c = 0.3 * step;
+    if (c < -0.3 * step) c = -0.3 * step;
+    step += c;
+    acc_phase_error = acc_phase_error - c;
+  }
   double t1 = acc_pos + step;
   if (rythm_clock_synced) {
     if (acc_clock_waiting) return;
@@ -4446,7 +4458,9 @@ FLASHMEM void acc_begin() {
   acc_clock_waiting = false;
   acc_restart = false;
   acc_pos = 0;
+  acc_phase_error = 0;
   rythm_current_step = 0;
+  acc_tap_reset();
   for (uint8_t v = 0; v < 4; v++) acc_voice[v] = acc_voice_t{false, 0, false, false, 0, 0, 0, 0, 0, ACC_NO_NOTE, ACC_NO_NOTE};
   for (uint8_t r = 0; r < ACC_ROLL_MAX; r++) acc_rolled[r].used = false;
   acc_now = acc_latest;
@@ -4512,6 +4526,7 @@ FLASHMEM void acc_midi_clock() {
     acc_clock_waiting = true;
     acc_clock_restart = false;
   }
+  acc_phase_error = 0;
   if (acc_clock_waiting) {
     acc_clock_waiting = false;
     acc_pos = acc_clock_restart ? 0 : ceil(acc_pos / ACC_BEAT) * ACC_BEAT;
@@ -4528,6 +4543,73 @@ FLASHMEM void rythm_clock_watch() {
     rythm_clock_synced = false;
     acc_clock_waiting = false;
   }
+}
+
+// Tap tempo: the hold button tapped in rhythm mode. Each tap was a sixth of the way from the tempo
+// to the one tapped, so it took ten taps to get near, and a run of taps at the pulse the pattern
+// moves in (eighths, as often as not) dragged the tempo up while the pattern ran away from the
+// hand. Now the second tap sets the tempo and the next few refine it: the time across the last few
+// taps (up to four intervals). With tap tempo counts (281) at eighths, two taps make a beat, and
+// the tempo is taken across pairs of taps, so a shuffle's long and short eighths still make an
+// even beat. A tap far off the run (40% from the beat it implies), or after more than two seconds,
+// begins a new run. And each tap from the second draws the beat (or the eighth, where the shuffle
+// puts it) halfway to where it fell: the rhythm hurries or holds back, up to 30%, until it is
+// there, so no note is skipped or played twice, and a slightly uneven hand settles in the middle
+// of its taps rather than being chased. Under a MIDI clock the clock has the tempo.
+#define TAP_RUN 5
+uint32_t tap_us[TAP_RUN];   // the run's taps, latest last
+uint8_t tap_count = 0;
+
+FLASHMEM void acc_tap_reset() { tap_count = 0; }
+
+// ms a beat from the first `taps` taps of the run: across whole beats when taps are eighths and
+// there are two or more intervals, so a shuffle's long and short eighths even out
+static float tap_beat(uint8_t taps) {
+  uint8_t intervals = taps - 1;
+  if (tap_counts && intervals >= 2) intervals &= ~1;
+  float per_beat = tap_counts ? 2 : 1;
+  return (tap_us[taps - 1] - tap_us[taps - 1 - intervals]) / 1000.0f * per_beat / intervals;
+}
+
+FLASHMEM void acc_tap() {
+  uint32_t now = micros();
+  if (rythm_clock_synced || (tap_count > 0 && now - tap_us[tap_count - 1] > 2000000)) tap_count = 0;
+  if (tap_count == TAP_RUN) {   // keep the latest
+    memmove(tap_us, tap_us + 1, sizeof(uint32_t) * (TAP_RUN - 1));
+    tap_count--;
+  }
+  tap_us[tap_count++] = now;
+  if (rythm_clock_synced || tap_count < 2) return;
+  // this tap's own beat (its interval, or with eighths the two taps to it) against the run's
+  // before it: far off, a new run from the tap before this one
+  if (tap_count >= 3) {
+    uint8_t own = (tap_counts && tap_count >= 3) ? 2 : 1;
+    float per_beat = tap_counts ? 2 : 1;
+    float this_beat = (now - tap_us[tap_count - 1 - own]) / 1000.0f * per_beat / own;
+    float before = tap_beat(tap_count - 1);
+    if (fabsf(this_beat - before) > 0.4f * before) {
+      tap_us[0] = tap_us[tap_count - 2];
+      tap_us[1] = now;
+      tap_count = 2;
+    }
+  }
+  float beat_ms = tap_beat(tap_count);
+  if (beat_ms < 200 || beat_ms > 2000) return;   // 30 to 300 bpm
+  rythm_bpm = 60000.0f / beat_ms;
+  noInterrupts();
+  // where the tap was: the button is believed after 10 ms of steady contact (the debouncer)
+  double at = acc_pos - 10 * rythm_bpm * ACC_BEAT / 60000.0;
+  // the nearest beat, or with eighths the nearest eighth as the shuffle places it
+  double beat = floor(at / ACC_BEAT) * ACC_BEAT;
+  double nearest = (at - beat < ACC_BEAT / 2) ? beat : beat + ACC_BEAT;
+  if (tap_counts) {
+    double off = beat + ACC_BEAT / 2 * shuffle;
+    if (fabs(at - off) < fabs(at - nearest)) nearest = off;
+  }
+  acc_phase_error = (nearest - at) / 2;
+  interrupts();
+  Serial.print("Updating the BPM to: ");
+  Serial.println(rythm_bpm);
 }
 
 // A chord that arrives just after notes of the part fell due -- meant for the beat, a moment late --
@@ -6198,11 +6280,7 @@ void handle_hold_button() {
         trigger_chord = true;
       }
     } else {
-      if (since_last_button_push > 100 && since_last_button_push < 2000 && !rythm_clock_synced) {   // under a clock, the clock's tempo
-        rythm_bpm = (rythm_bpm * 5.0 + 60 * 1000 / since_last_button_push) / 6.0;
-        Serial.print("Updating the BPM to: ");
-        Serial.println(rythm_bpm);
-      }
+      acc_tap();
     }
     since_last_button_push = 0;
   } else if (hold_transition == 1 && since_last_button_push > 800) {
