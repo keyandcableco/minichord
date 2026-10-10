@@ -65,6 +65,12 @@ ROLES = {
     "rhythm_intro": {"global": 317}, "rhythm_end_on": {"global": 318}, "palm_break": {"global": 319},
     "fingered_glide": {"chord": 320}, "tap_hold": {"global": 321}, "revert_panic": {"global": 322},
     "revert": {"global": 323}, "panic": {"global": 323}, "press_again": {"chord": 324},
+    # firmware 59-60: the DJ box and the harp's song; the drums
+    "dj_filter": {"global": 327}, "dj_resonance": {"global": 328}, "phone_echo": {"global": 329},
+    "echo_time": {"global": 330}, "echo_feedback": {"global": 331}, "tape_stop": {"global": 332}, "grab": {"global": 332},
+    "phone_strum": {"global": 333}, "drums": {"global": 334}, "drum_groove": {"global": 335}, "drum_groove_b": {"global": 336},
+    "drum_kit": {"global": 337}, "drum_level": {"global": 338}, "drum_humanize": {"global": 339}, "drum_midi": {"global": 340},
+    "count_in": {"global": 341}, "drums_only": {"global": 342}, "harp_drums": {"global": 343},
     "loop_quantize": {"global": 283}, "loop_countin": {"global": 284}, "loop_click": {"global": 285},
     "click_level": {"global": 286}, "chord_memory": {"global": 287}, "looper_pc": {"global": 256},
     "loop_length": {"global": 288},
@@ -603,6 +609,88 @@ for words, label, value in (
          "pressing the held chord goes up an octave and back", 3)):
     add(words, "setting", label, home="chord", moves=(EXACT("press_again", value),), off=(EXACT("press_again", 0),),
         note="with hold on: the chord ringing, pressed again")
+# Firmware 59: the DJ box on the song, and the harp that plays it
+DJ_NOTE = "the DJ box works on the song as it plays through the minichord (USB audio 1, play along)"
+for words, label, moves in (
+        ("strum along with my phone, strum along with the music, harp strums on the beat, harp strums with the song, "
+         "strum on the beat, strum on every beat", "the harp strums the held chord on the music's beat", (EXACT("phone_strum", 1),)),
+        ("strum eighths with the music, strum down and up with the music, harp strums eighths, strum in eighths with my phone",
+         "the harp strums down and up with the music", (EXACT("phone_strum", 2),)),
+        ("harp plays the song, the song on the harp, harp plays my phone, the harp plays the phone",
+         "the harp plays the song, once a second of it is grabbed", ()),
+        ("muffle the song, muffled song, song underwater, song through a low pass", "the song muffled (DJ filter)",
+         (EXACT("dj_filter", 40),)),
+        ("thin the song, thin out the song, song through a high pass, tinny song", "the song thinned (DJ filter)",
+         (EXACT("dj_filter", 160),)),
+        ("echo on the song, song echo, dub the song, dub echo on the song", "an echo on the song, in time",
+         (EXACT("phone_echo", 40),))):
+    add(words, "setting", label, home="global", moves=moves, note=DJ_NOTE)
+for words, voice in (("harp plays the song, the song on the harp, harp plays my phone, the harp plays the phone", "harp"),):
+    pass
+add("song voice, the song as an instrument, sampled song, song sample", "sound", "the song as the voice (grab a second first)",
+    home="harp", moves=(EXACT("voice", 5),), note="grab a second of the song first: the double tap on phone deck at 2, or the Lab's page")
+# Firmware 60: the drums. A groove by name ("bossa nova drums", "an amen break"), a kit ("on the 808"), and how they play
+DRUM_NOTE = "the drums play in rhythm mode, which is turned on at the instrument"
+GROOVE_WORDS = [
+    ("rock beat, rock drums, rock groove, straight rock beat", 1), ("pop beat, pop drums, eighth note beat", 2),
+    ("sixteenth note beat, pop sixteenths, busy pop beat", 3), ("ballad drums, ballad beat, slow ballad beat", 4),
+    ("funk beat, funk drums, funky beat, funk groove", 5), ("disco beat, disco drums, four on the floor disco", 6),
+    ("motown beat, motown drums, sixties soul beat", 7), ("shuffle beat, shuffle drums, blues shuffle", 8),
+    ("jazz drums, swing drums, swing beat, ride cymbal swing, jazz ride", 9), ("waltz drums, waltz beat", 10),
+    ("march beat, marching drums, snare march, military march", 11), ("second line, new orleans second line, second line beat", 12),
+    ("country beat, train beat, country drums, two beat drums", 13), ("folk drums, folk beat, brushed folk beat", 14),
+    ("six eight drums, 6 8 drums, six eight beat", 15), ("habanera drums, tango drums, tango beat", 16),
+    ("house beat, house drums, four on the floor, four to the floor", 17), ("trap beat, trap drums, trap hats, 808 trap", 18),
+    ("amen break, amen breakbeat, the amen, amen style break, jungle break, breakbeat", 19),
+    ("funky drummer, funky drummer break, funky drummer beat", 20), ("think break, think breakbeat", 21),
+    ("boom bap, boom bap beat, boom bap drums, 90s hip hop beat, hip hop beat", 22),
+    ("drum and bass, drum n bass, dnb, d and b, drum and bass beat", 23), ("lo fi beat, lo fi drums, lofi beat, lofi hip hop", 24),
+    ("son clave, clave beat, clave, son montuno drums", 25), ("rumba clave, rumba, rumba beat", 26),
+    ("bossa nova drums, bossa drums, bossa nova beat, bossa beat", 27), ("samba drums, samba beat, batucada", 28),
+    ("cumbia, cumbia beat, cumbia drums", 29), ("baiao, baiao beat, forro", 30), ("salsa, salsa beat, salsa drums", 31),
+    ("one drop, reggae drums, reggae beat, one drop beat", 32), ("dembow, reggaeton, reggaeton beat, dembow beat", 33),
+    ("soca, soca beat, calypso drums", 34), ("afrobeat, afrobeat drums, fela beat, tony allen beat", 35),
+    ("12 8 bell, bell pattern, agbekor, west african bell, african bell pattern", 36), ("highlife, highlife beat", 37),
+    ("maqsum, maqsoum, belly dance beat, arabic beat", 38), ("baladi, baladi beat", 39), ("saidi, saidi beat", 40),
+    ("kehrwa, keharwa, kaherva", 41), ("dadra, dadra taal", 42), ("teental, teentaal, tintal, tabla beat", 43)]
+GROOVE_NAMES = ["rock", "pop eighths", "pop sixteenths", "ballad", "funk", "disco", "motown", "shuffle", "jazz swing", "waltz",
+                "march", "second line", "country two-beat", "folk", "six eight", "habanera", "house", "trap",
+                "amen-style break", "funky drummer-style", "think-style break", "boom bap", "drum and bass", "lo-fi",
+                "son clave", "rumba clave", "bossa nova", "samba", "cumbia", "baiao", "salsa", "one drop", "dembow", "soca",
+                "afrobeat", "12/8 bell", "highlife", "maqsum", "baladi", "saidi", "kehrwa", "dadra", "teental"]
+KIT_NAMES = ["808", "909", "CR-78", "studio", "brushes", "boom bap", "world percussion", "tabla and doumbek", "trap", "house",
+             "glitch"]
+for words, n in GROOVE_WORDS:
+    add(words, "setting", f"drums: the {GROOVE_NAMES[n - 1]} groove", home="global", moves=(EXACT("drums", 1), EXACT("drum_groove", n)),
+        off=(EXACT("drum_groove", 0),), note=DRUM_NOTE)
+KIT_WORDS = [("808 kit, 808 drums, on the 808, tr 808, eight oh eight", 1), ("909 kit, 909 drums, on the 909, tr 909", 2),
+             ("cr78, cr 78, cr78 kit, vintage drum machine, old drum machine, rhythm box", 3),
+             ("studio kit, acoustic drums, real drums, live drums, drum kit", 4), ("brushes, brushed drums, brush kit, jazz brushes", 5),
+             ("boom bap kit, dusty drums, lo fi drums, crunchy drums, sp 1200 drums", 6),
+             ("world percussion, congas, bongos, hand drums, latin percussion, percussion kit", 7),
+             ("tabla, tablas, doumbek, darbuka, tabla and doumbek", 8), ("trap kit, 808 bass kick, trap drums kit", 9),
+             ("house kit, house drums kit, club drums", 10), ("glitch drums, bitcrushed drums, broken drums, glitchy drums, glitch kit", 11)]
+for words, n in KIT_WORDS:
+    add(words, "setting", f"drums: the {KIT_NAMES[n - 1]} kit", home="global", moves=(EXACT("drums", 1), EXACT("drum_kit", n)),
+        off=(EXACT("drum_kit", 0),), note=DRUM_NOTE)
+for words, label, moves, off in (
+        ("drums, add drums, with drums, drum machine, a drummer, drum beat, rhythm with drums", "drums",
+         (EXACT("drums", 1),), (EXACT("drums", 0),)),
+        ("drums only, just drums, only drums, just the drums, drums alone", "drums only",
+         (EXACT("drums", 1), EXACT("drums_only", 1)), (EXACT("drums_only", 0),)),
+        ("drum count in, sticks count in, count in with sticks, count the band in, rhythm count in, count off with sticks",
+         "a count-in of sticks before the rhythm",
+         (EXACT("count_in", 1),), (EXACT("count_in", 0),)),
+        ("harp drums, finger drumming, finger drums, drum pads, harp as drum pads, strings as drum pads, tap the drums on the harp",
+         "the harp plays the drums", (EXACT("harp_drums", 1),), (EXACT("harp_drums", 0),)),
+        ("loose drums, humanize the drums, humanized drums, sloppy drums, human drummer, drunk drummer, behind the beat",
+         "loose drums (humanize)", (EXACT("drums", 1), EXACT("drum_humanize", 50)), (EXACT("drum_humanize", 0),)),
+        ("tight drums, drums on the grid, quantized drums, robot drums", "drums on the grid", (EXACT("drum_humanize", 0),), None),
+        ("drums to midi, drums out over midi, send the drums to my daw, drums on channel 10, midi drums, record the drums",
+         "the drums out on MIDI channel 10", (EXACT("drum_midi", 1),), (EXACT("drum_midi", 0),)),
+        ("louder drums, drums up, more drums, turn up the drums", "louder drums", (SET("drum_level", 100),), None),
+        ("quieter drums, drums down, softer drums, turn down the drums, less drums", "quieter drums", (SET("drum_level", 35),), None)):
+    add(words, "setting", label, home="global", moves=moves, off=off, note=DRUM_NOTE)
 # The looper in time (firmware 46): quantize, count-in, click and its level
 LOOPER_NOTE = "the looper is worked live: the double tap, minicontrol's looper buttons, or control changes"
 for words, label, value in (
@@ -946,9 +1034,16 @@ TARGETS = {
     "rhythm_ending": "ending, the ending, ends the song, end the song, outro",
     "revert": "revert, reverts, undo, undoes, put the preset back, puts the preset back",
     "panic": "panic, panics, all notes off, stop everything, stops everything",
+    "dj_filter": "song filter, the songs filter, dj filter, filter on the song, filters the song, sweeps the song",
+    "phone_echo": "echo throw, dub throw, throws the echo, throw the echo, echoes the song, song echo",
+    "tape_stop": "tape stop, tape stops, stops the tape, stop the tape",
+    "grab": "grab, grabs, grabs the song, grab the song, samples the song, sample the song",
+    "drum_kit": "drum kit, drum kits, kits",
+    "drum_level": "drum level, drums level, drum volume",
 }
 # Where a knob sweeps each role, (low, high) in parameters.json units; its centre is stored in the preset
-SWEEP = {"cutoff": {"chord": (150, 4000), "harp": (80, 2000)}, "resonance": (0.7, 4.5), "reverb": (0, 0.9),
+SWEEP = {"dj_filter": (0, 200), "phone_echo": (0, 100), "drum_level": (0, 100), "drum_kit": (0, 11),
+         "cutoff": {"chord": (150, 4000), "harp": (80, 2000)}, "resonance": (0.7, 4.5), "reverb": (0, 0.9),
          "reverb_size": (0.2, 1.0), "delay_mix": (0, 0.6), "delay_time": (50, 600), "vib_amount": (0, 0.5),
          "trem_amount": (0, 0.8), "crunch": (0, 0.7), "glide": (0, 800), "vowel": (0, 100), "formant": (0, 100),
          "vocoder": (0, 100), "attack": (1, 2000), "release": (100, 4000), "sustain": (0, 1), "decay": (50, 3000),
@@ -961,9 +1056,11 @@ TAP = {"resonance": 4.0, "reverb": 0.9, "reverb_size": 1.0, "delay_mix": 0.45, "
        "noise": 0.15, "string_model": 100, "wave": 9, "looper": 6, "looper_pc": 7, "chord_memory": 5, "chromatic": 1, "lift": 1, "scale": 2, "barry": 1,
        "voice_leading": 1, "touch": 80, "palm_mute": 5, "transpose": 7, "tempo": 140, "ribbon": 1, "mpe": 1,
        "midi_in": 1, "knob_midi": 1, "knob_layer": 1, "layout": 1, "key": 1,
-       "rhythm_fill": 1, "rhythm_break": 2, "rhythm_ending": 3, "revert": 1, "panic": 2}
+       "rhythm_fill": 1, "rhythm_break": 2, "rhythm_ending": 3, "revert": 1, "panic": 2,
+       "dj_filter": 40, "phone_echo": 100, "tape_stop": 1, "grab": 2, "drum_level": 100}
 # the double tap's actions, which take a step rather than toggle a value
-TAP_ACTIONS = {"looper", "looper_pc", "chord_memory", "rhythm_fill", "rhythm_break", "rhythm_ending", "revert", "panic"}
+TAP_ACTIONS = {"looper", "looper_pc", "chord_memory", "rhythm_fill", "rhythm_break", "rhythm_ending", "revert", "panic",
+               "tape_stop", "grab"}
 # Words between an effect and its amount ("reverb at 40%"), and waveforms by name ("chord waveform 1 sawtooth")
 AMOUNT_FILLERS = {"to", "at", "of", "is", "set", "=", "around", "about"}
 WAVE_NAMES = {"sine": 0, "sawtooth": 9, "saw": 9, "square": 11, "triangle": 3, "pulse": 4}
@@ -1492,6 +1589,9 @@ class Interpreter:
         elif role in ("revert", "panic"):
             self.result.understood.append(f"double tap{slot} → " + ("the preset back as it was saved" if role == "revert"
                                           else "the panic: every voice stopped, All Notes Off"))
+        elif role in ("tape_stop", "grab"):
+            self.result.understood.append(f"double tap{slot} → " + ("the tape stop, and the song back in the next time"
+                                          if role == "tape_stop" else "a second of the song grabbed onto the harp"))
         else:
             self.result.understood.append(f"double tap{slot} → {label} to {value:g}, and back on the next double tap")
         if index > 0 and not self.tap_note:

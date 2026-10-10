@@ -274,7 +274,7 @@ def apply_changes(values, changes, params, report_all=False):
             if target != 0:
                 t = params.get(target)
                 # the double tap's actions are hidden settings: the looper, chord memory, a rhythm fill, revert or panic
-                ok = t is not None and target not in LOCKED and t["group"] != "hidden" or target in (256, 287, 315, 323)
+                ok = t is not None and target not in LOCKED and t["group"] != "hidden" or target in (256, 287, 315, 323, 332)
                 if a in KNOB_TARGETS:
                     ok = ok and target != 256 and t["controls"] == "all"
                 else:
