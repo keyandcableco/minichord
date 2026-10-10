@@ -7653,7 +7653,9 @@ const uint8_t phone_follow_cc = 26;     // with knobs send midi on, the follower
 const float phone_oss_ms = 2 * 128 * 1000.0f / AUDIO_SAMPLE_RATE_EXACT;
 const float phone_bpm_low = 70, phone_bpm_high = 180;
 const float phone_beat_sure = 0.25f;    // how much the music must resemble itself a beat on to have one: music 0.3-0.7, speech under 0.25
-const float phone_beat_lead_ms = 8;     // a beat is found this late (the rise counted in the blocks after it)
+const float phone_beat_lead_ms = 28;    // a beat is found this late: the rise is counted in the blocks after it
+                                        // (8 ms in the model), and on the device the rhythm's beats fell ~20 ms
+                                        // after the music's with only that (phone_test.py, against its kicks)
 const float phone_kick_weight = 2;      // a kick's say in where the beats fall, against the rise's spread
 DMAMEM float phone_oss[PHONE_OSS];
 DMAMEM float phone_work[PHONE_OSS];    // a still copy to search, without its mean
