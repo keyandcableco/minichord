@@ -5117,15 +5117,16 @@ static float dayan_tuning(float own_hz) {
 
 // ---- DRONE ----
 // A tanpura or a shruti box on the key's Sa, under everything, rhythm mode or not (372-375; the
-// sound is include/tanpura.h, rendered with the drums). Sa is the key as the dayan has it: C and the
-// transpose, at its tempered pitch (purity leaves it alone, it has no chord), folded into the
-// register chosen; the strings above and below it are pure, as a tanpura is tuned.
+// sound is include/tanpura.h, rendered with the drums). Sa is the root the harp's scales take from
+// the key, the chord key signature's, and the transpose, at its tempered pitch (purity leaves it
+// alone, it has no chord), folded into the register chosen; the strings above and below it are
+// pure, as a tanpura is tuned. (The dayan keeps to the transpose alone.)
 uint8_t drone_mode = 0;       // 0 off, 1-4 a tanpura with Pa, Ma, Ni or Sa first, 5 a shruti box
 uint8_t drone_register = 1;   // Sa from 0 E2, 1 A2, 2 D3, the octave up from there
 float drone_sa_hz() {
   static const float lowest[3] = {82.41f, 110.0f, 146.83f};
   float lo = lowest[drone_register < 3 ? drone_register : 1];
-  float hz = c_frequency * tempered_ratio(transpose_steps);
+  float hz = c_frequency * tempered_ratio(scale_root_offsets[key_signature_selection] + transpose_steps);
   while (hz >= 2 * lo) hz *= 0.5f;
   while (hz < lo) hz *= 2.0f;
   return hz;
