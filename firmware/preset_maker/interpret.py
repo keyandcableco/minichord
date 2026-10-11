@@ -93,6 +93,13 @@ ROLES = {
     "knob_layer": {"global": 117}, "led": {"global": 32}, "hover_reach": {"global": 251},
     "alt_maj": {"chord": 202}, "alt_min": {"chord": 203}, "alt_7th": {"chord": 204}, "alt_maj7": {"chord": 205},
     "alt_min7": {"chord": 206}, "alt_majmin": {"chord": 207}, "alt_all": {"chord": 208},
+    # firmware 49 and 63-68: koto press, the microtonal settings, the drone
+    "koto": {"harp": 289}, "custom_scale": {"harp": 236}, "custom_down": {"harp": 352},
+    "koto_steps": {"harp": 347}, "koto_snap": {"harp": 348}, "modifier_step": {"global": 349},
+    "ribbon_step_snap": {"harp": 350}, "melodic_direction": {"harp": 351}, "maqam": {"harp": 356},
+    "maqam_jins": {"harp": 357}, "purity": {"global": 358}, "mts": {"global": 371}, "drone": {"global": 372},
+    "drone_level": {"global": 373}, "drone_pace": {"global": 374}, "drone_register": {"global": 375},
+    "sharp_fn": {"global": 31},
 }
 
 
@@ -932,6 +939,119 @@ for words, label, value in (("just intonation, just tuning, pure tuning", "just 
                             ("quarter tones, quarter tone, quartertone, 24 edo", "quarter tones (24-EDO)", 11),
                             ("19 edo", "19-EDO", 10), ("31 edo", "31-EDO", 12)):
     add(words, "setting", label, home="global", moves=(EXACT("temperament", value),))
+add("own temperament, my own temperament, my own tuning, custom temperament, custom tuning, scala tuning, scala file, "
+    "a scala scale", "setting", "your own temperament", home="global", moves=(EXACT("temperament", 13),),
+    note="your own temperament is twelve offsets in cents: set them in minicontrol's Own temperament, read a Scala "
+         "file there, or send a MIDI Tuning Standard message from the computer. Needs firmware 67")
+
+# ---- microtonal playing (firmware 63-68) ----
+MICRO_NOTE = "needs firmware 63-68"
+# The maqams: scalar harp mode 14 from the key, quarter tones if the tuning is still equal; the three whose
+# way down differs (Rast, Hijaz, Nahawand) with melodic direction. Their other upper jins by name too.
+for words, label, m, jins in (
+        ("maqam rast, rast", "maqam Rast", 0, 0), ("maqam bayati, bayati", "maqam Bayati", 1, 0),
+        ("maqam saba, saba", "maqam Saba", 2, 0), ("maqam hijaz, hijaz, hijaz scale", "maqam Hijaz", 3, 0),
+        ("maqam sikah, sikah, segah, maqam segah", "maqam Sikah", 4, 0),
+        ("maqam nahawand, nahawand", "maqam Nahawand", 5, 0), ("maqam kurd, kurd", "maqam Kurd", 6, 0),
+        ("maqam ajam, ajam", "maqam Ajam", 7, 0),
+        ("maqam suznak, suznak", "maqam Suznak (Rast with Hijaz on G)", 0, 1),
+        ("maqam husseini, husseini, husayni", "maqam Husseini (Bayati with B half-flat)", 1, 1),
+        ("saba zamzam, maqam saba zamzam", "maqam Saba Zamzam", 2, 1),
+        ("hijazkar, maqam hijazkar", "maqam Hijazkar", 3, 1), ("maqam huzam, huzam", "maqam Huzam", 4, 1),
+        ("maqam, arabic scale, arabic maqam, middle eastern scale, arabic music, quarter tone scale",
+         "a maqam (Rast)", 0, 0)):
+    add(words, "setting", label, home="harp",
+        moves=(EXACT("scale", 14), EXACT("maqam", m), EXACT("maqam_jins", jins), EXACT("chromatic", 0),
+               IFZERO("temperament", 11)) + ((EXACT("melodic_direction", 1),) if m in (0, 3, 5) and not jins else ()),
+        note="the harp plays the maqam from the key (scalar harp mode 14), in quarter tones (24-EDO) unless "
+             "another division is chosen; put maqam upper jins on the double tap to modulate. " + MICRO_NOTE)
+# Ragas: the custom scale from the key, its way down where the avaroha differs, and a tanpura on Sa
+# tuned for the raga (Pa, or Ma where Pa is left out, or Ni). Degrees as masks: 1 b2 2 b3 3 4 #4 5 b6 6 b7 7.
+RAGA_NOTE = ("the harp plays the raga from the key (scalar harp mode 10), its way down with melodic direction, over "
+             "a tanpura on Sa: set Sa with the chord key signature and the transpose. " + MICRO_NOTE)
+for words, label, up, down, tanpura in (
+        ("raag yaman, raga yaman, yaman, yaman kalyan, kalyan", "raga Yaman", 2645, 2773, 1),
+        ("raag bhupali, raga bhupali, bhupali, bhoop, mohanam, raga mohanam", "raga Bhupali", 661, 0, 1),
+        ("raag bilawal, raga bilawal, bilawal, shankarabharanam, raga shankarabharanam", "raga Bilawal", 2741, 0, 1),
+        ("raag khamaj, raga khamaj, khamaj", "raga Khamaj", 2737, 1717, 1),
+        ("raag kafi, raga kafi, kafi, kharaharapriya, raga kharaharapriya", "raga Kafi", 1709, 0, 1),
+        ("raag bhairav, raga bhairav, bhairav, mayamalavagowla, raga mayamalavagowla", "raga Bhairav", 2483, 0, 1),
+        ("raag bhairavi, raga bhairavi, bhairavi, hanumatodi, raga hanumatodi", "raga Bhairavi", 1451, 0, 1),
+        ("raag todi, raga todi, todi, miyan ki todi", "raga Todi", 2507, 0, 1),
+        ("raag malkauns, raga malkauns, malkauns, hindolam, raga hindolam", "raga Malkauns", 1321, 0, 2),
+        ("raag marwa, raga marwa, marwa", "raga Marwa", 2643, 0, 3),
+        ("raag desh, raga desh, desh", "raga Desh", 2213, 1717, 1),
+        ("raag bihag, raga bihag, bihag", "raga Bihag", 2225, 2741, 1),
+        ("raag durga, raga durga, durga", "raga Durga", 677, 0, 1),
+        ("raag hamsadhwani, raga hamsadhwani, hamsadhwani", "raga Hamsadhwani", 2197, 0, 1)):
+    add(words, "setting", label, home="harp",
+        moves=(EXACT("scale", 10), EXACT("custom_scale", up), EXACT("custom_down", down), EXACT("chromatic", 0),
+               EXACT("melodic_direction", 1 if down else 0), IFZERO("drone", tanpura)),
+        note=RAGA_NOTE)
+add("melodic minor, jazz minor, melodic minor scale", "setting", "melodic minor, natural minor on the way down",
+    home="harp", moves=(EXACT("scale", 10), EXACT("custom_scale", 2733), EXACT("custom_down", 1453),
+                        EXACT("chromatic", 0), EXACT("melodic_direction", 1)),
+    note="up with a raised sixth and seventh, down the natural minor, from the key (scalar harp mode 10). " + MICRO_NOTE)
+add("melodic direction, ascending and descending, aroha and avaroha, aroha avaroha, arohana avarohana, "
+    "a different way down, way up and way down, descending form, descending forms, the way down", "setting",
+    "a scale's way down as it falls (melodic direction)", home="harp", moves=(EXACT("melodic_direction", 1),),
+    off=(EXACT("melodic_direction", 0),),
+    note="in scalar harp modes 10, 11, 14 and 15: a falling line plays the scale's down form. " + MICRO_NOTE)
+add("upper jins, other jins, second jins, swap the jins, change the jins, jins swap", "setting",
+    "the maqam's other upper jins", home="harp", moves=(EXACT("maqam_jins", 1),), off=(EXACT("maqam_jins", 0),),
+    note="put it on the double tap to modulate as you play. " + MICRO_NOTE)
+for words, label, value, tuning in (
+        ("quarter tone modifier, modifier quarter tone, modifier a quarter tone, half sharp modifier, half sharps, "
+         "half flats", "the modifier moves a quarter tone", 1, 11),
+        ("modifier diesis, diesis modifier, modifier a diesis", "the modifier moves a diesis of 31", 1, 12),
+        ("modifier one step, modifier by one step, microtonal modifier", "the modifier moves one step of the tuning", 1, None),
+        ("semitone modifier, modifier a semitone, modifier by a semitone, modifier a half step", "the modifier moves a semitone", 2, None)):
+    add(words, "setting", label, home="global",
+        moves=(EXACT("modifier_step", value),) + ((IFZERO("temperament", tuning),) if tuning else ()),
+        note="in 19, 24 and 31 (in 12 there is only the semitone). " + MICRO_NOTE)
+add("koto press, press to bend, bend by pressing, press the string to bend, press bends, ato oshi, oshi, "
+    "press a ringing string", "setting", "koto press: press a ringing string to bend it", home="harp",
+    moves=(EXACT("koto", 2), EXACT("lift", 1), EXACT("ribbon", 0)), off=(EXACT("koto", 0),),
+    note="plucking on lift, a finger on a ringing string bends it as hard as it presses. Needs firmware 49")
+add("koto press in steps, koto bends in steps, koto in steps, bends in steps, bend in steps, stepped bends, fretted bends, bends in quarter tones, shruti bends, "
+    "gamaka in steps, meend in steps, bends that snap", "setting", "koto press bends in steps of the tuning, snapping",
+    home="harp", moves=(EXACT("koto_steps", 1), SET("koto_snap", 60), IFZERO("koto", 2), EXACT("lift", 1),
+                        EXACT("ribbon", 0)), off=(EXACT("koto_steps", 0), EXACT("koto_snap", 0)),
+    note="koto press counted in steps of 19, 24 or 31 and held on each. " + MICRO_NOTE)
+add("ribbon step snap, frets between the notes, microtonal frets, snap to the microtones, find the microtones, "
+    "light frets, ribbon microtones", "setting", "the ribbon held lightly on the steps between its strings",
+    home="harp", moves=(EXACT("ribbon", 1), SET("ribbon_step_snap", 50), IFZERO("ribbon_snap", 40)),
+    off=(EXACT("ribbon_step_snap", 0),),
+    note="where two strings are more than a step apart, the slide rests on each step between. " + MICRO_NOTE)
+add("purity, pure chords, beatless chords, still chords, sweeten the chords, sweet tuning, adaptive just intonation, "
+    "adaptive tuning, barbershop tuning, barbershop, just chords, pure thirds", "setting",
+    "chords drawn toward just intervals (purity)", home="global", moves=(SET("purity", 100),),
+    off=(EXACT("purity", 0),),
+    note="every note toward the just interval it makes with the chord's root; put purity on a knob or hover to "
+         "sweep it. " + MICRO_NOTE)
+add("mts, mts output, midi tuning standard, microtonal midi, tuned midi, send the tuning, midi in tune", "setting",
+    "MTS output: the tuning over plain MIDI", home="global", moves=(EXACT("mts", 1),), off=(EXACT("mts", 0),),
+    note="each note's key retuned with an MTS message before it starts, for synths that read MTS; MPE output, if "
+         "on, carries the pitch instead. " + MICRO_NOTE)
+DRONE_NOTE = "a drone on the key's Sa (the chord key signature's root and the transpose). " + MICRO_NOTE
+for words, label, value in (
+        ("tanpura, tanpura drone, a tanpura, with a tanpura, tambura, tamboura, sa drone, drone on sa, indian drone, "
+         "tanpura on pa, pa tanpura", "a tanpura (Pa, Sa, Sa, low Sa)", 1),
+        ("tanpura with ma, ma tanpura, tanpura on ma, tanpura tuned to ma", "a tanpura with Ma", 2),
+        ("tanpura with ni, ni tanpura, tanpura on ni, tanpura tuned to ni", "a tanpura with Ni", 3),
+        ("all sa tanpura, tanpura all sa, tanpura on sa only", "a tanpura, all Sa", 4),
+        ("shruti box, sruti box, surpeti, harmonium drone, reed drone, drone box", "a shruti box (Sa and Pa)", 5)):
+    add(words, "setting", label, home="global", moves=(EXACT("drone", value),), off=(EXACT("drone", 0),),
+        note=DRONE_NOTE)
+for words, label, moves in (
+        ("louder tanpura, louder drone, drone up, tanpura up, more drone", "a louder drone", (SET("drone_level", 85),)),
+        ("quieter tanpura, quieter drone, softer drone, drone down, tanpura down, less drone", "a quieter drone",
+         (SET("drone_level", 25),)),
+        ("slow tanpura, slower tanpura, lazy tanpura", "a slower tanpura", (SET("drone_pace", 20),)),
+        ("fast tanpura, faster tanpura, quick tanpura", "a quicker tanpura", (SET("drone_pace", 7),)),
+        ("low tanpura, male tanpura, deep tanpura", "the drone low (Sa from E2)", (EXACT("drone_register", 0),)),
+        ("high tanpura, female tanpura", "the drone high (Sa from D3)", (EXACT("drone_register", 2),))):
+    add(words, "setting", label, home="global", moves=moves + (IFZERO("drone", 1),), note=DRONE_NOTE)
 for words, label, n in (("octave up, up an octave, an octave up, octave higher, an octave higher, higher octave, "
                          "high pitched, higher pitched", "an octave up", 1),
                         ("two octaves up, up two octaves, two octaves higher", "two octaves up", 2),
@@ -1050,9 +1170,14 @@ TARGETS = {
     "grab": "grab, grabs, grabs the song, grab the song, samples the song, sample the song",
     "drum_kit": "drum kit, drum kits, kits",
     "drum_level": "drum level, drums level, drum volume",
+    "purity": "purity, pureness, how pure, just intonation amount",
+    "drone_level": "drone level, tanpura level, drone volume, tanpura volume",
+    "drone": "tanpura, shruti box",
+    "maqam_jins": "jins, upper jins, other jins",
+    "sharp_fn": "sharp function, flats, flat button, sharps to flats, sharp to flat",
 }
 # Where a knob sweeps each role, (low, high) in parameters.json units; its centre is stored in the preset
-SWEEP = {"dj_filter": (0, 200), "phone_echo": (0, 100), "drum_level": (0, 100), "drum_kit": (0, 11),
+SWEEP = {"purity": (0, 100), "drone_level": (0, 100), "dj_filter": (0, 200), "phone_echo": (0, 100), "drum_level": (0, 100), "drum_kit": (0, 11),
          "cutoff": {"chord": (150, 4000), "harp": (80, 2000)}, "resonance": (0.7, 4.5), "reverb": (0, 0.9),
          "reverb_size": (0.2, 1.0), "delay_mix": (0, 0.6), "delay_time": (50, 600), "vib_amount": (0, 0.5),
          "trem_amount": (0, 0.8), "crunch": (0, 0.7), "glide": (0, 800), "vowel": (0, 100), "formant": (0, 100),
@@ -1067,7 +1192,8 @@ TAP = {"resonance": 4.0, "reverb": 0.9, "reverb_size": 1.0, "delay_mix": 0.45, "
        "voice_leading": 1, "touch": 80, "palm_mute": 5, "transpose": 7, "tempo": 140, "ribbon": 1, "mpe": 1,
        "midi_in": 1, "knob_midi": 1, "knob_layer": 1, "layout": 1, "key": 1,
        "rhythm_fill": 1, "rhythm_break": 2, "rhythm_ending": 3, "revert": 1, "panic": 2,
-       "dj_filter": 40, "phone_echo": 100, "tape_stop": 1, "grab": 2, "drum_level": 100}
+       "dj_filter": 40, "phone_echo": 100, "tape_stop": 1, "grab": 2, "drum_level": 100,
+       "purity": 100, "drone_level": 100, "drone": 1, "maqam_jins": 1, "sharp_fn": 1}
 # the double tap's actions, which take a step rather than toggle a value
 TAP_ACTIONS = {"looper", "looper_pc", "chord_memory", "rhythm_fill", "rhythm_break", "rhythm_ending", "revert", "panic",
                "tape_stop", "grab"}
@@ -1135,8 +1261,9 @@ ON_OFF = {"ribbon": 245, "ribbon mode": 245, "harp ribbon": 245, "mpe": 110, "mp
           "midi clock out": 266, "clock out": 266, "midi clock": 266,
           "phone beat": 311, "kick stab": 312, "kick stabs": 312,
           "kick note": 313, "rhythm intro": 317, "rhythm ending": 318, "palm break": 319,
-          "double tap hold": 321, "tap and hold": 321, "revert and panic": 322, "panic button": 322}
-ON_VALUE = {213: 5, 266: 3, 313: 36}
+          "double tap hold": 321, "tap and hold": 321, "revert and panic": 322, "panic button": 322,
+          "melodic direction": 351, "mts output": 371, "mts": 371, "tanpura": 372, "koto press": 289}
+ON_VALUE = {213: 5, 266: 3, 313: 36, 372: 1, 289: 2}
 # What has to be on for a control's setting to be heard
 PREPARE = {"delay_mix": DELAY_READY, "delay_time": (MIN("delay_mix", 0.3), IFZERO("delay_filter", 3000),
                                                      IFZERO("delay_feedback", 0.4)),
@@ -2391,6 +2518,19 @@ SAMPLE_VOICES = [1, 2, 3, 4, 5]
 KNOBS = [(10, 11, "the chord knob's alternate"), (12, 13, "the harp knob's alternate"),
          (14, 15, "the mod knob"), (16, 17, "the mod knob's alternate")]
 CONFLICTS = [
+    {"about": [351, 36], "when": [[351, "==", 1], [36, "not in", [10, 11, 14, 15]]],
+     "note": "melodic direction plays a way down only in scalar harp modes 10, 11, 14 and 15 (the custom scale, "
+             "the maqams)"},
+    {"about": [356, 357], "when": [[36, "not in", [14, 15]]],
+     "note": "the maqam is heard in scalar harp modes 14 and 15 only"},
+    {"about": [347, 348], "when": [[289, "==", 0]],
+     "note": "koto press steps and koto press snap shape koto press, which is off (0)"},
+    {"about": [350], "when": [[350, ">", 0], [245, "==", 0]],
+     "note": "ribbon step snap is for the ribbon (harp ribbon), which is off"},
+    {"about": [371, 110], "when": [[371, "==", 1], [110, "==", 1]],
+     "note": "with MPE output on the bends carry each note's pitch, and MTS output sends nothing"},
+    {"about": [349], "when": [[349, "!=", 0], [237, "not in", [10, 11, 12]]],
+     "note": "modifier step only matters in 19, 24 and 31: in twelve the modifier has only the semitone"},
     {"about": [342, 274], "when": [[342, "==", 1], [274, "==", 0]],
      "note": "drums only on rhythm style 0: a chord press makes no sound; choose a rhythm style (1-14) and "
              "set rhythm bass or rhythm chords to 1 to play over the drums"},
