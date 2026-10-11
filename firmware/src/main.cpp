@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=67; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371)
+int version_ID=68; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -191,6 +191,8 @@ uint8_t modifier_step = 1;    // how far the modifier moves one: the same, but a
 uint8_t modifier_step_choice = 0;
 void apply_modifier_step();
 bool harp_ribbon_active();
+extern uint8_t drone_mode, drone_register;   // see DRONE
+void drone_set_mode(uint8_t m);
 
 uint8_t major[7] = {0, 4, 7, 12, 2, 5, 9};  // After the four notes of the chord (fundamental, third, fifth of seven, and octave of fifth, the next notes are the second fourth and sixth)
 uint8_t minor[7] = {0, 3, 7, 12, 1, 5, 8};
@@ -5113,6 +5115,44 @@ static float dayan_tuning(float own_hz) {
   return best;
 }
 
+// ---- DRONE ----
+// A tanpura or a shruti box on the key's Sa, under everything, rhythm mode or not (372-375; the
+// sound is include/tanpura.h, rendered with the drums). Sa is the key as the dayan has it: C and the
+// transpose, at its tempered pitch (purity leaves it alone, it has no chord), folded into the
+// register chosen; the strings above and below it are pure, as a tanpura is tuned.
+uint8_t drone_mode = 0;       // 0 off, 1-4 a tanpura with Pa, Ma, Ni or Sa first, 5 a shruti box
+uint8_t drone_register = 1;   // Sa from 0 E2, 1 A2, 2 D3, the octave up from there
+float drone_sa_hz() {
+  static const float lowest[3] = {82.41f, 110.0f, 146.83f};
+  float lo = lowest[drone_register < 3 ? drone_register : 1];
+  float hz = c_frequency * tempered_ratio(transpose_steps);
+  while (hz >= 2 * lo) hz *= 0.5f;
+  while (hz < lo) hz *= 2.0f;
+  return hz;
+}
+
+FLASHMEM void drone_set_mode(uint8_t m) {
+  drone_mode = m;
+  AudioNoInterrupts();
+  drum_machine.drone.tune(drone_sa_hz());
+  drum_machine.drone.mode(m);
+  AudioInterrupts();
+}
+
+// From the loop: Sa follows the transpose, the temperament and the master tuning as they move.
+void drone_watch() {
+  static uint32_t last = 0;
+  static float tuned = 0;
+  if (!drone_mode || millis() - last < 50) return;
+  last = millis();
+  float hz = drone_sa_hz();
+  if (fabsf(hz - tuned) < 0.005f) return;
+  tuned = hz;
+  AudioNoInterrupts();
+  drum_machine.drone.tune(hz);
+  AudioInterrupts();
+}
+
 // A hit, from the rhythm's timer or the loop: velocity 1-127 as written (or played)
 void drum_strike(uint8_t v, uint8_t velocity, bool written = true) {
   float vel = written ? (127 - (127 - velocity) * acc_accents / 100.0f) / 127.0f : velocity / 127.0f;
@@ -9067,6 +9107,7 @@ void loop() {
   LBO_flag.set(digitalRead(BATT_LBO_PIN));
   chord_matrix.update(chord_matrix_array);
   chord_legato_watch();
+  drone_watch();
 
   // Handle low battery indicator
   handle_low_battery();

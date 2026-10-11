@@ -36,6 +36,18 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 358:
         purity=value; rebuild_purity(); retune_active_voices();
         break;
+      case 372:
+        drone_set_mode(value);
+        break;
+      case 373:
+        drum_machine.drone.level(value/100.0f);
+        break;
+      case 374:
+        drum_machine.drone.pace(value/10.0f);
+        break;
+      case 375:
+        drone_register=value; drone_set_mode(drone_mode);
+        break;
       case 359:
         own_temperament_cents[0]=(value-1000)/10.0f; if (temperament_selection==own_temperament) { purity_follow_chord(); retune_active_voices(); }
         break;
@@ -1225,6 +1237,10 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 237: lo=0; hi=13; return true;
       case 349: lo=0; hi=2; return true;
       case 358: lo=0; hi=100; return true;
+      case 372: lo=0; hi=5; return true;
+      case 373: lo=0; hi=100; return true;
+      case 374: lo=4; hi=30; return true;
+      case 375: lo=0; hi=2; return true;
       case 359: lo=0; hi=2000; return true;
       case 360: lo=0; hi=2000; return true;
       case 361: lo=0; hi=2000; return true;

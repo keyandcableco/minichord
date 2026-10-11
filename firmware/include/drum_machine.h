@@ -14,6 +14,7 @@
 #define DRUM_MACHINE_H
 #include <Arduino.h>
 #include <AudioStream.h>
+#include "tanpura.h"
 
 #define DRUM_VOICES 13
 enum { DRUM_KICK, DRUM_SNARE, DRUM_RIM, DRUM_CLAP, DRUM_HAT, DRUM_OPEN, DRUM_CYMBAL, DRUM_TOM_LO, DRUM_TOM_HI,
@@ -118,6 +119,7 @@ public:
     if (!primask) __enable_irq();
   }
   void level(float g) { gain = g; }
+  Tanpura drone;   // rendered here with the drums, at its own level (see tanpura.h)
   bool sounding() { for (uint8_t i = 0; i < DRUM_VOICES; i++) if (voice[i].active) return true; return head != tail || waiting; }
 
   virtual void update(void) {
@@ -134,7 +136,7 @@ public:
     }
     bool any = false;
     for (uint8_t i = 0; i < DRUM_VOICES; i++) any |= voice[i].active;
-    if (!any) return;
+    if (!any && !drone.active()) return;
     audio_block_t *l = allocate(), *r = allocate();
     if (!l || !r) { if (l) release(l); if (r) release(r); return; }
     float out_l[AUDIO_BLOCK_SAMPLES] = {0}, out_r[AUDIO_BLOCK_SAMPLES] = {0};
@@ -214,8 +216,11 @@ public:
       for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) { out_l[n] += x[n] * left; out_r[n] += x[n] * right; }
       if (s.tone_amp <= SILENT && s.noise_amp <= SILENT && !s.retrigs && s.sample_amp <= 0) s.active = false;
     }
+    // the drone, clean, after the kit's grit
+    float drone_l[AUDIO_BLOCK_SAMPLES] = {0}, drone_r[AUDIO_BLOCK_SAMPLES] = {0};
+    drone.render(drone_l, drone_r, AUDIO_BLOCK_SAMPLES);
     // the kit's grit and drive, the level, and a soft clip so a pile of hits rounds off rather than cracks
-    float drive = kit->drive, g = gain * 26000.0f;
+    float drive = kit->drive, g = 26000.0f;
     uint8_t hold = kit->hold > 1 ? kit->hold : 1;
     for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) {
       float a = out_l[n] * drive, b = out_r[n] * drive;
@@ -225,8 +230,8 @@ public:
         hold_count = (hold_count + 1) % hold;
       }
       if (crush_step > 0) { a = roundf(a / crush_step) * crush_step; b = roundf(b / crush_step) * crush_step; }
-      a = a / (1.0f + fabsf(a)) * 1.6f;
-      b = b / (1.0f + fabsf(b)) * 1.6f;
+      a = a / (1.0f + fabsf(a)) * 1.6f * gain + drone_l[n];
+      b = b / (1.0f + fabsf(b)) * 1.6f * gain + drone_r[n];
       l->data[n] = (int16_t)constrain(a * g, -32767.0f, 32767.0f);
       r->data[n] = (int16_t)constrain(b * g, -32767.0f, 32767.0f);
     }
