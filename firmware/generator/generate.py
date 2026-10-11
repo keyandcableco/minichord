@@ -3,6 +3,14 @@ from airium import Airium
 from itertools import groupby
 import shutil
 
+# The checkbox labels of a bitmask setting: the twelve chromatic degrees, or for a
+# step scale the steps of the division its address holds, from its first step
+def degree_labels(parameter):
+    if parameter["data_type"] == "steps":
+        bits = (parameter["max_value"] + 1).bit_length() - 1
+        return [str(parameter["first_step"] + b) for b in range(bits)]
+    return ["1","b2","2","b3","3","4","b5","5","b6","6","b7","7"]
+
 a = Airium(
     base_indent='  ',  # str
     current_level=0,  # int
@@ -164,11 +172,11 @@ with open('parameters.json') as f: # Reserved adresses: 0 for system command and
                                                 a.dfn(title=parameter["tooltip"], _t=parameter["name"])
                                                 #a.label(for_=id_iterator, _t=parameter["name"])
                                             with a.div(klass=" bloc B2 M2 S4"):
-                                                if(parameter["data_type"]=="degrees"):
+                                                if(parameter["data_type"] in ("degrees","steps")):
                                                     # a row of twelve checkboxes, one per chromatic degree,
                                                     # all writing bits of a single parameter
                                                     with a.span(klass="degree_row", adress_field=parameter["sysex_adress"], id=id_iterator):
-                                                        for bit, label in enumerate(["1","b2","2","b3","3","4","b5","5","b6","6","b7","7"]):
+                                                        for bit, label in enumerate(degree_labels(parameter)):
                                                             with a.label(klass="degree"):
                                                                 a.input(klass="degree_box inactive", adress_field=parameter["sysex_adress"],
                                                                         data_type="degrees", bit=bit, onchange='handledegree(this)', type='checkbox')
@@ -231,11 +239,11 @@ with open('parameters.json') as f: # Reserved adresses: 0 for system command and
                                                 a.dfn(title=parameter["tooltip"], _t=parameter["name"])
                                                 #a.label(for_=id_iterator, _t=parameter["name"])
                                             with a.div(klass=" bloc B2 M2 S4"):
-                                                if(parameter["data_type"]=="degrees"):
+                                                if(parameter["data_type"] in ("degrees","steps")):
                                                     # a row of twelve checkboxes, one per chromatic degree,
                                                     # all writing bits of a single parameter
                                                     with a.span(klass="degree_row", adress_field=parameter["sysex_adress"], id=id_iterator):
-                                                        for bit, label in enumerate(["1","b2","2","b3","3","4","b5","5","b6","6","b7","7"]):
+                                                        for bit, label in enumerate(degree_labels(parameter)):
                                                             with a.label(klass="degree"):
                                                                 a.input(klass="degree_box inactive", adress_field=parameter["sysex_adress"],
                                                                         data_type="degrees", bit=bit, onchange='handledegree(this)', type='checkbox')
@@ -298,11 +306,11 @@ with open('parameters.json') as f: # Reserved adresses: 0 for system command and
                                                 a.dfn(title=parameter["tooltip"], _t=parameter["name"])
                                                 #a.label(for_=id_iterator, _t=parameter["name"])
                                             with a.div(klass=" bloc B2 M2 S4"):
-                                                if(parameter["data_type"]=="degrees"):
+                                                if(parameter["data_type"] in ("degrees","steps")):
                                                     # a row of twelve checkboxes, one per chromatic degree,
                                                     # all writing bits of a single parameter
                                                     with a.span(klass="degree_row", adress_field=parameter["sysex_adress"], id=id_iterator):
-                                                        for bit, label in enumerate(["1","b2","2","b3","3","4","b5","5","b6","6","b7","7"]):
+                                                        for bit, label in enumerate(degree_labels(parameter)):
                                                             with a.label(klass="degree"):
                                                                 a.input(klass="degree_box inactive", adress_field=parameter["sysex_adress"],
                                                                         data_type="degrees", bit=bit, onchange='handledegree(this)', type='checkbox')

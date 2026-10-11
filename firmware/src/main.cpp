@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=62; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key)
+int version_ID=63; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -68,11 +68,13 @@ float led_attenuation = 0.0;
  * 12-EDO output is byte-identical to the tables this firmware already had, so
  * selecting equal temperament is arithmetically the same instrument as before.
  *
+ * The custom scale (address 236) is twelve toggles over the chromatic degrees.
+ * In 19, 24 and 31 each degree is read by its name, as the chord tables are (b3
+ * is a minor third, 8 of 31), so a scale ticked in twelve keeps its sound; the
+ * step scale (344-346) picks steps of the division itself, for the notes twelve
+ * has no name for, and the generator scale (267-269) builds one from an interval.
+ *
  * What does NOT follow the temperament:
- *   - the custom scale (address 236) is a twelve-bit mask over twelve chromatic
- *     degrees and cannot express thirty-one. It stays twelve-note and is simply
- *     wrong in 19 and 31; left as is rather than silently reinterpreted. The
- *     generator scale (267-269) is the one built in steps of the division.
  *   - MIDI out. Note numbers are integers and there is nowhere to put a
  *     31st of an octave, so notes are rescaled to the nearest semitone on the
  *     way out. The audio is microtonal and the MIDI is an approximation of it.
@@ -84,6 +86,15 @@ const uint8_t edo_sharp[4] = {1, 1, 2, 2};
 // semitone modifier would only double twelve, while a quarter-tone one reaches the twelve notes in
 // between. Key signatures still move a letter by the semitone (edo_sharp), so G major is G major.
 const uint8_t edo_modifier[4] = {1, 1, 2, 1};
+// The custom scale's twelve degrees, 1 b2 2 b3 3 4 b5 5 b6 6 b7 7, as steps of
+// each division: the named intervals, a minor second the diatonic semitone and
+// b5 the diminished fifth, as the tables below have them.
+const uint8_t edo_chromatic_degrees[4][12] = {
+  {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
+  {0, 2, 3, 5, 6, 8, 10, 11, 13, 14, 16, 17},
+  {0, 3, 5, 8, 10, 13, 16, 18, 21, 23, 26, 28},
+  {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22}
+};
 const int8_t edo_base_notes[4][7] = {
   {11, 4, 9, 2, 7, 0, 5},
   {17, 6, 14, 3, 11, 0, 8},
@@ -424,7 +435,15 @@ const uint8_t chord_scale_degrees[19][8] = {
 // scale, which is the default. Twelve bits is 4095 at most, well inside what
 // sysex can carry.
 uint16_t custom_scale_mask = 0b101010110101;
-uint8_t custom_scale_intervals[12] = {0, 2, 4, 5, 7, 9, 11, 0, 0, 0, 0, 0};
+// The step scale (addresses 344-346): one bit per step of the division, eleven
+// to an address, so 344 holds steps 0-10 (bit 0 the root), 345 11-21 and 346
+// 22-30. In 19, 24 and 31 any step ticked below the division's size makes it the
+// scale of modes 10 and 11 in place of the custom scale; in twelve, and with
+// none ticked, the custom scale plays. Steps past the division are ignored, so a
+// scale written in 31 keeps its lower steps in 19 rather than wrapping them.
+const uint8_t step_scale_bits = 11;
+uint16_t step_scale_mask[3] = {0, 0, 0};
+uint8_t custom_scale_intervals[31] = {0, 2, 4, 5, 7, 9, 11};
 uint8_t custom_scale_length = 7;
 const uint8_t custom_scale_max_octave = 3; // how far the harp may climb, in octaves, in any scale mode
 
@@ -4116,11 +4135,25 @@ void cantus_follow(uint8_t string) {
 // function to calculate the level of individual harp touch
 // Collapse the degree toggles into an ascending interval list. An empty scale
 // would leave the harp silent, so the root is kept in that case.
+static inline bool step_scale_has(uint8_t step) {
+  return step_scale_mask[step / step_scale_bits] & (1 << (step % step_scale_bits));
+}
+
 void rebuild_custom_scale() {
   custom_scale_length = 0;
-  for (uint8_t i = 0; i < 12; i++) {
-    if (custom_scale_mask & (1 << i)) {
-      custom_scale_intervals[custom_scale_length++] = i;
+  bool steps = false;
+  if (edo_index != 0) {
+    for (uint8_t i = 0; i < EDO; i++) if (step_scale_has(i)) steps = true;
+  }
+  if (steps) {
+    for (uint8_t i = 0; i < EDO; i++) {
+      if (step_scale_has(i)) custom_scale_intervals[custom_scale_length++] = i;
+    }
+  } else {
+    for (uint8_t i = 0; i < 12; i++) {
+      if (custom_scale_mask & (1 << i)) {
+        custom_scale_intervals[custom_scale_length++] = edo_chromatic_degrees[edo_index][i];
+      }
     }
   }
   if (custom_scale_length == 0) {
@@ -7948,6 +7981,7 @@ FLASHMEM void apply_temperament(uint8_t t) {
   memcpy(scale_intervals, edo_scale_intervals[edo_index], sizeof(scale_intervals));
   memcpy(chord_scale_intervals, edo_chord_scale_intervals[edo_index], sizeof(chord_scale_intervals));
   rebuild_generator_scale();   // its generator counts steps of the new division
+  rebuild_custom_scale();      // and the custom scale's degrees are steps of it too
   memcpy(major, edo_major[edo_index], 7);
   memcpy(minor, edo_minor[edo_index], 7);
   memcpy(maj_sixth, edo_maj_sixth[edo_index], 7);
