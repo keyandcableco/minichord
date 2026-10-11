@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=66; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358)
+int version_ID=67; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -334,13 +334,22 @@ const int8_t double_flat_notes[1][1] = {
 void apply_temperament(uint8_t t);
 uint8_t temperament_selection = 0;
 
+// Temperament 13, your own: twelve offsets from equal temperament, one per
+// pitch class from C, in cents (addresses 359-370, tenths of a cent from 1000).
+// Set by hand, from a Scala file in the editor, or by a MIDI Tuning Standard
+// scale/octave or bulk dump message (see mts_receive), which selects it.
+float own_temperament_cents[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+const uint8_t own_temperament = temperament_count;   // one past the generated profiles
+
 // note number to frequency ratio. In the twelve-note tunings the note is nudged
 // by a few cents; in 19 and 31 the octave is simply divided differently.
 static inline float tempered_ratio(float note) {
   if (edo_index == 0) {
     int n = (int)floorf(note);
     int pc = ((n % 12) + 12) % 12;
-    return powf(2.0f, (note + temperament_profiles[temperament_selection].cents[pc] / 100.0f) / 12.0f);
+    float cents = temperament_selection == own_temperament ? own_temperament_cents[pc]
+                                                           : temperament_profiles[temperament_selection].cents[pc];
+    return powf(2.0f, (note + cents / 100.0f) / 12.0f);
   }
   return powf(2.0f, note / (float)EDO);
 }
@@ -361,7 +370,7 @@ float purity_ratio[31] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
 void rebuild_purity();
 void purity_follow_chord();
 
-static inline float temper_ratio(float note) {
+__attribute__((noinline)) float temper_ratio(float note) {   // called from many places: one copy keeps RAM1 code down
   float r = tempered_ratio(note);
   if (purity == 0) return r;
   int n = (int)floorf(note);
@@ -1244,6 +1253,7 @@ uint midi_buffer_delay=300; //in microseconds, helps compatibility with some har
 #define MIDI_EVT_PRESSURE 4   // channel pressure, in velocity
 #define MIDI_EVT_POLY 5       // polyphonic aftertouch: note and pressure
 #define MIDI_EVT_REALTIME 6   // a system real-time message (clock, start, stop): its type in note
+#define MIDI_EVT_TUNING 7     // an MTS single note tuning change: the key in note, its semitone in velocity, the fraction in bend
 struct midi_event_t {
   uint8_t note;      // note number, or controller number for a CC
   uint8_t velocity;  // velocity, or controller value for a CC
@@ -1386,6 +1396,12 @@ void drain_midi_queue() {
       case MIDI_EVT_PRESSURE: usbMIDI.sendAfterTouch(e.velocity, e.channel, e.cable); break;
       case MIDI_EVT_POLY:     usbMIDI.sendAfterTouchPoly(e.note, e.velocity, e.channel, e.cable); break;
       case MIDI_EVT_REALTIME: usbMIDI.sendRealTime(e.note, e.cable); break;
+      case MIDI_EVT_TUNING: {
+        uint8_t m[12] = {0xF0, 0x7F, 0x7F, 0x08, 0x02, 0x00, 0x01, e.note, e.velocity,
+                         (uint8_t)((e.bend >> 7) & 0x7F), (uint8_t)(e.bend & 0x7F), 0xF7};
+        usbMIDI.sendSysEx(sizeof(m), m, true, e.cable);
+        break;
+      }
     }
     sent = true;
   }
@@ -1460,6 +1476,36 @@ static inline uint8_t mpe_harp_channel(uint8_t i) { return mpe_harp_channel_for(
 static inline float mpe_offset_semitones(int note) {
   return 12.0f * (float)log2((double)temper_ratio(note + transpose_steps))
          - (float)(transpose_semitones + midi_out_note(note));
+}
+
+// MTS output (371): outside MPE, nothing in a note on says where between the
+// semitones the note is, so before each one the key is retuned with a MIDI
+// Tuning Standard single note tuning change (real time, F0 7F 7F 08 02), which
+// many synths read (Surge, Pianoteq, Vital, hardware with MTS): the divided
+// octaves, the temperaments, purity, a string's bend and master tuning arrive
+// as they sound. Two notes of one key share its tuning, the last one's: in 31,
+// C# and Db leave as the same key. A key keeps its tuning till it moves, so
+// one already in tune is not sent again.
+bool mts_output = false;
+DMAMEM uint32_t mts_sent[128];   // each key's tuning as last sent, semitone << 14 | fraction, or none
+
+FLASHMEM void mts_reset() {
+  for (uint8_t k = 0; k < 128; k++) mts_sent[k] = 0xFFFFFFFF;
+}
+
+// Key `key`, about to start, sounds `offset` semitones from its equal tempered pitch.
+void mts_tune(uint8_t key, float offset, uint8_t cable) {
+  if (!mts_output || mpe_mode || key > 127) return;
+  float exact = key + offset + 12.0f * log2f(c_frequency / 130.8128f);
+  exact = constrain(exact, 0.0f, 127.99f);
+  int16_t semitone = (int16_t)floorf(exact);
+  int16_t fraction = (int16_t)lroundf((exact - semitone) * 16384.0f);
+  if (fraction >= 16384) { semitone++; fraction = 0; }
+  if (semitone > 127) { semitone = 127; fraction = 16383; }
+  uint32_t packed = ((uint32_t)semitone << 14) | (uint32_t)fraction;
+  if (mts_sent[key] == packed) return;
+  mts_sent[key] = packed;
+  queue_midi_event(MIDI_EVT_TUNING, key, (uint8_t)semitone, fraction, 0, cable);
 }
 
 float mpe_chord_position(uint8_t i) {
@@ -1594,6 +1640,7 @@ void harp_midi_on(uint8_t i) {
     }
   }
   mpe_prepare_harp(i);
+  mts_tune(note, mpe_offset_semitones(current_harp_notes[i]) + harp_voice_glide[i], harp_port);
   queue_midi(true, note, harp_note_velocity(i), channel, harp_port);
   harp_started_notes[i] = note;
   harp_started_channel[i] = channel;
@@ -1955,6 +2002,45 @@ void update_formants() {
 // neighbouring slider step still lands), 265 and 393 to them, and 6+128*n (n>0) to 127 or 255,
 // which amplitude 3 (0 to 100) never sends. Rarer six-byte universal messages sent to device 0
 // or 1, such as the sample dump handshakes (7E 7B-7F), still read as a write to those adresses.
+// A MIDI Tuning Standard message from a computer (Scala, Leimma, an MTS-ESP
+// master's export) tunes the minichord: an octave's twelve offsets become your
+// own temperament (13), which it selects, as if they had been set by hand, so a
+// preset saved now keeps them. Read: the scale/octave tunings, 1-byte (08 08,
+// -64 to +63 cents) and 2-byte (08 09, +-100 cents), real time or not, and the
+// bulk dump (08 01), whose octave from middle C (keys 60-71) is taken as the
+// pattern of every octave. Twelve-note tunings only: the divided octaves stay
+// with the temperament setting. Whether the message was one.
+FLASHMEM bool mts_receive(const byte *data, uint32_t length) {
+  if (length < 6 || data[0] != 0xF0 || (data[1] != 0x7E && data[1] != 0x7F) || data[3] != 0x08) return false;
+  float cents[12];
+  if (data[4] == 0x08 && length >= 21) {
+    for (uint8_t k = 0; k < 12; k++) cents[k] = (float)data[8 + k] - 64;
+  } else if (data[4] == 0x09 && length >= 33) {
+    for (uint8_t k = 0; k < 12; k++) {
+      int16_t v = (data[8 + 2 * k] << 7) | data[9 + 2 * k];
+      cents[k] = (v - 8192) * 100.0f / 8192.0f;
+    }
+  } else if (data[4] == 0x01 && data[1] == 0x7E && length >= 406) {
+    for (uint8_t k = 0; k < 12; k++) {
+      const byte *t = data + 22 + 3 * (60 + k);
+      if (t[0] == 0x7F && t[1] == 0x7F && t[2] == 0x7F) { cents[k] = 0; continue; }   // no change
+      float pitch = t[0] + ((t[1] << 7) | t[2]) / 16384.0f;
+      float off = 100.0f * (pitch - (60 + k));
+      cents[k] = constrain(off, -100.0f, 100.0f);
+    }
+  } else {
+    return false;
+  }
+  for (uint8_t k = 0; k < 12; k++) {
+    int16_t value = constrain((int16_t)lroundf(cents[k] * 10) + 1000, 0, 2000);
+    current_sysex_parameters[359 + k] = value;
+    apply_audio_parameter(359 + k, value);
+  }
+  current_sysex_parameters[237] = own_temperament;
+  apply_audio_parameter(237, own_temperament);
+  return true;
+}
+
 bool is_universal_sysex(const byte *data) {
   if (data[1] == 0x7E) {
     return (data[3] == 0x06 && data[4] == 0x01) || (data[3] == 0x09 && data[4] >= 0x01 && data[4] <= 0x03);
@@ -2017,6 +2103,7 @@ void processMIDI(void) {
     midi_in_message(type, usbMIDI.getCable(), usbMIDI.getChannel(), usbMIDI.getData1(), usbMIDI.getData2());
     return;
   }
+  if (type == usbMIDI.SystemExclusive && mts_receive(usbMIDI.getSysExArray(), usbMIDI.getSysExArrayLength())) return;
   if (type == usbMIDI.SystemExclusive && usbMIDI.getSysExArrayLength() == 6) {
     const byte *data = usbMIDI.getSysExArray();
     if (!is_universal_sysex(data)) {
@@ -2146,6 +2233,7 @@ void play_single_note(int i, IntervalTimer *timer) {
     queue_midi(false, chord_started_notes[i],chord_release_velocity,mpe_chord_channel(i), chord_port);
     chord_started_notes[i]=0;}
   mpe_prepare_chord(i);
+  mts_tune(midi_base_note_transposed + midi_out_note(current_applied_chord_notes[i]), mpe_offset_semitones(current_applied_chord_notes[i]), chord_port);
   queue_midi(true, midi_base_note_transposed+ midi_out_note(current_applied_chord_notes[i]),chord_attack_velocity,mpe_chord_channel(i), chord_port);
   chord_started_notes[i]=midi_base_note_transposed+ midi_out_note(current_applied_chord_notes[i]);
   looper_capture(LOOP_START, 12 + i, chord_voice_note_freq[i], 1, chord_started_notes[i], chord_attack_velocity);
@@ -2177,6 +2265,7 @@ void acc_play(uint8_t i, int16_t note, float firmness) {
   uint8_t velocity = constrain((int)lroundf(chord_attack_velocity * firmness), 1, 127);
   mpe_prepare_chord(i);
   chord_started_notes[i] = chord_midi_note(note);
+  mts_tune(chord_started_notes[i], mpe_offset_semitones(note), chord_port);
   queue_midi(true, chord_started_notes[i], velocity, mpe_chord_channel(i), chord_port);
   looper_capture(LOOP_START, 12 + i, chord_voice_note_freq[i], firmness, chord_started_notes[i], velocity);
 }
@@ -2371,6 +2460,7 @@ void set_chord_voice_frequency(uint8_t i, int16_t current_note) {
     queue_midi(false, chord_started_notes[i],chord_release_velocity,mpe_chord_channel(i), chord_port);
     chord_started_notes[i]=0;
     mpe_prepare_chord(i);
+    mts_tune(chord_midi_note(current_note), mpe_offset_semitones(current_note), chord_port);
     queue_midi(true, chord_midi_note(current_note),chord_attack_velocity,mpe_chord_channel(i), chord_port);
     chord_started_notes[i]=chord_midi_note(current_note);
   }
@@ -4224,7 +4314,7 @@ static inline bool step_scale_has(uint8_t step) {
   return step_scale_mask[step / step_scale_bits] & (1 << (step % step_scale_bits));
 }
 
-void rebuild_custom_scale() {
+FLASHMEM void rebuild_custom_scale() {
   custom_scale_length = 0;
   bool steps = false;
   if (edo_index != 0) {
@@ -4387,7 +4477,7 @@ FLASHMEM void rebuild_purity() {
 }
 
 // The chord being played gives the root; called as a chord changes.
-void purity_follow_chord() {
+FLASHMEM void purity_follow_chord() {
   int16_t root = get_root_button(key_signature_selection, chord_frame_shift, fundamental);
   if (chord_context_sharp) root += flat_button_modifier ? -modifier_step : modifier_step;
   purity_root_pc = (((root + transpose_steps) % EDO) + EDO) % EDO;
@@ -8200,15 +8290,15 @@ void toggle_double_tap_target(bool actions = true) {
 // the chord catalogue, inversion, spacing, the alternate layout — keeps working
 // on the same flat arrays it always did, so only these copies know about
 // temperament at all.
-void apply_modifier_step() {
+FLASHMEM void apply_modifier_step() {
   modifier_step = modifier_step_choice == 1 ? 1 : modifier_step_choice == 2 ? edo_sharp[edo_index] : edo_modifier[edo_index];
 }
 
 FLASHMEM void apply_temperament(uint8_t t) {
-  if (t >= temperament_count) t = 0;
+  if (t > own_temperament) t = 0;
   uint8_t previous_edo = EDO;
   temperament_selection = t;
-  edo_index = temperament_profiles[t].edo_index;
+  edo_index = t == own_temperament ? 0 : temperament_profiles[t].edo_index;
   EDO = edo_steps[edo_index];
   sharp_step = edo_sharp[edo_index];
   apply_modifier_step();
