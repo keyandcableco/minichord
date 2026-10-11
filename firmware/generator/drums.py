@@ -4,19 +4,27 @@ include/drum_machine.h for the voices). Run it after changing a kit or a groove:
     python3 drums.py
 
 A kit is the thirteen voices' settings over a plain default for each, so a kit only says what it
-changes. Every voice is synthesized: a pitched body that falls from tone_bend times its pitch to it,
-and a burst of noise and square-wave metal through a filter, each with its own decay (in ms, to -60 dB).
+changes. A voice is synthesized: a pitched body that falls from tone_bend times its pitch to it, and a
+burst of noise and square-wave metal through a filter, each with its own decay (in ms, to -60 dB). Or it
+plays a recorded stroke, sample='na' (one of drum_samples.py's STROKES, built into drum_samples.h by it).
 
 A groove is written as a grid, a line a voice, a character a step, bars separated by |:
     . rest   g a whisper   o a ghost   x a hit   X an accent   r a roll: two hits in the step
 steps is how many to the beat: 4 sixteenths, 3 triplets (shuffle, swing, 12/8), 2 eighths. The voices:
     K kick  S snare  R rim (claves, ka)  C clap  H hat (triangle)  O open hat  Y cymbal (crash, ride)
     T low tom  U high tom  L low conga (bayan)  M high conga (bongo, dayan)  B bell  Z shaker
+A tabla groove can be written in bols instead, the strokes' own names (BOLS below), a step each, spaced
+and with bars separated by |:
+    dha  a stroke   DHA accented   (dha) a ghost   -  a rest   ti/ra  two in the step, ti/ra/ki  three
 A groove's fill is a bar: its first half the groove's own, its second the fill, written out or one of
-the families below. Grooves are re-played in our own sounds, not sampled; the famous ones are named for
-the style they recall ("amen-style").
+the families below. Grooves are re-played in our own sounds; the famous ones are named for the style
+they recall ("amen-style").
 """
 import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from drum_samples import STROKES
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..', 'include', 'drum_patterns.h')
@@ -28,12 +36,23 @@ LETTER = dict(zip('KSRCHOYTULMBZ', range(13)))
 # high tom, low and high conga, cowbell, maracas
 GM_NOTE = [36, 38, 37, 39, 42, 46, 49, 45, 50, 64, 63, 56, 70]
 VELOCITY = {'g': 30, 'o': 56, 'x': 96, 'X': 124}
+SAMPLE = {name: i for i, (name, _, _) in enumerate(STROKES)}
+
+# The tabla's bols, on the 'tabla and doumbek' kit's recorded strokes (see it below): each the voices
+# struck together, as letters. Dha is Na with Ge, Dhin Tin with Ge: both hands at once.
+BOLS = {
+    'dha': 'ML', 'dhaa': 'YL', 'dhin': 'OL', 'dhi': 'OL',
+    'na': 'M', 'ta': 'M', 'naa': 'Y', 'taa': 'Y', 'tin': 'O', 'tun': 'T', 'tu': 'T',
+    'te': 'H', 'ti': 'H', 'ne': 'U', 'ra': 'U', 're': 'Z',
+    'ge': 'L', 'ghe': 'L', 'ga': 'L', 'gee': 'B',   # gee: Ge pushed up by the wrist
+    'ka': 'C', 'ke': 'C', 'ki': 'C', 'kat': 'C',
+}
 
 # ---- kits ----------------------------------------------------------------------------------------
 def V(**kw):
     v = dict(tone_hz=0, tone_bend=1.0, bend_ms=10, tone_ms=100, tone_level=1.0, noise_level=0, metal_level=0,
              metal_hz=540, metal_ratio=1.4815, metal_count=2, filter=1, filter_hz=2000, filter_q=0.7, noise_ms=50,
-             retrigs=0, retrig_ms=10, level=0.8, pan=0.0, choke=0, follow=0)
+             retrigs=0, retrig_ms=10, level=0.8, pan=0.0, choke=0, follow=0, sample=-1)
     v.update(kw)
     return v
 
@@ -63,6 +82,8 @@ def kit(name, bits=16, hold=1, drive=1.0, **voices):
     v = {k: dict(DEFAULT[k]) for k in VOICES}
     for k, change in voices.items():
         v[k].update(change)
+        if isinstance(v[k]['sample'], str):   # a recorded stroke: nothing synthesized under it
+            v[k].update(sample=SAMPLE[v[k]['sample']], tone_hz=0, noise_level=0, metal_level=0, retrigs=0)
     return dict(name=name, bits=bits, hold=hold, drive=drive, voices=v)
 
 KITS = [
@@ -117,9 +138,18 @@ KITS = [
         SNARE=dict(tone_hz=640, tone_bend=1.0, tone_ms=110, tone_level=0.7, noise_level=0.5, filter=1, filter_hz=4000, filter_q=2.5,
                    noise_ms=45, level=0.7),
         RIM=dict(tone_hz=900, tone_ms=25, noise_level=0.4, filter=1, filter_hz=2500, filter_q=2, noise_ms=20, level=0.45),
-        CONGA_LO=dict(tone_hz=90, tone_bend=0.8, bend_ms=120, tone_ms=500, noise_level=0.05, level=0.85),   # bayan: the pitch rising
-        CONGA_HI=dict(tone_hz=523, tone_bend=1.02, tone_ms=520, metal_level=0.15, metal_hz=1046, metal_ratio=2.0, noise_level=0.1,
-                      filter=1, filter_hz=3000, noise_ms=40, level=0.6)),                                       # dayan: ringing
+        # the tabla, recorded (drum_samples.py): the dayan's strokes choke each other, as do the bayan's,
+        # as a stroke on a skin stops the last one ringing; the bayan to the left, the dayan to the right
+        CLAP=dict(sample='ke', choke=3, level=1.75, pan=-0.25),
+        HAT=dict(sample='te', choke=2, level=1.5, pan=0.25),
+        OPEN=dict(sample='tin', choke=2, level=1.75, pan=0.25),
+        CYMBAL=dict(sample='na open', choke=2, level=1.9, pan=0.25),
+        TOM_LO=dict(sample='tun', choke=2, level=1.75, pan=0.25),
+        TOM_HI=dict(sample='ne', choke=2, level=1.4, pan=0.25),
+        CONGA_LO=dict(sample='ge', choke=3, level=2.1, pan=-0.25),
+        CONGA_HI=dict(sample='na', choke=2, level=1.9, pan=0.25),
+        BELL=dict(sample='ge bent', choke=3, level=2.1, pan=-0.25),
+        SHAKER=dict(sample='re', choke=2, level=1.25, pan=0.25)),
     kit('trap', drive=1.6, KICK=dict(tone_hz=45, tone_bend=1.6, bend_ms=25, tone_ms=1400, tone_level=0.9, noise_level=0.1, follow=1),
         SNARE=dict(tone_hz=210, noise_level=0.8, filter=1, filter_hz=1600, noise_ms=180),
         CLAP=dict(noise_ms=260),
@@ -139,6 +169,24 @@ KIT_INDEX = {k['name']: i for i, k in enumerate(KITS)}
 # ---- fills ----------------------------------------------------------------------------------------
 def ramp(n, lo=60, hi=120):
     return [round(lo + (hi - lo) * i / max(n - 1, 1)) for i in range(n)]
+
+TIHAI = 'ti/ra ki/ta DHA ti/ra ki/ta DHA ti/ra ki/ta'
+
+def bol_steps(tokens):
+    """bols, a step each -> per step [(where in the step, 0 to 1, letter, velocity)]"""
+    out = []
+    for tok in tokens:
+        hits = []
+        parts = tok.split('/')
+        for j, part in enumerate(parts):
+            if part == '-':
+                continue
+            vel = 56 if part.startswith('(') else 124 if part.isupper() else 96
+            bol = part.strip('()').lower()
+            assert bol in BOLS, f'{bol!r} is not a bol (BOLS)'
+            hits += [(j / len(parts), letter, vel) for letter in BOLS[bol]]
+        out.append(hits)
+    return out
 
 def fill_family(family, n):
     """The second half of a fill bar, n steps: {voice: [(step, velocity)]}"""
@@ -163,13 +211,11 @@ def fill_family(family, n):
         put('B', 0, 110)
         for i in range(n):
             put('U' if i % 2 == 0 else 'T', i, v[i])
-    elif family == 'tabla':
-        for i in range(n):
-            put('M', i, v[i])
-            if i % 2 == 1:
-                put('M', i + 0.5, v[i] - 20)
-        put('L', 0, 100)
-        put('L', n - 1, 120)
+    elif family == 'tabla':   # a tihai: tirakita dha three times, the third dha the bar line it lands on
+        tokens = TIHAI.split()[-n:]
+        for i, hits in enumerate(bol_steps(tokens)):
+            for frac, letter, vel in hits:
+                put(letter, i + frac, round(vel * (0.6 + 0.4 * i / max(n - 1, 1))))
     elif family == 'doumbek':
         for i in range(n):
             put('S', i, v[i])
@@ -197,8 +243,8 @@ def fill_family(family, n):
 
 # ---- grooves --------------------------------------------------------------------------------------
 GROOVES = []
-def G(name, kit, beats=4, steps=4, swing=12, fill='toms', **lines):
-    GROOVES.append(dict(name=name, kit=KIT_INDEX[kit], beats=beats, steps=steps, swing=swing, fill=fill, lines=lines))
+def G(name, kit, beats=4, steps=4, swing=12, fill='toms', bols=None, **lines):
+    GROOVES.append(dict(name=name, kit=KIT_INDEX[kit], beats=beats, steps=steps, swing=swing, fill=fill, lines=lines, bols=bols))
 
 # Western standards
 G('rock', 'studio', K='x.......x.x.....', S='....x.......x...', H='x.x.x.x.x.x.x.x.')
@@ -254,9 +300,10 @@ G('highlife', 'world percussion', fill='congas', B='x..x..x.x..x..x.', K='x.....
 G('maqsum', 'tabla and doumbek', fill='doumbek', K='x.......x.......', S='..x...x.....x...', R='o...o.o...o...o.')
 G('baladi', 'tabla and doumbek', fill='doumbek', K='x.x.....x.......', S='......x.....x...', R='o...o...o...o.o.')
 G('saidi', 'tabla and doumbek', fill='doumbek', K='x.....x.x.......', S='..x.........x...', R='o...o...o...o...')
-G('kehrwa', 'tabla and doumbek', fill='tabla', L='x.x.......o.x...', M='x...x.o.x...x.x.')
-G('dadra', 'tabla and doumbek', beats=3, steps=2, swing=0, fill='tabla', L='xx.x..', M='xxx.xx')
-G('teental', 'tabla and doumbek', fill='tabla', L='xxxxxxxx....xxxx', M='Xxxxxxxxxxxxxxxx')
+# The tabla's thekas, a matra a step: the khali (the empty beat) is where the bayan rests, Dha becoming Ta
+G('kehrwa', 'tabla and doumbek', steps=2, fill='tabla', bols='DHA ge na ti   na ka dhi na')
+G('dadra', 'tabla and doumbek', beats=3, steps=2, swing=0, fill='tabla', bols='DHA dhi na   dha tu na')
+G('teental', 'tabla and doumbek', fill='tabla', bols='DHA dhin dhin dha  dha dhin dhin dha  dha tin tin ta  ta dhin dhin dha')
 
 # Each accompaniment style's own drum part (rhythm style 274, its 0 to 14), a groove above by name
 STYLE_PARTS = ['rock', 'pop eighths', 'waltz', 'country two-beat', 'jazz swing', 'shuffle', 'folk', 'pop eighths',
@@ -284,6 +331,30 @@ def events_of(lines, beats, steps):
                     out.append((at, LETTER[letter], VELOCITY[c]))
     return sorted(out), bars
 
+def bol_events(bols, beats, steps):
+    """a groove's bols -> sorted [(at in 24ths, voice, velocity)], and the bars"""
+    unit = 24 // steps
+    bar_steps = beats * steps
+    out = []
+    bars = bols.split('|')
+    for b, bar in enumerate(bars):
+        tokens = bar.split()
+        assert len(tokens) == bar_steps, f'bar {b + 1} has {len(tokens)} bols, not {bar_steps}: {bar!r}'
+        for i, hits in enumerate(bol_steps(tokens)):
+            for frac, letter, vel in hits:
+                at = (b * bar_steps + i + frac) * unit
+                assert at == int(at), f'{tokens[i]!r} divides a step of {unit} 24ths unevenly'
+                out.append((int(at), LETTER[letter], vel))
+    return sorted(out), len(bars)
+
+def groove_events(g):
+    ev, bars = events_of(g['lines'], g['beats'], g['steps'])
+    if g['bols']:
+        more, bol_bars = bol_events(g['bols'], g['beats'], g['steps'])
+        assert bars in (None, bol_bars), f"{g['name']}: the bols have {bol_bars} bars, the lines {bars}"
+        ev, bars = sorted(ev + more), bol_bars
+    return ev, bars
+
 def fill_of(g):
     beats, steps = g['beats'], g['steps']
     unit = 24 // steps
@@ -292,6 +363,8 @@ def fill_of(g):
     start = (beats - fill_beats) * steps          # the step the fill takes over at
     first = {k: v.split('|')[0][:start] + '.' * (bar_steps - start) for k, v in g['lines'].items()}
     ev, _ = events_of(first, beats, steps)
+    if g['bols']:
+        ev += [e for e in bol_events(g['bols'].split('|')[0], beats, steps)[0] if e[0] < start * unit]
     for letter, hits in fill_family(g['fill'], bar_steps - start).items():
         for step, vel in hits:
             at = round((start + step) * unit)
@@ -304,16 +377,16 @@ def c_kit(k):
     for name in VOICES:
         v = k['voices'][name]
         f = lambda x: ('%.6g' % x) + ('' if any(c in '%.6g' % x for c in '.e') else '.0') + 'f'
-        vs.append('    {%s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %s, %s, %s, %d, %s, %s, %s, %d, %d},   // %s' % (
+        vs.append('    {%s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %s, %s, %s, %d, %s, %s, %s, %d, %d, %d},   // %s' % (
             f(v['tone_hz']), f(v['tone_bend']), f(v['bend_ms']), f(v['tone_ms']), f(v['tone_level']), f(v['noise_level']),
             f(v['metal_level']), f(v['metal_hz']), f(v['metal_ratio']), v['metal_count'], v['filter'], f(v['filter_hz']),
             f(v['filter_q']), f(v['noise_ms']), v['retrigs'], f(v['retrig_ms']), f(v['level']), f(v['pan']), v['choke'],
-            v['follow'], name.lower()))
+            v['follow'], v['sample'], name.lower() + (' (%s)' % STROKES[v['sample']][0] if v['sample'] >= 0 else '')))
     return '  {"%s", %d, %d, %.3ff, {\n%s\n  }},' % (k['name'], k['bits'], k['hold'], k['drive'], '\n'.join(vs))
 
 def main():
     lines = ['// generated by generator/drums.py - do not edit: change the kits and grooves there and run it',
-             '#ifndef DRUM_PATTERNS_H', '#define DRUM_PATTERNS_H', '#include "drum_machine.h"', '',
+             '#ifndef DRUM_PATTERNS_H', '#define DRUM_PATTERNS_H', '#include "drum_machine.h"', '#include "drum_samples.h"', '',
              'struct drum_event_t { uint16_t at; uint8_t voice; uint8_t velocity; };   // at in 24ths of a beat',
              'struct drum_groove_t {',
              '  const char *name;',
@@ -332,7 +405,7 @@ def main():
     lines += ['};', 'const uint8_t drum_kit_count = sizeof(drum_kits) / sizeof(drum_kit_t);', '']
     entries = []
     for i, g in enumerate(GROOVES):
-        ev, bars = events_of(g['lines'], g['beats'], g['steps'])
+        ev, bars = groove_events(g)
         fill = fill_of(g)
         lines.append('static const drum_event_t drum_groove_%d[] PROGMEM = {%s};   // %s' % (
             i, ', '.join('{%d, %d, %d}' % e for e in ev), g['name']))

@@ -1,4 +1,4 @@
-// The drum machine: thirteen synthesized drum voices in one audio object, stereo out (see DRUMS in
+// The drum machine: thirteen drum voices, mostly synthesized, in one audio object, stereo out (see DRUMS in
 // main.cpp, and generator/drums.py for the kits and grooves). Each voice is a pitched body (a sine
 // whose pitch falls from tone_bend times its own to it, for a kick's thump or a tom's) and a burst of
 // noise and metal (white noise, and two or four square waves at bell or cymbal ratios) through a
@@ -7,6 +7,9 @@
 // kit's grit: fewer bits and held samples for a lo-fi or broken sound, and a drive. Hits come from
 // the rhythm's timer and from the loop (the harp's pads), so they go through a little queue the audio
 // update takes them from, each with a delay in samples (the humanize). Nothing sounding, nothing runs.
+// A voice can instead play a recorded stroke (drum_samples.h, from generator/drum_samples.py): the
+// tabla's, which no sine and noise can be. A stroke choked fades in a few milliseconds rather than
+// stopping dead, as a hand laid on a skin does.
 #ifndef DRUM_MACHINE_H
 #define DRUM_MACHINE_H
 #include <Arduino.h>
@@ -27,7 +30,15 @@ struct drum_voice_t {
   float level, pan;                                         // pan -1 left to 1 right
   uint8_t choke;                                            // a voice struck cuts off the others in its group (not 0)
   uint8_t follow;                                           // 1: the body takes the pitch the hit gives (an 808 bass)
+  int8_t sample;                                            // a recorded stroke in drum_samples to play, or -1
 };
+
+struct drum_sample_t {
+  const int16_t *data;
+  uint32_t length;   // samples
+  uint32_t rate;     // Hz
+};
+extern const drum_sample_t drum_samples[];
 
 struct drum_kit_t {
   const char *name;
@@ -81,8 +92,12 @@ public:
       s.metal_level = p.metal_level;
       s.metal_count = p.metal_count == 4 ? 4 : 2;
       s.filter = p.filter;
+      s.sample = p.sample >= 0 ? &drum_samples[p.sample] : nullptr;
+      s.sample_inc = s.sample ? s.sample->rate / fs : 0;
+      s.sample_amp = 0;
       s.active = false;
     }
+    choke_damp = expf(-1.0f / (0.004f * fs));   // a choked stroke: a 4 ms fall, -60 dB in about 28 ms
     crush_step = k->bits < 16 ? (float)(1 << (16 - k->bits)) / 32768.0f : 0;
     __enable_irq();
   }
@@ -175,9 +190,27 @@ public:
         }
         noise = r; s.noise_amp = amp; s.ic1 = ic1; s.ic2 = ic2;
       }
+      // a recorded stroke, read between its samples at the rate it was recorded
+      if (s.sample_amp > 0) {
+        const int16_t *d = s.sample->data;
+        const uint32_t last = s.sample->length - 1;
+        float pos = s.sample_pos, amp = s.sample_amp * (1.0f / 32768.0f);
+        const float inc = s.sample_inc, damp = s.sample_choked ? choke_damp : 1.0f;
+        for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) {
+          uint32_t i0 = (uint32_t)pos;
+          if (i0 >= last) { amp = 0; break; }
+          float a = d[i0], b = d[i0 + 1];
+          x[n] += (a + (b - a) * (pos - i0)) * amp;
+          pos += inc;
+          amp *= damp;
+        }
+        s.sample_pos = pos;
+        s.sample_amp = amp * 32768.0f;
+        if (s.sample_amp <= SILENT) s.sample_amp = 0;
+      }
       const float left = s.left, right = s.right;
       for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) { out_l[n] += x[n] * left; out_r[n] += x[n] * right; }
-      if (s.tone_amp <= SILENT && s.noise_amp <= SILENT && !s.retrigs) s.active = false;
+      if (s.tone_amp <= SILENT && s.noise_amp <= SILENT && !s.retrigs && s.sample_amp <= 0) s.active = false;
     }
     // the kit's grit and drive, the level, and a soft clip so a pile of hits rounds off rather than cracks
     float drive = kit->drive, g = gain * 26000.0f;
@@ -215,6 +248,9 @@ private:
     float bend_span, noise_level, metal_level;
     uint8_t metal_count, filter;
     uint8_t retrigs;
+    const drum_sample_t *sample;
+    float sample_pos, sample_inc, sample_amp;
+    bool sample_choked;
     uint32_t retrig_count, retrig_samples;
   };
   static float decay(float ms, float fs) { return expf(-6.9078f / fmaxf(ms * fs / 1000.0f, 1.0f)); }   // to -60 dB in ms
@@ -224,7 +260,7 @@ private:
     voice_t &s = voice[h.voice];
     if (p.choke) {
       for (uint8_t i = 0; i < DRUM_VOICES; i++) {
-        if (i != h.voice && kit->v[i].choke == p.choke && voice[i].active) { voice[i].noise_amp *= 0.05f; voice[i].tone_amp *= 0.05f; }
+        if (i != h.voice && kit->v[i].choke == p.choke && voice[i].active) { voice[i].noise_amp *= 0.05f; voice[i].tone_amp *= 0.05f; voice[i].sample_choked = true; }
       }
     }
     float vel = constrain(h.velocity, 0.0f, 1.0f);
@@ -236,7 +272,10 @@ private:
     s.retrigs = p.retrigs;
     s.retrig_count = 0;
     s.ic1 = s.ic2 = 0;
-    s.active = s.tone_amp > 0 || s.noise_amp > 0;
+    s.sample_pos = 0;
+    s.sample_amp = s.sample ? vel : 0;
+    s.sample_choked = false;
+    s.active = s.tone_amp > 0 || s.noise_amp > 0 || s.sample_amp > 0;
   }
 
   const drum_kit_t *kit = nullptr;
@@ -246,7 +285,7 @@ private:
   hit_t pending[PENDING];
   uint8_t waiting = 0;
   uint32_t noise = 22222;
-  float gain = 0.7f, crush_step = 0, held_l = 0, held_r = 0;
+  float gain = 0.7f, choke_damp = 1.0f, crush_step = 0, held_l = 0, held_r = 0;
   uint8_t hold_count = 0;
 };
 

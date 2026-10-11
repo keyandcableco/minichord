@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=60; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343)
+int version_ID=61; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1725,6 +1725,12 @@ FLASHMEM void send_parameter_page(uint8_t page) {
   usbMIDI.sendSysEx(header + page_size * 2, midi_data_array, 0);
 }
 
+// The mark that the preset storage is the 512 kB one, formatted as such (see setup)
+FLASHMEM void preset_storage_mark() {
+  File mark = myfs.open("fs512", FILE_WRITE);
+  if (mark) mark.close();
+}
+
 FLASHMEM void control_command(uint8_t command, uint8_t parameter) {
   switch (command) {
   case 0: // SIGNAL TO SEND BACK ALL DATA: page 0, as it always was, two bytes a setting and no header
@@ -1738,6 +1744,7 @@ FLASHMEM void control_command(uint8_t command, uint8_t parameter) {
     Serial.println("Wiping memory");
     digitalWrite(_MUTE_PIN, LOW); // muting the DAC
     myfs.quickFormat();
+    preset_storage_mark();   // or the next boot would format it again, and whatever was saved since
     current_bank_number = 0;
     load_config(current_bank_number);
     digitalWrite(_MUTE_PIN, HIGH); // unmuting the DAC
@@ -5916,11 +5923,22 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   }
   // loading the preset
   Serial.println("Initialising filesystem");
-  if (!myfs.begin(1024 * 1024)) { // Need to check that size
+  // 512 kB at the top of flash for the twelve presets, a kilobyte or two each (about 36 kB in all).
+  // It was 1 MB, the size set at the start and never checked; the other half is the drums' tabla.
+  // The filesystem sits at the top, so a new size moves where it starts: the first time, whatever
+  // is found there (most likely nothing, and LittleFS formats it) is formatted on purpose, so no
+  // leftover of the old one can pass for it, and the presets come up as the factory's. Back them
+  // up first (minicontrol's backup), and restore them after.
+  if (!myfs.begin(512 * 1024)) {
     Serial.printf("Error starting %s\n", "Program flash DISK");
     while (1) {
       set_led_color(0, 1.0, 1.0); // turn red light
     }
+  }
+  if (!myfs.exists("fs512")) {
+    Serial.println("Preset storage moved to 512 kB: formatting it");
+    myfs.quickFormat();
+    preset_storage_mark();
   }
   Serial.println("Loading the preset");
   load_config(current_bank_number);
