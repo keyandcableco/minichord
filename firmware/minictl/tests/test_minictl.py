@@ -207,6 +207,39 @@ class WithFakeMinichord(unittest.TestCase):
         self.assertIn("live preset", out)
         self.assertGreater(self.fake.live[184], self.fake.banks[0][184])
 
+    def test_do_live_and_banks(self):
+        self.fake.banks[1][249] = self.fake.banks[3][249] = S.find("chord-attack")
+        self.fake.live[24] = 77                               # unsaved, live: must survive the walk
+        code, out = run("--yes", "do", "turn off hover on banks 2 and 4, set the chord attack to 200 ms")
+        self.assertEqual(code, 0, out)
+        self.assertEqual((self.fake.banks[1][249], self.fake.banks[3][249]), (0, 0))
+        self.assertEqual(sorted(self.fake.saves), [1, 3])
+        self.assertEqual(self.fake.live[1], 0)                # back on bank 1
+        self.assertEqual(self.fake.live[137], 200)
+        self.assertEqual(self.fake.live[24], 77)
+        self.assertEqual(self.fake.banks[0][137], S.defaults()[137])   # live, not saved
+
+    def test_do_dry_run_and_refusal(self):
+        code, out = run("do", "-n", "set the chord attack to 300")
+        self.assertIn("dry run", out)
+        self.assertNotEqual(self.fake.live[137], 300)
+        code, out = run("do", "darker on bank 5")              # no one to ask: the bank isn't written
+        self.assertEqual(self.fake.saves, [])
+
+    def test_do_bank_by_name(self):
+        code, out = run("--yes", "do", "set the chord attack to 50 on the Bank 7 bank")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.fake.banks[6][137], 50)
+
+    def test_do_code_offline(self):
+        os.environ.pop("MINICTL_PORT")
+        try:
+            code, out = run("--port", "no-such-port", "do", "-c", "defaults", "mod knob to the reverb size")
+        finally:
+            os.environ["MINICTL_PORT"] = "fakechord"
+        self.assertEqual(code, 0, out)
+        self.assertEqual(S.decode(out.strip().splitlines()[-1])[14], 24)
+
     def test_name(self):
         run("name", "Night", "drive")
         self.assertEqual(Settings.preset_name(self.fake.live), "Night drive")

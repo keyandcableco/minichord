@@ -443,6 +443,131 @@ def cmd_describe(args):
             d.close()
 
 
+def cmd_do(args):
+    """An instruction in words, minicontrol's instruction box on the command line"""
+    from . import commands as C
+    s = settings()
+    C.setup({str(a): {str(v): label for v, label in o.items()} for a, o in s.options.items()})
+    text = " ".join(args.text)
+    presets = s.shared_presets()
+    d = None
+    try:
+        if args.code:
+            live, _ = preset_code_from(args.code)
+            current, read = -1, {"live": list(live)}
+            names = []
+        else:
+            d = open_device(args)
+            live = d.read()
+            current = live[1]
+            read = {"live": list(live)}
+            names = []
+            walked = False
+            # a bank called by its name ("my Drone bank") needs every bank's name, so every bank read
+            marked, _ = C.mark_scopes(C.normalise(text), current, [])
+            if re.search(r"\b(?:bank|slot)s?\b", re.sub(r"«\d+»", "", marked)) and live[7] >= 50:
+                got = walk_banks(d, range(BANKS))
+                walked = True
+                names = [s.preset_name(got[b]) for b in range(BANKS)]
+                read.update({f"b{b}": v for b, v in got.items()})
+            want = [k for k in C.places_named(text, current, names) if k not in read]
+            if want:
+                walked = True
+                got = walk_banks(d, [int(k[1:]) for k in want])
+                read.update({f"b{b}": v for b, v in got.items()})
+        size = {k: len(v) for k, v in read.items()}
+        page1 = page1_defaults()
+        work = {}
+        for k, v in read.items():
+            full = list(v) + [0] * (pm.PARAMETER_SIZE - len(v))
+            for a, dv in page1.items():
+                if a >= len(v):
+                    full[a] = dv
+            work[k] = full
+        before = {k: list(v) for k, v in work.items()}
+
+        def values(k):
+            if k not in work:
+                raise RuntimeError(f"{C.scope_name([k])} wasn't read")
+            return work[k]
+
+        ctx = C.Context(values, current, [p["name"] for p in presets], presets, names)
+        out = C.plan(text, ctx)
+        for q in list(out["questions"]):
+            print(f'"{q.phrase}" could be:')
+            for i, ch in enumerate(q.choices, 1):
+                print(f"  {i}. {ch['name']}")
+            if args.yes or not sys.stdin.isatty():
+                print("  (left out: say which in the words)")
+                continue
+            answer = input("which? (number, Enter to leave it out) ").strip()
+            if answer.isdigit() and 1 <= int(answer) <= len(q.choices):
+                more = C.plan(q.clause(q.choices[int(answer) - 1]["addr"]), C.Context(values, current, [], presets, names))
+                for k in ("understood", "notes", "unknown"):
+                    out[k] += [x for x in more[k] if x not in out[k]]
+        if args.json:
+            print_json({"understood": out["understood"], "notes": out["notes"], "unknown": out["unknown"],
+                        "changes": {k: {s.names.get(a, str(a)): {"from": before[k][a], "to": work[k][a]}
+                                        for a in range(len(work[k])) if work[k][a] != before[k][a]} for k in work}})
+        else:
+            for line in out["understood"]:
+                print(f"  {line}")
+            if out["unknown"]:
+                print(f"Not understood: {', '.join(out['unknown'])}")
+            for n in out["notes"]:
+                print(f"  ! {n}")
+        changed = {k: [a for a in range(len(work[k])) if work[k][a] != before[k][a] and a < max(size[k], dev.PAGE)]
+                   for k in work}
+        changed = {k: v for k, v in changed.items() if v}
+        if not changed:
+            if not args.json:
+                print("nothing changes")
+            return
+        if not args.json:
+            for k in sorted(changed, key=lambda k: (k != "live", int(k[1:]) if k != "live" else 0)):
+                where = "live" if k == "live" else C.scope_name([k])
+                print(f"\n{where}:")
+                for a in changed[k]:
+                    print(f"  {s.names.get(a, a)}: {s.shown(a, before[k][a], before[k])} -> {s.shown(a, work[k][a], work[k])}")
+        if args.code:
+            print(f"\nPreset code:\n{s.encode(work['live'])}")
+            return
+        if args.dry_run:
+            print("\n(dry run: nothing sent)")
+            return
+        banks = sorted(int(k[1:]) for k in changed if k != "live")
+        if banks:
+            if not confirm(f"Write {C.scope_name([f'b{b}' for b in banks])}, replacing what "
+                           f"{'it holds' if len(banks) == 1 else 'they hold'}?", args):
+                print("banks left as they were")
+                banks = []
+            for b in banks:
+                d.load_bank(b)
+                time.sleep(0.1)
+                for a in changed[f"b{b}"]:
+                    if a not in dev.RESERVED and a != 7:
+                        d.set(a, work[f"b{b}"][a])
+                time.sleep(0.04)
+                d.save(b)
+                print(f"bank {b + 1} written")
+            walked = walked or bool(banks)
+        # Loading a bank on the way (to read or write one) dropped what was live and unsaved, so then
+        # the whole live sound goes back, with the changes; otherwise only the changes go
+        if walked:
+            now = d.load_bank(current) if banks else d.read()
+            send = [a for a in range(2, size["live"]) if work["live"][a] != now[a]]
+        else:
+            send = changed.get("live", [])
+        for a in send:
+            if a not in dev.RESERVED and a != 7:
+                d.set(a, work["live"][a])
+        if "live" in changed:
+            print("live: playing (`minictl save` keeps it)")
+    finally:
+        if d:
+            d.close()
+
+
 def cmd_words(args):
     import interpret
     interpret.print_vocabulary()
@@ -642,6 +767,11 @@ def parser():
     p.add_argument("--send", action="store_true", help="play the result on the minichord (live)")
     p.add_argument("--save", type=bank_arg, metavar="BANK", help="play it and save it to a bank (asks)")
     add("words", cmd_words, "every word and phrase describe understands")
+    p = add("do", cmd_do, "an instruction in words, for the live sound or any banks: "
+                          "do \"turn off hover on banks 2 and 4, raise the reverb\"")
+    p.add_argument("text", nargs="+")
+    p.add_argument("-n", "--dry-run", action="store_true", help="show what would change, send nothing")
+    p.add_argument("-c", "--code", help="work on a preset code instead of the minichord, and print the new code")
     p = add("conflicts", cmd_conflicts, "settings that undo one another, in the live preset or a code")
     p.add_argument("code", nargs="?")
     p.add_argument("-b", "--bank", type=bank_arg)

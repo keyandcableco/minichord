@@ -27,6 +27,7 @@ It runs on Linux, macOS and Windows, from this checkout. The `-e` matters: minic
 | `restore file` | write the banks in a backup (`--banks 1,3,5-7` for some), then read them back to check |
 | `code [code]` | the live preset as a share code, or play a code or shared preset |
 | `describe "words"` | a preset from a description, by preset_maker's rules, starting from what's playing (`--base` for something else); `--send` plays it, `--save n` keeps it |
+| `do "words"` | an instruction, as minicontrol's instruction box reads it: `do "turn off hover on banks 2 and 4, raise the reverb"` (below) |
 | `words` | everything `describe` understands |
 | `conflicts [code]` | settings that undo one another (`--strict` exits 1 when there are any, for scripts) |
 | `play C4 E4 G4` | notes through MIDI in (`--harp` for the harp's port, `-l` seconds, `--arp` seconds apart) |
@@ -45,9 +46,26 @@ Every setting has a name made from parameters.json: `chord-attack`, `harp-reverb
 
 After a `set` minictl says if the change made two settings undo each other, from the same list the describer warns with.
 
+### Instructions in words
+
+`minictl do` reads what minicontrol's instruction box reads, with the same grammar: `minictl/commands.py` is a port of minicontrol's `commands.js`, kept line for line.
+
+```
+minictl do "turn off hover, set the chord attack to 200 ms"
+minictl do "darker and more reverb on banks 3 to 5"
+minictl do "assign the mod knob to key signature on every bank except 1"
+minictl do "make bank 5 like bank 2"
+minictl do "copy the envelope from bank 3 to bank 4"
+minictl do "load Twin Green on bank 6, then make it darker"
+```
+
+An instruction is for the live sound unless it names banks: "on banks 2 and 4", "every bank but 3", "this bank", "my Drone bank" (a name kept in the bank, firmware 50 on). Anything that isn't an instruction ("warmer", "Purple Rain") goes to the describer, once for each bank, so "darker" is darker than what each bank holds. minictl shows what changes in each place, asks which setting was meant when a name could be several, and asks before writing banks. `-n` shows the changes and sends nothing. `-c CODE` works on a preset code instead of the minichord and prints the new code.
+
+Reading or writing a bank loads it, which drops what is live and unsaved, so afterwards minictl puts the live sound back as it was, with the changes on top.
+
 ### What it asks first
 
-`set`, `code`, `describe --send`, `bank` and `play` change only what's playing; the bank stays as stored until it's saved. `save`, `reset`, `restore`, `set --save` and `flash` write to the instrument's memory, so they ask first, or take `--yes`. Run from a script with no one to ask, they stop rather than go ahead.
+`set`, `code`, `describe --send`, `do` on the live sound, `bank` and `play` change only what's playing; the bank stays as stored until it's saved. `save`, `reset`, `restore`, `set --save`, `do` on banks and `flash` write to the instrument's memory, so they ask first, or take `--yes`. Run from a script with no one to ask, they stop rather than go ahead.
 
 Walking the banks (`banks`, `backup`, `restore`, `get -b`) loads each one in turn and comes back to the bank it started on. Loading a bank drops live changes that weren't saved.
 
@@ -66,5 +84,7 @@ python tests/test_minictl.py
 ```
 
 The tests check the names, values and codes, then run every device command against a pretend minichord on virtual MIDI ports (`tests/fake_minichord.py`), so they never touch a real one. Virtual ports exist on Linux and macOS; on Windows only the offline half runs. To try minictl without the instrument, run `python tests/fake_minichord.py` in one terminal and `minictl --port fakechord ...` in another.
+
+`tests/parity_test.py ~/minicontrol` runs the same instructions (`tests/commands_cases.json`: minicontrol's own tests and suggestions, and more) through `commands.py` and minicontrol's `commands.js`, and every one must change the same values and say the same things. It needs node. Run it after either side changes; a difference is a bug in one of them.
 
 `make_options.py` refreshes `minictl/options.json`, the names for each setting's choices, from minicontrol's `parameters.json`. Run it after minicontrol gains or renames a choice.
