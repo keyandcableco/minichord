@@ -7,7 +7,7 @@ class AudioStream {
 public:
   AudioStream(int, audio_block_t **) {}
   virtual void update() = 0;
-  audio_block_t *out[2] = {nullptr, nullptr};
+  audio_block_t *out[3] = {nullptr, nullptr, nullptr};
 protected:
   audio_block_t *allocate() { return new audio_block_t(); }
   void transmit(audio_block_t *b, int ch) { out[ch] = new audio_block_t(*b); }

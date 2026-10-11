@@ -400,6 +400,7 @@ def main():
              '  const drum_event_t *events;',
              '  uint16_t fill_count;    // its fill bar',
              '  const drum_event_t *fill;',
+             '  uint8_t bol_steps;       // a theka written in bols: its bols to the beat as written (tabla laya stretches it), else 0',
              '};', '']
     lines.append('const uint8_t drum_gm_note[DRUM_VOICES] = {%s};' % ', '.join(map(str, GM_NOTE)))
     lines.append('const drum_kit_t drum_kits[] PROGMEM = {')
@@ -412,8 +413,9 @@ def main():
         lines.append('static const drum_event_t drum_groove_%d[] PROGMEM = {%s};   // %s' % (
             i, ', '.join('{%d, %d, %d}' % e for e in ev), g['name']))
         lines.append('static const drum_event_t drum_fill_%d[] PROGMEM = {%s};' % (i, ', '.join('{%d, %d, %d}' % e for e in fill)))
-        entries.append('  {"%s", %d, %d, %d, %d, %d, drum_groove_%d, %d, drum_fill_%d},' % (
-            g['name'], g['kit'], g['beats'], g['swing'], bars * g['beats'] * 24, len(ev), i, len(fill), i))
+        entries.append('  {"%s", %d, %d, %d, %d, %d, drum_groove_%d, %d, drum_fill_%d, %d},' % (
+            g['name'], g['kit'], g['beats'], g['swing'], bars * g['beats'] * 24, len(ev), i, len(fill), i,
+            g['steps'] if g['bols'] else 0))
     lines += ['', '// drum groove (335) 1 is the first', 'const drum_groove_t drum_grooves[] PROGMEM = {'] + entries + [
         '};', 'const uint8_t drum_groove_count = sizeof(drum_grooves) / sizeof(drum_groove_t);', '']
     index = {g['name']: i for i, g in enumerate(GROOVES)}

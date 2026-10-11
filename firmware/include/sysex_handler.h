@@ -48,6 +48,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 375:
         drone_register=value; drone_set_mode(drone_mode);
         break;
+      case 379:
+        drum_machine.droneReverb(value/100.0f);
+        break;
       case 359:
         own_temperament_cents[0]=(value-1000)/10.0f; if (temperament_selection==own_temperament) { purity_follow_chord(); retune_active_voices(); }
         break;
@@ -125,6 +128,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         break;
       case 28:
         main_reverb.diffusion(value/100.0);
+        break;
+      case 380:
+        speed_ramp=value;
         break;
       case 257:
         string_spread=value; apply_string_spreads(); apply_harp_bus();
@@ -495,6 +501,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 302:
         hammer_on=value;
         break;
+      case 376:
+        hammer_after_ms=value;
+        break;
       case 252:
         touch_velocity=value;
         break;
@@ -580,7 +589,7 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         string_tremolo_lfo.begin(waveform_array[constrain(value,0,11)]);
         break;
       case 60:
-        string_tremolo_lfo.frequency(value/100.0);
+        lfo_rate(RAMP_HARP_TREMOLO,value/100.0);
         break;
       case 61:
         string_tremolo_lfo.amplitude(0.01+value/100.0);string_tremolo_lfo.offset(1-value/100.0);
@@ -589,7 +598,7 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         string_vibrato_lfo.begin(waveform_array[constrain(value,0,11)]);
         break;
       case 63:
-        string_vibrato_lfo.frequency(value/100.0);
+        lfo_rate(RAMP_HARP_VIBRATO,value/100.0);
         break;
       case 64:
         string_vibrato_lfo.amplitude(0.01+value/100.0);
@@ -860,6 +869,12 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 343:
         harp_drums=value;
         break;
+      case 377:
+        tabla_laya=value;
+        break;
+      case 378:
+        drum_machine.drumReverb(value/100.0f);
+        break;
       case 121:
         for (int i=0;i<4;i++){
           chord_osc_1_array[i]->amplitude(value/100.0);
@@ -1023,10 +1038,10 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         }
         break;
       case 157:
-        chord_tremolo_base_freq=value/100.0;
+        chord_tremolo_base_freq=value/100.0; chord_lfo_rates();
         break;
       case 158:
-        chord_tremolo_keytrack=value/100.0;
+        chord_tremolo_keytrack=value/100.0; chord_lfo_rates();
         break;
       case 159:
         for (int i=0;i<4;i++){
@@ -1039,10 +1054,10 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         }
         break;
       case 161:
-        chord_vibrato_base_freq=value/100.0;
+        chord_vibrato_base_freq=value/100.0; chord_lfo_rates();
         break;
       case 162:
-        chord_vibrato_keytrack=value/100.0;
+        chord_vibrato_keytrack=value/100.0; chord_lfo_rates();
         break;
       case 163:
         chords_vibrato_lfo.amplitude(0.01+value/100.0);
@@ -1241,6 +1256,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 373: lo=0; hi=100; return true;
       case 374: lo=4; hi=30; return true;
       case 375: lo=0; hi=2; return true;
+      case 379: lo=0; hi=100; return true;
       case 359: lo=0; hi=2000; return true;
       case 360: lo=0; hi=2000; return true;
       case 361: lo=0; hi=2000; return true;
@@ -1267,6 +1283,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 26: lo=0; hi=100; return true;
       case 27: lo=0; hi=100; return true;
       case 28: lo=0; hi=100; return true;
+      case 380: lo=0; hi=50; return true;
       case 257: lo=0; hi=100; return true;
       case 258: lo=0; hi=1; return true;
       case 259: lo=0; hi=100; return true;
@@ -1384,6 +1401,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 347: lo=0; hi=1; return true;
       case 348: lo=0; hi=100; return true;
       case 302: lo=0; hi=1; return true;
+      case 376: lo=20; hi=400; return true;
       case 252: lo=0; hi=100; return true;
       case 253: lo=0; hi=2; return true;
       case 263: lo=0; hi=100; return true;
@@ -1497,6 +1515,8 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 341: lo=0; hi=1; return true;
       case 342: lo=0; hi=1; return true;
       case 343: lo=0; hi=1; return true;
+      case 377: lo=0; hi=3; return true;
+      case 378: lo=0; hi=100; return true;
       case 121: lo=0; hi=100; return true;
       case 122: lo=0; hi=11; return true;
       case 123: lo=50; hi=200; return true;

@@ -603,7 +603,8 @@ AudioMixer4Lean              phone_dj_dry[2];   // the song, its low pass and it
 AudioMixer4Lean              phone_echo_in;     // both sides, and the echo fed back
 AudioEffectDelay         phone_echo;
 AudioMixer4Lean              phone_dj_out[2];   // the song through the filter, and the echo
-// The drum machine (main.cpp, DRUMS): thirteen synthesized voices, into the last mix beside the reverb
+// The drum machine (main.cpp, DRUMS): thirteen synthesized voices, into the last mix beside the reverb,
+// and a send of them and the drone into it
 AudioDrumMachine         drum_machine;
 
 AudioConnection          patchCord2000(string_filter_mixer, 0, string_multiplier, 0);
@@ -637,6 +638,7 @@ AudioConnection          patchCord2017(chords_r_stereo_multiply, 0, stereo_r_mix
 AudioConnection          patchCord2018(chords_l_stereo_multiply, 0, stereo_l_mixer, 1);
 AudioConnection          patchCord2019(chords_amplifier, 0, reverb_mixer, 1);
 
+AudioConnection          drumCord3(drum_machine, 2, reverb_mixer, 3);   // the drums' and the drone's reverb send (378, 379)
 AudioConnection          patchCord2020(reverb_mixer, 0, main_reverb, 0);
 AudioConnection          patchCord2021(main_reverb, 0, stereo_r_mixer, 2);
 AudioConnection          patchCord2022(main_reverb, 1, stereo_l_mixer, 2);

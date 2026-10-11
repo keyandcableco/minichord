@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=68; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375)
+int version_ID=69; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -658,6 +658,7 @@ int16_t press_rest[12] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};   // 
 // it sounds while another of its pads is held pulls it off to that one; lifting the last lets it
 // ring out. On the stock strip and the plates of twelve zones. See hammer_land().
 bool hammer_on = false;
+uint16_t hammer_after_ms = 180;        // 376: how long a string rings before a finger beside it takes it over
 int8_t pad_voice[12] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};   // the string each held pad has hold of, -1 none
 uint32_t voice_plucked_ms[12] = {0};   // when each string was last plucked
 // Pads arriving this soon after a palm mute are part of the palm. A slap's
@@ -979,6 +980,51 @@ float chord_vibrato_base_freq = 0;
 float chord_vibrato_keytrack = 0;
 float chord_tremolo_base_freq = 0;
 float chord_tremolo_keytrack = 0;
+// Speed ramp (380): the tremolo's and the vibrato's rates, harp and chords, move to a new rate over
+// this many tenths of a second instead of jumping to it, as a rotating speaker's rotors spin up when
+// switched to fast and coast down when switched to slow, taking half again as long to slow (they
+// have only friction to stop them). The rate closes in on where it's going as a rotor's speed does,
+// quickly at first, and is 95% of the way there at the time set. A knob, the double tap, hover or a
+// new chord's keytrack all move the rates; loading a preset sets them at once. 0 jumps, as before.
+enum { RAMP_HARP_TREMOLO, RAMP_HARP_VIBRATO, RAMP_CHORD_TREMOLO, RAMP_CHORD_VIBRATO };
+uint8_t speed_ramp = 0;
+bool parameters_loading = false;   // load_config is applying a preset
+struct lfo_rate_t { AudioSynthWaveform *lfo; float now, to; };
+lfo_rate_t lfo_rates[4] = {{&string_tremolo_lfo, 0, 0}, {&string_vibrato_lfo, 0, 0}, {&chords_tremolo_lfo, 0, 0}, {&chords_vibrato_lfo, 0, 0}};
+// LFO which heads for hz; from the loop, or a chord timer's interrupt (the keytrack)
+FLASHMEM void lfo_rate(uint8_t which, float hz) {
+  lfo_rate_t &r = lfo_rates[which];
+  r.to = hz;
+  if (speed_ramp == 0 || parameters_loading) {
+    r.now = hz;
+    r.lfo->frequency(hz);
+  }
+}
+// From loop(): each rate on its way
+FLASHMEM void lfo_rates_update() {
+  static uint32_t last = 0;
+  uint32_t now = micros();
+  float dt = (now - last) * 1e-6f;
+  if (dt < 0.002f) return;
+  last = now;
+  if (dt > 0.1f) dt = 0.1f;
+  for (uint8_t i = 0; i < 4; i++) {
+    noInterrupts();
+    lfo_rate_t &r = lfo_rates[i];
+    if (r.now != r.to) {
+      float tau = speed_ramp / 30.0f * (r.to < r.now ? 1.5f : 1.0f);   // tenths of a second, to 95% (three time constants)
+      r.now = tau > 0 ? r.now + (r.to - r.now) * (1.0f - expf(-dt / tau)) : r.to;
+      if (fabsf(r.to - r.now) < 0.002f) r.now = r.to;
+      r.lfo->frequency(r.now);
+    }
+    interrupts();
+  }
+}
+// The chords' rates: the setting's, and the chord's lowest note's keytrack on it
+FLASHMEM void chord_lfo_rates() {
+  lfo_rate(RAMP_CHORD_VIBRATO, chord_vibrato_base_freq + chord_vibrato_keytrack * current_chord_notes[0]);
+  lfo_rate(RAMP_CHORD_TREMOLO, chord_tremolo_base_freq + chord_tremolo_keytrack * current_chord_notes[0]);
+}
 float chord_filter_base_freq = 0;
 float chord_filter_keytrack = 0;
 // frequency mutlipliers for chord
@@ -1042,7 +1088,10 @@ uint8_t drum_midi = 0;            // 340: each hit out on channel 10: 0 off, 1 p
 bool count_in = false;            // 341: a bar of sticks before rhythm mode begins
 bool drums_only = false;          // 342: the accompaniment rests, the drums play
 bool harp_drums = false;          // 343: the harp's strings play the kit
+uint8_t tabla_laya = 0;           // 377: a theka's bols 0 as written, 1 one a beat, 2 two, 3 four
+volatile double drum_landed = -1; // a stretched theka's sam: the bar line its last fill landed on (-1 none)
 void drum_pad(uint8_t string, int16_t strength);
+void drum_strike(uint8_t v, uint8_t velocity, bool written = true, bool loose = true);
 float touch_firmness(float strength);
 void drums_set();
 void rhythm_fill_action(int16_t action);
@@ -1125,7 +1174,7 @@ void looper_action(int16_t action);
 void looper_voice_taken(bool harp, uint8_t v);
 void looper_update();
 void looper_capture(uint8_t kind, uint8_t voice, float freq, float firmness, uint8_t midi_note, uint8_t midi_velocity);
-enum { LOOP_START, LOOP_RELEASE, LOOP_RETUNE };
+enum { LOOP_START, LOOP_RELEASE, LOOP_RETUNE, LOOP_DRUM };
 enum { LOOPER_EMPTY, LOOPER_RECORDING, LOOPER_PLAYING, LOOPER_STOPPED, LOOPER_COUNTIN };
 volatile uint8_t looper_state = LOOPER_EMPTY;   // see LOOPER
 volatile bool looper_overdub = false;
@@ -1186,6 +1235,7 @@ void set_chord_source(uint8_t source);
 void set_chord_note_source(uint8_t i, uint8_t value);
 void harp_sample_start(uint8_t i);
 void chord_sample_start(uint8_t i);
+void chord_sample_glide(uint8_t i, float hz, uint16_t ms);
 const float harp_sample_level = 3.0f;    // a sample's loudness (0.2 RMS) against the strings' (string_level, 0.15 of a saw)
 const float chord_sample_level = 1.0f;   // and the chords'
 
@@ -2418,8 +2468,7 @@ void set_chord_voice_frequency(uint8_t i, int16_t current_note) {
 
     AudioNoInterrupts();
     chord_voice_note_freq[i] = note_freq;
-    chords_vibrato_lfo.frequency(chord_vibrato_base_freq + chord_vibrato_keytrack * current_chord_notes[0]);
-    chords_tremolo_lfo.frequency(chord_tremolo_base_freq + chord_tremolo_keytrack * current_chord_notes[0]);
+    chord_lfo_rates();
     // hord_vibrato_lfo_array[i]->frequency(chord_vibrato_base_freq);
     // chord_tremolo_lfo_array[i]->frequency(chord_tremolo_base_freq);
     chord_voice_filter_array[i]->frequency(note_freq * chord_filter_keytrack + chord_filter_base_freq);
@@ -2437,6 +2486,7 @@ void set_chord_voice_frequency(uint8_t i, int16_t current_note) {
       : log2f(note_freq / middle_freq) / 2.0f;
     uint16_t glide = (fingered_glide && !rythm_mode && !chord_legato) ? 0 : glide_length;   // struck afresh: there at once
     chord_freq_dc_array[i]->amplitude(glide_offset,glide);
+    chord_sample_glide(i, note_freq, glide);
     mpe_chord_note_change(i, 12.0f * log2f(note_freq), glide, current_note);
     // chord_voice_filter_array[i]->frequency(1*freq);
     AudioInterrupts();
@@ -2444,8 +2494,7 @@ void set_chord_voice_frequency(uint8_t i, int16_t current_note) {
     float note_freq = pow(2,chord_octave_change)*c_frequency/8 * temper_ratio(current_note+transpose_steps); //down one octave to let more possibilities with the shuffling array
     AudioNoInterrupts();
     chord_voice_note_freq[i] = note_freq;
-    chords_vibrato_lfo.frequency(chord_vibrato_base_freq + chord_vibrato_keytrack * current_chord_notes[0]);
-    chords_tremolo_lfo.frequency(chord_tremolo_base_freq + chord_tremolo_keytrack * current_chord_notes[0]);
+    chord_lfo_rates();
     // hord_vibrato_lfo_array[i]->frequency(chord_vibrato_base_freq);
     // chord_tremolo_lfo_array[i]->frequency(chord_tremolo_base_freq);
     chord_voice_filter_array[i]->frequency(note_freq * chord_filter_keytrack + chord_filter_base_freq);
@@ -2453,6 +2502,7 @@ void set_chord_voice_frequency(uint8_t i, int16_t current_note) {
     chord_osc_2_array[i]->frequency(osc_2_freq_multiplier * note_freq);
     chord_osc_3_array[i]->frequency(osc_3_freq_multiplier * note_freq);
     chord_freq_dc_array[i]->amplitude(0,0);
+    chord_sample_glide(i, note_freq, 0);
     mpe_chord_note_change(i, 12.0f * log2f(note_freq), 0, current_note);
     // chord_voice_filter_array[i]->frequency(1*freq);
     AudioInterrupts();
@@ -2469,7 +2519,6 @@ void set_chord_voice_frequency(uint8_t i, int16_t current_note) {
     queue_midi(true, chord_midi_note(current_note),chord_attack_velocity,mpe_chord_channel(i), chord_port);
     chord_started_notes[i]=chord_midi_note(current_note);
   }
-  if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(chord_voice_note_freq[i]);
   if (chord_envelope_array[i]->isActive() && !chord_voice_released[i]) {   // a chord change under a held chord
     looper_capture(LOOP_RETUNE, 12 + i, chord_voice_note_freq[i], 1, chord_started_notes[i], chord_attack_velocity);
   }
@@ -2656,9 +2705,51 @@ void harp_sample_start(uint8_t i) {
   harp_sample_array[i]->playFrequency(string_note_freq[i], 127);
 }
 
+// Glide on a sampled chord voice. The oscillators glide by their DC offset's ramp
+// (set_chord_voice_frequency); a sample has no input for it, so its pitch is moved from the loop
+// instead (chord_samples_glide), along the same straight line in octaves over the same glide time,
+// from wherever the last note left it, as the oscillators do: a barbershop swipe on the choir.
+struct chord_sample_glide_t { float from, to; uint32_t at; uint16_t ms; bool known; };   // in octaves (log2 Hz)
+chord_sample_glide_t chord_sample_glides[4] = {};
+
+static float chord_sample_octaves(uint8_t i) {
+  const chord_sample_glide_t &g = chord_sample_glides[i];
+  uint32_t gone = millis() - g.at;
+  if (g.ms == 0 || gone >= g.ms) return g.to;
+  return g.from + (g.to - g.from) * gone / g.ms;
+}
+
+// Voice i heads for hz over ms (0: there at once); from the loop or a chord timer's interrupt
+void chord_sample_glide(uint8_t i, float hz, uint16_t ms) {
+  if (i > 3 || hz <= 0) return;
+  chord_sample_glide_t &g = chord_sample_glides[i];
+  float to = log2f(hz);
+  g.from = g.known && ms ? chord_sample_octaves(i) : to;
+  g.to = to;
+  g.at = millis();
+  g.ms = g.known ? ms : 0;
+  g.known = true;
+  if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(exp2f(g.ms ? g.from : to));
+}
+
+// From loop(): a gliding sample on its way
+FLASHMEM void chord_samples_glide() {
+  for (uint8_t i = 0; i < 4; i++) {
+    noInterrupts();
+    chord_sample_glide_t &g = chord_sample_glides[i];
+    if (g.ms) {
+      float octaves = chord_sample_octaves(i);
+      if (millis() - g.at >= g.ms) g.ms = 0;
+      if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(exp2f(octaves));
+    }
+    interrupts();
+  }
+}
+
 void chord_sample_start(uint8_t i) {
   if (!chord_source_of[i]) return;
-  chord_sample_array[i]->playFrequency(chord_voice_note_freq[i], 127);
+  float hz = chord_sample_glides[i].known ? exp2f(chord_sample_octaves(i)) : chord_voice_note_freq[i];   // mid-glide: from where it is
+  chord_sample_array[i]->playFrequency(hz, 127);
   chord_sample_array[i]->amplitude(fminf(1, chord_voice_level[i] * chord_sample_level));
 }
 
@@ -2695,7 +2786,7 @@ void midi_in_tune_chord(uint8_t i) {
   chord_osc_2_array[i]->frequency(osc_2_freq_multiplier * f);
   chord_osc_3_array[i]->frequency(osc_3_freq_multiplier * f);
   chord_freq_dc_array[i]->amplitude(0, 0);
-  if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(f);
+  chord_sample_glide(i, f, 0);
   AudioInterrupts();
 }
 
@@ -2888,7 +2979,9 @@ void midi_in_settle() {
 // release_string, damp_string, the chords' note-ons and note-offs and set_chord_voice_frequency).
 // It plays them back through the voices MIDI in uses (midi_in_harp, midi_in_chord, marked looped),
 // so the minichord's own playing takes a voice back as it does from an incoming note, and the
-// looped notes go out over midi as they did when played.
+// looped notes go out over midi as they did when played. Harp drums' hits are kept too (LOOP_DRUM,
+// from drum_pad: the kit's voice and how hard), struck again on the kit as they come round, so a
+// beat played on the pads loops; quantize puts each on the grid.
 //
 // It is driven through setting 256, which is never saved as anything but 0: writing it does one
 // thing (looper_action: 1 record, 2 play, 3 stop, 4 clear, 5 overdub on or off, 6 the next step,
@@ -2928,10 +3021,10 @@ const int16_t looper_adress = 256;
 struct loop_event {
   uint32_t t;            // ms from the loop's start
   uint16_t cycle;        // the pass it was captured on
-  uint8_t kind;          // LOOP_START, LOOP_RELEASE or LOOP_RETUNE
-  uint8_t voice;         // as recorded: 0-11 a harp string, 12-15 a chord voice
+  uint8_t kind;          // LOOP_START, LOOP_RELEASE, LOOP_RETUNE or LOOP_DRUM
+  uint8_t voice;         // as recorded: 0-11 a harp string, 12-15 a chord voice; a LOOP_DRUM's the kit's voice
   uint8_t midi_note;
-  uint8_t midi_velocity;
+  uint8_t midi_velocity; // a LOOP_DRUM's: how hard it was struck, 1-127
   float freq;
   float firmness;        // as heard: (1 - firmness) squared is how much softer than full it played
 };
@@ -2991,7 +3084,8 @@ void looper_capture(uint8_t kind, uint8_t voice, float freq, float firmness, uin
   // the last 100 ms of a count-in: a note reaching for the downbeat starts the loop
   if (state == LOOPER_COUNTIN && (int32_t)(millis() - loop_start_ms) > -100) state = LOOPER_RECORDING;
   if (state != LOOPER_RECORDING && !(state == LOOPER_PLAYING && looper_overdub)) return;
-  if (kind == LOOP_START) loop_open[voice] = true;
+  if (kind == LOOP_DRUM) {}                           // a hit: nothing held, nothing to let go
+  else if (kind == LOOP_START) loop_open[voice] = true;
   else if (!loop_open[voice]) return;                  // let go of or retuned, but started before the recording
   else if (kind == LOOP_RELEASE) loop_open[voice] = false;
   uint32_t elapsed = millis() - loop_start_ms;
@@ -3002,12 +3096,16 @@ void looper_capture(uint8_t kind, uint8_t voice, float freq, float firmness, uin
     e.t = elapsed % loop_length_ms; e.cycle = elapsed / loop_length_ms;
     if (looper_quantize && looper_timed()) {   // an overdub's note in time as it comes; its let-go with it
       int32_t t = e.t;
-      if (kind == LOOP_START) {
-        int32_t snapped = looper_grid_snap(t);
-        if (snapped >= (int32_t)loop_length_ms) snapped -= loop_length_ms;   // the next pass's downbeat
-        loop_quantize_shift[voice] = snapped - t;
+      if (kind == LOOP_DRUM) {
+        t = looper_grid_snap(t);                       // a hit on its own: to the grid, no length to keep
+      } else {
+        if (kind == LOOP_START) {
+          int32_t snapped = looper_grid_snap(t);
+          if (snapped >= (int32_t)loop_length_ms) snapped -= loop_length_ms;   // the next pass's downbeat
+          loop_quantize_shift[voice] = snapped - t;
+        }
+        t += loop_quantize_shift[voice];
       }
-      t += loop_quantize_shift[voice];
       while (t < 0) t += loop_length_ms;
       while (t >= (int32_t)loop_length_ms) t -= loop_length_ms;
       e.t = t;
@@ -3025,6 +3123,12 @@ FLASHMEM static void loop_quantize_pass(int32_t length) {
   for (uint16_t i = 0; i < loop_event_count; i++) {
     loop_event &e = loop_events[i];
     int32_t t = e.t;
+    if (e.kind == LOOP_DRUM) {                         // a hit: to the grid, the drum's voice no string's
+      t = looper_grid_snap(t);
+      if (t >= length) t -= length;
+      e.t = t;
+      continue;
+    }
     if (e.kind == LOOP_START) {
       int32_t snapped = looper_grid_snap(t);
       if (snapped >= length) snapped -= length;
@@ -3073,6 +3177,10 @@ static void loop_voice_release(bool harp, uint8_t v) {
 }
 
 static void loop_play_event(const loop_event &e) {
+  if (e.kind == LOOP_DRUM) {                           // the kit, as hard as it was struck, where it was (no humanize again)
+    drum_strike(e.voice, e.midi_velocity, false, false);
+    return;
+  }
   bool harp = e.voice < 12;
   midi_in_voice *voices = harp ? midi_in_harp : midi_in_chord;
   int8_t v = loop_voice[e.voice];
@@ -5102,7 +5210,8 @@ static const drum_kit_t *drum_kit_wanted() {
   return &drum_kits[min(k, (uint8_t)(drum_kit_count - 1))];
 }
 
-// A tabla's dayan is tuned to Sa, the key (the transposition: C unless it's been moved). A dayan only
+// A tabla's dayan is tuned to Sa, the key: the chord key signature's root and the transpose, the Sa
+// the drone and the harp's scales take, so dayan and tanpura agree in any key. A dayan only
 // stretches a couple of semitones from the pitch its size and skin give it, so where Sa is further than
 // that from the one recorded, it's tuned to Pa, the fifth, or Ma, the fourth, as players do: in twelve
 // notes that keeps every key within two semitones of the recording, where the strokes still sound
@@ -5111,10 +5220,11 @@ static const drum_kit_t *drum_kit_wanted() {
 static float dayan_tuning(float own_hz) {
   if (own_hz <= 0) return 0;
   const int16_t fifth = (int16_t)lroundf(EDO * 0.5849625f);   // log2(3/2) of an octave, in steps
-  const int16_t choices[3] = {transpose_steps, (int16_t)(transpose_steps + fifth), (int16_t)(transpose_steps + EDO - fifth)};
+  const int16_t sa = scale_root_offsets[key_signature_selection] + transpose_steps;
+  const int16_t choices[3] = {sa, (int16_t)(sa + fifth), (int16_t)(sa + EDO - fifth)};
   float best = 0, best_cents = 1e9f;
   for (uint8_t i = 0; i < 3; i++) {
-    float hz = c_frequency * 2 * temper_ratio(choices[i]);   // from C4
+    float hz = c_frequency * 2 * tempered_ratio(choices[i]);   // from C4, as the drone's (purity has no chord to pull it to)
     while (hz > own_hz * 1.4142f) hz *= 0.5f;
     while (hz < own_hz * 0.7071f) hz *= 2.0f;
     float cents = fabsf(1200.0f * log2f(hz / own_hz));
@@ -5129,7 +5239,7 @@ static float dayan_tuning(float own_hz) {
 // sound is include/tanpura.h, rendered with the drums). Sa is the root the harp's scales take from
 // the key, the chord key signature's, and the transpose, at its tempered pitch (purity leaves it
 // alone, it has no chord), folded into the register chosen; the strings above and below it are
-// pure, as a tanpura is tuned. (The dayan keeps to the transpose alone.)
+// pure, as a tanpura is tuned. The dayan takes the same Sa (dayan_tuning).
 uint8_t drone_mode = 0;       // 0 off, 1-4 a tanpura with Pa, Ma, Ni or Sa first, 5 a shruti box
 uint8_t drone_register = 1;   // Sa from 0 E2, 1 A2, 2 D3, the octave up from there
 float drone_sa_hz() {
@@ -5163,11 +5273,12 @@ void drone_watch() {
   AudioInterrupts();
 }
 
-// A hit, from the rhythm's timer or the loop: velocity 1-127 as written (or played)
-void drum_strike(uint8_t v, uint8_t velocity, bool written = true) {
+// A hit, from the rhythm's timer or the loop: velocity 1-127 as written (or played); loose, it takes
+// the humanize (a looped hit was already played by a human)
+void drum_strike(uint8_t v, uint8_t velocity, bool written, bool loose) {
   float vel = written ? (127 - (127 - velocity) * acc_accents / 100.0f) / 127.0f : velocity / 127.0f;
   uint32_t delay = 0;
-  if (drum_humanize) {
+  if (drum_humanize && loose) {
     delay = drum_rand() % (uint32_t)(drum_humanize * 0.15f * AUDIO_SAMPLE_RATE_EXACT / 1000.0f + 1);
     vel *= 1.0f - (drum_rand() % 1000) / 1000.0f * drum_humanize * 0.002f;
   }
@@ -5200,36 +5311,78 @@ static void drum_countin_window(double t0, double t1) {
   }
 }
 
-// What the drums play from t0 to t1, within one section, as acc_section_window has it
-static void drum_section_window(double t0, double t1) {
-  if (!drums_on || (acc_follow && !acc_hands)) return;
-  const drum_groove_t &g = *drum_groove_playing();
-  if (acc_fill_on && t0 >= acc_fill_from && t0 < acc_fill_to) {
-    double bar = acc_fill_to - acc_bar_ticks();
-    for (uint16_t e = 0; e < g.fill_count; e++) {
-      const drum_event_t &ev = g.fill[e];
-      double at = acc_swung((int64_t)bar + ev.at, g.swing_unit);
-      if (at >= t0 && at < t1 && at >= acc_fill_from) drum_strike(ev.voice, ev.velocity);
+// Tabla laya (377): a theka is written a bol a step, four (teental) or two (kehrwa, dadra) to the
+// beat, which puts medium teental at 30 bpm and slow (vilambit) below the tempo's floor. Stretched,
+// the tempo counts bols instead: one a beat (teental's sixteen matras over four bars, kehrwa's eight
+// over two), two, or four. How many times longer than written the groove plays: 1 for the rest.
+static double drum_stretch(const drum_groove_t &g) {
+  if (!g.bol_steps || !tabla_laya) return 1;
+  static const uint8_t per_beat[4] = {0, 1, 2, 4};
+  return (double)g.bol_steps / per_beat[min(tabla_laya, (uint8_t)3)];
+}
+
+// The groove's own bars from t0 to t1. A theka stretched over several bars starts again (sam) on the
+// bar line its last fill, a tihai, landed on, as a tabla player's does.
+static void drum_groove_window(const drum_groove_t &g, double stretch, double t0, double t1) {
+  if (stretch == 1) {
+    int64_t origin = (int64_t)acc_origin;
+    for (uint16_t e = 0; e < g.count; e++) {
+      const drum_event_t &ev = g.events[e];
+      int64_t n = (int64_t)floor((t0 - origin - ev.at) / g.length);
+      for (int64_t m = n; m <= n + 1; m++) {
+        int64_t t = origin + ev.at + m * g.length;
+        if (t < origin) continue;
+        double at = acc_swung(t, g.swing_unit);
+        if (at >= t0 && at < t1) drum_strike(ev.voice, ev.velocity);
+      }
     }
     return;
   }
-  int64_t origin = (int64_t)acc_origin;
+  double origin = drum_landed >= acc_origin && drum_landed <= t0 ? drum_landed : acc_origin;
+  double length = g.length * stretch;
   for (uint16_t e = 0; e < g.count; e++) {
     const drum_event_t &ev = g.events[e];
-    int64_t n = (int64_t)floor((t0 - origin - ev.at) / g.length);
+    double from = ev.at * stretch;
+    int64_t n = (int64_t)floor((t0 - origin - from) / length);
     for (int64_t m = n; m <= n + 1; m++) {
-      int64_t t = origin + ev.at + m * g.length;
+      double t = origin + from + m * length;
       if (t < origin) continue;
-      double at = acc_swung(t, g.swing_unit);
+      double at = acc_swung(llround(t), g.swing_unit);
       if (at >= t0 && at < t1) drum_strike(ev.voice, ev.velocity);
     }
   }
 }
 
-// The harp's strings as the kit's first twelve voices, low string the kick, as firmly as touched
+// What the drums play from t0 to t1, within one section, as acc_section_window has it
+static void drum_section_window(double t0, double t1) {
+  if (!drums_on || (acc_follow && !acc_hands)) return;
+  const drum_groove_t &g = *drum_groove_playing();
+  double stretch = drum_stretch(g);
+  if (acc_fill_on && t0 >= acc_fill_from && t0 < acc_fill_to) {
+    double bar = acc_fill_to - acc_bar_ticks();
+    uint16_t own = 0;   // stretched: the theka plays on up to the fill's half, then the fill's bols as written
+    if (stretch != 1) {
+      own = (g.beats_per_bar - max(g.beats_per_bar / 2, 1)) * ACC_BEAT;
+      if (t0 < bar + own) drum_groove_window(g, stretch, t0, min(t1, bar + own));
+    }
+    for (uint16_t e = 0; e < g.fill_count; e++) {
+      const drum_event_t &ev = g.fill[e];
+      if (ev.at < own) continue;
+      double at = acc_swung((int64_t)bar + ev.at, g.swing_unit);
+      if (at >= t0 && at < t1 && at >= acc_fill_from) drum_strike(ev.voice, ev.velocity);
+    }
+    return;
+  }
+  drum_groove_window(g, stretch, t0, t1);
+}
+
+// The harp's strings as the kit's first twelve voices, low string the kick, as firmly as touched;
+// the looper records the hit
 void drum_pad(uint8_t string, int16_t strength) {
   float firm = strength > 0 ? touch_firmness(strength) : 1.0f;
-  drum_strike(string, (uint8_t)lroundf(127 * (0.35f + 0.65f * firm)), false);
+  uint8_t velocity = (uint8_t)lroundf(127 * (0.35f + 0.65f * firm));
+  drum_strike(string, velocity, false);
+  looper_capture(LOOP_DRUM, string, 0, 0, 0, velocity);
 }
 
 // From the loop: the kit the groove (or the setting) wants, and the MIDI notes to end
@@ -5257,6 +5410,7 @@ static void acc_fill_finish() {
     drum_strike(DRUM_CYMBAL, 118);
     drum_strike(DRUM_KICK, 118);
   }
+  drum_landed = acc_fill_to;   // sam, for a stretched theka
   if (acc_ending) {
     // the chord on the bar line, every part that plays struck together and left ringing
     static const acc_event_t last[4] = {{0, 0, ACC_ROOT, 0, 0, 112, 0}, {0, 1, ACC_V2, 0, 0, 100, 0}, {0, 2, ACC_V3, 0, 0, 100, 0}, {0, 3, ACC_V4, 0, 0, 100, 0}};
@@ -5395,6 +5549,7 @@ void acc_tick() {
     acc_phase_error = 0;
     // the pattern from its start on the press: the intro if it hasn't finished, else the main part
     acc_origin = acc_intro ? acc_bar_ticks() : 0;
+    drum_landed = -1;
     if (acc_intro) { acc_fill_from = 0; acc_fill_to = acc_origin; }
     else if (!acc_ending) acc_fill_on = false;
     acc_rest_to = 0;
@@ -5446,6 +5601,7 @@ FLASHMEM void acc_begin() {
   acc_countin_to = count_in ? acc_bar_ticks() : 0;   // a bar of sticks first, if asked
   acc_fill_from = acc_countin_to;
   acc_fill_to = acc_origin = acc_countin_to + (rhythm_intro ? acc_bar_ticks() : 0);
+  drum_landed = -1;
   interrupts();
   stop_chord_voices(0xF & ~acc_held_mask());   // what was ringing gives way to the parts
   Serial.print("Rhythm style: ");
@@ -5569,6 +5725,7 @@ FLASHMEM void acc_midi_clock() {
     acc_pos = acc_clock_restart ? 0 : ceil(acc_pos / ACC_BEAT) * ACC_BEAT;
     if (acc_clock_restart) {   // the pattern from its start (the intro's bar first if it is still to come)
       acc_origin = acc_intro ? acc_bar_ticks() : 0;
+      drum_landed = -1;
       if (acc_intro) { acc_fill_from = 0; acc_fill_to = acc_origin; }
       else if (!acc_ending) acc_fill_on = false;
       acc_rest_to = 0;
@@ -6224,6 +6381,7 @@ void load_config(int bank_number) {
   harp_pot.setup(harp_volume_sysex, 100, current_sysex_parameters[harp_pot_alternate_control], current_sysex_parameters[harp_pot_alternate_range], current_sysex_parameters,current_sysex_parameters[harp_pot_alternate_storage],apply_audio_parameter,harp_pot_alternate_storage);
   mod_pot.setup(current_sysex_parameters[mod_pot_main_control], current_sysex_parameters[mod_pot_main_range], current_sysex_parameters[mod_pot_alternate_control], current_sysex_parameters[mod_pot_alternate_range], current_sysex_parameters,current_sysex_parameters[mod_pot_alternate_storage],apply_audio_parameter,mod_pot_alternate_storage);
   Serial.println("pot setup done");
+  parameters_loading = true;   // the rates set at once (speed ramp)
   for (int i = 1; i < parameter_size; i++) {
     // The knobs' alternate defaults (4-6) are set without the force_update() their setting
     // runs: it brought each knob's target up to date mid-load, only for the force_updates
@@ -6233,6 +6391,7 @@ void load_config(int bank_number) {
     else if (i == 6) mod_pot.set_alternate_default(current_sysex_parameters[i]);
     else apply_audio_parameter(i, current_sysex_parameters[i]);
   }
+  parameters_loading = false;
   if (sysex_controler_connected) {
     control_command(0, 0); // push state to a connected remote controller
   }
@@ -6706,9 +6865,11 @@ bool string_held(uint8_t i) {
 
 // ---- hammer-on ----
 // A strum lands on each string beside one plucked a moment before, still held, so only a string
-// that has rung this long is taken over: longer than a slow strum's 150 ms from string to string.
-// A slide goes on from there, since the string it moves is the one plucked long ago.
-const uint16_t hammer_after_ms = 180;
+// that has rung hammer_after_ms (hammer-on time, 376; 180 unless set) is taken over: longer than a
+// slow strum's 150 ms from string to string. Shorter, a grace note or a trill can follow its string
+// at once (a piper's cut, an oud's trill want 40-60 ms), and a slow strum's strings beside one held
+// start to be moved instead. A slide goes on from there, since the string it moves is the one
+// plucked long ago.
 
 bool hammer_active() {
   return hammer_on && !harp_drums && !harp_pluck_on_lift && !harp_ribbon_active() && !harp_positions_active() && harp_plate != 2;
@@ -9222,6 +9383,8 @@ void loop() {
   phone_update();
   drums_update();
   samples_update();
+  chord_samples_glide();
+  lfo_rates_update();
   // The only point at which this firmware transmits MIDI. Must stay last, and must
   // stay in loop() -- see the MIDI OUTPUT QUEUE comment above.
   mpe_update_glide();

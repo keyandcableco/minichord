@@ -119,6 +119,10 @@ public:
     if (!primask) __enable_irq();
   }
   void level(float g) { gain = g; }
+  // The reverb's share of each, out of output 2 (mono) into the reverb's free input: they come out
+  // after the reverb, so without it the drums and the drone stay dry beside whatever it fills
+  void drumReverb(float s) { send_drums = s; }
+  void droneReverb(float s) { send_drone = s; }
   Tanpura drone;   // rendered here with the drums, at its own level (see tanpura.h)
   bool sounding() { for (uint8_t i = 0; i < DRUM_VOICES; i++) if (voice[i].active) return true; return head != tail || waiting; }
 
@@ -139,6 +143,8 @@ public:
     if (!any && !drone.active()) return;
     audio_block_t *l = allocate(), *r = allocate();
     if (!l || !r) { if (l) release(l); if (r) release(r); return; }
+    const float sd = send_drums * 0.5f, st = send_drone * 0.5f;   // each side's half of the mono send
+    audio_block_t *v = (sd > 0 || st > 0) ? allocate() : nullptr;
     float out_l[AUDIO_BLOCK_SAMPLES] = {0}, out_r[AUDIO_BLOCK_SAMPLES] = {0};
     const float inv_fs = 1.0f / AUDIO_SAMPLE_RATE_EXACT;
     float x[AUDIO_BLOCK_SAMPLES];
@@ -230,8 +236,11 @@ public:
         hold_count = (hold_count + 1) % hold;
       }
       if (crush_step > 0) { a = roundf(a / crush_step) * crush_step; b = roundf(b / crush_step) * crush_step; }
-      a = a / (1.0f + fabsf(a)) * 1.6f * gain + drone_l[n];
-      b = b / (1.0f + fabsf(b)) * 1.6f * gain + drone_r[n];
+      a = a / (1.0f + fabsf(a)) * 1.6f * gain;
+      b = b / (1.0f + fabsf(b)) * 1.6f * gain;
+      if (v) v->data[n] = (int16_t)constrain(((a + b) * sd + (drone_l[n] + drone_r[n]) * st) * g, -32767.0f, 32767.0f);
+      a += drone_l[n];
+      b += drone_r[n];
       l->data[n] = (int16_t)constrain(a * g, -32767.0f, 32767.0f);
       r->data[n] = (int16_t)constrain(b * g, -32767.0f, 32767.0f);
     }
@@ -239,6 +248,7 @@ public:
     transmit(r, 1);
     release(l);
     release(r);
+    if (v) { transmit(v, 2); release(v); }
   }
 
 private:
@@ -301,6 +311,7 @@ private:
   uint8_t waiting = 0;
   uint32_t noise = 22222;
   float gain = 0.7f, choke_damp = 1.0f, crush_step = 0, held_l = 0, held_r = 0;
+  float send_drums = 0, send_drone = 0;   // drum reverb (378), drone reverb (379)
   uint8_t hold_count = 0;
 };
 
