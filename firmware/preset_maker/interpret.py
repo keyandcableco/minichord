@@ -685,8 +685,6 @@ for words, label, moves, off in (
         ("drum count in, sticks count in, count in with sticks, count the band in, rhythm count in, count off with sticks",
          "a count-in of sticks before the rhythm",
          (EXACT("count_in", 1),), (EXACT("count_in", 0),)),
-        ("harp drums, finger drumming, finger drums, drum pads, harp as drum pads, strings as drum pads, tap the drums on the harp",
-         "the harp plays the drums", (EXACT("harp_drums", 1),), (EXACT("harp_drums", 0),)),
         ("loose drums, humanize the drums, humanized drums, sloppy drums, human drummer, drunk drummer, behind the beat",
          "loose drums (humanize)", (EXACT("drums", 1), EXACT("drum_humanize", 50)), (EXACT("drum_humanize", 0),)),
         ("tight drums, drums on the grid, quantized drums, robot drums", "drums on the grid", (EXACT("drum_humanize", 0),), None),
@@ -695,6 +693,14 @@ for words, label, moves, off in (
         ("louder drums, drums up, more drums, turn up the drums", "louder drums", (SET("drum_level", 100),), None),
         ("quieter drums, drums down, softer drums, turn down the drums, less drums", "quieter drums", (SET("drum_level", 35),), None)):
     add(words, "setting", label, home="global", moves=moves, off=off, note=DRUM_NOTE)
+# The harp as drum pads needs nothing else: not rhythm mode, not the drums on. While it is on the strings
+# play no notes, and the ribbon, the zipper plate's positions, hammer-on and palm mute rest until it's off.
+add("harp drums, finger drumming, finger drums, drum pads, harp as drum pads, strings as drum pads, tap the drums on the harp, "
+    "harp drum pads, drum pad harp, play drums on the harp, drums on the harp, harp plays the drums",
+    "setting", "the harp plays the drums", home="global",
+    moves=(EXACT("harp_drums", 1), IFZERO("drum_level", 70)), off=(EXACT("harp_drums", 0),),
+    note="the harp's strings are the kit's pads at any time, rhythm mode or not; while on they play no notes, "
+         "and the ribbon, the zipper plate, hammer-on and palm mute wait until it's off")
 # The looper in time (firmware 46): quantize, count-in, click and its level
 LOOPER_NOTE = "the looper is worked live: the double tap, minicontrol's looper buttons, or control changes"
 for words, label, value in (

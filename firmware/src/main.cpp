@@ -6227,13 +6227,14 @@ const uint8_t harp_landing_ms = 4;           // a finger pressing down reads wea
 
 const uint8_t harp_position_count = 24;
 
-// The ribbon reads any strip but the wheel, which is not a line.
+// The ribbon reads any strip but the wheel, which is not a line. Harp drums (343) take the pads back
+// from the ribbon, the zipper plates, the hammer and the palm: each pad is a drum, whatever plays the strings.
 bool harp_ribbon_active() {
-  return harp_ribbon && harp_plate != 2;
+  return harp_ribbon && harp_plate != 2 && !harp_drums;
 }
 
 bool harp_positions_active() {
-  return harp_plate == 1 && !harp_ribbon_active() && (chromatic_harp_mode || scalar_harp_selection != 0);
+  return harp_plate == 1 && !harp_drums && !harp_ribbon_active() && (chromatic_harp_mode || scalar_harp_selection != 0);
 }
 
 // Whether voice i has a finger on it: on a zipper plate or the ribbon a touch
@@ -6249,7 +6250,7 @@ bool string_held(uint8_t i) {
 const uint16_t hammer_after_ms = 180;
 
 bool hammer_active() {
-  return hammer_on && !harp_pluck_on_lift && !harp_ribbon_active() && !harp_positions_active() && harp_plate != 2;
+  return hammer_on && !harp_drums && !harp_pluck_on_lift && !harp_ribbon_active() && !harp_positions_active() && harp_plate != 2;
 }
 
 // String v moves to pad p's note without a pluck. Over midi the new note starts before the old one
@@ -6907,7 +6908,7 @@ void handle_harp() {
     if (down && !pad_was_down[i]) pad_landed[i] = now;
     pad_was_down[i] = down;
   }
-  if (palm_mute_pads) {
+  if (palm_mute_pads && !harp_drums) {   // pads hit together are a flam, not a palm
     static bool palm_down = false;
     static uint32_t palm_landed = 0;
     // Plucking on lift, fingers placed on strings are a chord waiting to be
@@ -6963,7 +6964,8 @@ void handle_harp() {
   for (int i = 0; i < 12 && stock; i++) {
     int value = harp_array[i].read_transition();
     if (harp_drums) {   // the strings are the kit's pads: a hit on the touch, nothing pitched
-      if (value == 2 && !string_palmed[i]) drum_pad(i, pad_strength[i]);
+      string_palmed[i] = false;   // a palm from before the drums came on
+      if (value == 2) drum_pad(i, pad_strength[i]);
       continue;
     }
     if (value == 2 && string_palmed[i]) {
