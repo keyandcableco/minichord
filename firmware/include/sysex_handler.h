@@ -33,6 +33,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 349:
         modifier_step_choice=value; apply_modifier_step();
         break;
+      case 358:
+        purity=value; rebuild_purity(); retune_active_voices();
+        break;
       case 109:
         { int tenths = (value == 0) ? 4400 : constrain(value, 4320, 4460); float tuned_c_frequency = 130.81 * (tenths / 4400.0); if (tuned_c_frequency != c_frequency) { c_frequency = tuned_c_frequency; retune_active_voices(); } }
         break;
@@ -1182,6 +1185,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 30: lo=0; hi=12; return true;
       case 237: lo=0; hi=12; return true;
       case 349: lo=0; hi=2; return true;
+      case 358: lo=0; hi=100; return true;
       case 109: lo=4320; hi=4460; return true;
       case 106: lo=1; hi=16; return true;
       case 107: lo=1; hi=16; return true;

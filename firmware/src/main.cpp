@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=65; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357)
+int version_ID=66; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -336,13 +336,36 @@ uint8_t temperament_selection = 0;
 
 // note number to frequency ratio. In the twelve-note tunings the note is nudged
 // by a few cents; in 19 and 31 the octave is simply divided differently.
-static inline float temper_ratio(float note) {
+static inline float tempered_ratio(float note) {
   if (edo_index == 0) {
     int n = (int)floorf(note);
     int pc = ((n % 12) + 12) % 12;
     return powf(2.0f, (note + temperament_profiles[temperament_selection].cents[pc] / 100.0f) / 12.0f);
   }
   return powf(2.0f, note / (float)EDO);
+}
+
+// Purity (358): every note is drawn from its tempered pitch toward the just
+// interval it makes with the chord's root, as far as purity says, so a held
+// chord goes from beating to still under a knob or a hand: thirds to 5/4 and
+// 6/5, fifths to 3/2, a dominant's seventh to 7/4, the neutral third of 31 to
+// 11/9. The root stays where the temperament puts it, so the tuning never
+// drifts from chord to chord, as tuning everything to the last chord would.
+// The harp is drawn toward the same root, so it sits in the chord. A step
+// that is no simple ratio within reach (25 cents, 40 for a dominant's 7/4)
+// keeps its tempered pitch. rebuild_purity() makes purity_ratio[], one factor
+// per step above the root, on a change of chord, purity or tuning.
+uint8_t purity = 0;                // 0-100
+int16_t purity_root_pc = 0;        // the chord root, transposed, in steps of the division
+float purity_ratio[31] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+void rebuild_purity();
+void purity_follow_chord();
+
+static inline float temper_ratio(float note) {
+  float r = tempered_ratio(note);
+  if (purity == 0) return r;
+  int n = (int)floorf(note);
+  return r * purity_ratio[(((n - purity_root_pc) % EDO) + EDO) % EDO];
 }
 
 // a minor third in the live temperament, for the relative-minor harp modes
@@ -2315,7 +2338,7 @@ void set_chord_voice_frequency(uint8_t i, int16_t current_note) {
     // steps; anywhere else the offset has to come from the real ratio, or every
     // glide voice lands on an equal-tempered pitch (and in 19 or 31 steps, on
     // an unrelated one, since a step is read as a semitone).
-    float glide_offset = (temperament_selection == 0)
+    float glide_offset = (temperament_selection == 0 && purity == 0)
       ? note_delta/24.0
       : log2f(note_freq / middle_freq) / 2.0f;
     uint16_t glide = (fingered_glide && !rythm_mode && !chord_legato) ? 0 : glide_length;   // struck afresh: there at once
@@ -4326,6 +4349,50 @@ enum ChordType {
   CHORD_JUST_AUGMENTED, CHORD_SUPERMAJOR_SEVENTH,
   CHORD_UNKNOWN
 };
+
+ChordType get_chord_type(uint8_t (*chord)[7]);
+
+// The just intervals purity draws toward, simplest first: the first within
+// reach of a tempered step is the one it takes.
+const float purity_just[][2] = {
+  {1, 1}, {3, 2}, {4, 3}, {5, 4}, {6, 5}, {5, 3}, {8, 5}, {9, 8}, {15, 8}, {9, 5}, {16, 15},
+  {7, 4}, {7, 6}, {9, 7}, {7, 5}, {10, 7}, {11, 9}, {11, 8}, {12, 7}, {16, 9}, {18, 11},
+  {11, 6}, {12, 11}, {10, 9}, {45, 32}
+};
+const float purity_reach = 25;          // cents from a tempered step to a just interval it may take
+const float purity_seventh_reach = 40;  // ...and for a dominant's seventh, which takes 7/4 first
+
+FLASHMEM void rebuild_purity() {
+  ChordType type = get_chord_type(current_chord);
+  bool dominant = type == CHORD_SEVENTH || type == CHORD_HARMONIC_7TH || type == CHORD_SEVENTH_SUS
+                  || type == CHORD_HARMONIC_NINTH || type == CHORD_OTONAL_HEXAD;
+  float root = log2f(tempered_ratio(purity_root_pc));
+  for (uint8_t k = 0; k < EDO; k++) {
+    float cents = 1200.0f * (log2f(tempered_ratio(purity_root_pc + k)) - root);
+    cents -= 1200.0f * floorf(cents / 1200.0f);
+    float correction = 0;
+    float seventh = 1200.0f * log2f(7.0f / 4.0f);
+    if (dominant && fabsf(cents - seventh) <= purity_seventh_reach) {
+      correction = seventh - cents;
+    } else {
+      for (const auto &j : purity_just) {
+        float just = 1200.0f * log2f(j[0] / j[1]);
+        float d = just - cents;
+        if (fabsf(d) <= purity_reach) { correction = d; break; }
+        if (fabsf(d + 1200) <= purity_reach) { correction = d + 1200; break; }   // just under the octave above
+      }
+    }
+    purity_ratio[k] = exp2f(purity / 100.0f * correction / 1200.0f);
+  }
+}
+
+// The chord being played gives the root; called as a chord changes.
+void purity_follow_chord() {
+  int16_t root = get_root_button(key_signature_selection, chord_frame_shift, fundamental);
+  if (chord_context_sharp) root += flat_button_modifier ? -modifier_step : modifier_step;
+  purity_root_pc = (((root + transpose_steps) % EDO) + EDO) % EDO;
+  if (purity > 0) rebuild_purity();
+}
 
 ChordType get_chord_type(uint8_t (*chord)[7]) {
   if (chord == &major)       return CHORD_MAJOR;
@@ -7642,6 +7709,7 @@ void update_chord_notes() {
   if (button_pushed) {
     chord_context_sharp = sharp_active;
     chord_context_slashed = slash_chord;
+    purity_follow_chord();
     inversion_repress();
     // A chord change keeps the cantus when the new chord has its note, the way
     // a singer holds a common tone, and lets it go otherwise.
@@ -8154,6 +8222,7 @@ FLASHMEM void apply_temperament(uint8_t t) {
   rebuild_generator_scale();   // its generator counts steps of the new division
   rebuild_custom_scale();      // and the custom scale's degrees are steps of it too
   rebuild_maqam();
+  purity_follow_chord();       // the root and the just steps, in the new division
   memcpy(major, edo_major[edo_index], 7);
   memcpy(minor, edo_minor[edo_index], 7);
   memcpy(maj_sixth, edo_maj_sixth[edo_index], 7);
