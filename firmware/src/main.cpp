@@ -8627,7 +8627,9 @@ FLASHMEM void phone_deck_action(int16_t action) {
 // A string the strum plucks: as a finger lifting would, so it rings out by itself
 static void phone_strum_pluck(uint8_t i) {
   if (harp_array[i].read_value() || midi_in_harp[i].owned) return;   // a finger on it, or a note sent in
-  if (harp_voice_position[i] != i && !harp_ribbon_active() && !harp_positions_active()) {   // a hammer had moved it
+  // the ribbon's and the zipper's voices are fingers, not strings, and harp drums have no notes: it rests
+  if (harp_drums || harp_ribbon_active() || harp_positions_active()) return;
+  if (harp_voice_position[i] != i) {   // a hammer had moved it
     harp_voice_position[i] = i;
     current_harp_notes[i] = calculate_note_harp(i, chord_context_slashed, chord_context_sharp);
   }

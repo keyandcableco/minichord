@@ -1760,6 +1760,8 @@ class Interpreter:
         for clause in self._clauses(normalise(text)):
             self._clause(clause)
         self._say_unheard()
+        if not self.profile:
+            self.later += conflict_notes(self.params, self.selectors, start, self.state, self.setting_name)
         self.result.notes = list(dict.fromkeys(self.result.notes + self.later))
         color = self.color if self.color is not None else (None if self.profile else self.hue)
         if color is not None and self.result.understood and (first or self.color is not None):
@@ -2294,6 +2296,52 @@ def print_vocabulary():
     print("otherwise it goes where it usually belongs, or to both.")
 
 
+
+def conflict_notes(params, sel, start, state, name):
+    """The CONFLICTS rows the change from start to state brought about, as notes"""
+    def target(a):
+        if isinstance(a, dict):
+            t = int(state.get(a["at"], 0) or 0)
+            return t if t in params else None
+        return a
+
+    def holds(term):
+        a, op, b = term
+        a = target(a)
+        if a is None:
+            return False
+        if op in ("selector", "!selector"):
+            return (a in sel) == (op == "selector")
+        if op in ("sweepable", "!sweepable"):
+            return (params[a].get("controls") == "all") == (op == "sweepable")
+        x = state.get(a, 0)
+        if isinstance(b, dict):
+            b = state.get(b["value"], 0) if "value" in b else [state.get(v, 0) for v in b["values"]]
+        if op == "==": return x == b
+        if op == "!=": return x != b
+        if op == ">": return x > b
+        if op == "<": return x < b
+        if op == "in": return x in b
+        return x not in b
+
+    notes = []
+    for row in CONFLICTS:
+        about = [target(a) for a in row["about"]]
+        if not any(a is not None and state.get(a) != start.get(a) for a in about):
+            continue
+        if not all(holds(t) for t in row["when"]):
+            continue
+        note = row["note"]
+        at = next((t[0] for t in row["when"] if isinstance(t[0], dict)), None) or \
+             next((a for a in row["about"] if isinstance(a, dict)), None)
+        if "{target}" in note:
+            t = target(at) if at is not None else int(state.get(row["when"][0][0], 0) or 0)
+            if t not in params:
+                continue
+            note = note.replace("{target}", name(t))
+        notes.append(note)
+    return notes
+
 def export_data(params, version):
     """Everything describe.js needs, from this file and the firmware: the one source for both"""
     def moves(m):
@@ -2306,7 +2354,7 @@ def export_data(params, version):
                                                  "default_value", "controls", "follows_target",
                                                  "introduction_version")}
                    for a, p in params.items()},
-        "selectors": sorted(selectors()),
+        "selectors": sorted(selectors()), "conflicts": CONFLICTS,
         "vocabulary": [{"words": list(e.words), "kind": e.kind, "label": e.label, "moves": moves(e.moves),
                         "off": moves(e.off), "opposite": e.opposite, "home": e.home, "hue": e.hue, "note": e.note,
                         "base": e.base, "chords": e.chords, "harp": e.harp, "both": e.both}
@@ -2330,6 +2378,115 @@ def export_data(params, version):
         "every_note": EVERY_NOTE, "note_voices_note": NOTE_VOICES_NOTE,
         "note_patterns": [list(p) for p in NOTE_PATTERNS], "note_split": NOTE_SPLIT, "note_every": NOTE_EVERY,
     }
+
+
+# ---- settings that undo one another ----
+# Combinations where one setting is silent, or only half works, because of another (from the firmware's
+# own code: the 2026-10-11 audit). Checked on the finished preset: a note when the description changed
+# one of a row's "about" settings and every "when" term holds. A term is [A, op, B]: A an address, or
+# {"at": k} the address setting k holds (a knob's or hover's target; false when unassigned); B a value,
+# a list, {"value": a} the value at a, or {"values": [a, ...]} theirs. Values as the description reads
+# them (floats as 0-1). "{target}" in a note is the {"at"} target's name.
+SAMPLE_VOICES = [1, 2, 3, 4, 5]
+KNOBS = [(10, 11, "the chord knob's alternate"), (12, 13, "the harp knob's alternate"),
+         (14, 15, "the mod knob"), (16, 17, "the mod knob's alternate")]
+CONFLICTS = [
+    {"about": [342, 274], "when": [[342, "==", 1], [274, "==", 0]],
+     "note": "drums only on rhythm style 0: a chord press makes no sound; choose a rhythm style (1-14) and "
+             "set rhythm bass or rhythm chords to 1 to play over the drums"},
+    {"about": [342, 274, 275, 276], "when": [[342, "==", 1], [274, "!=", 0], [275, "!=", 1], [276, "!=", 1]],
+     "note": "drums only: a chord press sounds through the voices the rhythm leaves to hold it, so set rhythm "
+             "bass or rhythm chords to 1 to hear the chords over the drums"},
+    {"about": [253, 252], "when": [[253, ">", 0], [252, "==", 0]],
+     "note": "touch pressure reaches the sound only as far as touch velocity does: at touch velocity 0 only "
+             "its MIDI goes out"},
+    {"about": [163, 175], "when": [[163, ">", 0], [175, "==", 0]],
+     "note": "the chords' vibrato is silent while chord vibrato intensity is 0"},
+    {"about": [170, 171, 172, 173, 174, 175], "when": [[170, ">", 0], [175, "==", 0]],
+     "note": "the chords' pitch bend envelope is silent while chord vibrato intensity is 0"},
+    {"about": [163, 161], "when": [[163, ">", 0], [175, ">", 0], [161, "==", 0]],
+     "note": "chord vibrato frequency is 0, so the vibrato holds still"},
+    {"about": [163, 167], "when": [[163, ">", 0], [175, ">", 0], [167, "==", 0]],
+     "note": "chord vibrato sustain is 0, so the vibrato dies away after its attack, hold and decay"},
+    {"about": [265, 199], "when": [[265, "in", SAMPLE_VOICES], [199, ">", 0]],
+     "note": "glide doesn't reach a sampled chord voice: a sample jumps to each pitch"},
+    {"about": [265, 320], "when": [[265, "in", SAMPLE_VOICES], [320, "==", 1]],
+     "note": "fingered glide doesn't reach a sampled chord voice: a sample jumps to each pitch"},
+    {"about": [265, 163, 170, 175], "when": [[265, "in", SAMPLE_VOICES], [175, ">", 0]],
+     "note": "vibrato and pitch bend don't reach a sampled chord voice, only the synth's oscillators"},
+    {"about": [264, 64, 71], "when": [[264, "in", SAMPLE_VOICES], [64, ">", 0]],
+     "note": "the harp's vibrato doesn't reach a sampled harp voice, only its own synth"},
+    {"about": [264, 71], "when": [[264, "in", SAMPLE_VOICES], [71, ">", 0]],
+     "note": "the harp's pitch bend doesn't reach a sampled harp voice, only its own synth"},
+    {"about": [38, 111], "when": [[38, ">", 0], [111, ">", 0]],
+     "note": "voice leading replaces chord spacing: the spacing isn't heard while voice leading is on"},
+    {"about": [38, 120], "when": [[38, ">", 0], [111, "==", 0], [120, "==", 0]],
+     "note": "with chord shuffling at 0 the chords sit too low for chord spacing to drop a note: it isn't heard"},
+    {"about": [39, 31, 33], "when": [[39, "==", 1]],
+     "note": "the alternate chord layout turns the sharp button off (and sharp function and Barry Harris mode with it)"},
+    {"about": [36, 98], "when": [[36, "!=", 0], [98, "==", 1]],
+     "note": "chromatic harp comes first: scalar harp mode isn't heard while chromatic mode is on"},
+    {"about": [40, 36, 98], "when": [[40, "!=", 0], [98, "==", 1]],
+     "note": "harp shuffling reorders the chord's notes only: it isn't heard in chromatic mode"},
+    {"about": [40, 36, 98], "when": [[40, "!=", 0], [98, "==", 0], [36, "!=", 0]],
+     "note": "harp shuffling reorders the chord's notes only: it isn't heard in scalar harp mode"},
+    {"about": [257, 258, 245], "when": [[257, ">", 0], [258, "==", 0], [245, "==", 1]],
+     "note": "string spread by pitch drifts on the ribbon, whose lowest and highest strings move as it plays: "
+             "spread pattern 1 holds"},
+    {"about": [259, 29], "when": [[259, ">", 0], [29, "==", 0]],
+     "note": "at pan 0 the chords are hard right, so the chord ensemble can't spread them"},
+    {"about": [108, 106, 107], "when": [[108, "==", 1], [106, "==", {"value": 107}]],
+     "note": "in single port mode give the chords and the harp different MIDI channels: on one channel notes "
+             "sent in never reach the chords, and a chord's note-off can end a harp note"},
+    {"about": [110], "when": [[110, "==", 1]],
+     "note": "MPE sends on its own channels (the chords 2-5, the harp 2-13 on its port, or 6-16 sharing one), "
+             "not the chord and harp channels"},
+    {"about": [340, 110], "when": [[340, "!=", 0], [110, "==", 1]],
+     "note": "drum MIDI goes out on channel 10, which MPE gives to a harp string: an MPE synth would play the "
+             "drums as that string"},
+    {"about": [188, 189, 191], "when": [[274, "!=", 0]],
+     "note": "cycle length, measure update and note pushed duration shape rhythm style 0 only"},
+    {"about": [117, 10], "when": [[117, "==", 1], [10, "==", 0]],
+     "note": "on knob layer 1 the chord knob plays its alternate only, and none is assigned: the knob does nothing"},
+    {"about": [117, 12], "when": [[117, "==", 1], [12, "==", 0]],
+     "note": "on knob layer 1 the harp knob plays its alternate only, and none is assigned: the knob does nothing"},
+    {"about": [117, 16], "when": [[117, "==", 1], [16, "==", 0], [14, "!=", 0]],
+     "note": "on knob layer 1 the mod knob plays its alternate only, and none is assigned: the knob does nothing"},
+]
+for _k, _r, _name in KNOBS:
+    CONFLICTS += [
+        {"about": [_k, {"at": _k}], "when": [[{"at": _k}, "!sweepable", None]],
+         "note": f"{_name} can't move {{target}}: that setting is for the double tap, or for nothing live"},
+        {"about": [_k, _r, {"at": _k}], "when": [[{"at": _k}, "sweepable", None], [{"at": _k}, "!selector", None],
+                                                 [{"at": _k}, "==", 0]],
+         "note": f"{_name} sweeps {{target}} around the preset's own value, which is 0, so it does nothing: "
+                 f"give {{target}} a value first"},
+        {"about": [_k, _r], "when": [[{"at": _k}, "sweepable", None], [{"at": _k}, "!selector", None],
+                                     [_r, "==", 0]],
+         "note": f"{_name}'s range is 0, so it doesn't move {{target}}"},
+        {"about": [_k], "when": [[_k, "in", list(range(202, 209))]],
+         "note": f"{_name} can't move a chord layout slot: only the double tap can"},
+    ]
+for _h, _name in ((249, "hover"), (325, "the alternate hover")):
+    CONFLICTS += [
+        {"about": [_h, {"at": _h}], "when": [[{"at": _h}, "!sweepable", None]],
+         "note": f"{_name} can't move {{target}}: that setting is for the double tap, or for nothing live"},
+        {"about": [_h, 10, 12, 14, 16], "when": [[{"at": _h}, "sweepable", None],
+                                                  [_h, "in", {"values": [10, 12, 14, 16]}]],
+         "note": f"{_name} and a knob both move {{target}}: hover works from the preset's value, so the knob's "
+                 f"setting is lost each time a hand passes"},
+        {"about": [_h], "when": [[_h, "in", list(range(202, 209))]],
+         "note": f"{_name} can't move a chord layout slot: only the double tap can"},
+        {"about": [_h], "when": [[_h, "==", 109]],
+         "note": f"{_name}'s values stop at 4095, so on master tuning it always lands on 432 Hz"},
+    ]
+for _t in (200, 209, 211):
+    CONFLICTS += [
+        {"about": [_t, 10, 12, 14, 16], "when": [[_t, "!=", 0], [_t, "in", {"values": [10, 12, 14, 16]}]],
+         "note": "the double tap and a knob both set {target}: the knob puts its own position back at once"},
+        {"about": [_t], "when": [[_t, "==", 109]],
+         "note": "double tap values stop at 4095, so on master tuning it always lands on 432 Hz"},
+    ]
 
 
 # ---- songs ----
