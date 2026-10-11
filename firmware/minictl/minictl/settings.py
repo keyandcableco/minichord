@@ -29,7 +29,7 @@ ALIASES = {"key": 35, "volume-chords": 3, "volume-harp": 2, "bpm": None, "tempo"
 
 
 def slug(text):
-    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+    return re.sub(r"[^a-z0-9]+", "-", text.lower().replace("#", " sharp ")).strip("-")
 
 
 class Settings:
@@ -197,7 +197,9 @@ class Settings:
 
     def conflicts(self, values):
         """the setting conflicts that hold in a preset, from the describer's CONFLICTS table"""
-        state = {a: values[a] for a in range(len(values))}
+        # in the description's own units, as the CONFLICTS rows are written (describe.js's conflicts() too)
+        state = {a: pm.to_human(self.params[a], values[a]) if a in self.params else values[a]
+                 for a in range(len(values))}
         return interpret.conflict_notes(self.params, self._it.selectors, {}, state, self._it.setting_name)
 
     def shared_presets(self):

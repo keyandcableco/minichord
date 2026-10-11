@@ -294,7 +294,7 @@ def apply_changes(values, changes, params, report_all=False):
             if new < lo or new > hi:
                 clamped = max(lo, min(hi, new))
                 notes.append(f"{label(p)}: {c['value']} is outside {source['min_value']}..{source['max_value']}; "
-                             f"set to {to_human(source, clamped)}")
+                             f"set to {to_human(source, clamped):g}")
                 new = clamped
         if new != values[a] or report_all:
             made.append((a, values[a], new))
