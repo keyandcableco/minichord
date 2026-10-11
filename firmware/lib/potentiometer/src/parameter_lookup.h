@@ -23,6 +23,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 31, 1, 0, 1 }, // sharp function
     { 30, 1, 0, 12 }, // transpose
     { 237, 1, 0, 12 }, // temperament
+    { 349, 1, 0, 2 }, // modifier step
     { 109, 0, 4320, 4460 }, // master tuning
     { 106, 1, 1, 16 }, // chord channel
     { 107, 1, 1, 16 }, // harp channel
@@ -122,6 +123,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 245, 1, 0, 1 }, // harp ribbon
     { 246, 1, 0, 24 }, // ribbon span
     { 247, 0, 0, 100 }, // ribbon snap
+    { 350, 0, 0, 100 }, // ribbon step snap
     { 248, 0, 0, 250 }, // ribbon glide
     { 40, 1, 0, 6 }, // harp shuffling
     { 99, 1, 0, 4 }, // octave change
@@ -142,6 +144,8 @@ static const ParameterInfo parameter_lookup[] = {
     { 214, 0, 1, 250 }, // palm mute release
     { 216, 1, 0, 1 }, // pluck on lift
     { 289, 1, 0, 12 }, // koto press
+    { 347, 1, 0, 1 }, // koto press steps
+    { 348, 0, 0, 100 }, // koto press snap
     { 302, 1, 0, 1 }, // hammer-on
     { 252, 0, 0, 100 }, // touch velocity
     { 253, 1, 0, 2 }, // touch pressure
@@ -376,7 +380,7 @@ static const uint8_t parameter_control[512] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 2, 2, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 2, 2, 0, 0,
     1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
     2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 2, 1, 1, 1, 1, 1,
-    1, 0, 0, 1, 1, 0, 0, 2, 2, 2, 1, 2, 1, 1, 1, 1, 1, 2, 2, 2, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+    1, 0, 0, 1, 1, 0, 0, 2, 2, 2, 1, 2, 1, 1, 1, 1, 1, 2, 2, 2, 0, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

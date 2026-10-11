@@ -30,6 +30,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 237:
         apply_temperament(value);
         break;
+      case 349:
+        modifier_step_choice=value; apply_modifier_step();
+        break;
       case 109:
         { int tenths = (value == 0) ? 4400 : constrain(value, 4320, 4460); float tuned_c_frequency = 130.81 * (tenths / 4400.0); if (tuned_c_frequency != c_frequency) { c_frequency = tuned_c_frequency; retune_active_voices(); } }
         break;
@@ -327,6 +330,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 247:
         ribbon_snap=value;
         break;
+      case 350:
+        ribbon_step_snap=value;
+        break;
       case 248:
         ribbon_glide_ms=value;
         break;
@@ -404,6 +410,12 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         break;
       case 289:
         koto_press=value;
+        break;
+      case 347:
+        koto_press_steps=value;
+        break;
+      case 348:
+        koto_press_snap=value;
         break;
       case 302:
         hammer_on=value;
@@ -1148,6 +1160,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 31: lo=0; hi=1; return true;
       case 30: lo=0; hi=12; return true;
       case 237: lo=0; hi=12; return true;
+      case 349: lo=0; hi=2; return true;
       case 109: lo=4320; hi=4460; return true;
       case 106: lo=1; hi=16; return true;
       case 107: lo=1; hi=16; return true;
@@ -1247,6 +1260,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 245: lo=0; hi=1; return true;
       case 246: lo=0; hi=24; return true;
       case 247: lo=0; hi=100; return true;
+      case 350: lo=0; hi=100; return true;
       case 248: lo=0; hi=250; return true;
       case 40: lo=0; hi=6; return true;
       case 99: lo=0; hi=4; return true;
@@ -1267,6 +1281,8 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 214: lo=1; hi=250; return true;
       case 216: lo=0; hi=1; return true;
       case 289: lo=0; hi=12; return true;
+      case 347: lo=0; hi=1; return true;
+      case 348: lo=0; hi=100; return true;
       case 302: lo=0; hi=1; return true;
       case 252: lo=0; hi=100; return true;
       case 253: lo=0; hi=2; return true;

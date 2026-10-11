@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=63; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31)
+int version_ID=64; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -185,6 +185,11 @@ uint8_t edo_index = 0;        // which of the four divisions is live
 uint8_t EDO = 12;             // steps per octave
 uint8_t sharp_step = 1;       // how far a key signature's sharp or flat moves a letter
 uint8_t modifier_step = 1;    // how far the modifier moves one: the same, but a quarter-tone in 24
+// modifier step (349) overrides that: 0 as the division has it, 1 one step of
+// the division (the diesis of 31, the quarter-tone of 24, a semitone in 19), 2
+// the chromatic semitone (two steps of 24 and 31). Twelve has only the one.
+uint8_t modifier_step_choice = 0;
+void apply_modifier_step();
 
 uint8_t major[7] = {0, 4, 7, 12, 2, 5, 9};  // After the four notes of the chord (fundamental, third, fifth of seven, and octave of fifth, the next notes are the second fourth and sixth)
 uint8_t minor[7] = {0, 3, 7, 12, 1, 5, 8};
@@ -554,6 +559,13 @@ bool string_plucked[12] = {false, false, false, false, false, false, false, fals
 // lets the string ring on at its own pitch; one that only rested plucks it
 // again. On the stock strip and the plates of twelve zones. See koto_follow().
 uint8_t koto_press = 0;
+// In 19, 24 and 31 a bend counted in semitones lands between the division's
+// steps. koto press steps counts koto press in steps of the division instead
+// (in twelve they are the same), and koto press snap holds the bend to each
+// step it passes, that much of each step's width in tune, as ribbon snap holds
+// the ribbon to its strings: meend through the shrutis rather than past them.
+bool koto_press_steps = false;
+uint8_t koto_press_snap = 0;    // 0-100
 bool string_pressing[12] = {false, false, false, false, false, false, false, false, false, false, false, false};   // a finger is on this ringing string
 bool string_pressed[12] = {false, false, false, false, false, false, false, false, false, false, false, false};    // ...and has bent it, so its lift plucks nothing
 int16_t press_rest[12] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};   // the lightest it has read since settling, which a press is measured from
@@ -621,6 +633,7 @@ harp_touch harp_touches[harp_touch_max];
 bool harp_ribbon = false;
 uint8_t ribbon_span = 0;        // strings from the bottom of the strip to the top, 0 for the twelve
 uint8_t ribbon_snap = 0;        // 0-100: how much of each string's width holds its note, 0 fretless
+uint8_t ribbon_step_snap = 0;   // 0-100: the same between two strings, for each step of the tuning they span
 uint8_t ribbon_glide_ms = 0;    // how slowly the pitch follows the finger, in ms; 0 for the stock 10
 // Semitones each voice sits above the note it is tuned to: where a ribbon touch
 // has slid to since it landed. 0 for every other way of playing.
@@ -6686,30 +6699,56 @@ uint8_t ribbon_strings() {
 // among the strings, held toward the nearest string's note by ribbon snap:
 // that much of each string's width plays its note, and the rest of the way
 // between two strings the pitch slides at the rate it makes up.
+// x held toward the nearest whole number: within snap/2 of it (snap 0-1) x is
+// that number, and the rest of the way to the next the value slides at the rate
+// it makes up, so it never jumps. Snap 0 leaves x as it is, 1 steps.
+float snap_to_whole(float x, float snap) {
+  float n = roundf(x);
+  if (snap <= 0) return x;
+  if (snap >= 1) return n;
+  float d = x - n;
+  float m = fabsf(d) <= snap / 2 ? 0 : (fabsf(d) - snap / 2) / (1 - snap);
+  return n + copysignf(m, d);
+}
+
 float ribbon_string_at(float place) {
   float s = place * (ribbon_strings() - 1) / (ribbon_wrapped() ? 12.0f : 11.0f);
   float last = ribbon_strings() - 1;
   if (s < 0) s = 0;
   if (s > last) s = last;
-  float a = ribbon_snap / 100.0f;
-  float n = roundf(s);
-  if (a <= 0) return s;
-  if (a >= 1) return n;
-  float d = s - n;
-  float m = fabsf(d) <= a / 2 ? 0 : (fabsf(d) - a / 2) / (1 - a);
-  return n + copysignf(m, d);
+  return snap_to_whole(s, ribbon_snap / 100.0f);
 }
 
 // The frequency ratio at a place among the strings, from the strings' own
-// notes either side, evenly in pitch between them, in the live tuning.
+// notes either side, evenly in pitch between them, in the live tuning. With
+// ribbon step snap, the slide between two strings a scale step apart is held,
+// more lightly, on each step of the tuning it passes: in 31 the strings of a
+// major scale are five steps apart, and the four between are found as easily
+// as a finger can rest, while the strings' own notes keep the stronger hold.
 float ribbon_ratio_at(float s) {
   uint8_t last = ribbon_strings() - 1;
   uint8_t k = (uint8_t)floorf(s);
   if (k >= last) k = last - 1;
   float f = s - k;
-  float r0 = temper_ratio(calculate_note_harp(k, chord_context_slashed, chord_context_sharp) + transpose_steps);
-  float r1 = temper_ratio(calculate_note_harp(k + 1, chord_context_slashed, chord_context_sharp) + transpose_steps);
-  return r0 * powf(r1 / r0, f);
+  int16_t n0 = calculate_note_harp(k, chord_context_slashed, chord_context_sharp);
+  int16_t n1 = calculate_note_harp(k + 1, chord_context_slashed, chord_context_sharp);
+  float l0 = log2f(temper_ratio(n0 + transpose_steps));
+  float l1 = log2f(temper_ratio(n1 + transpose_steps));
+  float l = l0 + (l1 - l0) * f;
+  if (ribbon_step_snap > 0 && abs(n1 - n0) > 1) {
+    int16_t lo = min(n0, n1), hi = max(n0, n1);
+    float below = log2f(temper_ratio(lo + transpose_steps));
+    for (int16_t j = lo; j < hi; j++) {
+      float above = log2f(temper_ratio(j + 1 + transpose_steps));
+      if (l <= above || j == hi - 1) {
+        float g = above > below ? (l - below) / (above - below) : 0;
+        l = below + (above - below) * snap_to_whole(constrain(g, 0.0f, 1.0f), ribbon_step_snap / 100.0f);
+        break;
+      }
+      below = above;
+    }
+  }
+  return exp2f(l);
 }
 
 // Tune a touch's voice to where it is. The voice keeps the note it landed on,
@@ -6985,7 +7024,10 @@ void koto_follow(uint8_t i, int16_t strength, uint32_t held_ms) {
   int16_t span = max(koto_full - press_rest[i] - koto_dead, koto_span_min);
   float amount = constrain((strength - press_rest[i] - koto_dead) / (float)span, 0.0f, 1.0f);
   if (amount >= koto_pressed) string_pressed[i] = true;
-  koto_bend(i, koto_press * amount);
+  float bend = koto_press * amount;   // in semitones, or in steps of the division
+  bend = snap_to_whole(bend, koto_press_snap / 100.0f);
+  if (koto_press_steps) bend *= 12.0f / EDO;
+  koto_bend(i, bend);
 }
 
 void handle_harp() {
@@ -7965,6 +8007,10 @@ void toggle_double_tap_target(bool actions = true) {
 // the chord catalogue, inversion, spacing, the alternate layout — keeps working
 // on the same flat arrays it always did, so only these copies know about
 // temperament at all.
+void apply_modifier_step() {
+  modifier_step = modifier_step_choice == 1 ? 1 : modifier_step_choice == 2 ? edo_sharp[edo_index] : edo_modifier[edo_index];
+}
+
 FLASHMEM void apply_temperament(uint8_t t) {
   if (t >= temperament_count) t = 0;
   uint8_t previous_edo = EDO;
@@ -7972,7 +8018,7 @@ FLASHMEM void apply_temperament(uint8_t t) {
   edo_index = temperament_profiles[t].edo_index;
   EDO = edo_steps[edo_index];
   sharp_step = edo_sharp[edo_index];
-  modifier_step = edo_modifier[edo_index];
+  apply_modifier_step();
   transpose_steps = (transpose_semitones * EDO + 6) / 12; // one semitone of transposition is EDO/12 steps here
   chord_note_floor = EDO;      // the spacing rails are octaves, so they move with the division
   chord_note_ceiling = 8 * EDO;
