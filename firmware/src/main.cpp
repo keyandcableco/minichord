@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=64; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350)
+int version_ID=65; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -190,6 +190,7 @@ uint8_t modifier_step = 1;    // how far the modifier moves one: the same, but a
 // the chromatic semitone (two steps of 24 and 31). Twelve has only the one.
 uint8_t modifier_step_choice = 0;
 void apply_modifier_step();
+bool harp_ribbon_active();
 
 uint8_t major[7] = {0, 4, 7, 12, 2, 5, 9};  // After the four notes of the chord (fundamental, third, fifth of seven, and octave of fifth, the next notes are the second fourth and sixth)
 uint8_t minor[7] = {0, 3, 7, 12, 1, 5, 8};
@@ -450,6 +451,54 @@ const uint8_t step_scale_bits = 11;
 uint16_t step_scale_mask[3] = {0, 0, 0};
 uint8_t custom_scale_intervals[31] = {0, 2, 4, 5, 7, 9, 11};
 uint8_t custom_scale_length = 7;
+
+// Melodic direction (351): a raga's aroha and avaroha, a maqam's way up and
+// way down, melodic minor. With it on, the harp in modes 10, 11, 14 and 15
+// plays a scale's descending form while the melody goes down: each string
+// plucked lower than the one before (a strum down, a falling line) takes its
+// note from the down form, each higher from the up form, and a string plucked
+// again keeps the direction it had. On the ribbon the finger's slide says.
+// Strings already ringing keep their pitch. The down form of the custom scale
+// is custom scale down (352, by name) or step scale down (353-355, in steps of
+// 19, 24 and 31), built as the up form is; with neither ticked the scale goes
+// down as it went up. The maqams carry their own.
+bool melodic_direction = false;
+bool harp_descending = false;    // the melody's direction, for the forms
+uint16_t custom_scale_down_mask = 0;
+uint16_t step_scale_down_mask[3] = {0, 0, 0};
+uint8_t custom_down_intervals[31];
+uint8_t custom_down_length = 0;  // 0: the scale goes down as it went up
+
+// The maqams (scalar harp modes 14 and 15, maqam 356): each a scale of seven,
+// as it goes up, as it comes down, and with its other upper jins (357), the
+// swap a player makes to move the maqam on, written in quarter-tones (steps of
+// 24) from the tonic and rounded to the live division: 31 holds the neutral
+// steps within a few cents (7 of 24 is 9 of 31), 12 and 19 approximate them.
+// The common forms, as maqamworld.com gives them:
+//   0 Rast        C D E‡ F G A B‡     down B♭, upper Hijaz on G: Suznak
+//   1 Bayati      D E‡ F G A B♭ C     upper Bayati on A: Husseini
+//   2 Saba        D E‡ F G♭ A B♭ C    lower Hijaz: Saba Zamzam
+//   3 Hijaz       D E♭ F# G A B‡ C    down B♭, upper Hijaz on G: Hijazkar
+//   4 Sikah       E‡ F G A B‡ C D     upper Hijaz on G: Huzam
+//   5 Nahawand    C D E♭ F G A♭ B     down B♭, upper Kurd on G
+//   6 Kurd        D E♭ F G A B♭ C
+//   7 Ajam        C D E F G A B       upper Nahawand on G
+const uint8_t maqam_count = 8;
+const uint8_t maqam_quarter_tones[maqam_count][3][7] = {
+  {{0, 4, 7, 10, 14, 18, 21}, {0, 4, 7, 10, 14, 18, 20}, {0, 4, 7, 10, 14, 16, 22}},
+  {{0, 3, 6, 10, 14, 16, 20}, {0, 3, 6, 10, 14, 16, 20}, {0, 3, 6, 10, 14, 17, 20}},
+  {{0, 3, 6, 8, 14, 16, 20},  {0, 3, 6, 8, 14, 16, 20},  {0, 2, 6, 8, 14, 16, 20}},
+  {{0, 2, 8, 10, 14, 17, 20}, {0, 2, 8, 10, 14, 16, 20}, {0, 2, 8, 10, 14, 16, 22}},
+  {{0, 3, 7, 11, 14, 17, 21}, {0, 3, 7, 11, 14, 17, 21}, {0, 3, 7, 9, 15, 17, 21}},
+  {{0, 4, 6, 10, 14, 16, 22}, {0, 4, 6, 10, 14, 16, 20}, {0, 4, 6, 10, 14, 16, 20}},
+  {{0, 2, 6, 10, 14, 16, 20}, {0, 2, 6, 10, 14, 16, 20}, {0, 2, 6, 10, 14, 16, 20}},
+  {{0, 4, 8, 10, 14, 18, 22}, {0, 4, 8, 10, 14, 18, 22}, {0, 4, 8, 10, 14, 18, 20}}
+};
+uint8_t maqam_selection = 0;
+bool maqam_upper_jins = false;
+uint8_t maqam_up[7] = {0, 4, 7, 10, 14, 18, 21};   // in steps of the live division
+uint8_t maqam_down[7] = {0, 4, 7, 10, 14, 18, 20};
+void rebuild_maqam();
 const uint8_t custom_scale_max_octave = 3; // how far the harp may climb, in octaves, in any scale mode
 
 // A scale made of one interval, the generator, stacked so many times and folded
@@ -4173,6 +4222,68 @@ void rebuild_custom_scale() {
     custom_scale_intervals[0] = 0;
     custom_scale_length = 1;
   }
+  // The down form, from the step scale down in the divided octaves, or the
+  // custom scale down by name; with neither, none (the up form serves).
+  custom_down_length = 0;
+  bool down_steps = false;
+  if (edo_index != 0) {
+    for (uint8_t i = 0; i < EDO; i++) {
+      if (step_scale_down_mask[i / step_scale_bits] & (1 << (i % step_scale_bits))) down_steps = true;
+    }
+  }
+  if (down_steps) {
+    for (uint8_t i = 0; i < EDO; i++) {
+      if (step_scale_down_mask[i / step_scale_bits] & (1 << (i % step_scale_bits))) custom_down_intervals[custom_down_length++] = i;
+    }
+  } else {
+    for (uint8_t i = 0; i < 12; i++) {
+      if (custom_scale_down_mask & (1 << i)) custom_down_intervals[custom_down_length++] = edo_chromatic_degrees[edo_index][i];
+    }
+  }
+}
+
+FLASHMEM void rebuild_maqam() {
+  uint8_t m = maqam_selection < maqam_count ? maqam_selection : 0;
+  for (uint8_t d = 0; d < 7; d++) {
+    uint8_t up = maqam_quarter_tones[m][maqam_upper_jins ? 2 : 0][d];
+    uint8_t down = maqam_quarter_tones[m][maqam_upper_jins ? 2 : 1][d];
+    maqam_up[d] = (up * EDO + 12) / 24;
+    maqam_down[d] = (down * EDO + 12) / 24;
+  }
+}
+
+// The scale modes 10-15 play, in the melody's direction.
+void harp_scale_list(const uint8_t *&intervals, uint8_t &length) {
+  bool down = melodic_direction && harp_descending;
+  uint8_t m = scalar_harp_selection;
+  if (m == 12 || m == 13) {
+    intervals = generator_scale_intervals;
+    length = generator_scale_length;
+  } else if (m == 14 || m == 15) {
+    intervals = down ? maqam_down : maqam_up;
+    length = 7;
+  } else if (down && custom_down_length > 0) {
+    intervals = custom_down_intervals;
+    length = custom_down_length;
+  } else {
+    intervals = custom_scale_intervals;
+    length = custom_scale_length;
+  }
+}
+
+// Whether the harp's mode has a down form for melodic direction to follow.
+bool harp_has_forms() {
+  uint8_t m = scalar_harp_selection;
+  return melodic_direction && !chromatic_harp_mode && (m == 10 || m == 11 || m == 14 || m == 15);
+}
+
+// A string sounding at position p: the melody goes up if it is above the last
+// one, down if below.
+void harp_motion(uint8_t p) {
+  static int16_t last = -1;
+  if (last >= 0 && p > last) harp_descending = false;
+  if (last >= 0 && p < last) harp_descending = true;
+  last = p;
 }
 
 FLASHMEM void rebuild_generator_scale() {
@@ -4437,25 +4548,25 @@ uint8_t calculate_note_harp(uint8_t string, bool slashed, bool sharp) {
     return calculate_static_scale_note(string, scalar_harp_selection, key_signature_selection);
   }
 
-  // Modes 10 and 12 run the user scale and the generator scale from the key
-  // signature, like modes 1-7
-  if (scalar_harp_selection == 10 || scalar_harp_selection == 12) {
-    bool generated = scalar_harp_selection == 12;
-    return calculate_list_scale_note(string, scale_root_offsets[key_signature_selection] + EDO, 0,
-                                     generated ? generator_scale_intervals : custom_scale_intervals,
-                                     generated ? generator_scale_length : custom_scale_length);
+  // Modes 10, 12 and 14 run the user scale, the generator scale and the maqam
+  // from the key signature, like modes 1-7
+  if (scalar_harp_selection == 10 || scalar_harp_selection == 12 || scalar_harp_selection == 14) {
+    const uint8_t *intervals;
+    uint8_t length;
+    harp_scale_list(intervals, length);
+    return calculate_list_scale_note(string, scale_root_offsets[key_signature_selection] + EDO, 0, intervals, length);
   }
 
-  // Modes 11 and 13 run them from the chord's root, like modes 8 and 9
-  if (scalar_harp_selection == 11 || scalar_harp_selection == 13) {
-    bool generated = scalar_harp_selection == 13;
+  // Modes 11, 13 and 15 run them from the chord's root, like modes 8 and 9
+  if (scalar_harp_selection == 11 || scalar_harp_selection == 13 || scalar_harp_selection == 15) {
+    const uint8_t *intervals;
+    uint8_t length;
+    harp_scale_list(intervals, length);
     uint8_t root_note = slashed
       ? get_root_button(key_signature_selection, chord_frame_shift, slash_value)
       : get_root_button(key_signature_selection, chord_frame_shift, fundamental);
     int8_t sharp_offset = sharp ? (flat_button_modifier ? -modifier_step : modifier_step) : 0;
-    return calculate_list_scale_note(string, root_note, sharp_offset,
-                                     generated ? generator_scale_intervals : custom_scale_intervals,
-                                     generated ? generator_scale_length : custom_scale_length);
+    return calculate_list_scale_note(string, root_note, sharp_offset, intervals, length);
   }
 
   // Modes 8 and 9 keep the chord's root but choose the scale to suit its type
@@ -6263,6 +6374,10 @@ void pluck_string(uint8_t i) {
   string_pluck_firmness[i] = pluck_strength < 0 ? 1 : touch_firmness(pluck_strength);
   string_firmness[i] = string_pluck_firmness[i];
   for (uint8_t k = 0; k < press_slots; k++) press_recent[i][k] = string_pluck_firmness[i];
+  if (harp_has_forms() && !harp_ribbon_active()) {   // the ribbon follows its slide instead
+    harp_motion(harp_voice_position[i]);
+    current_harp_notes[i] = calculate_note_harp(harp_voice_position[i], chord_context_slashed, chord_context_sharp);
+  }
   set_harp_voice_frequency(i, current_harp_notes[i]);
   harp_sample_start(i);
   string_resting[i] = false;
@@ -6395,6 +6510,7 @@ bool hammer_active() {
 // String v moves to pad p's note without a pluck. Over midi the new note starts before the old one
 // ends, so a synth that plays legato slides or hammers too; the looper hears a retune.
 void hammer_to(uint8_t v, uint8_t p) {
+  if (harp_has_forms()) harp_motion(p);
   harp_voice_position[v] = p;
   current_harp_notes[v] = calculate_note_harp(p, chord_context_slashed, chord_context_sharp);
   set_harp_voice_frequency(v, current_harp_notes[v]);
@@ -6756,9 +6872,17 @@ float ribbon_ratio_at(float s) {
 // voice's own channel. Outside MPE nothing can bend one voice of the harp
 // channel alone, so the midi note follows the nearest string instead, note by
 // note, while the sound here still slides.
+float ribbon_last_place[12];   // where each voice's touch last turned, for melodic direction
+const float ribbon_turn = 0.25;  // strings a slide goes back before the melody has turned
+
 void ribbon_tune(ribbon_touch &touch) {
   uint8_t v = touch.voice;
   float s = ribbon_string_at(touch.place);
+  if (harp_has_forms()) {
+    if (s > ribbon_last_place[v] + ribbon_turn) { harp_descending = false; ribbon_last_place[v] = s; }
+    else if (s < ribbon_last_place[v] - ribbon_turn) { harp_descending = true; ribbon_last_place[v] = s; }
+    else if (harp_descending ? s < ribbon_last_place[v] : s > ribbon_last_place[v]) ribbon_last_place[v] = s;
+  }
   if (touch.string > ribbon_strings() - 1) touch.string = ribbon_strings() - 1;   // the span shrank under it
   if (!mpe_mode && fabsf(s - touch.string) > 0.5f + ribbon_string_hysteresis) {
     touch.string = (uint8_t)lroundf(s);
@@ -6796,6 +6920,7 @@ void ribbon_land(ribbon_touch &touch) {
   touch.sounding = true;
   harp_voice_held[v] = true;
   float s = ribbon_string_at(touch.place);
+  ribbon_last_place[v] = s;
   touch.string = (uint8_t)lroundf(s);
   harp_voice_position[v] = touch.string;
   current_harp_notes[v] = calculate_note_harp(touch.string, chord_context_slashed, chord_context_sharp);
@@ -8028,6 +8153,7 @@ FLASHMEM void apply_temperament(uint8_t t) {
   memcpy(chord_scale_intervals, edo_chord_scale_intervals[edo_index], sizeof(chord_scale_intervals));
   rebuild_generator_scale();   // its generator counts steps of the new division
   rebuild_custom_scale();      // and the custom scale's degrees are steps of it too
+  rebuild_maqam();
   memcpy(major, edo_major[edo_index], 7);
   memcpy(minor, edo_minor[edo_index], 7);
   memcpy(maj_sixth, edo_maj_sixth[edo_index], 7);

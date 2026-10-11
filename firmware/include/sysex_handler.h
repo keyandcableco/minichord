@@ -333,6 +333,27 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 350:
         ribbon_step_snap=value;
         break;
+      case 351:
+        melodic_direction=value;
+        break;
+      case 352:
+        custom_scale_down_mask=value; rebuild_custom_scale();
+        break;
+      case 353:
+        step_scale_down_mask[0]=value; rebuild_custom_scale();
+        break;
+      case 354:
+        step_scale_down_mask[1]=value; rebuild_custom_scale();
+        break;
+      case 355:
+        step_scale_down_mask[2]=value; rebuild_custom_scale();
+        break;
+      case 356:
+        maqam_selection=value; rebuild_maqam();
+        break;
+      case 357:
+        maqam_upper_jins=value; rebuild_maqam();
+        break;
       case 248:
         ribbon_glide_ms=value;
         break;
@@ -1247,7 +1268,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 6: lo=0; hi=1024; return true;
       case 7: lo=0; hi=1000; return true;
       case 2: lo=0; hi=100; return true;
-      case 36: lo=0; hi=13; return true;
+      case 36: lo=0; hi=15; return true;
       case 236: lo=0; hi=4095; return true;
       case 267: lo=1; hi=30; return true;
       case 268: lo=1; hi=31; return true;
@@ -1261,6 +1282,13 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 246: lo=0; hi=24; return true;
       case 247: lo=0; hi=100; return true;
       case 350: lo=0; hi=100; return true;
+      case 351: lo=0; hi=1; return true;
+      case 352: lo=0; hi=4095; return true;
+      case 353: lo=0; hi=2047; return true;
+      case 354: lo=0; hi=2047; return true;
+      case 355: lo=0; hi=511; return true;
+      case 356: lo=0; hi=7; return true;
+      case 357: lo=0; hi=1; return true;
       case 248: lo=0; hi=250; return true;
       case 40: lo=0; hi=6; return true;
       case 99: lo=0; hi=4; return true;
