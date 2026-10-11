@@ -70,7 +70,7 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         main_reverb.diffusion(value/100.0);
         break;
       case 257:
-        string_spread=value; apply_string_spreads();
+        string_spread=value; apply_string_spreads(); apply_harp_bus();
         break;
       case 258:
         string_spread_pattern=value; apply_string_spreads();
@@ -199,7 +199,7 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         
         break;
       case 29:
-        pan=value/100.0;apply_audio_parameter(85, current_sysex_parameters[85]);apply_audio_parameter(184, current_sysex_parameters[184]);
+        pan=value/100.0;apply_harp_bus();apply_chord_bus();apply_string_spreads();
         break;
       case 200:
         
@@ -338,7 +338,7 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         string_level=value/100.0; for (int s=0;s<12;s++) apply_string_firmness(s);
         break;
       case 217:
-        for (int s=0;s<12;s++) string_pluck_array[s]->blend(value/100.0);
+        string_blend=value/100.0;apply_string_blend();
         break;
       case 264:
         set_harp_source(value);
@@ -561,7 +561,7 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         strings_effect_mix.gain(1,value/100.0);strings_effect_mix_r.gain(1,value/100.0);
         break;
       case 85:
-        reverb_mixer.gain(0,value/100.0/2);reverb_mixer.gain(2,value/100.0/2);string_r_stereo_gain.amplitude((1-reverb_dry_proportion*value/100.0)*pan,100);string_l_stereo_gain.amplitude(1-reverb_dry_proportion*value/100.0,100);
+        reverb_mixer.gain(0,value/100.0/2);reverb_mixer.gain(2,value/100.0/2);string_dry=1-reverb_dry_proportion*value/100.0;apply_harp_bus();
         break;
       case 86:
         string_waveshaper_mix.gain(0,1-value/100.0);string_waveshaper_mix_r.gain(0,1-value/100.0);string_waveshaper_mix.gain(1,value/100.0);string_waveshaper_mix_r.gain(1,value/100.0);
@@ -1034,7 +1034,7 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         chords_effect_mix.gain(1,value/100.0);
         break;
       case 184:
-        reverb_mixer.gain(1,value/100.0);chords_r_stereo_gain.amplitude(1.0-reverb_dry_proportion*value/100.0,100);chords_l_stereo_gain.amplitude((1.0-reverb_dry_proportion*value/100.0)*pan,100);
+        reverb_mixer.gain(1,value/100.0);chord_dry=1.0-reverb_dry_proportion*value/100.0;apply_chord_bus();
         break;
       case 185:
         chord_waveshaper_mix.gain(0,1-value/100.0);chord_waveshaper_mix.gain(1,value/100.0);

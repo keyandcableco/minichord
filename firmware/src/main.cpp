@@ -876,6 +876,9 @@ u_int32_t random_delay = 10000;
 // pan for audio output 
 float pan=1;
 float reverb_dry_proportion=0.6; //to avoid drop in volume in full reverb, keep some part of the dry signal in
+float string_dry = 1, chord_dry = 1;   // the dry share each side keeps under its reverb (85, 184), as last applied
+void apply_harp_bus();
+void apply_chord_bus();
 
 //>>AUTO RYTHM<<
 u_int8_t rythm_pattern[16] = {};
@@ -908,6 +911,7 @@ bool double_tap_hold = false;
 // Revert and panic (see PANIC AND REVERT)
 bool modifier_preset_combo = false;   // the modifier held, down reverts the preset and up is the panic (322)
 const int16_t preset_action_adress = 323;   // the action: 1 revert, 2 panic; the double tap's target
+const int16_t phone_deck_adress = 332;      // the action: 1 the tape stop and back, 2 a grab; the double tap's target
 void preset_action(int16_t action);
 bool modifier_holding = false;      // the modifier is down as a tap and hold's second press
 void acc_fill_request(bool ending);
@@ -1057,6 +1061,8 @@ float pluck_strum = -1;          // strum velocity's say on the plucks made now,
 
 // Sampled voices (addresses 264, 265, and 270-273 for each chord note), see SAMPLES
 uint8_t harp_voice_source = 0;    // 0 the harp's own synth, 1 piano, 2 pizzicato, 3 choir, 4 strings
+float string_blend = 0;           // the string model (217), 0-1; resting while a sample plays the harp
+void apply_string_blend();
 uint8_t chord_voice_source = 0;   // the same, for the chords as a whole (chord voice, 265)
 uint8_t chord_note_source[4] = {0, 0, 0, 0};   // each note's own (270-273): 0 as the chord voice, else 1 + a source
 uint8_t chord_source_of[4] = {0, 0, 0, 0};     // what each chord voice sounds now, as chord_voice_source counts
@@ -2401,6 +2407,10 @@ static const AudioSynthWavetable::instrument_data *sampled_instrument(uint8_t so
   return nullptr;
 }
 
+FLASHMEM void apply_string_blend() {
+  for (uint8_t s = 0; s < 12; s++) string_pluck_array[s]->blend(harp_voice_source ? 0 : string_blend);
+}
+
 FLASHMEM void set_harp_source(uint8_t source) {
   const AudioSynthWavetable::instrument_data *instrument = sampled_instrument(source);
   harp_voice_source = instrument ? source : 0;
@@ -2411,6 +2421,7 @@ FLASHMEM void set_harp_source(uint8_t source) {
     harp_source_mix_array[i]->gain(1, instrument ? 1 : 0);
     apply_string_firmness(i);   // the oscillator silent while a sample sounds in its place
   }
+  apply_string_blend();   // and the string model, which would fade the sample out (it passes its input at 1 - blend)
 }
 
 // Each chord voice has its own sample player, so each note can sound its own instrument: the chord
@@ -4488,6 +4499,7 @@ volatile uint16_t acc_latest_serial = 0;
 uint16_t acc_serial_from_memory = 0xFFFF;   // the snapshot chord memory made, which the late catch leaves alone
 
 double acc_pos = 0;                     // where the rhythm has got to, in 24ths of a beat since it began: every note before it has played
+volatile double acc_pos_dropped = 0;    // what acc_pos has gone back to 0 from (a press restarting the bar, a MIDI Start) since chord memory last looked
 volatile double acc_clock_pos = 0;      // under a MIDI clock, where its latest tick fell
 volatile bool acc_clock_waiting = false;   // under a MIDI clock, waiting for the tick it starts on
 volatile bool acc_clock_restart = false;   // ... which begins the pattern (Start), rather than the next beat
@@ -4532,6 +4544,7 @@ volatile bool acc_fill_on = false;
 volatile double acc_fill_from = 0, acc_fill_to = 0;
 volatile bool acc_fill_switch = false;  // ...and the other style after it
 volatile bool acc_intro = false;        // the fill playing is the intro
+bool acc_pressed = false;               // a hand has been down since rhythm mode came on (rhythm follows hands)
 volatile bool acc_ending = false;       // ...is the ending's
 volatile bool acc_ending_done = false;  // the last chord is struck: the loop turns rhythm mode off
 volatile double acc_rest_to = 0;        // a break: nothing plays before this
@@ -4989,6 +5002,7 @@ void acc_tick() {
   }
   if (acc_restart) {
     acc_restart = false;
+    acc_pos_dropped += acc_pos;
     acc_pos = 0;
     acc_phase_error = 0;
     // the pattern from its start on the press: the intro if it hasn't finished, else the main part
@@ -5034,6 +5048,7 @@ FLASHMEM void acc_begin() {
   for (uint8_t r = 0; r < ACC_ROLL_MAX; r++) acc_rolled[r].used = false;
   acc_now = acc_latest;
   acc_hands = current_line >= 0;
+  acc_pressed = acc_hands;
   // style A, or the intro's bar first (the style's fill, as a pickup into it)
   acc_main_b = false;
   acc_ending = acc_ending_done = false;
@@ -5162,6 +5177,7 @@ FLASHMEM void acc_midi_clock() {
   acc_phase_error = 0;
   if (acc_clock_waiting) {
     acc_clock_waiting = false;
+    if (acc_clock_restart) acc_pos_dropped += acc_pos;
     acc_pos = acc_clock_restart ? 0 : ceil(acc_pos / ACC_BEAT) * ACC_BEAT;
     if (acc_clock_restart) {   // the pattern from its start (the intro's bar first if it is still to come)
       acc_origin = acc_intro ? acc_bar_ticks() : 0;
@@ -5303,8 +5319,15 @@ void trigger_chord_notes();
 
 FLASHMEM static double chord_memory_pos() {
   noInterrupts();
-  double p = acc_pos;
+  double p = acc_pos, dropped = acc_pos_dropped;
+  acc_pos_dropped = 0;
   interrupts();
+  // The rhythm started its bar again (rhythm follows hands at 2, a MIDI Start): a recording carries
+  // on where it was, and a memory playing starts again from its top with the bar.
+  if (dropped != 0) {
+    if (chord_memory_state == CHORD_MEMORY_RECORDING) chord_memory_start -= dropped;
+    else if (chord_memory_state == CHORD_MEMORY_PLAYING) { chord_memory_start = 0; chord_memory_played = -1; }
+  }
   return p;
 }
 FLASHMEM static double chord_memory_bar() { return ACC_BEAT * acc_styles[acc_style_index()].beats_per_bar; }
@@ -5603,7 +5626,10 @@ FLASHMEM void acc_update() {
     return;
   }
   static uint16_t seen = 0;
-  bool hands = current_line >= 0 || midi_chord_held || chord_memory_state == CHORD_MEMORY_PLAYING;
+  // A fill or the ending asked for (by the double tap, which needs the hands off the chords) plays out
+  // as if a hand were down, and a press during it doesn't start the bar again over it
+  bool fill_hands = acc_follow && ((acc_fill_on && !acc_intro) || acc_ending);
+  bool hands = current_line >= 0 || midi_chord_held || chord_memory_state == CHORD_MEMORY_PLAYING || fill_hands;
   bool caught = false;
   if (hands != acc_hands) {
     acc_hands = hands;
@@ -5613,13 +5639,19 @@ FLASHMEM void acc_update() {
       for (uint8_t r = 0; r < ACC_ROLL_MAX; r++) acc_rolled[r].used = false;
       interrupts();
       stop_chord_voices(0xF);
-    } else if (acc_follow == 2 && hands && !rythm_clock_synced) {
+    } else if (acc_follow == 2 && hands && !rythm_clock_synced && !fill_hands) {
+      if (rhythm_intro && !acc_pressed) {   // the intro waited for the first press, not played to no one
+        noInterrupts();
+        acc_intro = acc_fill_on = true;
+        interrupts();
+      }
       acc_restart = true;   // the bar starts with the press
       caught = true;
     } else if (acc_follow && hands) {
       acc_catch_late();
       caught = true;
     }
+    if (hands) acc_pressed = true;
   }
   if (acc_latest_serial != seen) {
     seen = acc_latest_serial;
@@ -6050,7 +6082,7 @@ void send_string_pressure(uint8_t i, float firmness);
 // gains into the left and right mixers: by pitch, the lowest of the twelve strings as they are tuned
 // now to the left and the highest to the right, or neighbouring strings on alternate sides, across
 // spread width. The pan keeps its loudness (constant power) and the middle is at full in both, as
-// every string was before, so the existing pan setting still places the harp as a whole. A voice
+// every string was before, centred where pan places the harp. A voice
 // is placed as it sounds (pluck_string, midi_in_harp_on), from the frequency it plays, so a
 // ribbon or incoming note lands by its pitch too.
 static float harp_note_frequency(int16_t note) {
@@ -6071,9 +6103,28 @@ void apply_string_spread(uint8_t i) {
     string_mixer_r_array[i / 4]->gain(i % 4, 0);
     return;
   }
-  float angle = (position * string_spread / 100.0f + 1) * (float)M_PI / 4;
-  string_mixer_array[i / 4]->gain(i % 4, sqrtf(2.0f) * cosf(angle));
-  string_mixer_r_array[i / 4]->gain(i % 4, sqrtf(2.0f) * sinf(angle));
+  // centred where pan puts the harp unspread (left at 1, right at pan: hard left at pan 0, the middle at
+  // 1), as loud there as it is, and fanned out from it within the two sides (apply_harp_bus leaves the
+  // right side at full while the strings spread)
+  float centre = atanf(pan), level = sqrtf(1 + pan * pan);
+  float angle = constrain(centre + position * string_spread / 100.0f * (float)M_PI / 4, 0.0f, (float)M_PI / 2);
+  string_mixer_array[i / 4]->gain(i % 4, level * cosf(angle));
+  string_mixer_r_array[i / 4]->gain(i % 4, level * sinf(angle));
+}
+
+// The harp's and the chords' dry sides: pan (29) separates them, the harp to the left (its right side
+// at pan) and the chords to the right (their left side at pan). Spread strings place themselves,
+// centred where pan would put the harp (apply_string_spread), so the harp's right side stays at full.
+// Pan and the reverbs each re-apply these from the values as they are now, so a knob on one doesn't
+// undo a knob on another.
+void apply_harp_bus() {
+  string_l_stereo_gain.amplitude(string_dry, 100);
+  string_r_stereo_gain.amplitude(string_dry * (string_spread ? 1 : pan), 100);
+}
+
+void apply_chord_bus() {
+  chords_r_stereo_gain.amplitude(chord_dry, 100);
+  chords_l_stereo_gain.amplitude(chord_dry * pan, 100);
 }
 
 // At spread 0 the two chains carried the same, so the right one, the strings' whole effects chain
@@ -6934,10 +6985,15 @@ void handle_harp() {
     // A palm lands all at once and placed fingers one by one, so only pads that
     // landed together count, and only they are silenced: strings placed before
     // the palm keep their pluck.
-    uint8_t held = 0;
-    for (int i = 0; i < 12; i++) {
-      if (!harp_array[i].read_value()) continue;
-      if (!harp_pluck_on_lift || now - pad_landed[i] <= palm_spread_ms) held++;
+    // On the ribbon and the zipper plates a finger reads up to three neighbouring zones, so there a run
+    // of three or fewer is one finger, and only a wider run (a hand) counts zone by zone
+    uint8_t held = 0, run = 0;
+    bool line = ribbon || positions;
+    for (int i = 0; i <= 12; i++) {
+      bool counts = i < 12 && harp_array[i].read_value() && (!harp_pluck_on_lift || now - pad_landed[i] <= palm_spread_ms);
+      if (counts) { run++; continue; }
+      held += (line && run <= 3) ? (run > 0) : run;
+      run = 0;
     }
     if (!palm_down && held >= palm_mute_pads) {
       palm_mute();
@@ -7794,6 +7850,12 @@ void toggle_double_tap_target(bool actions = true) {
     rhythm_fill_action(action >= 1 && action <= 3 ? action : 1);
     break;
   }
+  // the phone deck, assigned to it: the tape stop (and the song back in, the next time), or a grab at 2
+  for (uint8_t k = 0; k < double_tap_pairs && actions; k++) {
+    if (current_sysex_parameters[double_tap_control_adress[k]] != phone_deck_adress) continue;
+    phone_deck_action(current_sysex_parameters[double_tap_value_adress[k]] == 2 ? 2 : 1);
+    break;
+  }
   if (double_tap_engaged) {
     // Restore to the addresses latched at engage time, last applied first: the
     // assignments can be rewritten while the toggle is held, and each restore
@@ -7815,7 +7877,7 @@ void toggle_double_tap_target(bool actions = true) {
     for (uint8_t k = 0; k < double_tap_pairs; k++) {
       int16_t adress = current_sysex_parameters[double_tap_control_adress[k]];
       double_tap_engaged_adress[k] = -1;
-      if (adress == looper_adress || adress == chord_memory_adress || adress == rhythm_fill_adress || adress == preset_action_adress) continue;   // stepped above
+      if (adress == looper_adress || adress == chord_memory_adress || adress == rhythm_fill_adress || adress == preset_action_adress || adress == phone_deck_adress) continue;   // stepped above
       if (!control_can_tap(adress)) continue;      // 0 means this pair is unassigned
       bool repeat = false;                          // two pairs on one parameter: the first one wins
       for (uint8_t j = 0; j < k; j++) if (double_tap_engaged_adress[j] == adress) repeat = true;
@@ -8259,7 +8321,13 @@ static void phone_kick(float strength) {
     }
     return;
   }
-  if (phone_kick_stab && !rythm_mode && current_line >= 0) trigger_chord = true;
+  if (phone_kick_stab && !rythm_mode) {
+    if (current_line >= 0) trigger_chord = true;
+    else if (continuous_chord) {   // the chord kept with hold: no button down for the loop to strike it, so struck here
+      trigger_chord = true;
+      trigger_chord_notes();
+    }
+  }
   if (phone_kick_note) {
     if (note_on) queue_midi(false, phone_kick_note, 0, chord_channel, chord_port);
     queue_midi(true, phone_kick_note, (uint8_t)constrain(lroundf(64 + 63 * strength), 1, 127), chord_channel, chord_port);
@@ -8493,6 +8561,9 @@ void phone_dj_set() {
 }
 
 FLASHMEM void phone_dj_setup() {
+  // DMAMEM is not cleared at power-up: a preset saved with the song as a voice would play whatever RAM2 held
+  memset(song_pcm, 0, sizeof(song_pcm));
+  memset(phone_ring, 0, sizeof(phone_ring));
   phone_deck.begin(phone_ring, SONG_SAMPLE_LENGTH);
   for (uint8_t c = 0; c < 2; c++) phone_dj_filter[c].octaveControl(0);
   phone_echo.delay(0, 250);
@@ -8504,12 +8575,14 @@ FLASHMEM void phone_dj_setup() {
 FLASHMEM void phone_grab() {
   AudioNoInterrupts();
   for (uint8_t i = 0; i < 12; i++) if (harp_voice_source == 5) harp_sample_array[i]->stop();
+  for (uint8_t i = 0; i < 4; i++) if (chord_source_of[i] == 5) chord_sample_array[i]->stop();
   phone_deck.grab(song_pcm, SONG_SAMPLE_LENGTH);
   AudioInterrupts();
   int32_t peak = 1;
   for (uint32_t k = 0; k < SONG_SAMPLE_LENGTH; k++) peak = max(peak, (int32_t)abs(song_pcm[k]));
   float g = 29000.0f / peak;
-  if (g > 1) for (uint32_t k = 0; k < SONG_SAMPLE_LENGTH; k++) song_pcm[k] = (int16_t)(song_pcm[k] * g);
+  // nothing coming in (under -40 dB) stays quiet, not hiss brought up to full scale
+  if (g > 1 && peak >= 300) for (uint32_t k = 0; k < SONG_SAMPLE_LENGTH; k++) song_pcm[k] = (int16_t)(song_pcm[k] * g);
   song_grabbed = true;
   if (harp_voice_source != 5) {
     current_sysex_parameters[264] = 5;
@@ -8564,7 +8637,7 @@ void phone_dj_update() {
     due[k] = due[queued];
     k--;
   }
-  if (!phone_strum || phone_bpm <= 0 || phone_beat_period_ms <= 0 || current_line < 0 || queued) return;
+  if (!phone_strum || phone_bpm <= 0 || phone_beat_period_ms <= 0 || (current_line < 0 && !continuous_chord) || queued) return;   // a chord held, or kept with hold
   float unit = phone_beat_period_ms / (phone_strum == 2 ? 2 : 1);
   int32_t since = (int32_t)(now - phone_beat_anchor_ms);
   uint32_t index = (uint32_t)floorf(since / unit);
