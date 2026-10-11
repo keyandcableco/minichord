@@ -94,6 +94,14 @@ SENTENCES = [
     "pizzicato strings and choir on the chords", "the bass is piano and the top note is choir, darker",
     "strings in the middle, piano on the bass note", "a choir top with a plucky harp", "mixed instruments, lots of reverb",
 ]
+# The sampled voices, which a sound or a waveform for the synth has to take back: choir chords with their own piano
+# in the bass and string quartet on the third note, and a piano harp
+SAMPLED = {265: 3, 270: 2, 272: 5, 264: 1}
+SENTENCES += [
+    "Africa brass on the chords", "Africa Brass", "synth chords", "synth", "sawtooth chords", "square wave harp",
+    "detuned chords, noisy", "epic choir", "piano chords with choir on top", "choir on top with piano chords",
+    "detuned synth chords", "sawtooth piano chords", "brass harp",
+]
 # every song in the list, by its first name, as a preset and a profile
 SENTENCES += [e.words[0] for e in interpret.V if e.kind == "song"]
 
@@ -102,10 +110,13 @@ def python_side(params, version, presets):
     names = [p["name"] for p in presets]
     plain = pm.default_values(params, version)
     shared = pm.decode(presets[3]["value"], params)
+    sampled = list(plain) if isinstance(plain, list) else dict(plain)
+    for a, v in SAMPLED.items():
+        sampled[a] = v
     out = []
     for text in SENTENCES:
         row = {}
-        for label, base in (("plain", plain), ("shared", shared)):
+        for label, base in (("plain", plain), ("shared", shared), ("sampled", sampled)):
             r = interpret.interpret(text, base, params, names, first=True)
             after, made, notes = pm.apply_changes(base, r.changes, params)
             row[label] = {"understood": r.understood, "unknown": r.unknown, "notes": r.notes + notes,
@@ -115,7 +126,7 @@ def python_side(params, version, presets):
         row["profile"] = {"understood": r.understood, "unknown": r.unknown, "notes": r.notes + notes,
                           "edits": [[a, v] for a, _, v in made]}
         out.append(row)
-    return out, plain, shared
+    return out, plain, shared, sampled
 
 
 NODE = r"""
@@ -128,7 +139,7 @@ const input = JSON.parse(fs.readFileSync(inputPath));
 const names = shared.map(p => p.name);
 const out = input.sentences.map(text => {
   const row = {};
-  for (const [label, base] of [["plain", input.plain], ["shared", input.shared]]) {
+  for (const [label, base] of [["plain", input.plain], ["shared", input.shared], ["sampled", input.sampled]]) {
     const r = d.interpret(text, base, { presetNames: names, first: true });
     const a = d.applyChanges(base, r.changes);
     row[label] = { understood: r.understood, unknown: r.unknown, notes: r.notes.concat(a.notes),
@@ -174,14 +185,14 @@ def main():
     version = pm.firmware_version(params)
     presets = pm.load_shared_presets()
     song_problems = check_songs(params, version)
-    py, plain, shared = python_side(params, version, presets)
+    py, plain, shared, sampled = python_side(params, version, presets)
     with tempfile.TemporaryDirectory() as tmp:
         data = os.path.join(tmp, "describe_data.json")
         with open(data, "w") as f:
             json.dump(interpret.export_data(params, version), f)
         inp = os.path.join(tmp, "input.json")
         with open(inp, "w") as f:
-            json.dump({"sentences": SENTENCES, "plain": plain, "shared": shared}, f)
+            json.dump({"sentences": SENTENCES, "plain": plain, "shared": shared, "sampled": sampled}, f)
         script = os.path.join(tmp, "run.js")
         with open(script, "w") as f:
             f.write(NODE)
@@ -206,7 +217,7 @@ def main():
                 if json.dumps(a) != json.dumps(b):
                     bad += 1
                     print(f"DIFFERENT [{mode}/{key}] {text[:60]!r}\n  python: {json.dumps(a)[:400]}\n  js:     {json.dumps(b)[:400]}")
-    total = len(SENTENCES) * 3
+    total = len(SENTENCES) * 4
     print(f"{len(SENTENCES)} descriptions, {total} runs: " + ("the same in both" if not bad else f"{bad} differences"))
     sys.exit(1 if bad or song_problems or decoded_bad else 0)
 

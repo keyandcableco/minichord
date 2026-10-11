@@ -25,7 +25,7 @@ What should change? > darker and less reverb
 
 What it understands (`--words` lists everything):
 
-- **Instruments and kinds of sound:** pad, pluck, organ, electric piano, piano, choir, string quartet, pizzicato, guitar, bells, music box, kalimba, marimba, flute, brass, accordion, supersaw, chiptune, bass, and more. The piano, choir and strings use the sampled voices.
+- **Instruments and kinds of sound:** pad, pluck, organ, electric piano, piano, choir, string quartet, pizzicato, guitar, bells, music box, kalimba, marimba, flute, brass, accordion, supersaw, chiptune, bass, and more. The piano, choir and strings use the sampled voices; "synth" puts a section back on its own oscillators. An instrument for the chords is every note's, so notes given their own one ("choir on top") follow it again, unless the same description gives them one. A waveform ("sawtooth chords") said of a sampled section brings back its synth too, and a word the samples only partly hear ("detuned") is said back.
 - **Qualities:** dark/bright, warm/cold, soft/punchy, short/long, spacey/dry, lo-fi, detuned, fat/thin, eerie, calm and more. Each one works with "very", "slightly", "more", "less" and "not".
 - **Effects:** reverb, delay, distortion, fuzz, tremolo, vibrato, ensemble chorus, stereo spread, glide, vocoder, singing vowels, touch velocity, pressure, palm mute and pluck on lift. Each one works with "lots of", "a touch of", "more", "less" and "no".
 - **Settings:** pentatonic or blues harp, chromatic, jazzy (Barry Harris), voice leading, sus chords, voicings, temperaments and EDOs, octave up or down, key of E flat, 120 bpm, tuned to 432 Hz, and a colour name for the bank LED.

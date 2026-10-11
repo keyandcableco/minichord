@@ -173,6 +173,10 @@ add("string section, string quartet, string ensemble, orchestral strings, orches
     "cello, cellos, viola, quartet, bowed strings, bowed string, strings section, real strings, sampled strings, "
     "violin strings, cello strings, string orchestra, chamber strings, legato strings", "sound", "string quartet", home="chord", hue=20,
     moves=(EXACT("voice", 4),) + env(200, 500, 0.9, 900) + (EXACT("cutoff", 4000), EXACT("string_model", 0)))
+# The section's own oscillators as they're set, in place of a sampled voice; one at zero gets a level to be heard
+add("synth, synths, synthy, synthesizer, synthesizers, synthesiser, synthesisers, oscillator, oscillators, own synth, "
+    "its own synth, their own synth, no samples, not sampled", "sound", "synth", hue=200, moves={
+        "chord": (EXACT("voice", 0), IFZERO("amp1", 0.15)), "harp": (EXACT("voice", 0), IFZERO("amp1", 0.15))})
 add("pizzicato, pizz, plucked strings, pizzicato strings, pizz strings, pizzicato string, plucked string section",
     "sound", "pizzicato", home="harp", hue=15,
     moves=(EXACT("voice", 2),) + env(1, 600, 0.0, 400) + (EXACT("cutoff", 4000), EXACT("string_model", 0)))
@@ -1076,6 +1080,15 @@ NOTE_POSITIONS = {"bass note": [0], "bottom note": [0], "lowest note": [0], "low
                   "top": [3], "middle notes": [1, 2], "middle two": [1, 2], "inner voices": [1, 2], "middle": [1, 2],
                   "above": [1, 2, 3], "upper notes": [1, 2, 3], "upper voices": [1, 2, 3]}
 NOTE_VOICE_NAMES = {1: "its own synth", 2: "piano", 3: "pizzicato", 4: "choir", 5: "string quartet"}
+# What chord voice and harp voice play, in place of the oscillators; the notes' own voices count one higher
+VOICE_NAMES = {1: "piano", 2: "pizzicato", 3: "choir", 4: "string quartet", 5: "song sample"}
+# The settings only the section's own oscillators hear; a sampled voice doesn't. A waveform names the synth itself
+WAVE_ROLES = ("wave", "wave2", "wave3")
+OSC_ROLES = WAVE_ROLES + ("amp1", "amp2", "amp3", "mult1", "mult2", "mult3", "noise")
+
+
+def _join(names):
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
 NOTE_NAMES = ("bass note", "second note", "third note", "top note")
 EVERY_NOTE = [5, 2, 4, 3]   # "each note a different instrument": cello-ish quartet, piano, choir, pizzicato on top
 NOTE_VOICES_NOTE = ("each chord note's instrument: the first is the bass and the fourth the top in the stock voicing; "
@@ -1317,6 +1330,71 @@ class Interpreter:
         else:
             return
         self._put(a, new, why)
+        if role == "voice" and section == "chord":
+            self._whole_chord()
+
+    # ---- the sampled voices ----
+
+    def _whole_chord(self):
+        """An instrument for the chords is every note's: a note given its own one goes back to the chord voice,
+        unless this description gave it"""
+        addrs = [ROLES[f"voice{n + 1}"]["chord"] for n in range(4)]
+        notes = [n for n, a in enumerate(addrs) if self.state.get(a) and a not in self.touched]
+        voice = self.state[ROLES["voice"]["chord"]] + 1    # in the notes' own count
+        had = {}
+        for n in notes:
+            if self.state[addrs[n]] != voice:
+                had.setdefault(NOTE_VOICE_NAMES[self.state[addrs[n]]], []).append(NOTE_NAMES[n])
+            self._put(addrs[n], 0, "the chord voice")
+        if had:
+            self.later.append("every chord note on the chord voice now (it had " + _join(
+                [f"{name} on {'all four notes' if len(where) == 4 else 'the ' + _join(where)}"
+                 for name, where in had.items()]) + ")")
+
+    def _samples(self, section):
+        """The sampled instruments a section plays in place of its oscillators: none when any of its notes hears them"""
+        voice = self.state.get(ROLES["voice"][section], 0)
+        if section == "harp":
+            return [VOICE_NAMES[voice]] if voice else []
+        heard = []
+        for n in range(4):
+            own = self.state.get(ROLES[f"voice{n + 1}"]["chord"], 0)
+            if own == 1 or (own == 0 and voice == 0):
+                return []
+            heard.append(NOTE_VOICE_NAMES[own] if own else VOICE_NAMES[voice])
+        return list(dict.fromkeys(heard))
+
+    def _oscillators(self, entry, section):
+        """A word for the oscillators, said of a section playing a sample: a waveform names the synth, so the section
+        goes back to it, unless this description chose its instrument. Another word reaches a sample only in part,
+        which is said once the description is read, of the instrument it ends on"""
+        if self.profile:
+            return
+        for s in self._sections(section):
+            roles = {m[1] for m in self._moves_for(entry.moves, s)}
+            if not roles & set(OSC_ROLES):
+                continue
+            samples = self._samples(s)
+            if samples and roles <= set(WAVE_ROLES) and ROLES["voice"][s] not in self.touched:
+                self._move(EXACT("voice", 0), s, 1, entry.label)
+                self.later.append(f"{entry.label}: the {'chords on their' if s == 'chord' else 'harp on its'} own "
+                                  f"synth again, in place of the {_join(samples)}, since a waveform is the synth's")
+            else:
+                self.unheard.setdefault(s, {})[entry.label] = roles <= set(OSC_ROLES)
+
+    def _say_unheard(self):
+        for s, words in self.unheard.items():
+            samples = self._samples(s)
+            if not samples:
+                continue
+            part, whose = ("chords", "their") if s == "chord" else ("harp", "its")
+            for how, labels in (("not", [w for w, all_osc in words.items() if all_osc]),
+                                ("only partly", [w for w, all_osc in words.items() if not all_osc])):
+                if labels:   # the synth offered, unless the sample was asked for too
+                    self.result.notes.append(
+                        f"{_join(labels)}: {how} heard, since the {part} play{'s' if s == 'harp' else ''} the "
+                        f"{_join(samples)} and not {whose} oscillators" +
+                        ("" if ROLES["voice"][s] in self.touched else f"; say \"synth {part}\" for all of it"))
 
     def _moves_for(self, moves, section):
         if isinstance(moves, dict):
@@ -1361,6 +1439,7 @@ class Interpreter:
                 self.result.understood.append(f"{prefix}a little {opp.label} (less {entry.label})")
                 return
             k = {1: 1.0, 2: 1.6, 0: 0.5}[strength]
+            self._oscillators(entry, section)
             self._apply(entry, section, k, entry.label)
             word = {1: "", 2: "very ", 0: "slightly "}[strength]
             self.result.understood.append(f"{prefix}{word}{entry.label}")
@@ -1670,9 +1749,12 @@ class Interpreter:
         self.void_next = False
         self.last_value = None
         self.forced = None
+        self.unheard = {}
+        self.later = []   # said once the whole description is read, so a song's recipe keeps them too
         for clause in self._clauses(normalise(text)):
             self._clause(clause)
-        self.result.notes = list(dict.fromkeys(self.result.notes))
+        self._say_unheard()
+        self.result.notes = list(dict.fromkeys(self.result.notes + self.later))
         color = self.color if self.color is not None else (None if self.profile else self.hue)
         if color is not None and self.result.understood and (first or self.color is not None):
             self._put(20, color, "bank color")
@@ -2237,6 +2319,8 @@ def export_data(params, version):
         "amount_fillers": sorted(AMOUNT_FILLERS), "wave_names": WAVE_NAMES,
         "note_instruments": NOTE_INSTRUMENTS, "note_positions": NOTE_POSITIONS,
         "note_voice_names": {str(k): v for k, v in NOTE_VOICE_NAMES.items()}, "note_names": list(NOTE_NAMES),
+        "voice_names": {str(k): v for k, v in VOICE_NAMES.items()}, "wave_roles": list(WAVE_ROLES),
+        "osc_roles": list(OSC_ROLES),
         "every_note": EVERY_NOTE, "note_voices_note": NOTE_VOICES_NOTE,
         "note_patterns": [list(p) for p in NOTE_PATTERNS], "note_split": NOTE_SPLIT, "note_every": NOTE_EVERY,
     }
