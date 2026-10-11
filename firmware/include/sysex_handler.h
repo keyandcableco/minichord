@@ -19,13 +19,13 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         harp_release_threshold=value; harp_sensor.set_thresholds(harp_touch_threshold, harp_release_threshold);
         break;
       case 35:
-        key_signature_selection=constrain(value,0,20);
+        key_signature_selection=constrain(value,0,20); purity_follow_chord();
         break;
       case 31:
         flat_button_modifier=value;
         break;
       case 30:
-        transpose_semitones=value;transpose_steps=(transpose_semitones*EDO+6)/12;midi_base_note_transposed=midi_base_note+transpose_semitones;
+        transpose_semitones=value;transpose_steps=(transpose_semitones*EDO+6)/12;midi_base_note_transposed=midi_base_note+transpose_semitones; purity_follow_chord();
         break;
       case 237:
         apply_temperament(value);

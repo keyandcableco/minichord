@@ -370,7 +370,7 @@ uint8_t purity = 0;                // 0-100
 int16_t purity_root_pc = 0;        // the chord root, transposed, in steps of the division
 float purity_ratio[31] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 void rebuild_purity();
-void purity_follow_chord();
+void purity_follow_chord(bool from_chord = false);
 
 __attribute__((noinline)) float temper_ratio(float note) {   // called from many places: one copy keeps RAM1 code down
   float r = tempered_ratio(note);
@@ -1435,7 +1435,7 @@ void drain_midi_queue() {
 // string's channel.
 #define MPE_BEND_RANGE_SEMITONES 48  // the MPE default, and wide enough for any glide
 #define MPE_GLIDE_UPDATE_MS 10       // how often a moving voice re-sends its bend
-#define MPE_BEND_EPSILON 8           // about a cent at that range; smaller moves wait
+#define MPE_BEND_EPSILON 8           // 4.7 cents at that range: smaller moves wait while a glide runs, and are sent once it settles
 
 uint8_t mpe_mode = 0;          // 0 single channel (unchanged), 1 MPE
 bool mpe_zone_declared = false;
@@ -1571,7 +1571,10 @@ void mpe_update_glide() {
     if (chord_started_notes[i] == 0) continue;
     if (now - mpe_chord_bend_time[i] < MPE_GLIDE_UPDATE_MS) continue;
     int16_t b = mpe_bend_value(mpe_chord_bend_semitones(i));
-    if (abs(b - mpe_chord_bend_sent[i]) < MPE_BEND_EPSILON) continue;
+    // While a glide runs, small steps wait for a bigger one; once the voice has arrived (or was retuned
+    // in place: purity, a temperament, master tuning) it gets its exact bend, however small the move.
+    bool gliding = mpe_chord_ramp_ms[i] && now - mpe_chord_ramp_start[i] < mpe_chord_ramp_ms[i];
+    if (b == mpe_chord_bend_sent[i] || (gliding && abs(b - mpe_chord_bend_sent[i]) < MPE_BEND_EPSILON)) continue;
     queue_midi_bend(b, mpe_chord_channel(i), chord_port);
     mpe_chord_bend_sent[i] = b;
     mpe_chord_bend_time[i] = now;
@@ -4478,10 +4481,16 @@ FLASHMEM void rebuild_purity() {
   }
 }
 
-// The chord being played gives the root; called as a chord changes.
-FLASHMEM void purity_follow_chord() {
-  int16_t root = get_root_button(key_signature_selection, chord_frame_shift, fundamental);
-  if (chord_context_sharp) root += flat_button_modifier ? -modifier_step : modifier_step;
+// The chord being played gives the root; called as a chord changes. Until the first chord since power
+// on there is none, and the key's root stands in (it had been the first button's, B).
+bool purity_have_chord = false;
+FLASHMEM void purity_follow_chord(bool from_chord) {
+  if (from_chord) purity_have_chord = true;
+  int16_t root = scale_root_offsets[key_signature_selection];
+  if (purity_have_chord) {
+    root = get_root_button(key_signature_selection, chord_frame_shift, fundamental);
+    if (chord_context_sharp) root += flat_button_modifier ? -modifier_step : modifier_step;
+  }
   purity_root_pc = (((root + transpose_steps) % EDO) + EDO) % EDO;
   if (purity > 0) rebuild_purity();
 }
@@ -7840,7 +7849,7 @@ void update_chord_notes() {
   if (button_pushed) {
     chord_context_sharp = sharp_active;
     chord_context_slashed = slash_chord;
-    purity_follow_chord();
+    purity_follow_chord(true);
     inversion_repress();
     // A chord change keeps the cantus when the new chord has its note, the way
     // a singer holds a common tone, and lets it go otherwise.
