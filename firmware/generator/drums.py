@@ -6,7 +6,8 @@ include/drum_machine.h for the voices). Run it after changing a kit or a groove:
 A kit is the thirteen voices' settings over a plain default for each, so a kit only says what it
 changes. A voice is synthesized: a pitched body that falls from tone_bend times its pitch to it, and a
 burst of noise and square-wave metal through a filter, each with its own decay (in ms, to -60 dB). Or it
-plays a recorded stroke, sample='na' (one of drum_samples.py's STROKES, built into drum_samples.h by it).
+plays a recorded stroke, sample='na' (one of drum_samples.py's STROKES, built into drum_samples.h by it);
+follow=1 retunes a stroke recorded at a known pitch to the key, as a tabla's dayan is.
 
 A groove is written as a grid, a line a voice, a character a step, bars separated by |:
     . rest   g a whisper   o a ghost   x a hit   X an accent   r a roll: two hits in the step
@@ -36,7 +37,7 @@ LETTER = dict(zip('KSRCHOYTULMBZ', range(13)))
 # high tom, low and high conga, cowbell, maracas
 GM_NOTE = [36, 38, 37, 39, 42, 46, 49, 45, 50, 64, 63, 56, 70]
 VELOCITY = {'g': 30, 'o': 56, 'x': 96, 'X': 124}
-SAMPLE = {name: i for i, (name, _, _) in enumerate(STROKES)}
+SAMPLE = {stroke[0]: i for i, stroke in enumerate(STROKES)}
 
 # The tabla's bols, on the 'tabla and doumbek' kit's recorded strokes (see it below): each the voices
 # struck together, as letters. Dha is Na with Ge, Dhin Tin with Ge: both hands at once.
@@ -139,17 +140,18 @@ KITS = [
                    noise_ms=45, level=0.7),
         RIM=dict(tone_hz=900, tone_ms=25, noise_level=0.4, filter=1, filter_hz=2500, filter_q=2, noise_ms=20, level=0.45),
         # the tabla, recorded (drum_samples.py): the dayan's strokes choke each other, as do the bayan's,
-        # as a stroke on a skin stops the last one ringing; the bayan to the left, the dayan to the right
+        # as a stroke on a skin stops the last one ringing; the bayan to the left, the dayan to the right.
+        # The dayan follows: tuned to the key (dayan_tuning in main.cpp)
         CLAP=dict(sample='ke', choke=3, level=1.75, pan=-0.25),
-        HAT=dict(sample='te', choke=2, level=1.5, pan=0.25),
-        OPEN=dict(sample='tin', choke=2, level=1.75, pan=0.25),
-        CYMBAL=dict(sample='na open', choke=2, level=1.9, pan=0.25),
-        TOM_LO=dict(sample='tun', choke=2, level=1.75, pan=0.25),
-        TOM_HI=dict(sample='ne', choke=2, level=1.4, pan=0.25),
+        HAT=dict(sample='te', choke=2, follow=1, level=1.5, pan=0.25),
+        OPEN=dict(sample='tin', choke=2, follow=1, level=1.75, pan=0.25),
+        CYMBAL=dict(sample='na open', choke=2, follow=1, level=1.9, pan=0.25),
+        TOM_LO=dict(sample='tun', choke=2, follow=1, level=1.75, pan=0.25),
+        TOM_HI=dict(sample='ne', choke=2, follow=1, level=1.4, pan=0.25),
         CONGA_LO=dict(sample='ge', choke=3, level=2.1, pan=-0.25),
-        CONGA_HI=dict(sample='na', choke=2, level=1.9, pan=0.25),
+        CONGA_HI=dict(sample='na', choke=2, follow=1, level=1.9, pan=0.25),
         BELL=dict(sample='ge bent', choke=3, level=2.1, pan=-0.25),
-        SHAKER=dict(sample='re', choke=2, level=1.25, pan=0.25)),
+        SHAKER=dict(sample='re', choke=2, follow=1, level=1.25, pan=0.25)),
     kit('trap', drive=1.6, KICK=dict(tone_hz=45, tone_bend=1.6, bend_ms=25, tone_ms=1400, tone_level=0.9, noise_level=0.1, follow=1),
         SNARE=dict(tone_hz=210, noise_level=0.8, filter=1, filter_hz=1600, noise_ms=180),
         CLAP=dict(noise_ms=260),

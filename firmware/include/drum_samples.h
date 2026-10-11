@@ -4641,16 +4641,16 @@ static const int16_t drum_sample_9[958] PROGMEM __attribute__((aligned(4))) = { 
 5,4,3,3,3,3,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0};
 
 const drum_sample_t drum_samples[] = {
-  {drum_sample_0, 9922, 22050},   // na
-  {drum_sample_1, 19845, 22050},   // na open
-  {drum_sample_2, 15434, 22050},   // tin
-  {drum_sample_3, 19845, 22050},   // tun
-  {drum_sample_4, 3899, 22050},   // te
-  {drum_sample_5, 3307, 22050},   // ne
-  {drum_sample_6, 5733, 22050},   // re
-  {drum_sample_7, 19845, 22050},   // ge
-  {drum_sample_8, 12127, 22050},   // ge bent
-  {drum_sample_9, 958, 22050},   // ke
+  {drum_sample_0, 9922, 22050, 278.0f},   // na
+  {drum_sample_1, 19845, 22050, 278.0f},   // na open
+  {drum_sample_2, 15434, 22050, 278.0f},   // tin
+  {drum_sample_3, 19845, 22050, 278.0f},   // tun
+  {drum_sample_4, 3899, 22050, 278.0f},   // te
+  {drum_sample_5, 3307, 22050, 278.0f},   // ne
+  {drum_sample_6, 5733, 22050, 278.0f},   // re
+  {drum_sample_7, 19845, 22050, 0.0f},   // ge
+  {drum_sample_8, 12127, 22050, 0.0f},   // ge bent
+  {drum_sample_9, 958, 22050, 0.0f},   // ke
 };
 
 #endif

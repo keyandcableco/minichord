@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=61; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB)
+int version_ID=62; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -4777,6 +4777,28 @@ static const drum_kit_t *drum_kit_wanted() {
   return &drum_kits[min(k, (uint8_t)(drum_kit_count - 1))];
 }
 
+// A tabla's dayan is tuned to Sa, the key (the transposition: C unless it's been moved). A dayan only
+// stretches a couple of semitones from the pitch its size and skin give it, so where Sa is further than
+// that from the one recorded, it's tuned to Pa, the fifth, or Ma, the fourth, as players do: in twelve
+// notes that keeps every key within two semitones of the recording, where the strokes still sound
+// themselves. own_hz is the pitch the stroke was recorded at; the answer is in whichever octave is
+// nearest it.
+static float dayan_tuning(float own_hz) {
+  if (own_hz <= 0) return 0;
+  const int16_t fifth = (int16_t)lroundf(EDO * 0.5849625f);   // log2(3/2) of an octave, in steps
+  const int16_t choices[3] = {transpose_steps, (int16_t)(transpose_steps + fifth), (int16_t)(transpose_steps + EDO - fifth)};
+  float best = 0, best_cents = 1e9f;
+  for (uint8_t i = 0; i < 3; i++) {
+    float hz = c_frequency * 2 * temper_ratio(choices[i]);   // from C4
+    while (hz > own_hz * 1.4142f) hz *= 0.5f;
+    while (hz < own_hz * 0.7071f) hz *= 2.0f;
+    float cents = fabsf(1200.0f * log2f(hz / own_hz));
+    if (cents <= 250) return hz;   // Sa first, then Pa, then Ma
+    if (cents < best_cents) { best = hz; best_cents = cents; }
+  }
+  return best;
+}
+
 // A hit, from the rhythm's timer or the loop: velocity 1-127 as written (or played)
 void drum_strike(uint8_t v, uint8_t velocity, bool written = true) {
   float vel = written ? (127 - (127 - velocity) * acc_accents / 100.0f) / 127.0f : velocity / 127.0f;
@@ -4787,7 +4809,9 @@ void drum_strike(uint8_t v, uint8_t velocity, bool written = true) {
   }
   float pitch = 0;
   const drum_kit_t *kit = drum_machine.currentKit();
-  if (kit && kit->v[v].follow && acc_now.valid) {
+  if (kit && kit->v[v].follow && kit->v[v].sample >= 0) {
+    pitch = dayan_tuning(drum_samples[kit->v[v].sample].pitch_hz);
+  } else if (kit && kit->v[v].follow && acc_now.valid) {
     int16_t pc = ((acc_now.root + transpose_steps) % EDO + EDO) % EDO;
     pitch = c_frequency / 4 * temper_ratio(pc);   // C1 to B1: an 808's bass
   }

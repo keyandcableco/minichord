@@ -1,6 +1,7 @@
 // Renders each groove of drum_patterns.h through drum_machine.h: four bars and a fill bar, a crash on the
 // next downbeat, at the groove's tempo, to <name>.wav; and one file of every kit's voices struck in turn.
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <vector>
 // the assembler isn't the Teensy's: no primask here
@@ -20,6 +21,7 @@ static void wav(const std::string &path, const std::vector<int16_t> &lr) {
   fwrite(lr.data(), 2, lr.size(), f); fclose(f);
 }
 struct Hit { double at; uint8_t v, vel; };
+static float dayan_hz = 261.63f;   // a minichord in C: the dayan at Sa, C4 (see dayan_tuning in main.cpp)
 static std::vector<int16_t> run(AudioDrumMachine &dm, std::vector<Hit> hits, double seconds, int &peak, int &clips) {
   std::vector<int16_t> lr;
   std::sort(hits.begin(), hits.end(), [](const Hit &a, const Hit &b) { return a.at < b.at; });
@@ -28,7 +30,9 @@ static std::vector<int16_t> run(AudioDrumMachine &dm, std::vector<Hit> hits, dou
   for (int b = 0; b < blocks; b++) {
     double t = b * 128 / AUDIO_SAMPLE_RATE_EXACT;
     while (h < hits.size() && hits[h].at < t + 128 / AUDIO_SAMPLE_RATE_EXACT) {
-      dm.hit(hits[h].v, hits[h].vel / 127.0f, 45.0f, (uint32_t)((hits[h].at - t) * AUDIO_SAMPLE_RATE_EXACT));
+      const drum_voice_t &dv = dm.currentKit()->v[hits[h].v];
+      float pitch = dv.follow && dv.sample >= 0 ? dayan_hz : 45.0f;   // the dayan in the key, an 808's bass at 45 Hz
+      dm.hit(hits[h].v, hits[h].vel / 127.0f, pitch, (uint32_t)((hits[h].at - t) * AUDIO_SAMPLE_RATE_EXACT));
       h++;
     }
     dm.out[0] = dm.out[1] = nullptr;
@@ -44,6 +48,7 @@ static std::vector<int16_t> run(AudioDrumMachine &dm, std::vector<Hit> hits, dou
   return lr;
 }
 int main() {
+  if (getenv("DAYAN_HZ")) dayan_hz = atof(getenv("DAYAN_HZ"));   // another key than C
   for (int g = 0; g < drum_groove_count; g++) {
     const drum_groove_t &gr = drum_grooves[g];
     AudioDrumMachine dm; dm.setKit(&drum_kits[gr.kit]); dm.level(0.7f);

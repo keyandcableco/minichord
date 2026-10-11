@@ -29,7 +29,8 @@ struct drum_voice_t {
   float retrig_ms;                                          // ... this far apart
   float level, pan;                                         // pan -1 left to 1 right
   uint8_t choke;                                            // a voice struck cuts off the others in its group (not 0)
-  uint8_t follow;                                           // 1: the body takes the pitch the hit gives (an 808 bass)
+  uint8_t follow;                                           // 1: the body takes the pitch the hit gives (an 808 bass),
+                                                            // or a recorded stroke is retuned to it (a dayan)
   int8_t sample;                                            // a recorded stroke in drum_samples to play, or -1
 };
 
@@ -37,6 +38,7 @@ struct drum_sample_t {
   const int16_t *data;
   uint32_t length;   // samples
   uint32_t rate;     // Hz
+  float pitch_hz;    // what it was tuned to, for a voice that follows; 0 untuned
 };
 extern const drum_sample_t drum_samples[];
 
@@ -93,7 +95,7 @@ public:
       s.metal_count = p.metal_count == 4 ? 4 : 2;
       s.filter = p.filter;
       s.sample = p.sample >= 0 ? &drum_samples[p.sample] : nullptr;
-      s.sample_inc = s.sample ? s.sample->rate / fs : 0;
+      s.sample_base_inc = s.sample ? s.sample->rate / fs : 0;
       s.sample_amp = 0;
       s.active = false;
     }
@@ -249,7 +251,7 @@ private:
     uint8_t metal_count, filter;
     uint8_t retrigs;
     const drum_sample_t *sample;
-    float sample_pos, sample_inc, sample_amp;
+    float sample_pos, sample_base_inc, sample_inc, sample_amp;
     bool sample_choked;
     uint32_t retrig_count, retrig_samples;
   };
@@ -274,6 +276,14 @@ private:
     s.ic1 = s.ic2 = 0;
     s.sample_pos = 0;
     s.sample_amp = s.sample ? vel : 0;
+    // a stroke that follows, at the pitch the hit gives, in whichever octave is nearest its own
+    float ratio = 1.0f;
+    if (s.sample && p.follow && h.pitch > 0 && s.sample->pitch_hz > 0) {
+      ratio = h.pitch / s.sample->pitch_hz;
+      while (ratio > 1.4142f) ratio *= 0.5f;
+      while (ratio < 0.7071f) ratio *= 2.0f;
+    }
+    s.sample_inc = s.sample_base_inc * ratio;
     s.sample_choked = false;
     s.active = s.tone_amp > 0 || s.noise_amp > 0 || s.sample_amp > 0;
   }

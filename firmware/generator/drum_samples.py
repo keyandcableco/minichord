@@ -20,18 +20,22 @@ import sys
 RATE = 22050
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'include', 'drum_samples.h')
 
-# name (as the kits in drums.py ask for it), file in samples/tabla, seconds kept: what each bol needs
+# name (as the kits in drums.py ask for it), file in samples/tabla, seconds kept (what each bol needs),
+# and the pitch it was tuned to, for a stroke the drum machine retunes (0: left as it is). The dayan
+# was tuned to C#4 and a few cents: its syahi makes its partials whole multiples of one pitch, 278 Hz
+# (Na and Tin ring at 557 and 838, its 2nd and 3rd); Tun's 315 Hz is the drum's lowest mode, below
+# them all and not one of them. The bayan isn't tuned to the key, and Ge bends anyway.
 STROKES = [
-    ('na', 'tabla_na', 0.45),        # dayan, Na (Ta): the rim, the ring stopped at the syahi
-    ('na open', 'tabla_na_o', 0.9),  # ... left to ring
-    ('tin', 'tabla_tas1', 0.7),      # dayan, Tin: the ring between rim and syahi
-    ('tun', 'tabla_tun2', 0.9),      # dayan, Tun: the open centre
-    ('te', 'tabla_te1', 0.18),       # dayan, Te (Ti): flat fingers on the syahi, dead
-    ('ne', 'tabla_te_ne', 0.15),     # dayan, Ne: Te's partner in tirakita
-    ('re', 'tabla_re', 0.26),        # dayan, Re: a brush
-    ('ge', 'tabla_ghe5', 0.9),       # bayan, Ge: open, ringing at 93 Hz
-    ('ge bent', 'tabla_ghe4', 0.55), # bayan, Ge pushed up by the wrist, 100 to 137 Hz
-    ('ke', 'tabla_ke1', 0.05),       # bayan, Ke (Ka): the flat hand, closed
+    ('na', 'tabla_na', 0.45, 278),         # dayan, Na (Ta): the rim, the ring stopped at the syahi
+    ('na open', 'tabla_na_o', 0.9, 278),   # ... left to ring
+    ('tin', 'tabla_tas1', 0.7, 278),       # dayan, Tin: the ring between rim and syahi
+    ('tun', 'tabla_tun2', 0.9, 278),       # dayan, Tun: the open centre
+    ('te', 'tabla_te1', 0.18, 278),        # dayan, Te (Ti): flat fingers on the syahi, dead
+    ('ne', 'tabla_te_ne', 0.15, 278),      # dayan, Ne: Te's partner in tirakita
+    ('re', 'tabla_re', 0.26, 278),         # dayan, Re: a brush
+    ('ge', 'tabla_ghe5', 0.9, 0),          # bayan, Ge: open, ringing at 93 Hz
+    ('ge bent', 'tabla_ghe4', 0.55, 0),    # bayan, Ge pushed up by the wrist, 100 to 137 Hz
+    ('ke', 'tabla_ke1', 0.05, 0),          # bayan, Ke (Ka): the flat hand, closed
 ]
 STRIKE_RMS = 0.07      # each stroke's first 80 ms: low enough that Re, all edge (22 dB crest), still fits
 FADE = 0.06            # seconds faded at the cut
@@ -63,13 +67,13 @@ def main():
              '// The tabla strokes Sonic Pi bundles, recorded by Marius Miron (Freesound mmiron, pack 8162), CC0.',
              '#ifndef DRUM_SAMPLES_H', '#define DRUM_SAMPLES_H', '#include "drum_machine.h"', '']
     total, table = 0, []
-    for i, (name, file, keep) in enumerate(STROKES):
+    for i, (name, file, keep, pitch) in enumerate(STROKES):
         s = stroke(folder, file, keep)
         total += s.nbytes
         body = ',\n'.join(','.join(str(v) for v in s[j:j + 24]) for j in range(0, len(s), 24))
         lines.append('static const int16_t drum_sample_%d[%d] PROGMEM __attribute__((aligned(4))) = {   // %s, %s\n%s};'
                      % (i, len(s), name, file, body))
-        table.append('  {drum_sample_%d, %d, %d},   // %s' % (i, len(s), RATE, name))
+        table.append('  {drum_sample_%d, %d, %d, %.1ff},   // %s' % (i, len(s), RATE, pitch, name))
         print(f'{name:8s} {file:12s} {len(s) / RATE:.2f} s  {s.nbytes / 1024:5.1f} kB')
     lines += ['', 'const drum_sample_t drum_samples[] = {'] + table + ['};', '', '#endif', '']
     with open(OUT, 'w') as f:
