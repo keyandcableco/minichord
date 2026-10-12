@@ -126,36 +126,52 @@ FLASHMEM void ReedPiano::strike(float f, float st) {
   active = true;
 }
 
+// The voice's state is held in locals through the block: written through out, the members could alias it,
+// and the compiler would load and store every one of them each sample (on the Teensy that cost more than the
+// arithmetic). The pickup's table read is inlined for the same reason.
 void ReedPiano::render(float *out, int n) {
   if (!active) {
     for (int i = 0; i < n; i++) out[i] = 0;
     return;
   }
-  const float g0 = table[TABLE_SIZE / 2];   // the pickup at rest (x = 0 is the table's middle)
+  const float *tab = table;
+  const float g0 = tab[TABLE_SIZE / 2];   // the pickup at rest (x = 0 is the table's middle)
+  const float scale = TABLE_SIZE / (2 * TABLE_RANGE);
+  const float rc1 = r1 * c1, rs1 = r1 * s1, rc2 = r2 * c2, rs2 = r2 * s2;
+  const float dr = drive, nm = norm, hpc = hp_coef, lpc = lp_coef;
+  const float b0 = bb0, b1 = bb1, b2 = bb2, a1 = ba1, a2 = ba2;
+  const bool body = body_on, clk = clank;
+  float X1 = x1, Y1 = y1, X2 = x2, Y2 = y2, hin = hp_in, hout = hp_out, z1 = bz1, z2 = bz2, l = lp;
   for (int i = 0; i < n; i++) {
-    float nx = r1 * (c1 * x1 - s1 * y1);
-    y1 = r1 * (s1 * x1 + c1 * y1);
-    x1 = nx;
-    float x = x1;
-    if (clank) {
-      nx = r2 * (c2 * x2 - s2 * y2);
-      y2 = r2 * (s2 * x2 + c2 * y2);
-      x2 = nx;
-      x += x2;
+    float nx = rc1 * X1 - rs1 * Y1;
+    Y1 = rs1 * X1 + rc1 * Y1;
+    X1 = nx;
+    float x = X1;
+    if (clk) {
+      nx = rc2 * X2 - rs2 * Y2;
+      Y2 = rs2 * X2 + rc2 * Y2;
+      X2 = nx;
+      x += X2;
     }
-    float v = (pickup(drive * x) - g0) * norm;
-    float h = hp_coef * (hp_out + v - hp_in);
-    hp_in = v;
-    hp_out = h;
-    if (body_on) {   // transposed direct form II
-      float b = bb0 * h + bz1;
-      bz1 = bb1 * h - ba1 * b + bz2;
-      bz2 = bb2 * h - ba2 * b;
+    // the pickup, read from its table between points
+    float p = (dr * x + TABLE_RANGE) * scale;
+    p = p < 0 ? 0 : p > TABLE_SIZE - 0.001f ? TABLE_SIZE - 0.001f : p;
+    int k = (int)p;
+    float f = p - k;
+    float v = (tab[k] + f * (tab[k + 1] - tab[k]) - g0) * nm;
+    float h = hpc * (hout + v - hin);
+    hin = v;
+    hout = h;
+    if (body) {   // transposed direct form II
+      float b = b0 * h + z1;
+      z1 = b1 * h - a1 * b + z2;
+      z2 = b2 * h - a2 * b;
       h = b;
     }
-    lp += lp_coef * (h - lp);
-    out[i] = lp;
+    l += lpc * (h - l);
+    out[i] = l;
   }
+  x1 = X1; y1 = Y1; x2 = X2; y2 = Y2; hp_in = hin; hp_out = hout; bz1 = z1; bz2 = z2; lp = l;
   if (clank && fabsf(x2) + fabsf(y2) < 1e-5f) { x2 = y2 = 0; clank = false; }
   // gone below hearing (-80 dB of a fresh strike) for a block: done
   if (fabsf(x1) + fabsf(y1) < 1e-4f) {
