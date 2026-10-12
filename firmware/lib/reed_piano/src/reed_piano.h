@@ -55,6 +55,7 @@ private:
   static float pickup(float x);
 
   void tune(float freq);
+  template <bool CLANK, bool BODY> void run(float *out, int n);   // render's loop, one per case
 
   bool active = false;
   float freq = 220;
