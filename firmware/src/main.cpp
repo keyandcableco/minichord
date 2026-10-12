@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=77; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law)
+int version_ID=78; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1223,10 +1223,14 @@ uint8_t strum_velocity = 0;      // 0-100: how much softer a slow strum plays th
 float pluck_strum = -1;          // strum velocity's say on the plucks made now, -1 none (as pluck_strength)
 
 // Sampled voices (addresses 264, 265, and 270-273 for each chord note), see SAMPLES
-uint8_t harp_voice_source = 0;    // 0 the harp's own synth, 1 piano, 2 pizzicato, 3 choir, 4 strings, 5 the song, 6 vibraphone, 7 bass, 8 sitar, 9 electric piano
+uint8_t harp_voice_source = 0;    // 0 the harp's own synth, 1 piano, 2 pizzicato, 3 choir, 4 strings, 5 the song, 6 vibraphone, 7 bass, 8 sitar, 9 electric piano, 10 reed piano
 float string_blend = 0;           // the string model (217), 0-1; resting while a sample plays the harp
 void apply_string_blend();
 uint8_t chord_voice_source = 0;   // the same, for the chords as a whole (chord voice, 265)
+// How hard the reed piano (voice source 10) is struck at full strength, 0-1, which sets its bark: the
+// harp's (386) scaled by how hard each string is plucked, the chords' (387) as it is
+float harp_reed_bark = 0.6f;
+float chord_reed_bark = 0.6f;
 uint8_t chord_note_source[4] = {0, 0, 0, 0};   // each note's own (270-273): 0 as the chord voice, else 1 + a source
 uint8_t chord_source_of[4] = {0, 0, 0, 0};     // what each chord voice sounds now, as chord_voice_source counts
 void set_harp_source(uint8_t source);
@@ -2823,7 +2827,8 @@ void apply_chord_voice_level(uint8_t i) {
 // A section's voices can sound a sampled instrument in place of their oscillators (harp voice,
 // chord voice): piano, pizzicato strings, choir, a string quartet, and after the song (5) a
 // vibraphone, a fingered bass, a sitar or an electric piano (lib/minichord_samples, made by
-// generator/samples.py). The sample runs through the voice's own envelope, filter and level, so
+// generator/samples.py); 10 is the reed piano, a model rather than samples (lib/reed_piano), played
+// by the same player, struck as hard as the harp is plucked. The sample runs through the voice's own envelope, filter and level, so
 // the preset shapes it as it does the synth, and the voice's pitch (the ribbon, a retune, a chord
 // change) moves it. Its own envelope only passes it on; once the voice's envelope is done it stops,
 // so a voice not sounding costs nothing.
@@ -2854,6 +2859,7 @@ static const AudioSynthWavetableMulaw::instrument_data *sampled_instrument(uint8
     case 7: return &bass_instrument;
     case 8: return &sitar_instrument;
     case 9: return &epiano_instrument;
+    case 10: return &AudioSynthWavetableMulaw::reed_instrument;   // no samples: the reed piano's model (lib/reed_piano)
   }
   return nullptr;
 }
@@ -2896,17 +2902,20 @@ FLASHMEM void set_chord_source(uint8_t source) {
 }
 
 // value as stored: 0 the chord voice, 1 the synth, 2 piano, 3 pizzicato, 4 choir, 5 string quartet,
-// 6 the song, 7 vibraphone, 8 bass, 9 sitar, 10 electric piano (1 + the voice source)
+// 6 the song, 7 vibraphone, 8 bass, 9 sitar, 10 electric piano, 11 reed piano (1 + the voice source)
 FLASHMEM void set_chord_note_source(uint8_t i, uint8_t value) {
   if (i > 3) return;
-  chord_note_source[i] = value <= 10 ? value : 0;
+  chord_note_source[i] = value <= 11 ? value : 0;
   apply_chord_source(i);
 }
 
-// Starts harp voice i's sample at the frequency it sounds; its level follows (apply_string_firmness)
+// Starts harp voice i's sample at the frequency it sounds; its level follows (apply_string_firmness).
+// The reed piano is struck as hard as the string was plucked, times the harp's bark (386), which sets
+// its tone: a sample has one strength, and the level does the rest.
 void harp_sample_start(uint8_t i) {
   if (!harp_voice_source) return;
-  harp_sample_array[i]->playFrequency(string_note_freq[i], 127);
+  int strength = harp_voice_source == 10 ? (int)lroundf(127 * harp_reed_bark * (1 - string_softness(i))) : 127;
+  harp_sample_array[i]->playFrequency(string_note_freq[i], strength);
 }
 
 // Glide on a sampled chord voice. The oscillators glide by their DC offset's ramp
@@ -2953,7 +2962,7 @@ FLASHMEM void chord_samples_glide() {
 void chord_sample_start(uint8_t i) {
   if (!chord_source_of[i]) return;
   float hz = chord_sample_glides[i].known ? exp2f(chord_sample_octaves(i)) : chord_voice_note_freq[i];   // mid-glide: from where it is
-  chord_sample_array[i]->playFrequency(hz, 127);
+  chord_sample_array[i]->playFrequency(hz, chord_source_of[i] == 10 ? (int)lroundf(127 * chord_reed_bark) : 127);   // the reed piano struck as hard as 387 says
   chord_sample_array[i]->amplitude(fminf(1, chord_voice_level[i] * chord_sample_level));
 }
 

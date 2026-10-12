@@ -83,8 +83,16 @@ CODE_BLOCK_TO_TEST
  * but fades out based on release time.
  *
  */
+const AudioSynthWavetableMulaw::instrument_data AudioSynthWavetableMulaw::reed_instrument = {0, nullptr, nullptr};
+
 void AudioSynthWavetableMulaw::stop(void) {
 	cli();
+	if (reed_mode) {   // the voice's envelope is done by now: the reed stops at once
+		reed.stop();
+		env_state = STATE_IDLE;
+		sei();
+		return;
+	}
 	if (env_state != STATE_IDLE) {
 		env_state = STATE_RELEASE;
 		if (nullptr != current_sample)
@@ -128,6 +136,13 @@ void AudioSynthWavetableMulaw::playNote(int note, int amp) {
  */
 void AudioSynthWavetableMulaw::setState(int note, int amp, float freq) {
 	cli();
+	if (reed_mode) {   // the reed struck, as hard as amp says; amplitude() still sets its level
+		reed.strike(freq, amp / 127.0f);
+		env_state = STATE_SUSTAIN;
+		state_change = true;
+		sei();
+		return;
+	}
 	int i;
 	env_state = STATE_IDLE;
 	current_sample = nullptr;
@@ -166,6 +181,10 @@ void AudioSynthWavetableMulaw::setState(int note, int amp, float freq) {
  * @param freq frequency of the generated output (between 0 and the board-specific sample rate)
  */
 void AudioSynthWavetableMulaw::setFrequency(float freq) {
+	if (reed_mode) {
+		reed.frequency(freq);
+		return;
+	}
 	if (nullptr != current_sample)
 	{
 		float tone_incr_temp = freq * current_sample->PER_HERTZ_PHASE_INCREMENT;
@@ -185,6 +204,10 @@ void AudioSynthWavetableMulaw::setFrequency(float freq) {
  */
 void AudioSynthWavetableMulaw::update(void) {
 #if defined(KINETISK) || defined(__IMXRT1062__)
+	if (reed_mode) {
+		update_reed();
+		return;
+	}
 	// exit if nothing to do
 	if (env_state == STATE_IDLE || 
 		nullptr == current_sample ||
@@ -444,4 +467,23 @@ void AudioSynthWavetableMulaw::update(void) {
 	transmit(block);
 	release(block);
 #endif
+}
+
+// The reed piano in this voice's place: the model's block, at the voice's level (amplitude())
+void AudioSynthWavetableMulaw::update_reed(void) {
+	if (!reed.sounding()) {
+		env_state = STATE_IDLE;
+		return;
+	}
+	audio_block_t *block = allocate();
+	if (block == NULL) return;
+	float buf[AUDIO_BLOCK_SAMPLES];
+	reed.render(buf, AUDIO_BLOCK_SAMPLES);
+	const float g = tone_amp * (32767.0f / 65535.0f);
+	for (int i = 0; i < AUDIO_BLOCK_SAMPLES; i++) {
+		float v = buf[i] * g;
+		block->data[i] = v > 32767.0f ? 32767 : v < -32768.0f ? -32768 : (int16_t)v;
+	}
+	transmit(block);
+	release(block);
 }

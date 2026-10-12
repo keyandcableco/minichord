@@ -105,6 +105,8 @@ ROLES = {
     "drone_reverb": {"global": 379}, "speed_ramp": {"global": 380},
     # firmware 74: the tanpura's jawari
     "drone_jawari": {"global": 381},
+    # firmware 78: the reed piano's bark
+    "reed_bark": {"chord": 387, "harp": 386},
     # the pitch bend envelope's start and decay, chord shuffling, the generator scale (firmware 38)
     "bend": {"chord": 170, "harp": 71}, "bend_decay": {"chord": 173, "harp": 74}, "chord_shuffle": {"chord": 120},
     "generator": {"harp": 267}, "generator_notes": {"harp": 268}, "generator_mode": {"harp": 269},
@@ -177,9 +179,31 @@ add("organ, organs, hammond, b3, drawbar, church organ, combo organ", "sound", "
     "chord": synth_chord(0.15, 0, 1.0, 0.1, 0, 2.0, 0.08, 0, 0.5) + env(5, 100, 1.0, 80) + (EXACT("cutoff", 3500),),
     "harp": synth_harp(0) + env(5, 100, 1.0, 80)})
 # The sampled electric piano, vibraphone, sitar and bass (voice source 6-9, firmware 73), as the piano is
-add("electric piano, e piano, epiano, rhodes, wurlitzer, wurly, ep, dx7, dx 7, fm piano", "sound", "electric piano", home="chord", hue=35,
+add("electric piano, e piano, epiano, rhodes, ep, dx7, dx 7, fm piano", "sound", "electric piano", home="chord", hue=35,
     moves=(EXACT("voice", 9),) + env(2, 2500, 0.3, 600) + (EXACT("cutoff", 4000), EXACT("string_model", 0)),
     note="the sampled electric piano needs firmware 73")
+# The reed piano (voice source 10, firmware 78): a model of the Wurlitzer, not samples; it barks when dug into
+REED_NOTE = ("the reed piano is a model of the Wurlitzer 200A (voice 10), not samples: it barks as it is struck harder "
+             "(harp reed bark 386 with touch velocity, chord reed bark 387); needs firmware 78")
+add("wurlitzer, wurlitzers, wurly, wurlie, wurli, reed piano, reed electric piano, 200a, wurlitzer 200a",
+    "sound", "Wurlitzer (reed piano)", home="chord", hue=30,
+    moves=(EXACT("voice", 10),) + env(2, 2500, 0.3, 450) + (EXACT("cutoff", 5000), EXACT("string_model", 0)),
+    note=REED_NOTE)
+# "bark" alone stays the filter's (an envelope filter's quack, below); with the instrument named it is the reed's
+add("barky wurlitzer, barking wurlitzer, wurlitzer barking, barky wurly, gritty wurlitzer, growling wurlitzer, "
+    "dirty wurlitzer, wurlitzer dug into, wurlitzer played hard", "sound", "Wurlitzer, barking (struck hard)",
+    home="chord", hue=30,
+    moves=(EXACT("voice", 10), SET("reed_bark", 90)) + env(2, 2500, 0.3, 450) + (EXACT("cutoff", 5000), EXACT("string_model", 0)),
+    off=(EXACT("reed_bark", 60),), note=REED_NOTE)
+add("growl, growly, growling, dig in, dug in, digging in, played hard, struck hard, more bark, wurlitzer bark",
+    "setting", "the reed piano barking (struck hard)", home="chord",
+    moves=(SET("reed_bark", 90),), off=(EXACT("reed_bark", 60),), note=REED_NOTE)
+add("mellow wurlitzer, soft wurlitzer, round wurlitzer, gentle wurlitzer, sweet wurlitzer, mellow wurly",
+    "sound", "Wurlitzer, round (struck softly)", home="chord", hue=30,
+    moves=(EXACT("voice", 10), SET("reed_bark", 25)) + env(2, 2500, 0.3, 450) + (EXACT("cutoff", 5000), EXACT("string_model", 0)),
+    off=(EXACT("reed_bark", 60),), note=REED_NOTE)
+add("no bark, without bark, less bark, struck softly, played softly", "setting", "the reed piano round (struck softly)",
+    home="chord", moves=(SET("reed_bark", 25),), off=(EXACT("reed_bark", 60),), note=REED_NOTE)
 add("piano, pianos, grand piano, acoustic piano, upright piano, keys", "sound", "piano", hue=40,
     moves=(EXACT("voice", 1),) + env(1, 2500, 0.3, 700) + (EXACT("cutoff", 4000), EXACT("string_model", 0)))
 add("choir, choirs, voices, vocal, vocals, aahs, ahhs, oohs, singers", "sound", "choir", home="chord", hue=280,
@@ -1453,9 +1477,10 @@ TARGETS = {
     "drone_reverb": "drone reverb, tanpura reverb, reverb on the drone, reverb on the tanpura",
     "hammer_time": "hammer-on time, hammer on time",
     "drone_jawari": "jawari, jivari, drone jawari, tanpura jawari, the jawari, tanpura buzz, drone buzz",
+    "reed_bark": "bark, reed bark, wurlitzer bark, the bark, growl, how hard it's struck",
 }
 # Where a knob sweeps each role, (low, high) in parameters.json units; its centre is stored in the preset
-SWEEP = {"trem_freq": (0.5, 8), "speed_ramp": (0, 40), "drum_reverb": (0, 100), "drone_reverb": (0, 100), "drone_jawari": (0, 100), "hammer_time": (30, 300), "purity": (0, 100), "drone_level": (0, 100), "dj_filter": (0, 200), "phone_echo": (0, 100), "drum_level": (0, 100), "drum_kit": (0, 11),
+SWEEP = {"trem_freq": (0.5, 8), "speed_ramp": (0, 40), "drum_reverb": (0, 100), "drone_reverb": (0, 100), "drone_jawari": (0, 100), "reed_bark": (0, 100), "hammer_time": (30, 300), "purity": (0, 100), "drone_level": (0, 100), "dj_filter": (0, 200), "phone_echo": (0, 100), "drum_level": (0, 100), "drum_kit": (0, 11),
          "cutoff": {"chord": (150, 4000), "harp": (80, 2000)}, "resonance": (0.7, 4.5), "reverb": (0, 0.9),
          "reverb_size": (0.2, 1.0), "delay_mix": (0, 0.6), "delay_time": (50, 600), "vib_amount": (0, 0.5),
          "trem_amount": (0, 0.8), "crunch": (0, 0.7), "glide": (0, 800), "vowel": (0, 100), "formant": (0, 100),
@@ -1473,7 +1498,7 @@ TAP = {"resonance": 4.0, "reverb": 0.9, "reverb_size": 1.0, "delay_mix": 0.45, "
        "dj_filter": 40, "phone_echo": 100, "tape_stop": 1, "grab": 2, "drum_level": 100,
        "purity": 100, "drone_level": 100, "drone": 1, "maqam_jins": 1, "sharp_fn": 1,
        "trem_freq": 6.7, "speed_ramp": 20, "tabla_laya": 2, "drum_reverb": 60, "drone_reverb": 60, "hammer_time": 50,
-       "drone_jawari": 100}
+       "drone_jawari": 100, "reed_bark": 100}
 # the double tap's actions, which take a step rather than toggle a value
 TAP_ACTIONS = {"looper", "looper_pc", "chord_memory", "rhythm_fill", "rhythm_break", "rhythm_ending", "revert", "panic",
                "tape_stop", "grab"}
@@ -1487,17 +1512,18 @@ NOTE_INSTRUMENTS = {"pizzicato strings": 3, "plucked strings": 3, "pizz strings"
                     "cello": 5, "choir": 4, "voices": 4, "vocals": 4, "vocal": 4, "aahs": 4, "piano": 2, "pianos": 2,
                     "oscillators": 1, "synth voice": 1, "own synth": 1, "vibraphone": 7, "vibes": 7,
                     "bass guitar": 8, "electric bass": 8, "fingered bass": 8, "sitar": 9, "electric piano": 10,
-                    "e piano": 10, "epiano": 10, "rhodes": 10}
+                    "e piano": 10, "epiano": 10, "rhodes": 10,
+                    "wurlitzer": 11, "wurly": 11, "reed piano": 11}
 NOTE_POSITIONS = {"bass note": [0], "bottom note": [0], "lowest note": [0], "low note": [0], "first note": [0],
                   "bass": [0], "bottom": [0], "second note": [1], "tenor": [1], "third note": [2], "alto": [2],
                   "fourth note": [3], "top note": [3], "highest note": [3], "high note": [3], "soprano": [3],
                   "top": [3], "middle notes": [1, 2], "middle two": [1, 2], "inner voices": [1, 2], "middle": [1, 2],
                   "above": [1, 2, 3], "upper notes": [1, 2, 3], "upper voices": [1, 2, 3]}
 NOTE_VOICE_NAMES = {1: "its own synth", 2: "piano", 3: "pizzicato", 4: "choir", 5: "string quartet", 6: "song sample",
-                    7: "vibraphone", 8: "bass guitar", 9: "sitar", 10: "electric piano"}
+                    7: "vibraphone", 8: "bass guitar", 9: "sitar", 10: "electric piano", 11: "reed piano"}
 # What chord voice and harp voice play, in place of the oscillators; the notes' own voices count one higher
 VOICE_NAMES = {1: "piano", 2: "pizzicato", 3: "choir", 4: "string quartet", 5: "song sample", 6: "vibraphone",
-               7: "bass guitar", 8: "sitar", 9: "electric piano"}
+               7: "bass guitar", 8: "sitar", 9: "electric piano", 10: "reed piano"}
 # The settings only the section's own oscillators hear; a sampled voice doesn't. A waveform names the synth itself
 WAVE_ROLES = ("wave", "wave2", "wave3")
 OSC_ROLES = WAVE_ROLES + ("amp1", "amp2", "amp3", "mult1", "mult2", "mult3", "noise")
@@ -2799,10 +2825,14 @@ def export_data(params, version):
 # {"at": k} the address setting k holds (a knob's or hover's target; false when unassigned); B a value,
 # a list, {"value": a} the value at a, or {"values": [a, ...]} theirs. Values as the description reads
 # them (floats as 0-1). "{target}" in a note is the {"at"} target's name.
-SAMPLE_VOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+SAMPLE_VOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]   # 10, the reed piano, is a model but takes a sample's place
 KNOBS = [(10, 11, "the chord knob's alternate"), (12, 13, "the harp knob's alternate"),
          (14, 15, "the mod knob"), (16, 17, "the mod knob's alternate")]
 CONFLICTS = [
+    {"about": [386], "when": [[386, "!=", 60], [264, "!=", 10]],
+     "note": "harp reed bark only shapes the reed piano, and the harp isn't playing it (harp voice 10)"},
+    {"about": [387], "when": [[387, "!=", 60], [265, "!=", 10], [270, "!=", 11], [271, "!=", 11], [272, "!=", 11], [273, "!=", 11]],
+     "note": "chord reed bark only shapes the reed piano, and no chord note plays it (chord voice 10, or a note voice 11)"},
     {"about": [376], "when": [[376, "!=", 180], [302, "==", 0]],
      "note": "hammer-on time shapes hammer-on, which is off (0)"},
     {"about": [377], "when": [[377, ">", 0], [335, "not in", [41, 42, 43]]],

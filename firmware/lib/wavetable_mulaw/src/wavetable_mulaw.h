@@ -35,6 +35,7 @@
 #include <AudioStream.h> // github.com/PaulStoffregen/cores/blob/master/teensy4/AudioStream.h
 #include <math.h>
 #include <stdint.h>
+#include "reed_piano.h"   // the reed piano, which plays a voice in place of samples (reed_instrument)
 
 #define WAVETABLE_CENTS_SHIFT(C) (pow(2.0, (C)/1200.0))
 #define WAVETABLE_NOTE_TO_FREQUENCY(N) (440.0 * pow(2.0, ((N) - 69) / 12.0))
@@ -90,6 +91,9 @@ public:
 		const uint8_t* sample_note_ranges;
 		const sample_data* samples;
 	};
+	// An instrument with no samples is the reed piano (lib/reed_piano): the voice plays the model,
+	// struck at playFrequency's amp as its strength (127 full), its level amplitude() as always.
+	static const instrument_data reed_instrument;
 	enum { DEFAULT_AMPLITUDE = 90 };
 	enum { TRIANGLE_INITIAL_PHASE = -0x40000000 };
 	enum envelopeStateEnum { STATE_IDLE, STATE_DELAY, STATE_ATTACK, STATE_HOLD, STATE_DECAY, STATE_SUSTAIN, STATE_RELEASE };
@@ -109,7 +113,10 @@ public:
 	 * decoded SoundFont file using the SoundFont Decoder Script which accompanies this library.
 	 */
 	void setInstrument(const instrument_data& instrument) {
+		if (instrument.sample_count == 0 && !ReedPiano::ready()) ReedPiano::setup(AUDIO_SAMPLE_RATE_EXACT);
 		cli();
+		reed_mode = instrument.sample_count == 0;
+		reed.stop();
 		this->instrument = &instrument;
 		current_sample = NULL;
 		env_state = STATE_IDLE;
@@ -207,5 +214,10 @@ private:
 	volatile uint32_t mod_phase = TRIANGLE_INITIAL_PHASE;
 	volatile int32_t mod_pitch_offset_init = 0;
 	volatile int32_t mod_pitch_offset_scnd = 0;
+
+	// the reed piano, when this voice plays it (reed_instrument)
+	bool reed_mode = false;
+	ReedPiano reed;
+	void update_reed(void);
 };
 

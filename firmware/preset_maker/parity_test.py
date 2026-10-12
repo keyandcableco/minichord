@@ -107,6 +107,9 @@ SENTENCES = [
     "harp drums with reverb on the drums", "dry drums, dry tanpura", "turn on tabla laya and speed ramp",
     "a tanpura with open jawari", "more buzz on the tanpura", "closed jawari", "the mod knob is the jawari",
     "double tap opens the jawari",
+    "a wurlitzer with tremolo", "a barky wurlitzer", "mellow wurlitzer chords with the bass guitar on the bass note",
+    "barky wurly on the harp with touch velocity", "wurlitzer chords, the mod knob controls the bark",
+    "reed piano on the top note", "dig in", "no bark", "funky barky filter", "rhodes chords",
 ]
 # The sampled voices, which a sound or a waveform for the synth has to take back: choir chords with their own piano
 # in the bass and string quartet on the third note, and a piano harp
