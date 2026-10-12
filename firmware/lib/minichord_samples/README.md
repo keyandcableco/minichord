@@ -6,6 +6,6 @@ The sampled instruments the harp and chord voices can play (harp voice, 264; cho
 
     python3 generator/samples.py ~/minichord-lab/samples
 
-It prints each instrument's size. The sample data sits in flash beside the program, and the presets' storage needs 1 MB at the top of flash, so the firmware has to stay below about 0.9 MB in all: at version 36 there were 82 kB to spare.
+It prints each instrument's size. The sample data sits in flash beside the program, below the presets' storage at the top of flash (1 MB until firmware 61, 512 kB until 70, 128 kB since). `pio run` reports what is left as "free for files": take 128 kB (131072 bytes) from it for what the next sample can use. Firmware 70 left about 675 kB.
 
 See `LICENSE` for where the recordings come from and their terms (CC BY 3.0 and CC BY-SA 3.0).
