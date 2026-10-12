@@ -105,6 +105,9 @@ ROLES = {
     "drone_reverb": {"global": 379}, "speed_ramp": {"global": 380},
     # firmware 74: the tanpura's jawari
     "drone_jawari": {"global": 381},
+    # the pitch bend envelope's start and decay, chord shuffling, the generator scale (firmware 38)
+    "bend": {"chord": 170, "harp": 71}, "bend_decay": {"chord": 173, "harp": 74}, "chord_shuffle": {"chord": 120},
+    "generator": {"harp": 267}, "generator_notes": {"harp": 268}, "generator_mode": {"harp": 269},
 }
 
 
@@ -195,7 +198,7 @@ add("pizzicato, pizz, plucked strings, pizzicato strings, pizz strings, pizzicat
 add("guitar, guitars, acoustic guitar, nylon, folk, ukulele, uke, lute", "sound", "guitar", home="harp", hue=30, moves={
     "harp": synth_harp(0, 90) + env(1, 3000, 0.6, 900) + (EXACT("string_decay", 3.0), EXACT("string_damping", 40)),
     "chord": synth_chord(0.15, 9, 1.0) + env(1, 1200, 0.1, 500) + (EXACT("cutoff", 1800),)})
-add("concert harp, celtic harp, real harp, lyre, zither, dulcimer, autoharp", "sound", "concert harp", home="harp",
+add("concert harp, celtic harp, real harp, lyre, zither", "sound", "concert harp", home="harp",
     hue=50, moves=synth_harp(0, 75) + env(1, 4000, 0.6, 1500)
     + (EXACT("string_decay", 4.0), EXACT("string_damping", 25)))
 add("sitar, sitars, sitaar", "sound", "sitar", home="harp", hue=40,
@@ -401,6 +404,197 @@ add("harmonica, harmonicas, blues harp, mouth organ", "sound", "harmonica", hue=
     "chord": synth_chord(0.12, 5, 1.0, 0.08, 4, 1.0) + env(20, 200, 0.9, 100) + (SET("vib_amount", 0.06),
                                                                               EXACT("vib_freq", 5)) + VIBRATO_READY,
     "harp": synth_harp(5) + env(15, 200, 0.9, 100) + (SET("vib_amount", 0.06), EXACT("vib_freq", 5))})
+# The instruments of the folk, synth and ambient bank sets (minicontrol presets/, 2026-10-12), each the
+# nearest a sentence comes to the preset: the gesture it was built on comes with the sound (pluck on
+# lift, the koto press as a noter or a pressed rim, pressure as a volume pedal or a bow)
+MAJOR_PENTATONIC, MIXOLYDIAN, KURD = 661, 1717, 1451   # custom scale bits: 0 2 4 7 9; 0 2 4 5 7 9 10; 0 1 3 5 7 8 10
+add("autoharp, auto harp, autoharps, chromaharp", "sound", "autoharp", hue=35,
+    moves={"harp": synth_harp(0, 100) + env(1, 3500, 0.6, 600) + (
+               EXACT("string_decay", 3.5), EXACT("string_damping", 45), EXACT("scale", 0), EXACT("chromatic", 0),
+               EXACT("lift", 1), EXACT("ribbon", 0), EXACT("touch", 60), EXACT("strum", 60), EXACT("palm_mute", 7)),
+           "chord": synth_chord(0.14, 3, 1.0, 0.06, 9, 2.0, 0.05, 0, 0.5) + env(1, 1400, 0.3, 350) + (
+               EXACT("retrigger", 1), EXACT("cutoff", 1600))},
+    note="autoharp: every string plays the chord held, as its chord bars leave only those, and sounds as the "
+         "finger lifts; the Folk & Americana set's bank 1")
+add("dulcimer, mountain dulcimer, appalachian dulcimer, lap dulcimer, noter", "sound", "mountain dulcimer",
+    hue=90,
+    moves={"harp": synth_harp(0, 100) + env(1, 3000, 0.6, 600) + (
+               EXACT("string_decay", 3.2), EXACT("string_damping", 35), EXACT("scale", 10),
+               EXACT("custom_scale", MIXOLYDIAN), EXACT("chromatic", 0), EXACT("lift", 1), EXACT("koto", 2),
+               EXACT("koto_snap", 70), EXACT("ribbon", 0), EXACT("palm_mute", 6)),
+           "chord": synth_chord(0.14, 3, 1.0, 0.07, 0, 0.5, 0.05, 9, 1.0) + env(2, 2500, 0.8, 800) + (
+               EXACT("cutoff", 1400), EXACT("note2", 0))},
+    note="dulcimer: the melody string in the mixolydian mode of the DAD tuning, plucked on lift; press a ringing "
+         "string to slide it up a fret, the noter (koto press, firmware 64); the chords its drone strings")
+add("bluegrass, bluegrass banjo, five string banjo, 5 string banjo, banjo rolls", "sound", "bluegrass banjo",
+    hue=50,
+    moves={"harp": synth_harp(0, 100) + env(1, 1500, 0.3, 250) + (
+               EXACT("string_decay", 1.1), EXACT("string_damping", 60), EXACT("transient", 0.22), ADD("octave", 1),
+               EXACT("hammer_on", 1), EXACT("hammer_time", 60), EXACT("lift", 0), EXACT("strum", 75),
+               EXACT("touch", 55)),
+           "chord": synth_chord(0.14, 9, 1.0, 0.08, 3, 2.0, 0.04, 0, 1.0) + env(1, 900, 0.2, 200) + (
+               EXACT("retrigger", 1), EXACT("cutoff", 1800), EXACT("voice1", 8), EXACT("rhythm_style", 3),
+               EXACT("tempo", 136))},
+    note="bluegrass: a popping banjo an octave up with hammer-ons quick enough for its rolls, a flat-picked guitar "
+         "and the sampled upright bass (firmware 73) in boom-chick")
+add("pedal steel, pedal steel guitar, steel guitar, lap steel, slide guitar, bottleneck", "sound", "pedal steel",
+    hue=195,
+    moves={"harp": synth_harp(3) + env(15, 1200, 0.85, 500) + (
+               EXACT("cutoff", 1200), EXACT("ribbon", 1), EXACT("ribbon_snap", 60), EXACT("ribbon_glide", 110),
+               EXACT("ribbon_span", 12), SET("vib_amount", 0.03), EXACT("vib_freq", 4.8), EXACT("vib_attack", 500),
+               EXACT("touch", 60), EXACT("pressure", 1), EXACT("lift", 0)),
+           "chord": synth_chord(0.12, 3, 1.0, 0.07, 0, 2.0, 0.04, 9, 1.0) + env(40, 2500, 0.8, 900) + (
+               EXACT("retrigger", 0), EXACT("cutoff", 1800), EXACT("glide", 220), EXACT("fingered_glide", 1),
+               SET("vib_amount", 0.012), EXACT("vib_freq", 5)) + VIBRATO_READY},
+    note="pedal steel: the harp is the bar on a ribbon, louder as the finger presses (the volume pedal); roll from "
+         "one chord onto the next and the chord slides there, the pedals. Needs firmware 54")
+add("honky tonk piano, honky-tonk piano, honkytonk piano, honky tonk, honkytonk, honky-tonk, tack piano, saloon piano, barroom piano, barrelhouse piano, barrelhouse", "sound", "honky-tonk piano",
+    hue=10,
+    moves={"chord": (EXACT("voice", 1),) + env(1, 3500, 0.9, 300) + (
+               EXACT("cutoff", 3000), EXACT("string_model", 0), EXACT("ensemble", 45), EXACT("voice1", 8)),
+           "harp": (EXACT("voice", 1),) + env(1, 3500, 0.9, 500) + (
+               EXACT("cutoff", 4000), EXACT("string_model", 0), EXACT("touch", 80))},
+    note="honky-tonk: the sampled piano a little out of tune with itself (the ensemble), the sampled upright bass "
+         "under it (firmware 73); say boogie for the left hand")
+add("washboard, washboard band, jug band, skiffle, spoons", "sound", "washboard band", home="global", hue=40,
+    moves=(EXACT("harp_drums", 1), EXACT("drum_kit", 5), IFZERO("drum_level", 65)),
+    note="washboard band: the harp's twelve strings are the brushes kit's pads (a suitcase kick at the bottom, "
+         "the washboard's snare and knocks, the spoons); the chords stay as they are. Needs firmware 60")
+add("cajun, zydeco, cajun accordion, zydeco accordion", "sound", "Cajun accordion", hue=330,
+    moves={"chord": synth_chord(0.10, 9, 1.0, 0.08, 11, 1.0, 0.05, 9, 2.0) + env(12, 300, 0.95, 120) + (
+               EXACT("retrigger", 1), EXACT("cutoff", 2000), EXACT("ensemble", 50)),
+           "harp": (EXACT("voice", 4),) + env(50, 1500, 0.9, 350) + (
+               EXACT("cutoff", 4000), EXACT("string_model", 0), EXACT("touch", 60), EXACT("pressure", 1),
+               EXACT("hammer_on", 1), EXACT("hammer_time", 80), EXACT("lift", 0))},
+    note="Cajun: a button accordion whose reeds beat against each other on the chords, and the sampled strings as "
+         "a fiddle on the harp, swelling as the finger presses and slurring as one lands beside a held note")
+add("synthwave, synth wave, retrowave, outrun, eighties pad, 80s pad", "sound", "synthwave pad",
+    hue=290,
+    moves={"chord": synth_chord(0.10, 9, 1.0, 0.09, 9, 1.0, 0.06, 4, 0.5) + env(300, 1500, 0.85, 1800) + (
+               EXACT("cutoff", 500), EXACT("resonance", 1.4), EXACT("filter_sens", 1.0), EXACT("fenv_attack", 600),
+               EXACT("fenv_decay", 2000), EXACT("fenv_sustain", 0.5), EXACT("ensemble", 70), SET("reverb", 0.45)),
+           "harp": synth_harp(11) + env(1, 900, 0.0, 700) + (
+               EXACT("cutoff", 1300), EXACT("filter_sens", 1.0), EXACT("fenv_attack", 1), EXACT("fenv_decay", 400),
+               EXACT("fenv_sustain", 0.3)) + DELAY_READY + (SET("delay_mix", 0.25), EXACT("spread", 70),
+                                                            EXACT("spread_pattern", 1))},
+    note="synthwave: a chorused saw pad that opens as its filter envelope swells, a square pluck ping-ponging in "
+         "an echo; say hover opens the filter for the hand")
+add("synth brass, synthbrass, brass stabs, eighties brass, 80s brass, stab brass", "sound", "synth brass",
+    home="chord", hue=45,
+    moves={"chord": synth_chord(0.11, 9, 1.0, 0.10, 9, 1.0, 0.05, 4, 0.5) + env(8, 500, 0.7, 180) + (
+               EXACT("retrigger", 1), EXACT("cutoff", 900), EXACT("resonance", 1.3), EXACT("filter_sens", 1.5),
+               EXACT("fenv_attack", 1), EXACT("fenv_decay", 320), EXACT("fenv_sustain", 0.45), EXACT("ensemble", 35),
+               EXACT("bend", 0.94), EXACT("bend_decay", 60), MIN("vib_depth", 1.0)),
+           "harp": synth_harp(9) + env(3, 800, 0.8, 150) + (
+               EXACT("cutoff", 1200), EXACT("filter_sens", 1.2), EXACT("fenv_attack", 1), EXACT("fenv_decay", 300),
+               EXACT("fenv_sustain", 0.5), SET("vib_amount", 0.02), EXACT("vib_freq", 5.5), EXACT("vib_attack", 350))},
+    note="synth brass: a bite on every press and a scoop up to the pitch (the pitch bend envelope starting a little "
+         "under); for the stabs on a song's kicks say the kick stabs the chords")
+add("italo, italo disco, italodisco, eurodisco, euro disco, hi nrg, hi-nrg", "sound", "Italo disco",
+    hue=320,
+    moves={"chord": synth_chord(0.11, 9, 1.0, 0.09, 4, 1.0, 0.06, 9, 2.0) + env(2, 400, 0.5, 200) + (
+               EXACT("retrigger", 1), EXACT("cutoff", 1500), EXACT("filter_sens", 1.0), EXACT("fenv_attack", 1),
+               EXACT("fenv_decay", 300), EXACT("fenv_sustain", 0.5), EXACT("ensemble", 50), EXACT("rhythm_style", 9),
+               EXACT("tempo", 124), EXACT("drums", 1), EXACT("drum_groove", 6), EXACT("drum_kit", 2)),
+           "harp": synth_harp(3) + env(1, 700, 0.0, 400) + (EXACT("transient", 0.2), ADD("octave", 1)) + DELAY_READY
+                   + (SET("delay_mix", 0.22), EXACT("spread", 60), EXACT("spread_pattern", 1))},
+    note="Italo disco: a bright stab arpeggiating in sixteenths (rhythm mode) over a 909 four-on-the-floor at 124, a "
+         "bell pluck echoing on the harp. The drums need firmware 60")
+add("berlin school, tangerine dream, klaus schulze, berlin sequence, sequencer line", "sound", "Berlin school sequence",
+    hue=140,
+    moves={"chord": synth_chord(0.14, 9, 1.0, 0.0, 0, 2.0, 0.06, 11, 2.0) + env(1, 250, 0.3, 120) + (
+               EXACT("retrigger", 1), EXACT("cutoff", 600), EXACT("resonance", 2.0), EXACT("filter_sens", 1.8),
+               EXACT("fenv_attack", 1), EXACT("fenv_decay", 200), EXACT("fenv_sustain", 0.3), EXACT("chord_shuffle", 1))
+               + rhythm([1, 2, 4, 8, 1, 2, 16, 8, 1, 2, 4, 8, 1, 32, 4, 2]) + (
+               EXACT("tempo", 122), EXACT("rhythm_note", 110), IFZERO("delay_time", 246), IFZERO("delay_filter", 2500),
+               IFZERO("delay_feedback", 0.3), SET("delay_mix", 0.2)),
+           "harp": synth_harp(9) + env(5, 1200, 0.8, 300) + (
+               EXACT("cutoff", 1000), EXACT("resonance", 1.4), EXACT("filter_sens", 1.0), EXACT("fenv_attack", 1),
+               EXACT("fenv_decay", 600), EXACT("fenv_sustain", 0.5), EXACT("hammer_on", 1), EXACT("hammer_time", 90),
+               EXACT("lift", 0)) + DELAY_READY + (SET("delay_mix", 0.3),)},
+    note="Berlin school: tap hold and the chord buttons run a two-bar resonant sequence through the chord's notes and "
+         "the extras an octave up, into an echo; a lead with hammer-on slides over it")
+add("trance gate, trance gated, gated pad, chopped pad, gated synth, gate the pad, gate the chords", "sound",
+    "trance gate", home="chord", hue=180,
+    moves={"chord": synth_chord(0.10, 9, 1.0, 0.09, 9, 1.0, 0.05, 9, 2.0) + env(5, 1500, 0.9, 150) + (
+               EXACT("cutoff", 2500), EXACT("ensemble", 85), EXACT("trem_wave", 2), EXACT("trem_freq", 9.0),
+               SET("trem_amount", 0.9), SET("speed_ramp", 15))},
+    note="trance gate: a square-wave tremolo chopping a supersaw into sixteenths (9 Hz is sixteenths at 135 bpm); "
+         "the speed ramp (firmware 69) slews a change of rate, so a double tap to 18 Hz doubles it smoothly")
+add("power ballad, eighties ballad, 80s ballad, gated reverb, gated drums, gated snare, big snare", "sound",
+    "power ballad", hue=350,
+    moves={"chord": synth_chord(0.09, 9, 1.0, 0.08, 0, 2.0, 0.06, 4, 0.5) + env(150, 2000, 0.85, 1500) + (
+               EXACT("cutoff", 1200), EXACT("ensemble", 55), SET("reverb", 0.5), EXACT("rhythm_style", 11),
+               EXACT("tempo", 72), EXACT("drums", 1), EXACT("drum_groove", 4), EXACT("drum_kit", 1),
+               SET("drum_reverb", 70)),
+           "harp": (EXACT("voice", 9),) + env(1, 4000, 1.0, 600) + (
+               EXACT("cutoff", 4000), EXACT("string_model", 0), SET("reverb", 0.5), EXACT("touch", 80))},
+    note="power ballad: a wide pad, the sampled electric piano in a hall (firmware 73), and a slow 808 ballad with "
+         "the drums deep in the reverb, the gated room of the eighties (firmware 69)")
+add("glass harmonica, glass harp, glass armonica, armonica, wine glasses, wineglasses, singing glass, singing glasses",
+    "sound", "glass harmonica", hue=185,
+    moves={"harp": synth_harp(0, 30) + env(120, 5000, 0.6, 2500) + (
+               EXACT("string_decay", 7.0), EXACT("string_damping", 10), SET("reverb", 0.55), ADD("octave", 1),
+               EXACT("lift", 1), EXACT("koto", 1), EXACT("koto_snap", 0), EXACT("ribbon", 0), EXACT("palm_mute", 6)),
+           "chord": synth_chord(0.09, 0, 1.0, 0.07, 0, 2.0, 0.04, 3, 0.5) + env(900, 2000, 0.95, 2500) + (
+               EXACT("cutoff", 2500), SET("trem_amount", 0.15), EXACT("trem_freq", 0.3), SET("reverb", 0.6),
+               EXACT("ensemble", 15), SET("purity", 80))},
+    note="glass harmonica: glasses that sing as the fingers lift, bending up a semitone when a ringing one is pressed "
+         "harder (koto press); a bowed glass pad on the chords, tuned pure")
+add("singing bowl, singing bowls, tibetan bowl, tibetan bowls, sound bowl, sound bowls, temple bowls, crystal bowls, "
+    "sound bath", "sound", "singing bowls", hue=40,
+    moves={"harp": synth_harp(0, 15) + env(1, 5000, 0.0, 4000) + (
+               EXACT("string_decay", 8.0), EXACT("string_damping", 8), EXACT("transient", 0.1),
+               SET("trem_amount", 0.15), EXACT("trem_freq", 3.0), SET("reverb", 0.5), EXACT("spread", 80),
+               EXACT("spread_pattern", 1), EXACT("lift", 1), EXACT("koto", 2), EXACT("koto_snap", 0),
+               EXACT("ribbon", 0), EXACT("scale", 10), EXACT("custom_scale", MAJOR_PENTATONIC), EXACT("chromatic", 0),
+               EXACT("palm_mute", 6)),
+           "chord": synth_chord(0.10, 0, 1.0, 0.06, 0, 2.0, 0.03, 3, 0.5) + env(5, 5000, 0.0, 5000) + (
+               EXACT("retrigger", 1), EXACT("cutoff", 1500), EXACT("note2", 0), SET("trem_amount", 0.25),
+               EXACT("trem_freq", 2.2), SET("reverb", 0.6), EXACT("drone", 4), EXACT("drone_level", 70),
+               EXACT("drone_pace", 20), EXACT("drone_register", 0), SET("drone_reverb", 50),
+               EXACT("drone_jawari", 20))},
+    note="singing bowls: small bowls struck as the fingers lift and bent by pressing the rim, big bowls humming for "
+         "seconds on the chord buttons, and the drone (firmware 68) as the great bowl's hum, low and smooth")
+add("orwell, orwell 9, orwell nine, orwell scale, xenharmonic, xenharmonic scale", "sound", "Orwell[9] in 31 tones",
+    hue=95,
+    moves={"harp": synth_harp(0, 60) + env(1, 3500, 0.5, 2000) + (
+               EXACT("string_decay", 4.5), EXACT("string_damping", 30), EXACT("temperament", 12), EXACT("scale", 12),
+               EXACT("generator", 7), EXACT("generator_notes", 9), EXACT("generator_mode", 4), EXACT("chromatic", 0),
+               EXACT("lift", 1), EXACT("ribbon", 0)) + DELAY_READY + (SET("delay_mix", 0.25),),
+           "chord": synth_chord(0.09, 3, 1.0, 0.07, 0, 2.0, 0.05, 9, 0.5) + env(700, 2000, 0.9, 2200) + (
+               EXACT("cutoff", 1500), EXACT("ensemble", 40), SET("reverb", 0.55), EXACT("temperament", 12))},
+    note="Orwell[9]: nine notes of 31-tone equal temperament stacked from a small third (7 steps, 271 cents), the "
+         "generator scale (firmware 38); the mod knob on generator mode turns it through its modes")
+add("mohajira, neutral thirds, neutral third scale, neutral scale", "setting", "Mohajira (neutral thirds) in 31 tones",
+    home="harp", moves=(EXACT("temperament", 12), EXACT("scale", 12), EXACT("generator", 9), EXACT("generator_notes", 7),
+                        EXACT("generator_mode", 0), EXACT("chromatic", 0)),
+    note="Mohajira: seven notes stacked from a neutral third (9 steps of 31), neither major nor minor")
+add("whale, whales, whale song, whalesong, humpback, humpback whale", "sound", "whale song", hue=220,
+    moves={"harp": synth_harp(3) + env(200, 1500, 0.9, 900) + (
+               EXACT("cutoff", 800), EXACT("resonance", 1.4), EXACT("filter_sens", 0.6), EXACT("fenv_attack", 400),
+               EXACT("fenv_decay", 1200), EXACT("fenv_sustain", 0.6), EXACT("ribbon", 1), EXACT("ribbon_snap", 0),
+               EXACT("ribbon_glide", 250), EXACT("ribbon_span", 12), ADD("octave", -1), EXACT("touch", 60),
+               EXACT("pressure", 1), EXACT("lift", 0), IFZERO("delay_time", 600), IFZERO("delay_filter", 2000),
+               IFZERO("delay_feedback", 0.5), SET("delay_mix", 0.4), SET("reverb", 0.6), EXACT("spread", 70),
+               EXACT("spread_pattern", 1)),
+           "chord": synth_chord(0.14, 0, 0.5, 0.06, 3, 1.0, 0.03, 0, 2.0, noise=0.02) + env(1500, 2000, 0.9, 3000) + (
+               EXACT("cutoff", 500), EXACT("note2", 0), EXACT("lfo_wave", 0), EXACT("lfo_freq", 0.08),
+               EXACT("lfo_amount", 0.2), SET("reverb", 0.65), ADD("octave", -1), EXACT("glide", 800),
+               EXACT("fingered_glide", 1))},
+    note="whale: a low voice on the ribbon with the slowest glide, swelling under pressure into a long echo; the "
+         "chords an ocean, a drone pad that slowly swells and slides from chord to chord")
+add("handpan, hand pan, handpans, hang drum, pantam", "sound", "handpan", hue=120,
+    moves={"harp": synth_harp(0, 40) + env(1, 4000, 0.0, 2500) + (
+               EXACT("string_decay", 5.0), EXACT("string_damping", 20), EXACT("transient", 0.12),
+               SET("trem_amount", 0.08), EXACT("trem_freq", 2.5), SET("reverb", 0.5), EXACT("spread", 50),
+               EXACT("spread_pattern", 1), EXACT("touch", 85), EXACT("strum", 50), EXACT("palm_mute", 4),
+               EXACT("scale", 10), EXACT("custom_scale", KURD), EXACT("chromatic", 0), EXACT("lift", 0)),
+           "chord": synth_chord(0.12, 0, 1.0, 0.07, 0, 2.0, 0.04, 3, 0.5) + env(2, 3500, 0.0, 2500) + (
+               EXACT("retrigger", 1), EXACT("cutoff", 1500), EXACT("note2", 0), SET("trem_amount", 0.12),
+               EXACT("trem_freq", 2.8), SET("reverb", 0.5), ADD("octave", -1))},
+    note="handpan: the strings as tone fields in the Kurd scale, ringing long with a slow shimmer, as loud as they're "
+         "struck, damped by the flat hand; the chord buttons the ding and the low note under it")
 add("steel drum, steel drums, steel pan, steelpan, steel band", "sound", "steel drum", home="harp", hue=50, moves={
     "harp": synth_harp(3) + env(1, 700, 0.0, 600) + (EXACT("transient", 0.25), EXACT("cutoff", 1500)),
     "chord": synth_chord(0.12, 3, 1.0, 0.05, 0, 2.0) + env(1, 700, 0.0, 600)})

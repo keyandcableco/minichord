@@ -16,6 +16,12 @@ import preset_maker as pm
 import interpret
 
 SENTENCES = [
+    # the folk, synth and ambient sets' instruments (2026-10-12): the scoop, the generator scale, chord shuffling
+    "synth brass with the kick stabbing the chords", "orwell nine with lots of reverb", "berlin school at 110 bpm",
+    "singing bowls", "a pedal steel on the harp and a honky tonk piano on the chords", "a washboard band",
+    "mohajira on the harp", "whale song, hover opens the echo", "handpan", "bluegrass", "cajun accordion",
+    "italo disco", "a power ballad", "trance gate", "glass harmonica", "synthwave pad, hover opens the filter",
+    "a mountain dulcimer", "an autoharp",
     "four bar loops with a click and count me in", "an 8 bar loop, quantize the loop", "a bar long loop",
     "loops of 2 bars at 90 bpm", "loop as long as I play",
     "warm pad chords, plucky harp spread across the stereo field, the mod knob opens the filter, double tap starts the looper",
