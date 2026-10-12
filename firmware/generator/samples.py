@@ -104,14 +104,14 @@ TUNING_CENTS = {
     ('choir/musyng/aah', 64): -4.2,
     ('choir/musyng/aah', 76): -15.0,
     ('piano', 78): 6.4,
-    # - vibraphone, bass, sitar and electric piano: the energy-weighted pitch of the recording over its
-    #   first 0.8 s, offline (as the pizzicato is), before they were built; not yet checked on the minichord.
-    #   The vibraphone's lowest zone (48-56) is 25 cents sharp in its fundamental, its second partial on two
-    #   octaves of the note as named.
-    ('vibraphone/fluid', 50): 25.1,
-    ('vibraphone/fluid', 58): 5.7,
-    ('vibraphone/fluid', 66): -8.5,
-    ('vibraphone/fluid', 82): 3.8,
+    # - vibraphone: its fundamental's peak, offline, through the strike and the stretch the loop repeats
+    #   (they agree within 2 cents). Not the energy-weighted fit: the strike's upper partials, a bar's and
+    #   not harmonics, pull that 25 cents sharp in the low recordings, and an aligned loop (whole periods
+    #   of the pitch given here) cut to a wrong pitch fights the real one: at 25 cents out, recording 50's
+    #   held notes wandered 60 cents on the minichord (fw73_test.py hold). The others within 3 cents.
+    # - bass, sitar and electric piano: the energy-weighted pitch over the first 0.8 s, within 3 cents
+    #   throughout, so none; on the minichord every note within 5 cents (fw73_test.py harp).
+    ('vibraphone/fluid', 66): -4.5,
 }
 
 
