@@ -354,6 +354,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 7:
         current_sysex_parameters[7]=version_ID;
         break;
+      case 385:
+        lock_action(value);
+        break;
       case 2:
         string_gain.amplitude(value/100.0,100);  harp_attack_velocity=value/100.0*127;
         break;
@@ -1364,6 +1367,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 5: lo=0; hi=1024; return true;
       case 6: lo=0; hi=1024; return true;
       case 7: lo=0; hi=1000; return true;
+      case 385: lo=0; hi=1535; return true;
       case 2: lo=0; hi=100; return true;
       case 36: lo=0; hi=15; return true;
       case 236: lo=0; hi=4095; return true;

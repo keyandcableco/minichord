@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=75; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384)
+int version_ID=76; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1931,6 +1931,162 @@ FLASHMEM void upside_down_request(int value) {
 static inline uint8_t up_button_pin() { return upside_down ? DOWN_PGM_PIN : UP_PGM_PIN; }
 static inline uint8_t down_button_pin() { return upside_down ? UP_PGM_PIN : DOWN_PGM_PIN; }
 
+// ---------- LOCKS: settings the instrument keeps as its own, whatever preset is loaded ----------
+// A preset holds every setting, as it always has, and a preset file round-trips unchanged. But some
+// settings describe the instrument or the room rather than the sound: which harp plate is fitted,
+// how firm a touch it takes, the orchestra's A. A lock keeps the instrument's own value for an
+// address: a preset load skips it, as it already skips USB audio (244) and upside down (384), and a
+// change made to it live (an editor, the key change combo, MIDI tuning messages) is kept in the
+// Teensy's EEPROM a moment later rather than waiting for a save. A save writes the active values,
+// so a preset saved here describes this instrument, and the stock firmware loading that file finds
+// the right plate.
+// Which addresses may be locked goes by each parameter's "lock" in parameters.json (parameter_lock
+// in parameter_lookup.h): "never" for actions, the preset's name and the controls' own storage;
+// "default" for the ones locked until a player says otherwise (the plate, the touch and release
+// thresholds, the master tuning); "fixed" for 244 and 384, the instrument's by their own code,
+// which are only reported here. Writing lock (385) with an address locks it, with 1024 + the
+// address unlocks it; control command 9 reports the locked addresses (7D 6C, a count, then two
+// bytes an address, the fixed ones first); command 10 unlocks them all (0) or locks the default
+// ones again (1). The first boot with no locks in EEPROM locks the default ones, each at the value
+// the first preset loaded holds, so nothing changes until a player changes it.
+const int16_t lock_adress = 385;
+const uint8_t lock_max = 64;
+const int lock_eeprom = 16;                      // EEPROM, after USB audio and upside down: 'L', the layout, the count, a spare, then four bytes an entry
+const uint8_t lock_eeprom_layout = 1;
+struct lock_entry { uint16_t adress; int16_t value; };
+lock_entry lock_table[lock_max];
+uint8_t lock_count = 0;
+uint8_t lock_mask[parameter_size / 8];           // a bit an address, for the test in the loop
+bool locks_unseeded = false;                     // no locks in EEPROM yet: the defaults take the first preset's values
+bool locks_dirty = false;                        // a locked value changed live, to write once the changes stop
+elapsedMillis locks_since_change;
+const uint32_t lock_write_delay_ms = 2000;
+static inline bool lockable(int16_t a) { return a > 0 && a < (int16_t)parameter_size && parameter_lock[a] >= PARAMETER_LOCK_ALLOWED && parameter_lock[a] != PARAMETER_LOCK_FIXED; }
+static inline bool locked(int16_t a) { return a >= 0 && a < (int16_t)parameter_size && (lock_mask[a >> 3] & (1 << (a & 7))); }
+static int8_t lock_find(uint16_t a) {
+  for (uint8_t k = 0; k < lock_count; k++) if (lock_table[k].adress == a) return k;
+  return -1;
+}
+FLASHMEM static void lock_mask_rebuild() {
+  memset(lock_mask, 0, sizeof lock_mask);
+  for (uint8_t k = 0; k < lock_count; k++) lock_mask[lock_table[k].adress >> 3] |= 1 << (lock_table[k].adress & 7);
+}
+FLASHMEM static void lock_save() {
+  eeprom_write_byte((uint8_t *)(lock_eeprom + 0), 'L');
+  eeprom_write_byte((uint8_t *)(lock_eeprom + 1), lock_eeprom_layout);
+  eeprom_write_byte((uint8_t *)(lock_eeprom + 2), lock_count);
+  eeprom_write_byte((uint8_t *)(lock_eeprom + 3), 0);
+  for (uint8_t k = 0; k < lock_count; k++) {
+    int at = lock_eeprom + 4 + 4 * k;
+    eeprom_write_byte((uint8_t *)(at + 0), lock_table[k].adress & 0xFF);
+    eeprom_write_byte((uint8_t *)(at + 1), lock_table[k].adress >> 8);
+    eeprom_write_byte((uint8_t *)(at + 2), (uint16_t)lock_table[k].value & 0xFF);
+    eeprom_write_byte((uint8_t *)(at + 3), (uint16_t)lock_table[k].value >> 8);
+  }
+  locks_dirty = false;
+}
+// at power on, before the first preset loads
+FLASHMEM void lock_load() {
+  lock_count = 0;
+  locks_unseeded = eeprom_read_byte((const uint8_t *)(lock_eeprom + 0)) != 'L' || eeprom_read_byte((const uint8_t *)(lock_eeprom + 1)) != lock_eeprom_layout;
+  if (!locks_unseeded) {
+    uint8_t n = eeprom_read_byte((const uint8_t *)(lock_eeprom + 2));
+    if (n > lock_max) n = lock_max;
+    for (uint8_t k = 0; k < n; k++) {
+      int at = lock_eeprom + 4 + 4 * k;
+      uint16_t a = eeprom_read_byte((const uint8_t *)(at + 0)) | (eeprom_read_byte((const uint8_t *)(at + 1)) << 8);
+      int16_t v = (int16_t)(eeprom_read_byte((const uint8_t *)(at + 2)) | (eeprom_read_byte((const uint8_t *)(at + 3)) << 8));
+      if (!lockable(a) || lock_find(a) >= 0) continue;   // a setting that can't be locked any more (another firmware's table): dropped
+      lock_table[lock_count].adress = a;
+      lock_table[lock_count].value = v;
+      lock_count++;
+    }
+  }
+  lock_mask_rebuild();
+  Serial.printf("Locks: %d%s\n", lock_count, locks_unseeded ? " (none kept yet: the defaults will be locked at the first load)" : "");
+}
+// the default locks, each at the value the live settings hold now
+FLASHMEM static void lock_defaults() {
+  for (int16_t a = 1; a < (int16_t)parameter_size; a++) {
+    if (parameter_lock[a] != PARAMETER_LOCK_DEFAULT || lock_find(a) >= 0 || lock_count >= lock_max) continue;
+    lock_table[lock_count].adress = a;
+    lock_table[lock_count].value = current_sysex_parameters[a];
+    lock_count++;
+  }
+}
+// in load_config, once the preset's values are in: the locked ones give way to the instrument's
+FLASHMEM void lock_apply() {
+  if (locks_unseeded) {
+    locks_unseeded = false;
+    lock_defaults();
+    lock_mask_rebuild();
+    lock_save();
+    Serial.printf("Locked the %d default settings as this preset has them\n", lock_count);
+  }
+  for (uint8_t k = 0; k < lock_count; k++) current_sysex_parameters[lock_table[k].adress] = lock_table[k].value;
+}
+FLASHMEM static void lock_set(uint16_t a, bool on) {
+  if (a < parameter_size && parameter_lock[a] == PARAMETER_LOCK_FIXED) { Serial.printf("Setting %d is the instrument's already\n", a); return; }
+  if (!lockable(a)) { Serial.printf("Setting %d can't be locked\n", a); return; }
+  int8_t k = lock_find(a);
+  if (on && k < 0) {
+    if (lock_count >= lock_max) { Serial.println("No room for another lock"); return; }
+    lock_table[lock_count].adress = a;
+    lock_table[lock_count].value = current_sysex_parameters[a];
+    lock_count++;
+    Serial.printf("Locked %d at %d\n", a, current_sysex_parameters[a]);
+  } else if (!on && k >= 0) {
+    for (uint8_t j = k; j + 1 < lock_count; j++) lock_table[j] = lock_table[j + 1];
+    lock_count--;
+    Serial.printf("Unlocked %d\n", a);
+  } else return;
+  lock_mask_rebuild();
+  lock_save();
+}
+FLASHMEM void lock_reset(bool defaults) {
+  lock_count = 0;
+  if (defaults) lock_defaults();
+  lock_mask_rebuild();
+  lock_save();
+  Serial.printf(defaults ? "The default settings locked, %d\n" : "All settings unlocked\n", lock_count);
+}
+// lock (385): an address locks it, 1024 + an address unlocks it; an action, never a value to keep
+FLASHMEM void lock_action(int value) {
+  current_sysex_parameters[lock_adress] = 0;
+  if (parameters_loading || value <= 0) return;   // a preset holds 0 here; one that doesn't is no reason to lock anything
+  if (value < 1024) lock_set(value, true);
+  else if (value - 1024 < (int)parameter_size) lock_set(value - 1024, false);
+}
+// control command 9: the locked addresses to an editor, 7D 6C, a count, then two bytes an address
+FLASHMEM void lock_report() {
+  uint8_t data[3 + 2 * (lock_max + 2)];
+  uint8_t n = 0;
+  data[0] = 0x7D;
+  data[1] = 0x6C;
+  const uint16_t fixed[2] = {usb_audio_adress, upside_down_adress};
+  for (uint8_t k = 0; k < 2; k++) { data[3 + 2 * n] = fixed[k] % 128; data[4 + 2 * n] = fixed[k] / 128; n++; }
+  for (uint8_t k = 0; k < lock_count; k++) { data[3 + 2 * n] = lock_table[k].adress % 128; data[4 + 2 * n] = lock_table[k].adress / 128; n++; }
+  data[2] = n;
+  usbMIDI.sendSysEx(3 + 2 * n, data, 0);
+}
+// in the loop: a locked setting changed live (an editor, the key change combo, a pop, MIDI tuning)
+// becomes the instrument's new value, written once the changes have stopped for a moment. The knobs
+// and hover apply their sweep without writing the setting, so they move a locked setting for as
+// long as they hold it, as they do any other, and leave the lock as it was.
+void lock_update() {
+  static elapsedMillis since_check;
+  if (since_check < 50 || parameters_loading) return;
+  since_check = 0;
+  for (uint8_t k = 0; k < lock_count; k++) {
+    int16_t now = current_sysex_parameters[lock_table[k].adress];
+    if (now == lock_table[k].value) continue;
+    lock_table[k].value = now;
+    locks_dirty = true;
+    locks_since_change = 0;
+  }
+  if (locks_dirty && locks_since_change > lock_write_delay_ms) lock_save();
+}
+
 // A setting's factory default in a bank: page 0's from the bank's factory preset, page 1's generated
 static inline int16_t parameter_default(int bank_number, uint16_t i) {
   return i < page_size ? default_bank_sysex_parameters[bank_number][i] : parameter_page1_defaults[i - page_size];
@@ -2024,6 +2180,13 @@ FLASHMEM void control_command(uint8_t command, uint8_t parameter) {
     break;
   case 8: // rhythm mode: parameter 0 off, 1 on, 2 the other way, as a long press on hold
     set_rythm_mode(parameter == 2 ? !rythm_mode : parameter == 1);
+    break;
+  case 9: // the locked settings, for an editor (see LOCKS)
+    lock_report();
+    break;
+  case 10: // the locks: 0 none, 1 the default ones (see LOCKS)
+    lock_reset(parameter == 1);
+    lock_report();
     break;
   case 4: // loading a bank, so a remote can read every preset in turn
     if (parameter < preset_number) {
@@ -6538,6 +6701,7 @@ void load_config(int bank_number) {
     apply_preset_version(bank_number);
     current_sysex_parameters[usb_audio_adress] = usb_audio_mode;   // the instrument's, whatever the preset holds
     current_sysex_parameters[upside_down_adress] = upside_down;
+    lock_apply();                                                  // and the locked settings, see LOCKS
     Serial.printf("Loaded preset %d\n", bank_number + 1);
   } else {
     Serial.print("No preset, writing factory default");
@@ -6689,6 +6853,7 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
     preset_storage_mark();
   }
   preset_file_relayout();
+  lock_load();                 // the instrument's own settings, before the first preset loads (see LOCKS)
   Serial.println("Loading the preset");
   load_config(current_bank_number);
   // initializing the strings
@@ -9431,6 +9596,7 @@ void phone_dj_update() {
 
 void loop() {
   usb_audio_update();
+  lock_update();
   // Process incoming MIDI messages
   // A chord sent in arrives as several notes at once: take what has come, up to a handful a pass
   for (uint8_t k = 0; k < 16 && usbMIDI.read(); k++) {
