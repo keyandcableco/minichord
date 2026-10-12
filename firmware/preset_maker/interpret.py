@@ -103,6 +103,8 @@ ROLES = {
     # firmware 69: hammer-on time, tabla laya, the drums' and the drone's reverb, speed ramp
     "hammer_time": {"harp": 376}, "tabla_laya": {"global": 377}, "drum_reverb": {"global": 378},
     "drone_reverb": {"global": 379}, "speed_ramp": {"global": 380},
+    # firmware 74: the tanpura's jawari
+    "drone_jawari": {"global": 381},
 }
 
 
@@ -1100,6 +1102,18 @@ add("drone reverb, reverb on the drone, reverb on the tanpura, tanpura reverb, t
     off=(EXACT("drone_reverb", 0),), note="the drone " + REVERB_SEND_NOTE)
 add("dry drone, dry tanpura, no reverb on the drone, no reverb on the tanpura", "setting", "the drone dry", home="global",
     moves=(EXACT("drone_reverb", 0),), note=FW69_NOTE)
+
+# ---- firmware 74: the tanpura's jawari ----
+JAWARI_NOTE = ("drone jawari (381): how closely each tanpura string lies along its curved bridge, as the cotton thread "
+               "under it is slid to set: 0 closed, a plain string; 100 open, lying right on the bridge; 60 the usual. "
+               "Needs firmware 74")
+add("jawari, jivari, juari, open jawari, more jawari, buzzing tanpura, buzzy tanpura, bright tanpura, tanpura buzz, "
+    "more buzz on the tanpura, the tanpura buzzing, let the tanpura buzz, tanpura shimmer, blooming tanpura",
+    "setting", "the jawari open: the tanpura buzzing and blooming", home="global",
+    moves=(SET("drone_jawari", 90), IFZERO("drone", 1)), off=(EXACT("drone_jawari", 60),), note=JAWARI_NOTE)
+add("closed jawari, less jawari, no jawari, smooth tanpura, plain tanpura, dull tanpura, tanpura without buzz, "
+    "no buzz on the tanpura, tanpura not buzzing", "setting", "the jawari closed: a plain tanpura", home="global",
+    moves=(SET("drone_jawari", 10), IFZERO("drone", 1)), off=(EXACT("drone_jawari", 60),), note=JAWARI_NOTE)
 SPEED_RAMP_NOTE = ("the tremolo's and the vibrato's rates wind up to a new rate and coast down, as a rotating speaker's rotors "
                    "do; put the tremolo speed on the double tap or a knob to switch. " + FW69_NOTE)
 add("speed ramp, ramped tremolo, tremolo ramp, tremolo spins up, tremolo winds up, spin up and down, spins up and down, "
@@ -1244,9 +1258,10 @@ TARGETS = {
     "drum_reverb": "drum reverb, drums reverb, reverb on the drums",
     "drone_reverb": "drone reverb, tanpura reverb, reverb on the drone, reverb on the tanpura",
     "hammer_time": "hammer-on time, hammer on time",
+    "drone_jawari": "jawari, jivari, drone jawari, tanpura jawari, the jawari, tanpura buzz, drone buzz",
 }
 # Where a knob sweeps each role, (low, high) in parameters.json units; its centre is stored in the preset
-SWEEP = {"trem_freq": (0.5, 8), "speed_ramp": (0, 40), "drum_reverb": (0, 100), "drone_reverb": (0, 100), "hammer_time": (30, 300), "purity": (0, 100), "drone_level": (0, 100), "dj_filter": (0, 200), "phone_echo": (0, 100), "drum_level": (0, 100), "drum_kit": (0, 11),
+SWEEP = {"trem_freq": (0.5, 8), "speed_ramp": (0, 40), "drum_reverb": (0, 100), "drone_reverb": (0, 100), "drone_jawari": (0, 100), "hammer_time": (30, 300), "purity": (0, 100), "drone_level": (0, 100), "dj_filter": (0, 200), "phone_echo": (0, 100), "drum_level": (0, 100), "drum_kit": (0, 11),
          "cutoff": {"chord": (150, 4000), "harp": (80, 2000)}, "resonance": (0.7, 4.5), "reverb": (0, 0.9),
          "reverb_size": (0.2, 1.0), "delay_mix": (0, 0.6), "delay_time": (50, 600), "vib_amount": (0, 0.5),
          "trem_amount": (0, 0.8), "crunch": (0, 0.7), "glide": (0, 800), "vowel": (0, 100), "formant": (0, 100),
@@ -1263,7 +1278,8 @@ TAP = {"resonance": 4.0, "reverb": 0.9, "reverb_size": 1.0, "delay_mix": 0.45, "
        "rhythm_fill": 1, "rhythm_break": 2, "rhythm_ending": 3, "revert": 1, "panic": 2,
        "dj_filter": 40, "phone_echo": 100, "tape_stop": 1, "grab": 2, "drum_level": 100,
        "purity": 100, "drone_level": 100, "drone": 1, "maqam_jins": 1, "sharp_fn": 1,
-       "trem_freq": 6.7, "speed_ramp": 20, "tabla_laya": 2, "drum_reverb": 60, "drone_reverb": 60, "hammer_time": 50}
+       "trem_freq": 6.7, "speed_ramp": 20, "tabla_laya": 2, "drum_reverb": 60, "drone_reverb": 60, "hammer_time": 50,
+       "drone_jawari": 100}
 # the double tap's actions, which take a step rather than toggle a value
 TAP_ACTIONS = {"looper", "looper_pc", "chord_memory", "rhythm_fill", "rhythm_break", "rhythm_ending", "revert", "panic",
                "tape_stop", "grab"}
@@ -2601,6 +2617,10 @@ CONFLICTS = [
      "note": "drum reverb with no drums: neither drums nor harp drums is on"},
     {"about": [379], "when": [[379, ">", 0], [372, "==", 0]],
      "note": "drone reverb with the drone off (0)"},
+    {"about": [381], "when": [[381, "!=", 60], [372, "==", 0]],
+     "note": "drone jawari shapes the tanpura, and the drone is off (0)"},
+    {"about": [381], "when": [[381, "!=", 60], [372, "==", 5]],
+     "note": "drone jawari shapes the tanpura's strings; the shruti box (drone 5) has reeds, not strings"},
     {"about": [380], "when": [[380, ">", 0], [159, "==", 0], [163, "==", 0], [61, "==", 0], [64, "==", 0]],
      "note": "speed ramp moves the tremolo's and the vibrato's rates, and there is no tremolo or vibrato to hear it in"},
     {"about": [351, 36], "when": [[351, "==", 1], [36, "not in", [10, 11, 14, 15]]],

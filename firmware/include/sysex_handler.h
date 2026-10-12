@@ -132,6 +132,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 380:
         speed_ramp=value;
         break;
+      case 381:
+        drum_machine.drone.jawari(value/100.0f);
+        break;
       case 257:
         string_spread=value; apply_string_spreads(); apply_harp_bus();
         break;
@@ -1284,6 +1287,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 27: lo=0; hi=100; return true;
       case 28: lo=0; hi=100; return true;
       case 380: lo=0; hi=50; return true;
+      case 381: lo=0; hi=100; return true;
       case 257: lo=0; hi=100; return true;
       case 258: lo=0; hi=1; return true;
       case 259: lo=0; hi=100; return true;
