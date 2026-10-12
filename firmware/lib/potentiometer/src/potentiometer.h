@@ -18,6 +18,8 @@ class potentiometer{
   void set_alternate_range(float range);
   void set_alternate_default(int alternate_initial_value);
   void force_update();
+  // Which pin the knob is read from: upside down, the top and bottom knobs trade places.
+  void set_pin(int pin) { pot_pin = pin; }
   bool update_parameter(bool alternate_flag); //the flag tells us whether the modifier button was pushed
   // Pickup: the next switch between main and alternate leaves the newly active function where it
   // was until the knob reaches the position it was last set from (or crosses it), so the function

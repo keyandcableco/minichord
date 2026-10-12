@@ -13,7 +13,7 @@ preset_maker.apply_changes to check and store, with what was understood and what
 import difflib, json, os, re, unicodedata
 from dataclasses import dataclass, field
 
-NOT_IN_PRESETS = {0, 1, 2, 3, 4, 5, 6, 7, 241, 242, 243, 244, 256, 382, 383, 510, 511}
+NOT_IN_PRESETS = {0, 1, 2, 3, 4, 5, 6, 7, 241, 242, 243, 244, 256, 382, 383, 384, 510, 511}
 HERE = os.path.dirname(os.path.abspath(__file__))
 LOOKUP_H = os.path.join(os.path.dirname(HERE), "lib", "potentiometer", "src", "parameter_lookup.h")
 

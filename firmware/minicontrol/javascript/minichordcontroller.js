@@ -8,6 +8,9 @@ class MiniChordController {
       this.parameter_size = 512;
       this.page_size = 256;
       this.reserved_adresses = [382, 383, 510, 511];   // can't be written: their low byte is a universal SysEx id
+      // Settings of the instrument, not of a preset (USB audio, upside down): a preset sent whole
+      // leaves them as they are, or loading one would turn a left-handed player's minichord back over
+      this.instrument_adresses = [244, 384];
       this.has_page1 = false;
       this.page1_defaults = {};                         // address -> stored default, from parameters.json
       this.onPageReceived = null;
@@ -191,10 +194,12 @@ class MiniChordController {
     applyPreset(values) {
       const count = Math.min(values.length, this.parameter_size);
       for (let i = 2; i < count; i++) {
-        if (!this.reserved_adresses.includes(i)) this.sendParameter(i, values[i]);
+        if (!this.reserved_adresses.includes(i) && !this.instrument_adresses.includes(i)) this.sendParameter(i, values[i]);
       }
       if (values.length <= this.page_size && this.has_page1) {
-        for (const [adress, value] of Object.entries(this.page1_defaults)) this.sendParameter(parseInt(adress), value);
+        for (const [adress, value] of Object.entries(this.page1_defaults)) {
+          if (!this.instrument_adresses.includes(parseInt(adress))) this.sendParameter(parseInt(adress), value);
+        }
       }
       this.sendParameter(0, 0);   // the minichord reports back, and the interface follows
     }

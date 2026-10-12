@@ -599,7 +599,7 @@ async function generateRandomPreset() {
   
   // Send the preset to the device
   for (let i = 2; i < miniChordController.parameter_size; i++) {
-    if (preset[i] !== undefined && !miniChordController.reserved_adresses.includes(i)) {
+    if (preset[i] !== undefined && !miniChordController.reserved_adresses.includes(i) && !miniChordController.instrument_adresses.includes(i)) {
       let valueToSend = preset[i];
       
       // Float values are already in the correct range (e.g., 0-100), 

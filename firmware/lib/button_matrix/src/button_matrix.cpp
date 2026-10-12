@@ -46,13 +46,13 @@ void button_matrix::update(debouncer (&data_array)[22]){
         delayMicroseconds(5);
         bool reading=!digitalRead(read_pin_1);
         uint8_t write_index=index*3-2;
-        data_array[write_index].set(reading);
+        data_array[upside_down ? 22-write_index : write_index].set(reading);
         reading=!digitalRead(read_pin_2);
         write_index=index*3-1;
-        data_array[write_index].set(reading);
+        data_array[upside_down ? 22-write_index : write_index].set(reading);
         reading=!digitalRead(read_pin_3);
         write_index=index*3;
-        data_array[write_index].set(reading);
+        data_array[upside_down ? 22-write_index : write_index].set(reading);
         index=index-1;
   }
   //now the sharp

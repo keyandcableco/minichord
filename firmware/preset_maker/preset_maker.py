@@ -33,8 +33,8 @@ FLOAT_MULTIPLIER = 100
 VERSION_ADDRESS = 7
 RESERVED = {382, 383, 510, 511}                 # can't be written: their low byte is a universal SysEx id
 # Settings a preset has no business changing: the bank and version stamps, the knob memories and
-# volumes, the instrument's own setup (harp thresholds, plate, USB audio) and the looper's action.
-LOCKED = {0, 1, 2, 3, 4, 5, 6, 7, 241, 242, 243, 244, 256}
+# volumes, the instrument's own setup (harp thresholds, plate, USB audio, upside down) and the looper's action.
+LOCKED = {0, 1, 2, 3, 4, 5, 6, 7, 241, 242, 243, 244, 256, 384}
 # Settings whose value is the address of another setting, and which kind of control each one is
 KNOB_TARGETS = {10: "chord knob, alternate", 12: "harp knob, alternate", 14: "mod knob, main",
                 16: "mod knob, alternate", 249: "hover", 303: "the phone's sound, 1", 307: "the phone's sound, 2",

@@ -16,6 +16,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 20, 0, 0, 360 }, // bank color
     { 32, 0, 0, 100 }, // led attenuation
     { 244, 1, 0, 2 }, // usb audio
+    { 384, 1, 0, 1 }, // upside down
     { 243, 1, 0, 3 }, // harp plate
     { 241, 0, 0, 120 }, // harp touch threshold
     { 242, 0, 0, 119 }, // harp release threshold

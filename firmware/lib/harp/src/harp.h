@@ -33,8 +33,14 @@ class harp{
   // chip's own baseline is only kept to four counts, coarser than a hand a few
   // centimetres away moves it, so the baseline is the caller's to keep.
   uint16_t read_proximity();
+  // Upside down, for a left-handed player: the plate's zones in the other
+  // order, so the zone at the top as the player holds it plays what the top
+  // zone always has (harp order i becomes 11 - i, in update() and
+  // read_strength() alike).
+  void set_upside_down(bool flipped);
 
   private:
+  bool upside_down = false;
   bool thresholds_changed = false;
   #if CAP_CHIP==1
     AT42QT2120 touch_sensor;

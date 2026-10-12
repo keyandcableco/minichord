@@ -20,6 +20,11 @@ class button_matrix{
   void write_bit(bool data);
   void write_byte(byte data);
   void update(debouncer (&data_array)[22]);
+  // Upside down, for a left-handed player: the 21 chord buttons turned round,
+  // so the button at the top left as the player holds it is F major, as it is
+  // the right way up (button i becomes 22 - i: the columns and the rows both
+  // reverse). The sharp button is where it is either way.
+  bool upside_down = false;
 
 
   private:

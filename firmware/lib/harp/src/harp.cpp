@@ -171,3 +171,11 @@ harp::harp(){}
       }
   }
 #endif
+
+// Both chips keep their order in remap_array, so turning it over is turning
+// that over: every reading lands on the zone at the other end.
+void harp::set_upside_down(bool flipped){
+  if (flipped == upside_down) return;
+  upside_down = flipped;
+  for (uint8_t key=0; key < 12; key++) remap_array[key] = 11 - remap_array[key];
+}

@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=74; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381)
+int version_ID=75; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1365,8 +1365,9 @@ void queue_midi_cc(uint8_t controller, uint8_t value, uint8_t channel, uint8_t c
 // with less (0.7 of a value, and lighter smoothing) a resting mod knob flickered between 71 and 72.
 bool knob_midi = false;        // the knobs' positions sent out as control changes (address 238)
 bool knob_midi_resend = false; // send every knob's position again, e.g. just after it's switched on
+bool upside_down = false;      // a left-handed player's minichord, turned round (address 384, see upside_down_apply)
 void send_knob_ccs() {
-  static const uint8_t pins[3] = {POT_CHORD_PIN, POT_HARP_PIN, POT_MOD_PIN};
+  const uint8_t pins[3] = {upside_down ? POT_MOD_PIN : POT_CHORD_PIN, POT_HARP_PIN, upside_down ? POT_CHORD_PIN : POT_MOD_PIN};
   static float smoothed[3] = {-1, -1, -1};
   static int16_t sent[3] = {-1, -1, -1};
   static elapsedMillis since;
@@ -1896,6 +1897,40 @@ void usb_audio_update() {
   SCB_AIRCR = 0x05FA0004;                        // a system reset: the program starts again, USB with it
 }
 
+// ---------- Upside down (address 384), for a left-handed player: a setting of the instrument ----------
+// Turned round, the harp is under the left hand and the chord buttons under the right. Every control
+// is read as if it had turned with the player, so the instrument plays as it does the right way up:
+//   the chord buttons: the one at the top left as the player holds it is F major (button i is 22 - i)
+//   the harp: the zone at the top plays what the top zone always has (zone i is 11 - i)
+//   the knobs: the top one is the chord knob and the bottom one the mod knob, the harp knob between
+//   the preset buttons: the upper one goes up (its arrow, turned round, points up too)
+// The rhythm button and the sharp button stay what they are. Everything past the reading (chords,
+// combinations, the harp's plates, the looper, MIDI) sees the instrument the right way up, so nothing
+// else changes. One thing doesn't turn: zipper 24 and the fretless wrap (harp plates 1 and 3) have an
+// island of the bottom zone above the top one, which turned round is below the bottom zone and still
+// plays the place above the top; a plate made for the left hand would have it at the other end.
+// The arcade wheel (plate 2) is read turned round, its bearing from the top as the player holds it.
+// Kept in the Teensy's EEPROM beside USB audio, not in the presets, so it stays as chosen
+// whichever preset is loaded; 0 the right way up, 1 upside down.
+const int upside_down_adress = 384;
+const int upside_down_eeprom = 1;                // EEPROM byte; erased (0xFF) reads as 0, the right way up
+void upside_down_apply() {
+  harp_sensor.set_upside_down(upside_down);
+  chord_matrix.upside_down = upside_down;
+  chord_pot.set_pin(upside_down ? POT_MOD_PIN : POT_CHORD_PIN);
+  mod_pot.set_pin(upside_down ? POT_CHORD_PIN : POT_MOD_PIN);
+  current_sysex_parameters[upside_down_adress] = upside_down;
+}
+FLASHMEM void upside_down_request(int value) {
+  bool flipped = value > 0;
+  if (eeprom_read_byte((const uint8_t *)upside_down_eeprom) != (uint8_t)flipped) eeprom_write_byte((uint8_t *)upside_down_eeprom, flipped);
+  if (flipped != upside_down) Serial.println(flipped ? "Upside down, for a left-handed player" : "The right way up");
+  upside_down = flipped;
+  upside_down_apply();
+}
+static inline uint8_t up_button_pin() { return upside_down ? DOWN_PGM_PIN : UP_PGM_PIN; }
+static inline uint8_t down_button_pin() { return upside_down ? UP_PGM_PIN : DOWN_PGM_PIN; }
+
 // A setting's factory default in a bank: page 0's from the bank's factory preset, page 1's generated
 static inline int16_t parameter_default(int bank_number, uint16_t i) {
   return i < page_size ? default_bank_sysex_parameters[bank_number][i] : parameter_page1_defaults[i - page_size];
@@ -1912,7 +1947,7 @@ void pop_sysex_parameters() {
   if (!sysex_pushed) return;
   sysex_pushed = false;
   for (int i = 0; i < parameter_size; i++) {
-    if (i == 7 || i == usb_audio_adress) continue;        // the firmware version isn't a parameter, and USB audio is the instrument's
+    if (i == 7 || i == usb_audio_adress || i == upside_down_adress) continue;   // the firmware version isn't a parameter, and USB audio and upside down are the instrument's
     if (current_sysex_parameters[i] == pushed_sysex_parameters[i]) continue;
     current_sysex_parameters[i] = pushed_sysex_parameters[i];
     apply_audio_parameter(i, pushed_sysex_parameters[i]);
@@ -6502,6 +6537,7 @@ void load_config(int bank_number) {
     memcpy(current_sysex_parameters, stored, sizeof stored);
     apply_preset_version(bank_number);
     current_sysex_parameters[usb_audio_adress] = usb_audio_mode;   // the instrument's, whatever the preset holds
+    current_sysex_parameters[upside_down_adress] = upside_down;
     Serial.printf("Loaded preset %d\n", bank_number + 1);
   } else {
     Serial.print("No preset, writing factory default");
@@ -6615,6 +6651,8 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   chord_matrix.setup();
   harp_sensor.setup();
   harp_sensor.recalibrate();
+  upside_down = eeprom_read_byte((const uint8_t *)upside_down_eeprom) == 1;
+  upside_down_apply();
   // The harp pads don't bounce: the touch chip already wants two readings in a row before it calls a
   // pad touched. The buttons' 10 ms was most of the harp's latency: from a pad's reading crossing
   // the touch threshold to the pluck took 17 ms (median, measured), and with 4 ms it takes 11.
@@ -7567,6 +7605,9 @@ void handle_harp_ribbon() {
 // The ring's ten zones, clockwise from the top: each one's harp zone (zone i is
 // T(12 - i)), the compass bearing of its middle in degrees, 0 at the top, and
 // its width. The arrows' outer zones are 30 degrees wide, the side arrows' 45.
+// Upside down the harp's zones are numbered from the other end, so a segment's
+// zone is 11 - zone, and the ring's top is where its bottom was: the bearing
+// turns half round (clockwise is still clockwise).
 struct wheel_segment { uint8_t zone; float bearing; float width; };
 const wheel_segment wheel_ring[10] = {
   {10, 0, 30}, {9, 30, 30}, {4, 67.5, 45}, {3, 112.5, 45}, {2, 150, 30},
@@ -7585,7 +7626,8 @@ void handle_wheel() {
   static int16_t sent = -1;
   static elapsedMillis since;
   bool touched = false;
-  for (uint8_t k = 0; k < 10; k++) touched |= harp_array[wheel_ring[k].zone].read_value();
+  auto zone = [](const wheel_segment &s) -> uint8_t { return upside_down ? 11 - s.zone : s.zone; };
+  for (uint8_t k = 0; k < 10; k++) touched |= harp_array[zone(wheel_ring[k])].read_value();
   if (!touched) {
     if (was_touched) queue_midi_cc(wheel_touch_cc, 0, harp_channel, harp_port);
     was_touched = false;
@@ -7598,17 +7640,17 @@ void handle_wheel() {
   harp_sensor.read_strength(strength);
   uint8_t peak = 0;
   for (uint8_t k = 1; k < 10; k++) {
-    if (strength[wheel_ring[k].zone] > strength[wheel_ring[peak].zone]) peak = k;
+    if (strength[zone(wheel_ring[k])] > strength[zone(wheel_ring[peak])]) peak = k;
   }
   const wheel_segment &p = wheel_ring[peak];
   const wheel_segment &before = wheel_ring[(peak + 9) % 10];
   const wheel_segment &after = wheel_ring[(peak + 1) % 10];
-  float s_peak = strength[p.zone];
+  float s_peak = strength[zone(p)];
   if (s_peak <= 0) return;
-  bool toward_after = strength[after.zone] >= strength[before.zone];
-  float s_near = strength[(toward_after ? after : before).zone];
+  bool toward_after = strength[zone(after)] >= strength[zone(before)];
+  float s_near = strength[zone(toward_after ? after : before)];
   float lean = min(s_near / s_peak, 1.0f) * p.width / 2;
-  float bearing = p.bearing + (toward_after ? lean : -lean);
+  float bearing = p.bearing + (toward_after ? lean : -lean) + (upside_down ? 180 : 0);
   float steps = bearing * 128 / 360;
   if (!was_touched) queue_midi_cc(wheel_touch_cc, 127, harp_channel, harp_port);
   was_touched = true;
@@ -9405,8 +9447,8 @@ void loop() {
 
   // Update debouncers
   hold_button.set(digitalRead(HOLD_BUTTON_PIN));
-  up_button.set(digitalRead(UP_PGM_PIN));
-  down_button.set(digitalRead(DOWN_PGM_PIN));
+  up_button.set(digitalRead(up_button_pin()));
+  down_button.set(digitalRead(down_button_pin()));
   LBO_flag.set(digitalRead(BATT_LBO_PIN));
   chord_matrix.update(chord_matrix_array);
   chord_legato_watch();
