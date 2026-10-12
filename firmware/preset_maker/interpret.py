@@ -171,10 +171,10 @@ add("drone, drones, droning", "sound", "drone", home="chord", hue=260, moves=env
 add("organ, organs, hammond, b3, drawbar, church organ, combo organ", "sound", "organ", home="chord", hue=30, moves={
     "chord": synth_chord(0.15, 0, 1.0, 0.1, 0, 2.0, 0.08, 0, 0.5) + env(5, 100, 1.0, 80) + (EXACT("cutoff", 3500),),
     "harp": synth_harp(0) + env(5, 100, 1.0, 80)})
-add("electric piano, e piano, epiano, rhodes, wurlitzer, wurly, ep, dx7, dx 7, fm piano", "sound", "electric piano", home="chord", hue=35, moves={
-    "chord": synth_chord(0.15, 0, 1.0, 0.05, 3, 2.0) + env(2, 1800, 0.25, 500)
-             + (SET("trem_amount", 0.2), IFZERO("trem_freq", 4), EXACT("cutoff", 2500)),
-    "harp": synth_harp(0) + env(1, 1500, 0.2, 500) + (EXACT("transient", 0.15),)})
+# The sampled electric piano, vibraphone, sitar and bass (voice source 6-9, firmware 73), as the piano is
+add("electric piano, e piano, epiano, rhodes, wurlitzer, wurly, ep, dx7, dx 7, fm piano", "sound", "electric piano", home="chord", hue=35,
+    moves=(EXACT("voice", 9),) + env(2, 2500, 0.3, 600) + (EXACT("cutoff", 4000), EXACT("string_model", 0)),
+    note="the sampled electric piano needs firmware 73")
 add("piano, pianos, grand piano, acoustic piano, upright piano, keys", "sound", "piano", hue=40,
     moves=(EXACT("voice", 1),) + env(1, 2500, 0.3, 700) + (EXACT("cutoff", 4000), EXACT("string_model", 0)))
 add("choir, choirs, voices, vocal, vocals, aahs, ahhs, oohs, singers", "sound", "choir", home="chord", hue=280,
@@ -196,7 +196,14 @@ add("guitar, guitars, acoustic guitar, nylon, folk, ukulele, uke, lute", "sound"
 add("concert harp, celtic harp, real harp, lyre, zither, dulcimer, autoharp", "sound", "concert harp", home="harp",
     hue=50, moves=synth_harp(0, 75) + env(1, 4000, 0.6, 1500)
     + (EXACT("string_decay", 4.0), EXACT("string_damping", 25)))
-add("banjo, mandolin, koto, shamisen, twang, twangy, sitar", "sound", "twangy strings", home="harp", hue=45,
+add("sitar, sitars, sitaar", "sound", "sitar", home="harp", hue=40,
+    moves=(EXACT("voice", 8),) + env(1, 3500, 0.35, 1200) + (EXACT("cutoff", 5000), EXACT("string_model", 0)),
+    note="the sampled sitar needs firmware 73")
+add("bass guitar, bass guitars, electric bass, fingered bass, finger bass, slap bass", "sound", "bass guitar", home="chord", hue=25, moves={
+    "chord": (EXACT("voice1", 8),),
+    "harp": (EXACT("voice", 7),) + env(1, 2000, 0.4, 300) + (EXACT("cutoff", 4000), EXACT("string_model", 0))},
+    note="the sampled bass needs firmware 73; on the chords it plays the bass note under the others")
+add("banjo, mandolin, koto, shamisen, twang, twangy", "sound", "twangy strings", home="harp", hue=45,
     moves=synth_harp(0, 100) + env(1, 1500, 0.4, 600)
     + (EXACT("string_decay", 1.2), EXACT("string_damping", 70), SCALE("cutoff", 1.5)))
 add("harpsichord, harpsichords, clavinet, clav", "sound", "harpsichord", home="harp", hue=45,
@@ -206,10 +213,9 @@ add("bell, bells, chime, chimes, glass, glassy, glockenspiel, celesta, crystal, 
     "sound", "bells", home="harp", hue=190, moves={
         "harp": synth_harp(0) + env(1, 2000, 0.0, 2000) + (EXACT("transient", 0.15), SET("reverb", 0.4)),
         "chord": synth_chord(0.15, 0, 1.0, 0.06, 0, 2.0) + env(1, 2000, 0.0, 2000) + (SET("reverb", 0.4),)})
-add("vibraphone, vibes, vibraphones", "sound", "vibraphone", home="harp", hue=200, moves={
-    "harp": synth_harp(0) + env(1, 2000, 0.0, 1500) + (SET("trem_amount", 0.35), EXACT("trem_freq", 5)),
-    "chord": synth_chord(0.15, 0, 1.0, 0.04, 0, 2.0) + env(1, 2000, 0.0, 1500)
-             + (SET("trem_amount", 0.35), EXACT("trem_freq", 5))})
+add("vibraphone, vibes, vibraphones", "sound", "vibraphone", home="harp", hue=200,
+    moves=(EXACT("voice", 6),) + env(1, 3000, 0.25, 1500) + (EXACT("cutoff", 4000), EXACT("string_model", 0)),
+    note="the sampled vibraphone needs firmware 73 (its motor's tremolo is in the recording)")
 add("music box, musicbox", "sound", "music box", home="harp", hue=320,
     moves=synth_harp(0) + env(1, 1200, 0.0, 1200) + (EXACT("transient", 0.15), ADD("octave", 1)))
 add("kalimba, mbira, thumb piano", "sound", "kalimba", home="harp", hue=35,
@@ -1269,15 +1275,19 @@ WAVE_NAMES = {"sine": 0, "sawtooth": 9, "saw": 9, "square": 11, "triangle": 3, "
 NOTE_INSTRUMENTS = {"pizzicato strings": 3, "plucked strings": 3, "pizz strings": 3, "pizzicato": 3, "pizz": 3,
                     "string quartet": 5, "bowed strings": 5, "strings": 5, "violins": 5, "violin": 5, "cellos": 5,
                     "cello": 5, "choir": 4, "voices": 4, "vocals": 4, "vocal": 4, "aahs": 4, "piano": 2, "pianos": 2,
-                    "oscillators": 1, "synth voice": 1, "own synth": 1}
+                    "oscillators": 1, "synth voice": 1, "own synth": 1, "vibraphone": 7, "vibes": 7,
+                    "bass guitar": 8, "electric bass": 8, "fingered bass": 8, "sitar": 9, "electric piano": 10,
+                    "e piano": 10, "epiano": 10, "rhodes": 10}
 NOTE_POSITIONS = {"bass note": [0], "bottom note": [0], "lowest note": [0], "low note": [0], "first note": [0],
                   "bass": [0], "bottom": [0], "second note": [1], "tenor": [1], "third note": [2], "alto": [2],
                   "fourth note": [3], "top note": [3], "highest note": [3], "high note": [3], "soprano": [3],
                   "top": [3], "middle notes": [1, 2], "middle two": [1, 2], "inner voices": [1, 2], "middle": [1, 2],
                   "above": [1, 2, 3], "upper notes": [1, 2, 3], "upper voices": [1, 2, 3]}
-NOTE_VOICE_NAMES = {1: "its own synth", 2: "piano", 3: "pizzicato", 4: "choir", 5: "string quartet"}
+NOTE_VOICE_NAMES = {1: "its own synth", 2: "piano", 3: "pizzicato", 4: "choir", 5: "string quartet", 6: "song sample",
+                    7: "vibraphone", 8: "bass guitar", 9: "sitar", 10: "electric piano"}
 # What chord voice and harp voice play, in place of the oscillators; the notes' own voices count one higher
-VOICE_NAMES = {1: "piano", 2: "pizzicato", 3: "choir", 4: "string quartet", 5: "song sample"}
+VOICE_NAMES = {1: "piano", 2: "pizzicato", 3: "choir", 4: "string quartet", 5: "song sample", 6: "vibraphone",
+               7: "bass guitar", 8: "sitar", 9: "electric piano"}
 # The settings only the section's own oscillators hear; a sampled voice doesn't. A waveform names the synth itself
 WAVE_ROLES = ("wave", "wave2", "wave3")
 OSC_ROLES = WAVE_ROLES + ("amp1", "amp2", "amp3", "mult1", "mult2", "mult3", "noise")
@@ -2579,7 +2589,7 @@ def export_data(params, version):
 # {"at": k} the address setting k holds (a knob's or hover's target; false when unassigned); B a value,
 # a list, {"value": a} the value at a, or {"values": [a, ...]} theirs. Values as the description reads
 # them (floats as 0-1). "{target}" in a note is the {"at"} target's name.
-SAMPLE_VOICES = [1, 2, 3, 4, 5]
+SAMPLE_VOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 KNOBS = [(10, 11, "the chord knob's alternate"), (12, 13, "the harp knob's alternate"),
          (14, 15, "the mod knob"), (16, 17, "the mod knob's alternate")]
 CONFLICTS = [

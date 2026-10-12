@@ -3405,7 +3405,7 @@
               <p>217</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="crossfades each harp string from its oscillator to a plucked string model, in percent. 0 is the oscillator alone, as before; 100 is the model alone: a burst of noise ringing round a loop the length of the string's period, which mellows as it dies away the way a real string does. Its pluck is brighter the harder the string is plucked (with touch velocity on), and it follows the ribbon's glide, the vibrato and the tuning. The envelope, filter and transient still shape it; an envelope with a quick attack and long decay lets the string ring as it would. A sampled harp voice (harp voice 1-5) plays instead of both, the model resting">string model</dfn>
+              <dfn title="crossfades each harp string from its oscillator to a plucked string model, in percent. 0 is the oscillator alone, as before; 100 is the model alone: a burst of noise ringing round a loop the length of the string's period, which mellows as it dies away the way a real string does. Its pluck is brighter the harder the string is plucked (with touch velocity on), and it follows the ribbon's glide, the vibrato and the tuning. The envelope, filter and transient still shape it; an envelope with a quick attack and long decay lets the string ring as it would. A sampled harp voice (harp voice 1-9) plays instead of both, the model resting">string model</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
               <input class="slider inactive" adress_field="217" curve="linear" data_type="int" id="143" max="100" min="0" onchange="handlechange(this)" step="1" target_max="100" target_min="0" type="range" value="0" />
@@ -3425,10 +3425,10 @@
               <p>264</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="(5: the song, a second of what plays into the minichord over USB, grabbed with phone deck) what each harp string sounds: 0 its own synth (the oscillator and string model), as before; 1 piano; 2 pizzicato strings; 3 choir; 4 a string quartet (cello low, viola in the middle, violin high). A sample runs through the string's envelope, filter and level, so the preset still shapes it, and follows the ribbon and the tuning. Samples rendered by the midi-js-soundfonts project: the piano from FluidR3 (CC BY 3.0), the others from Musyng Kite (CC BY-SA 3.0); see lib/minichord_samples">harp voice</dfn>
+              <dfn title="(5: the song, a second of what plays into the minichord over USB, grabbed with phone deck) what each harp string sounds: 0 its own synth (the oscillator and string model), as before; 1 piano; 2 pizzicato strings; 3 choir; 4 a string quartet (cello low, viola in the middle, violin high); 6 vibraphone (its motor on); 7 a fingered bass; 8 sitar; 9 electric piano. A sample runs through the string's envelope, filter and level, so the preset still shapes it, and follows the ribbon and the tuning; the vibraphone, bass, sitar and electric piano hold on while the envelope does, so a long decay lets them ring. Samples rendered by the midi-js-soundfonts project: the piano, vibraphone, bass and electric piano from FluidR3 (CC BY 3.0), the others from Musyng Kite (CC BY-SA 3.0); see lib/minichord_samples">harp voice</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="264" curve="linear" data_type="int" id="144" max="5" min="0" onchange="handlechange(this)" step="1" target_max="5" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="264" curve="linear" data_type="int" id="144" max="9" min="0" onchange="handlechange(this)" step="1" target_max="9" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone264" class="value_zone"></p>
@@ -5470,10 +5470,10 @@
               <p>265</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="(5: the song, a second of what plays into the minichord over USB, grabbed with phone deck) what each chord voice sounds: 0 its own oscillators, as before; 1 piano; 2 pizzicato strings; 3 choir; 4 a string quartet. A sample runs through the voice's envelope and filter, so the preset still shapes it. Samples rendered by the midi-js-soundfonts project: the piano from FluidR3 (CC BY 3.0), the others from Musyng Kite (CC BY-SA 3.0); see lib/minichord_samples">chord voice</dfn>
+              <dfn title="(5: the song, a second of what plays into the minichord over USB, grabbed with phone deck) what each chord voice sounds: 0 its own oscillators, as before; 1 piano; 2 pizzicato strings; 3 choir; 4 a string quartet; 6 vibraphone (its motor on); 7 a fingered bass (best as first note voice, under the others); 8 sitar; 9 electric piano. A sample runs through the voice's envelope and filter, so the preset still shapes it. Samples rendered by the midi-js-soundfonts project: the piano, vibraphone, bass and electric piano from FluidR3 (CC BY 3.0), the others from Musyng Kite (CC BY-SA 3.0); see lib/minichord_samples">chord voice</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="265" curve="linear" data_type="int" id="245" max="5" min="0" onchange="handlechange(this)" step="1" target_max="5" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="265" curve="linear" data_type="int" id="245" max="9" min="0" onchange="handlechange(this)" step="1" target_max="9" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone265" class="value_zone"></p>
@@ -5490,10 +5490,10 @@
               <p>270</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="what the first chord note sounds, in place of chord voice: 0 as the chord voice, 1 its own oscillators, 2 piano, 3 pizzicato strings, 4 choir, 5 a string quartet. So the notes can be different instruments, say pizzicato in the bass under a choir. Counted as the note levels (first note to fourth note) are: the first is the bass and the fourth the top with the chords voiced as they come, with inversions and with voice leading; chord spacing without voice leading can reorder them. Each note has its own sample player, so this costs nothing more">first note voice</dfn>
+              <dfn title="what the first chord note sounds, in place of chord voice: 0 as the chord voice, 1 its own oscillators, 2 piano, 3 pizzicato strings, 4 choir, 5 a string quartet, 6 the song, 7 vibraphone, 8 a fingered bass, 9 sitar, 10 electric piano. So the notes can be different instruments, say the bass under an electric piano, or pizzicato under a choir. Counted as the note levels (first note to fourth note) are: the first is the bass and the fourth the top with the chords voiced as they come, with inversions and with voice leading; chord spacing without voice leading can reorder them. Each note has its own sample player, so this costs nothing more">first note voice</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="270" curve="linear" data_type="int" id="246" max="5" min="0" onchange="handlechange(this)" step="1" target_max="5" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="270" curve="linear" data_type="int" id="246" max="10" min="0" onchange="handlechange(this)" step="1" target_max="10" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone270" class="value_zone"></p>
@@ -5510,10 +5510,10 @@
               <p>271</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="what the second chord note sounds, in place of chord voice: 0 as the chord voice, 1 its own oscillators, 2 piano, 3 pizzicato strings, 4 choir, 5 a string quartet. So the notes can be different instruments, say pizzicato in the bass under a choir. Counted as the note levels (first note to fourth note) are: the first is the bass and the fourth the top with the chords voiced as they come, with inversions and with voice leading; chord spacing without voice leading can reorder them. Each note has its own sample player, so this costs nothing more">second note voice</dfn>
+              <dfn title="what the second chord note sounds, in place of chord voice: 0 as the chord voice, 1 its own oscillators, 2 piano, 3 pizzicato strings, 4 choir, 5 a string quartet, 6 the song, 7 vibraphone, 8 a fingered bass, 9 sitar, 10 electric piano. So the notes can be different instruments, say the bass under an electric piano, or pizzicato under a choir. Counted as the note levels (first note to fourth note) are: the first is the bass and the fourth the top with the chords voiced as they come, with inversions and with voice leading; chord spacing without voice leading can reorder them. Each note has its own sample player, so this costs nothing more">second note voice</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="271" curve="linear" data_type="int" id="247" max="5" min="0" onchange="handlechange(this)" step="1" target_max="5" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="271" curve="linear" data_type="int" id="247" max="10" min="0" onchange="handlechange(this)" step="1" target_max="10" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone271" class="value_zone"></p>
@@ -5530,10 +5530,10 @@
               <p>272</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="what the third chord note sounds, in place of chord voice: 0 as the chord voice, 1 its own oscillators, 2 piano, 3 pizzicato strings, 4 choir, 5 a string quartet. So the notes can be different instruments, say pizzicato in the bass under a choir. Counted as the note levels (first note to fourth note) are: the first is the bass and the fourth the top with the chords voiced as they come, with inversions and with voice leading; chord spacing without voice leading can reorder them. Each note has its own sample player, so this costs nothing more">third note voice</dfn>
+              <dfn title="what the third chord note sounds, in place of chord voice: 0 as the chord voice, 1 its own oscillators, 2 piano, 3 pizzicato strings, 4 choir, 5 a string quartet, 6 the song, 7 vibraphone, 8 a fingered bass, 9 sitar, 10 electric piano. So the notes can be different instruments, say the bass under an electric piano, or pizzicato under a choir. Counted as the note levels (first note to fourth note) are: the first is the bass and the fourth the top with the chords voiced as they come, with inversions and with voice leading; chord spacing without voice leading can reorder them. Each note has its own sample player, so this costs nothing more">third note voice</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="272" curve="linear" data_type="int" id="248" max="5" min="0" onchange="handlechange(this)" step="1" target_max="5" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="272" curve="linear" data_type="int" id="248" max="10" min="0" onchange="handlechange(this)" step="1" target_max="10" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone272" class="value_zone"></p>
@@ -5550,10 +5550,10 @@
               <p>273</p>
             </div>
             <div class=" bloc B6 M4 S6">
-              <dfn title="what the fourth chord note sounds, in place of chord voice: 0 as the chord voice, 1 its own oscillators, 2 piano, 3 pizzicato strings, 4 choir, 5 a string quartet. So the notes can be different instruments, say pizzicato in the bass under a choir. Counted as the note levels (first note to fourth note) are: the first is the bass and the fourth the top with the chords voiced as they come, with inversions and with voice leading; chord spacing without voice leading can reorder them. Each note has its own sample player, so this costs nothing more">fourth note voice</dfn>
+              <dfn title="what the fourth chord note sounds, in place of chord voice: 0 as the chord voice, 1 its own oscillators, 2 piano, 3 pizzicato strings, 4 choir, 5 a string quartet, 6 the song, 7 vibraphone, 8 a fingered bass, 9 sitar, 10 electric piano. So the notes can be different instruments, say the bass under an electric piano, or pizzicato under a choir. Counted as the note levels (first note to fourth note) are: the first is the bass and the fourth the top with the chords voiced as they come, with inversions and with voice leading; chord spacing without voice leading can reorder them. Each note has its own sample player, so this costs nothing more">fourth note voice</dfn>
             </div>
             <div class=" bloc B2 M2 S4">
-              <input class="slider inactive" adress_field="273" curve="linear" data_type="int" id="249" max="5" min="0" onchange="handlechange(this)" step="1" target_max="5" target_min="0" type="range" value="0" />
+              <input class="slider inactive" adress_field="273" curve="linear" data_type="int" id="249" max="10" min="0" onchange="handlechange(this)" step="1" target_max="10" target_min="0" type="range" value="0" />
             </div>
             <div class=" bloc B1 M1 S1">
               <p id="value_zone273" class="value_zone"></p>

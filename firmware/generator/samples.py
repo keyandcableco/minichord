@@ -22,9 +22,17 @@ A recording is pitched from the note its file is named for, less any offset in T
 some of the renderings are off, and every note played from one carries its error, which a pure
 third against it (in 31-EDO, or just chords) makes plain.
 
-Flash is the limit: the firmware has about 690 kB besides the presets' storage, so the
-loops are shorter than the Lab's (whose are about two seconds), the choir and strings,
-with little above 8 kHz, are kept at 16 kHz, and the sizes are printed at the end.
+Flash is the limit: the firmware has about 560 kB besides the presets' storage and the first four,
+so the loops are shorter than the Lab's (whose are about two seconds), the instruments with little
+above 8 kHz are kept at 16 kHz, and the sizes are printed at the end.
+
+The later four (vibraphone, bass, sitar, electric piano; voice source 6-9, after the song at 5) are
+struck or plucked and looped, and two things differ for them. Each loop is a whole number of the
+recording's periods long (aligned), so the loop's own repetition rate falls on the note's harmonics
+instead of pulling the pitch onto its own grid (the choir's and strings' offsets below are partly
+that grid). And each is levelled by its first 0.4 s, as the pizzicato is, not by its loop: a struck
+note's loop sits well below its strike, and levelling by the loop would leave the strike clipped to
+the limit and the note quiet.
 """
 import math
 import os
@@ -52,6 +60,22 @@ INSTRUMENTS = [
     dict(name='strings', title='string quartet (Musyng Kite): cello, viola, violin', rate=16000,
          notes=[('quartet/cello', 40), ('quartet/cello', 50), ('quartet/viola', 60), ('quartet/violin', 70),
                 ('quartet/violin', 82)], loop=(0.5, 0.5, 0.2)),
+    # The vibraphone has its motor on, a steady 4.2 Hz tremolo of about 3.6 dB in every recording, so its
+    # loop is one turn of the motor (0.238 s) and the tremolo goes round seamlessly; little of it is above
+    # 8 kHz. Musyng Kite's has no steady motor, its partials beating unevenly instead.
+    dict(name='vibraphone', title='vibraphone (FluidR3)', rate=16000, aligned=True, level_from_start=True,
+         notes=[('vibraphone/fluid', n) for n in (50, 58, 66, 74, 82)], loop=(0.4, 0.238, 0.1)),
+    # A fingered electric bass, for the chords' first note under the others (first note voice); Musyng
+    # Kite's is two layers a semitone apart from 66 up.
+    dict(name='bass', title='fingered bass (FluidR3)', rate=16000, aligned=True, level_from_start=True,
+         notes=[('bass/fluid', n) for n in (36, 48, 60)], loop=(0.35, 0.3, 0.12)),
+    # Musyng Kite's sitar rings on steadily with its bridge's buzz (FluidR3's dies away much sooner), at
+    # 22 kHz for the buzz.
+    dict(name='sitar', title='sitar (Musyng Kite)', rate=22050, aligned=True, level_from_start=True,
+         notes=[('sitar/musyng', n) for n in (44, 56, 68, 80)], loop=(0.4, 0.25, 0.1)),
+    # A Rhodes-style electric piano (General MIDI's Electric Piano 1); mellow, so at 16 kHz.
+    dict(name='epiano', title='electric piano (FluidR3)', rate=16000, aligned=True, level_from_start=True,
+         notes=[('epiano/fluid', n) for n in (42, 54, 66, 78)], loop=(0.55, 0.25, 0.12)),
 ]
 TARGET_RMS = 0.2
 # Recordings that sound away from the note they are named for, in cents, measured on the minichord
@@ -80,6 +104,14 @@ TUNING_CENTS = {
     ('choir/musyng/aah', 64): -4.2,
     ('choir/musyng/aah', 76): -15.0,
     ('piano', 78): 6.4,
+    # - vibraphone, bass, sitar and electric piano: the energy-weighted pitch of the recording over its
+    #   first 0.8 s, offline (as the pizzicato is), before they were built; not yet checked on the minichord.
+    #   The vibraphone's lowest zone (48-56) is 25 cents sharp in its fundamental, its second partial on two
+    #   octaves of the note as named.
+    ('vibraphone/fluid', 50): 25.1,
+    ('vibraphone/fluid', 58): 5.7,
+    ('vibraphone/fluid', 66): -8.5,
+    ('vibraphone/fluid', 82): 3.8,
 }
 
 
@@ -97,7 +129,7 @@ def find_file(root, folder, note):
     raise SystemExit('missing %s/%d' % (folder, note))
 
 
-def build_note(root, inst, folder, note):
+def build_note(root, inst, folder, note, root_hz):
     rate = inst['rate']
     x = decode(find_file(root, folder, note), rate)
     onset = np.argmax(np.abs(x) > 0.01 * np.max(np.abs(x)))
@@ -105,13 +137,16 @@ def build_note(root, inst, folder, note):
     if 'loop' in inst:
         start_s, length_s, fade_s = inst['loop']
         ls, le, xf = int(start_s * rate), int((start_s + length_s) * rate), int(fade_s * rate)
+        if inst.get('aligned'):                        # a whole number of the note's periods
+            period = rate / root_hz
+            le = ls + int(round(round(length_s * rate / period) * period))
         if le + 4 > len(x) or ls - xf < 0:
             raise SystemExit('%s/%d too short for its loop' % (folder, note))
         x = x[:le + 4].copy()
         t = np.arange(xf) / xf
         x[le - xf:le] = x[le - xf:le] * np.cos(t * np.pi / 2) + x[ls - xf:ls] * np.sin(t * np.pi / 2)
         x[le:le + 4] = x[ls:ls + 4]                    # the player reads a sample past the end at the wrap
-        level = np.sqrt(np.mean(x[ls:le] ** 2))
+        level = np.sqrt(np.mean(x[:int(0.4 * rate)] ** 2) if inst.get('level_from_start') else np.mean(x[ls:le] ** 2))
         loop = (ls, le)
     else:
         end = min(len(x), int(inst['one_shot'] * rate))
@@ -165,17 +200,18 @@ def main():
            '#include "minichord_samples.h"', '']
     header = ['// generated by generator/samples.py - do not edit', '#ifndef MINICHORD_SAMPLES_H',
               '#define MINICHORD_SAMPLES_H', '#include <Audio.h>', '',
-              '// The sampled instruments, in voice source order (harp voice and chord voice 1-%d)' % len(INSTRUMENTS)]
+              '// The sampled instruments, in voice source order (harp voice and chord voice 1-4, and after the song at 5, 6-%d)'
+              % (len(INSTRUMENTS) + 1)]
     total = 0
     report = []
     for inst in INSTRUMENTS:
         structs, ranges, size = [], [], 0
         notes = [n for _, n in inst['notes']]
         for k, (folder, note) in enumerate(inst['notes']):
-            pcm, loop = build_note(root, inst, folder, note)
+            root_hz = 440 * 2 ** ((note - 69 + TUNING_CENTS.get((folder, note), 0) / 100) / 12)
+            pcm, loop = build_note(root, inst, folder, note, root_hz)
             array = 'sample_%s_%d' % (inst['name'], note)
             cpp.append(c_array(array, pcm))
-            root_hz = 440 * 2 ** ((note - 69 + TUNING_CENTS.get((folder, note), 0) / 100) / 12)
             structs.append(sample_struct(array, pcm, loop, root_hz, inst['rate']))
             ranges.append(127 if k == len(notes) - 1 else (note + notes[k + 1]) // 2)
             size += pcm.nbytes

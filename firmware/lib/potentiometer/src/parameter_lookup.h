@@ -157,7 +157,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 22, 1, 0, 1 }, // change held strings
     { 41, 0, 0, 100 }, // amplitude
     { 217, 0, 0, 100 }, // string model
-    { 264, 1, 0, 5 }, // harp voice
+    { 264, 1, 0, 9 }, // harp voice
     { 218, 0, 10, 2000 }, // string decay
     { 219, 0, 0, 100 }, // string damping
     { 42, 1, 0, 11 }, // waveform
@@ -258,11 +258,11 @@ static const ParameterInfo parameter_lookup[] = {
     { 113, 1, 0, 4 }, // slash voice
     { 114, 1, 0, 1 }, // slash re-voice
     { 115, 1, 0, 5 }, // cantus
-    { 265, 1, 0, 5 }, // chord voice
-    { 270, 1, 0, 5 }, // first note voice
-    { 271, 1, 0, 5 }, // second note voice
-    { 272, 1, 0, 5 }, // third note voice
-    { 273, 1, 0, 5 }, // fourth note voice
+    { 265, 1, 0, 9 }, // chord voice
+    { 270, 1, 0, 10 }, // first note voice
+    { 271, 1, 0, 10 }, // second note voice
+    { 272, 1, 0, 10 }, // third note voice
+    { 273, 1, 0, 10 }, // fourth note voice
     { 274, 1, 0, 14 }, // rhythm style
     { 275, 1, 0, 2 }, // rhythm bass
     { 276, 1, 0, 2 }, // rhythm chords

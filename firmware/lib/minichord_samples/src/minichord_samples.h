@@ -3,10 +3,14 @@
 #define MINICHORD_SAMPLES_H
 #include <Audio.h>
 
-// The sampled instruments, in voice source order (harp voice and chord voice 1-4)
+// The sampled instruments, in voice source order (harp voice and chord voice 1-4, and after the song at 5, 6-9)
 extern const AudioSynthWavetable::instrument_data piano_instrument;   // piano (FluidR3)
 extern const AudioSynthWavetable::instrument_data pizzicato_instrument;   // pizzicato strings (Musyng Kite, FluidR3 in the middle)
 extern const AudioSynthWavetable::instrument_data choir_instrument;   // choir aah (Musyng Kite)
 extern const AudioSynthWavetable::instrument_data strings_instrument;   // string quartet (Musyng Kite): cello, viola, violin
+extern const AudioSynthWavetable::instrument_data vibraphone_instrument;   // vibraphone (FluidR3)
+extern const AudioSynthWavetable::instrument_data bass_instrument;   // fingered bass (FluidR3)
+extern const AudioSynthWavetable::instrument_data sitar_instrument;   // sitar (Musyng Kite)
+extern const AudioSynthWavetable::instrument_data epiano_instrument;   // electric piano (FluidR3)
 
 #endif
