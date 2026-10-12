@@ -2080,6 +2080,11 @@ void lock_update() {
   for (uint8_t k = 0; k < lock_count; k++) {
     int16_t now = current_sysex_parameters[lock_table[k].adress];
     if (now == lock_table[k].value) continue;
+    if (double_tap_engaged) {   // a double tap's toggle is held, not chosen: it is let go of without a trace
+      bool held = false;
+      for (uint8_t j = 0; j < double_tap_pairs; j++) if (double_tap_engaged_adress[j] == (int16_t)lock_table[k].adress) held = true;
+      if (held) continue;
+    }
     lock_table[k].value = now;
     locks_dirty = true;
     locks_since_change = 0;
