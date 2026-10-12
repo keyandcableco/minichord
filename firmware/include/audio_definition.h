@@ -4,6 +4,7 @@
 #include "lean_filter.h"   // AudioFilterStateVariable's sums, the corner once a block while its control holds still (lean_filter.h)
 #include "lean_mixer.h"   // AudioMixer4's arithmetic, without the work on inputs at gain 0 (lean_mixer.h)
 #include "metronome_click.h"   // the looper's click, silent between ticks (metronome_click.h)
+#include "wavetable_mulaw.h"   // AudioSynthWavetable, its samples as mu-law too (wavetable_mulaw.h)
 #include "envelope_retrigger.h"   // AudioEffectEnvelope, keeping a noteOff that comes during the retrigger fade (envelope_retrigger.h)
 #include <Wire.h>
 #include <SPI.h>
@@ -48,18 +49,18 @@ AudioSynthWaveformModulated waveform_string_11; //xy=783.1000061035156,1351.9999
 // SAMPLED HARP: each harp voice's source, its oscillator or a sampled instrument (harp voice, 264;
 // set_harp_source), mixed ahead of the plucked string: declared between the oscillators and the
 // plucked strings, so neither path loses a block (see the plucked strings below)
-AudioSynthWavetable      harp_sample_1;
-AudioSynthWavetable      harp_sample_2;
-AudioSynthWavetable      harp_sample_3;
-AudioSynthWavetable      harp_sample_4;
-AudioSynthWavetable      harp_sample_5;
-AudioSynthWavetable      harp_sample_6;
-AudioSynthWavetable      harp_sample_7;
-AudioSynthWavetable      harp_sample_8;
-AudioSynthWavetable      harp_sample_9;
-AudioSynthWavetable      harp_sample_10;
-AudioSynthWavetable      harp_sample_11;
-AudioSynthWavetable      harp_sample_12;
+AudioSynthWavetableMulaw harp_sample_1;
+AudioSynthWavetableMulaw harp_sample_2;
+AudioSynthWavetableMulaw harp_sample_3;
+AudioSynthWavetableMulaw harp_sample_4;
+AudioSynthWavetableMulaw harp_sample_5;
+AudioSynthWavetableMulaw harp_sample_6;
+AudioSynthWavetableMulaw harp_sample_7;
+AudioSynthWavetableMulaw harp_sample_8;
+AudioSynthWavetableMulaw harp_sample_9;
+AudioSynthWavetableMulaw harp_sample_10;
+AudioSynthWavetableMulaw harp_sample_11;
+AudioSynthWavetableMulaw harp_sample_12;
 AudioMixer4Lean              harp_source_mix_1;
 AudioMixer4Lean              harp_source_mix_2;
 AudioMixer4Lean              harp_source_mix_3;
@@ -180,10 +181,10 @@ AudioEffectEnvelopeRetrigger      voice1_envelope_filter; //xy=1330.100006103515
 AudioMixer4Lean              voice1_mixer;   //xy=1332.1000061035156,1536.9999923706055
 // SAMPLED CHORDS: each chord voice's source, its oscillators or a sampled instrument (chord voice,
 // 265; set_chord_source), mixed ahead of its filter, declared between the two for its block
-AudioSynthWavetable      chord_sample_1;
-AudioSynthWavetable      chord_sample_2;
-AudioSynthWavetable      chord_sample_3;
-AudioSynthWavetable      chord_sample_4;
+AudioSynthWavetableMulaw chord_sample_1;
+AudioSynthWavetableMulaw chord_sample_2;
+AudioSynthWavetableMulaw chord_sample_3;
+AudioSynthWavetableMulaw chord_sample_4;
 AudioMixer4Lean              chord_source_mix_1;
 AudioMixer4Lean              chord_source_mix_2;
 AudioMixer4Lean              chord_source_mix_3;
