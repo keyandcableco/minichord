@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=70; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB)
+int version_ID=71; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1937,9 +1937,9 @@ FLASHMEM void send_parameter_page(uint8_t page) {
   usbMIDI.sendSysEx(header + page_size * 2, midi_data_array, 0);
 }
 
-// The mark that the preset storage is the 128 kB one, formatted as such (see setup)
+// The mark that the preset storage is the 512 kB one, formatted as such since firmware 71 (see setup)
 FLASHMEM void preset_storage_mark() {
-  File mark = myfs.open("fs128", FILE_WRITE);
+  File mark = myfs.open("fs512b", FILE_WRITE);
   if (mark) mark.close();
 }
 
@@ -6502,23 +6502,27 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   }
   // loading the preset
   Serial.println("Initialising filesystem");
-  // 128 kB at the top of flash for the twelve presets. A preset is its 512 settings as text, 1.2 kB
-  // (3 kB if every setting had five digits), and each takes one 4 kB block: twelve blocks, two for
-  // LittleFS's own, one for the mark, and room to write a new copy before the old one goes, about
-  // 64 kB, so 128 kB holds even twice the settings. It was 1 MB, the size set at the start and never
-  // checked, then 512 kB (firmware 61, for the tabla); firmware 70 gives the other 384 kB to samples.
+  // 512 kB at the top of flash for the twelve presets. A preset is its 512 settings as text, 1.2 kB
+  // (3 kB if every setting had five digits), but on the Teensy 4.0 LittleFS_Program's blocks are
+  // 32 kB (its SECTOR_SIZE), and a file too big to sit inside its directory's metadata (128 bytes
+  // here) takes a block of its own: twelve presets are twelve blocks, LittleFS keeps two, and a save
+  // needs a free one to write the new copy before the old goes, sixteen blocks, 512 kB. Firmware 70
+  // tried 128 kB, four blocks, and only two presets fit. Less needs the presets in fewer files.
+  // It was 1 MB, the size set at the start and never checked, then 512 kB from firmware 61.
   // The filesystem sits at the top, so a new size moves where it starts: the first time, whatever
   // is found there (most likely nothing, and LittleFS formats it) is formatted on purpose, so no
   // leftover of the old one can pass for it, and the presets come up as the factory's. Back them
   // up first (minicontrol's backup), and restore them after.
-  if (!myfs.begin(128 * 1024)) {
+  if (!myfs.begin(512 * 1024)) {
     Serial.printf("Error starting %s\n", "Program flash DISK");
     while (1) {
       set_led_color(0, 1.0, 1.0); // turn red light
     }
   }
-  if (!myfs.exists("fs128")) {
-    Serial.println("Preset storage moved to 128 kB: formatting it");
+  // fs512b, not fs512: firmware 70's 128 kB overwrote the top four blocks of firmware 69's 512 kB,
+  // whose start it left alone, so that one can still mount, half overwritten, and must be formatted
+  if (!myfs.exists("fs512b")) {
+    Serial.println("Preset storage back to 512 kB: formatting it");
     myfs.quickFormat();
     preset_storage_mark();
   }
