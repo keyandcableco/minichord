@@ -1,0 +1,38 @@
+name: Tell minictl
+
+# minictl (keyandcableco/minictl) carries this fork's describer and settings (its sync.py). Its sync
+# workflow runs every three hours by itself; this makes it run at once when a push to test-allFeatures
+# changes what it carries, by sending it a "firmware-changed" dispatch.
+#
+# Needs a secret, MINICTL_DISPATCH_TOKEN: a fine-grained personal access token with access to
+# keyandcableco/minictl only, permission Contents: read and write. Without it this does nothing and
+# minictl keeps to its schedule.
+
+on:
+  push:
+    branches: [ test-allFeatures ]
+    paths:
+      - 'firmware/preset_maker/**'
+      - 'firmware/generator/parameters.json'
+      - 'firmware/lib/potentiometer/src/parameter_lookup.h'
+      - 'firmware/minicontrol/json/shared_presets.json'
+      - 'firmware/src/main.cpp'
+      - '.github/workflows/minictl-sync.yml'
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: dispatch to minictl
+        env:
+          TOKEN: ${{ secrets.MINICTL_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "No MINICTL_DISPATCH_TOKEN secret: minictl will sync on its own schedule."
+            exit 0
+          fi
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/keyandcableco/minictl/dispatches \
+            -d '{"event_type": "firmware-changed", "client_payload": {"commit": "${{ github.sha }}"}}'
+          echo "minictl told about ${{ github.sha }}"
