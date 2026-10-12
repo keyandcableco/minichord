@@ -93,6 +93,12 @@ SENTENCES = [
     "choir on top, pizzicato in the bass", "piano bass with choir above", "each note a different instrument",
     "pizzicato strings and choir on the chords", "the bass is piano and the top note is choir, darker",
     "strings in the middle, piano on the bass note", "a choir top with a plucky harp", "mixed instruments, lots of reverb",
+    # firmware 69
+    "organ with a leslie, the double tap speeds up the leslie", "the mod knob sets the leslie speed", "speed ramp",
+    "bagpipe drone with grace notes", "trills on the harp", "grace notes, hammer on time 40", "slow hammer ons",
+    "vilambit teental with a tanpura and reverb on the tanpura", "drut teental", "a bol a beat",
+    "vilambit teental, dugun on the double tap", "wet drums boom bap", "the mod knob sets the drum reverb",
+    "harp drums with reverb on the drums", "dry drums, dry tanpura", "turn on tabla laya and speed ramp",
 ]
 # The sampled voices, which a sound or a waveform for the synth has to take back: choir chords with their own piano
 # in the bass and string quartet on the third note, and a piano harp

@@ -100,6 +100,9 @@ ROLES = {
     "maqam_jins": {"harp": 357}, "purity": {"global": 358}, "mts": {"global": 371}, "drone": {"global": 372},
     "drone_level": {"global": 373}, "drone_pace": {"global": 374}, "drone_register": {"global": 375},
     "sharp_fn": {"global": 31},
+    # firmware 69: hammer-on time, tabla laya, the drums' and the drone's reverb, speed ramp
+    "hammer_time": {"harp": 376}, "tabla_laya": {"global": 377}, "drum_reverb": {"global": 378},
+    "drone_reverb": {"global": 379}, "speed_ramp": {"global": 380},
 }
 
 
@@ -1052,6 +1055,57 @@ for words, label, moves in (
         ("low tanpura, male tanpura, deep tanpura", "the drone low (Sa from E2)", (EXACT("drone_register", 0),)),
         ("high tanpura, female tanpura", "the drone high (Sa from D3)", (EXACT("drone_register", 2),))):
     add(words, "setting", label, home="global", moves=moves + (IFZERO("drone", 1),), note=DRONE_NOTE)
+
+# ---- firmware 69: quick hammer-ons, tabla laya, the drums' and the drone's reverb, speed ramp ----
+FW69_NOTE = "needs firmware 69"
+add("grace notes, grace note, gracenotes, cuts, pipe cuts, piping cuts, gracings, quick hammer ons, quick hammer-ons, "
+    "fast hammer ons, fast hammer-ons, trills, trill, fast trills, quick trills, ornaments, ornamented, ornamentation",
+    "setting", "quick hammer-ons, for grace notes and trills", home="harp",
+    moves=(EXACT("hammer_on", 1), EXACT("hammer_time", 50), EXACT("lift", 0), EXACT("ribbon", 0)),
+    off=(EXACT("hammer_time", 180),),
+    note="hammer-on takes a held string over 50 ms after its pluck (hammer-on time), so a grace note or a trill "
+         "follows at once; strum quickly, or a slow strum moves a held string instead of plucking the next. " + FW69_NOTE)
+add("slow hammer ons, slow hammer-ons, careful hammer ons, late hammer ons", "setting",
+    "hammer-ons only on a string that has rung a while", home="harp",
+    moves=(EXACT("hammer_on", 1), EXACT("hammer_time", 300), EXACT("lift", 0), EXACT("ribbon", 0)),
+    off=(EXACT("hammer_time", 180),), note="hammer-on time 300 ms: even a slow strum plucks every string. " + FW69_NOTE)
+TABLA_NOTE = ("the tabla's thekas (kehrwa, dadra, teental) counted against the tempo: a bol a beat, the tempo counts "
+              "matras. " + FW69_NOTE)
+for words, label, value, tempo in (
+        ("a bol a beat, one bol a beat, bol a beat, a bol per beat, one bol per beat, a matra a beat, one matra a beat, "
+         "matra a beat, a beat a matra, tempo in matras, count matras, counted in matras", "the thekas a bol a beat (tabla laya)", 1, None),
+        ("vilambit, vilambit laya, vilambit teental, slow teental, slow theka, slow laya", "vilambit: a slow theka, a bol a beat", 1, 48),
+        ("madhya laya, madhya, medium teental, medium theka, medium laya", "madhya laya: a medium theka, a bol a beat", 1, 120),
+        ("drut, drut laya, drut teental, fast teental, fast theka, fast laya", "drut: a fast theka, a bol a beat", 1, 240),
+        ("dugun, double laya, two bols a beat, two bols per beat", "dugun: the thekas two bols a beat", 2, None),
+        ("chaugun, four bols a beat, four bols per beat", "chaugun: the thekas four bols a beat", 3, None)):
+    add(words, "setting", label, home="global",
+        moves=(EXACT("tabla_laya", value),) + ((EXACT("tempo", tempo), EXACT("drums", 1), IFZERO("drum_groove", 43)) if tempo else ()),
+        off=(EXACT("tabla_laya", 0),), note=TABLA_NOTE)
+REVERB_SEND_NOTE = "into the reverb the harp and the chords share (reverb size sets its room); as loud dry as before. " + FW69_NOTE
+add("drum reverb, reverb on the drums, drums in the reverb, wet drums, roomy drums, drums in the room, ambient drums, "
+    "drums with reverb, reverb drums, reverberant drums", "setting", "the drums in the reverb", home="global",
+    moves=(SET("drum_reverb", 50),), off=(EXACT("drum_reverb", 0),), note="the drums, harp drums too, " + REVERB_SEND_NOTE)
+add("dry drums, drums dry, no reverb on the drums", "setting", "the drums dry", home="global",
+    moves=(EXACT("drum_reverb", 0),), note=FW69_NOTE)
+add("drone reverb, reverb on the drone, reverb on the tanpura, tanpura reverb, tanpura in the reverb, drone in the reverb, "
+    "wet tanpura, wet drone, tanpura in the room, drone in the room, reverberant tanpura", "setting",
+    "the drone in the reverb", home="global", moves=(SET("drone_reverb", 50), IFZERO("drone", 1)),
+    off=(EXACT("drone_reverb", 0),), note="the drone " + REVERB_SEND_NOTE)
+add("dry drone, dry tanpura, no reverb on the drone, no reverb on the tanpura", "setting", "the drone dry", home="global",
+    moves=(EXACT("drone_reverb", 0),), note=FW69_NOTE)
+SPEED_RAMP_NOTE = ("the tremolo's and the vibrato's rates wind up to a new rate and coast down, as a rotating speaker's rotors "
+                   "do; put the tremolo speed on the double tap or a knob to switch. " + FW69_NOTE)
+add("speed ramp, ramped tremolo, tremolo ramp, tremolo spins up, tremolo winds up, spin up and down, spins up and down, "
+    "winds up and down, rotor ramp, gradual speed change", "setting", "the tremolo and vibrato wind up and down (speed ramp)",
+    home="global", moves=(SET("speed_ramp", 20),), off=(EXACT("speed_ramp", 0),), note=SPEED_RAMP_NOTE)
+add("leslie, leslies, leslie speaker, leslie cabinet, rotary speaker, rotary, rotating speaker, rotating speakers, "
+    "spinning speaker, rotor speaker, rotary cabinet, chorale and tremolo", "effect", "a rotating speaker",
+    home="chord", hue=310,
+    moves={"chord": (SET("trem_amount", 0.3), EXACT("trem_freq", 0.8), EXACT("trem_wave", 0), EXACT("speed_ramp", 12))},
+    off={"chord": (EXACT("trem_amount", 0), EXACT("speed_ramp", 0))},
+    note="the chords' tremolo turning slowly (chorale, 0.8 Hz); the double tap on the tremolo speed spins it up to "
+         "fast (6.7 Hz) and back over about a second. " + FW69_NOTE)
 for words, label, n in (("octave up, up an octave, an octave up, octave higher, an octave higher, higher octave, "
                          "high pitched, higher pitched", "an octave up", 1),
                         ("two octaves up, up two octaves, two octaves higher", "two octaves up", 2),
@@ -1175,9 +1229,18 @@ TARGETS = {
     "drone": "tanpura, shruti box",
     "maqam_jins": "jins, upper jins, other jins",
     "sharp_fn": "sharp function, flats, flat button, sharps to flats, sharp to flat",
+    "trem_freq": "tremolo speed, tremolo rate, tremolo frequency, rotor speed, leslie speed, speaker speed, rotary speed, "
+                 "leslie, rotary, rotating speaker, speeds up the leslie, speed up the leslie, spins up the leslie, "
+                 "spin up the leslie, speeds up the rotary, speeds up the speaker, switches the leslie, switch the leslie, "
+                 "leslie fast and slow, fast leslie",
+    "speed_ramp": "speed ramp, ramp",
+    "tabla_laya": "laya, tabla laya, dugun",
+    "drum_reverb": "drum reverb, drums reverb, reverb on the drums",
+    "drone_reverb": "drone reverb, tanpura reverb, reverb on the drone, reverb on the tanpura",
+    "hammer_time": "hammer-on time, hammer on time",
 }
 # Where a knob sweeps each role, (low, high) in parameters.json units; its centre is stored in the preset
-SWEEP = {"purity": (0, 100), "drone_level": (0, 100), "dj_filter": (0, 200), "phone_echo": (0, 100), "drum_level": (0, 100), "drum_kit": (0, 11),
+SWEEP = {"trem_freq": (0.5, 8), "speed_ramp": (0, 40), "drum_reverb": (0, 100), "drone_reverb": (0, 100), "hammer_time": (30, 300), "purity": (0, 100), "drone_level": (0, 100), "dj_filter": (0, 200), "phone_echo": (0, 100), "drum_level": (0, 100), "drum_kit": (0, 11),
          "cutoff": {"chord": (150, 4000), "harp": (80, 2000)}, "resonance": (0.7, 4.5), "reverb": (0, 0.9),
          "reverb_size": (0.2, 1.0), "delay_mix": (0, 0.6), "delay_time": (50, 600), "vib_amount": (0, 0.5),
          "trem_amount": (0, 0.8), "crunch": (0, 0.7), "glide": (0, 800), "vowel": (0, 100), "formant": (0, 100),
@@ -1193,7 +1256,8 @@ TAP = {"resonance": 4.0, "reverb": 0.9, "reverb_size": 1.0, "delay_mix": 0.45, "
        "midi_in": 1, "knob_midi": 1, "knob_layer": 1, "layout": 1, "key": 1,
        "rhythm_fill": 1, "rhythm_break": 2, "rhythm_ending": 3, "revert": 1, "panic": 2,
        "dj_filter": 40, "phone_echo": 100, "tape_stop": 1, "grab": 2, "drum_level": 100,
-       "purity": 100, "drone_level": 100, "drone": 1, "maqam_jins": 1, "sharp_fn": 1}
+       "purity": 100, "drone_level": 100, "drone": 1, "maqam_jins": 1, "sharp_fn": 1,
+       "trem_freq": 6.7, "speed_ramp": 20, "tabla_laya": 2, "drum_reverb": 60, "drone_reverb": 60, "hammer_time": 50}
 # the double tap's actions, which take a step rather than toggle a value
 TAP_ACTIONS = {"looper", "looper_pc", "chord_memory", "rhythm_fill", "rhythm_break", "rhythm_ending", "revert", "panic",
                "tape_stop", "grab"}
@@ -1262,8 +1326,9 @@ ON_OFF = {"ribbon": 245, "ribbon mode": 245, "harp ribbon": 245, "mpe": 110, "mp
           "phone beat": 311, "kick stab": 312, "kick stabs": 312,
           "kick note": 313, "rhythm intro": 317, "rhythm ending": 318, "palm break": 319,
           "double tap hold": 321, "tap and hold": 321, "revert and panic": 322, "panic button": 322,
-          "melodic direction": 351, "mts output": 371, "mts": 371, "tanpura": 372, "koto press": 289}
-ON_VALUE = {213: 5, 266: 3, 313: 36, 372: 1, 289: 2}
+          "melodic direction": 351, "mts output": 371, "mts": 371, "tanpura": 372, "koto press": 289,
+          "tabla laya": 377, "drum reverb": 378, "drone reverb": 379, "speed ramp": 380}
+ON_VALUE = {213: 5, 266: 3, 313: 36, 372: 1, 289: 2, 377: 1, 378: 50, 379: 50, 380: 20}
 # What has to be on for a control's setting to be heard
 PREPARE = {"delay_mix": DELAY_READY, "delay_time": (MIN("delay_mix", 0.3), IFZERO("delay_filter", 3000),
                                                      IFZERO("delay_feedback", 0.4)),
@@ -2518,6 +2583,16 @@ SAMPLE_VOICES = [1, 2, 3, 4, 5]
 KNOBS = [(10, 11, "the chord knob's alternate"), (12, 13, "the harp knob's alternate"),
          (14, 15, "the mod knob"), (16, 17, "the mod knob's alternate")]
 CONFLICTS = [
+    {"about": [376], "when": [[376, "!=", 180], [302, "==", 0]],
+     "note": "hammer-on time shapes hammer-on, which is off (0)"},
+    {"about": [377], "when": [[377, ">", 0], [335, "not in", [41, 42, 43]]],
+     "note": "tabla laya only moves the tabla's thekas (drum grooves 41-43: kehrwa, dadra, teental), and no theka is chosen"},
+    {"about": [378], "when": [[378, ">", 0], [334, "==", 0], [343, "==", 0]],
+     "note": "drum reverb with no drums: neither drums nor harp drums is on"},
+    {"about": [379], "when": [[379, ">", 0], [372, "==", 0]],
+     "note": "drone reverb with the drone off (0)"},
+    {"about": [380], "when": [[380, ">", 0], [159, "==", 0], [163, "==", 0], [61, "==", 0], [64, "==", 0]],
+     "note": "speed ramp moves the tremolo's and the vibrato's rates, and there is no tremolo or vibrato to hear it in"},
     {"about": [351, 36], "when": [[351, "==", 1], [36, "not in", [10, 11, 14, 15]]],
      "note": "melodic direction plays a way down only in scalar harp modes 10, 11, 14 and 15 (the custom scale, "
              "the maqams)"},
