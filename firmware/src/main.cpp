@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=71; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB)
+int version_ID=72; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1937,9 +1937,9 @@ FLASHMEM void send_parameter_page(uint8_t page) {
   usbMIDI.sendSysEx(header + page_size * 2, midi_data_array, 0);
 }
 
-// The mark that the preset storage is the 512 kB one, formatted as such since firmware 71 (see setup)
+// The mark that the preset storage is the 256 kB one of firmware 72, formatted as such (see PRESET STORAGE)
 FLASHMEM void preset_storage_mark() {
-  File mark = myfs.open("fs512b", FILE_WRITE);
+  File mark = myfs.open("fs256", FILE_WRITE);
   if (mark) mark.close();
 }
 
@@ -6206,15 +6206,158 @@ FLASHMEM void acc_update() {
 }
 
 //--->>FILE HANDLING UTILITIES
-String serialize(int16_t data_array[], u_int16_t array_size) {
-  String dataString = "0,";
-  dataString += String(current_bank_number); // to save the number of the bank for the online display
-  dataString += ",";
-  for (u_int16_t i = 2; i < array_size; i++) {
-    dataString += String(data_array[i]);
-    dataString += ",";
+/* ---- PRESET STORAGE ---------------------------------------------------------
+ *
+ * Until firmware 72 each preset was a file of its own (a.txt to l.txt, its settings as text). On
+ * the Teensy 4.0 LittleFS_Program's blocks are 32 kB, and a file bigger than what fits inside its
+ * directory's metadata (128 bytes) takes a block of its own, so twelve small files needed sixteen
+ * blocks, 512 kB. Now the twelve are one file, presets.bin: a header, then a slot of parameter_size
+ * settings for each preset, as they are in memory, 12 kB in all, one block. With LittleFS's two,
+ * the one a save writes its copy to before the old one goes, and spares, 256 kB (eight blocks) is
+ * plenty, and the other 256 kB of the old 512 go to the samples.
+ *
+ * A save writes its preset's slot in place (FILE_WRITE_BEGIN, a seek, a write) and marks it saved in
+ * the header; LittleFS writes the block afresh and swaps it in as the file closes, so a save cut off
+ * by the power leaves the file as it was. A slot never saved reads as missing, and load_config writes
+ * the factory's into it, as it did a missing file. The header says how many settings a slot holds, so
+ * a firmware with a bigger parameter array can find the old slots and lay the file out again.
+ *
+ * The first boot of 72 on an older minichord moves the presets over (presets_migrate): the old 512 kB
+ * filesystem is mounted, its twelve files read into memory, the new 256 kB one formatted (it overlaps
+ * the top half of the old) and presets.bin written. Which layout is there is read off the flash
+ * itself, by the "littlefs" a filesystem writes at the start of its first two blocks, before anything
+ * is mounted: LittleFS_Program::begin formats whatever it can't mount, so mounting the wrong size to
+ * find out would wipe the presets it was looking for. The presets are only in memory for the moment
+ * between the old one's last read and the new file's close; a backup first is still wise.
+ */
+const char *preset_file = "presets.bin";
+const uint32_t preset_storage_size = 256 * 1024;
+const uint32_t preset_storage_old_size = 512 * 1024;   // firmware 61 to 71: a file a preset
+const uint32_t program_flash_size = 0x1F0000;          // the Teensy 4.0's, as LittleFS_Program has it
+const uint32_t preset_fs_block = 32768;                // and its block (SECTOR_SIZE)
+struct preset_header {
+  char magic[4];        // "MCPS"
+  uint16_t format;      // 1
+  uint16_t parameters;  // settings in a slot
+  uint16_t saved;       // a bit a preset: slot b holds a saved preset
+  uint16_t spare;
+  uint32_t spare2;
+};
+static_assert(sizeof(preset_header) == 16, "the preset file's header is 16 bytes");
+
+static inline uint32_t preset_slot_at(int bank, uint16_t parameters) {
+  return sizeof(preset_header) + (uint32_t)bank * parameters * 2;
+}
+
+static void preset_header_fresh(preset_header &h) {
+  memset(&h, 0, sizeof h);
+  memcpy(h.magic, "MCPS", 4);
+  h.format = 1;
+  h.parameters = parameter_size;
+}
+
+static bool preset_header_read(File &f, preset_header &h) {
+  f.seek(0);
+  return f.read((uint8_t *)&h, sizeof h) == sizeof h && memcmp(h.magic, "MCPS", 4) == 0 && h.parameters > 0;
+}
+
+// Whether a LittleFS of this size starts at the top of flash: its first or second block holds "littlefs".
+FLASHMEM static bool preset_fs_present(uint32_t size) {
+  const uint8_t *base = (const uint8_t *)(0x60000000 + program_flash_size - size);
+  for (uint32_t block = 0; block < 2; block++) {
+    for (uint32_t i = 0; i < 64; i++) {
+      if (memcmp(base + block * preset_fs_block + i, "littlefs", 8) == 0) return true;
+    }
   }
-  return dataString;
+  return false;
+}
+
+// One preset's settings into its slot; false if the file couldn't be written.
+FLASHMEM bool preset_write(int bank, const int16_t *values) {
+  File f = myfs.open(preset_file, FILE_WRITE_BEGIN);
+  if (!f) return false;
+  preset_header h;
+  if (!preset_header_read(f, h) || h.parameters != parameter_size) preset_header_fresh(h);
+  f.seek(preset_slot_at(bank, h.parameters));
+  bool ok = f.write((const uint8_t *)values, parameter_size * 2) == parameter_size * 2;
+  h.saved |= 1 << bank;
+  f.seek(0);
+  ok = ok && f.write((const uint8_t *)&h, sizeof h) == sizeof h;
+  f.close();
+  return ok;
+}
+
+// One preset's settings out of its slot; false if it was never saved.
+FLASHMEM bool preset_read(int bank, int16_t *values) {
+  File f = myfs.open(preset_file, FILE_READ);
+  if (!f) return false;
+  preset_header h;
+  bool ok = preset_header_read(f, h) && (h.saved & (1 << bank)) && h.parameters == parameter_size;
+  if (ok) {
+    f.seek(preset_slot_at(bank, h.parameters));
+    ok = f.read((uint8_t *)values, parameter_size * 2) == parameter_size * 2;
+  }
+  f.close();
+  return ok;
+}
+
+// A file laid out for another parameter_size: every saved slot read at its old size (what it lacks at
+// its default, as a short preset always was) and the file written again at this one.
+FLASHMEM void preset_file_relayout() {
+  File f = myfs.open(preset_file, FILE_READ);
+  if (!f) return;
+  preset_header h;
+  bool valid = preset_header_read(f, h);
+  if (!valid || h.parameters == parameter_size) { f.close(); return; }
+  Serial.printf("Presets hold %d settings, this firmware %d: laying the file out again\n", h.parameters, parameter_size);
+  int16_t banks[preset_number][parameter_size];   // 12 kB of stack, for this boot only
+  uint16_t saved = h.saved;
+  for (int b = 0; b < preset_number; b++) {
+    for (uint16_t i = 0; i < parameter_size; i++) banks[b][i] = parameter_default(b, i);
+    if (!(saved & (1 << b))) continue;
+    f.seek(preset_slot_at(b, h.parameters));
+    uint16_t n = min(h.parameters, parameter_size);
+    f.read((uint8_t *)banks[b], n * 2);
+  }
+  f.close();
+  myfs.remove(preset_file);
+  for (int b = 0; b < preset_number; b++) if (saved & (1 << b)) preset_write(b, banks[b]);
+}
+
+void deserialize(char *text, int16_t data_array[]);
+bool preset_fs_mounted = false;   // presets_migrate mounted the new one already
+
+// Firmware 61-71's presets, a text file each in a 512 kB filesystem, into presets.bin (see PRESET STORAGE).
+FLASHMEM void presets_migrate() {
+  static LittleFS_Program oldfs;
+  if (!oldfs.begin(preset_storage_old_size)) return;
+  int16_t banks[preset_number][parameter_size];   // 12 kB of stack, for this boot only
+  uint16_t found = 0;
+  for (int b = 0; b < preset_number; b++) {
+    for (uint16_t i = 0; i < parameter_size; i++) banks[b][i] = parameter_default(b, i);
+    File entry = oldfs.open(bank_name[b]);
+    if (!entry) continue;
+    size_t size = entry.size();
+    char *text = (char *)malloc(size + 1);
+    if (text) {
+      text[entry.read(text, size)] = 0;
+      deserialize(text, banks[b]);
+      free(text);
+      found |= 1 << b;
+    }
+    entry.close();
+  }
+  Serial.printf("Moving %d presets into one file\n", __builtin_popcount(found));
+  if (!myfs.begin(preset_storage_size)) return;
+  preset_fs_mounted = true;
+  myfs.quickFormat();
+  preset_storage_mark();
+  for (int b = 0; b < preset_number; b++) {
+    if (!(found & (1 << b))) continue;
+    banks[b][0] = 0;
+    banks[b][1] = b;
+    if (!preset_write(b, banks[b])) Serial.printf("Couldn't write preset %d\n", b + 1);
+  }
 }
 
 void deserialize(char *text, int16_t data_array[]) {   // takes the text apart as it goes
@@ -6290,19 +6433,12 @@ FLASHMEM void save_config(int bank_number, bool default_save) {
   digitalWrite(_MUTE_PIN, LOW); // muting the DAC
   current_bank_number=bank_number; //save to correctly write in the memory 
   AudioNoInterrupts();
-  // myfs.quickFormat();  // performs a quick format of the created di
-  myfs.remove(bank_name[bank_number]);
-  File dataFile = myfs.open(bank_name[bank_number], FILE_WRITE);
-
+  static int16_t saving[parameter_size];
   if (default_save) {
     // if we need to put the default in memory
-    Serial.println("Writing the default file");
+    Serial.println("Writing the factory preset");
     default_bank_sysex_parameters[bank_number][firmware_version_adress] = version_ID;
-    Serial.println(bank_name[bank_number]);
-    static int16_t factory[parameter_size];
-    for (uint16_t i = 0; i < parameter_size; i++) factory[i] = parameter_default(bank_number, i);
-    String return_data = serialize(factory, parameter_size);
-    dataFile.println(return_data);
+    for (uint16_t i = 0; i < parameter_size; i++) saving[i] = parameter_default(bank_number, i);
   } else {
     Serial.println("Saving current settings");
     // A double tap toggle is a momentary override, not part of the preset. If
@@ -6317,15 +6453,16 @@ FLASHMEM void save_config(int bank_number, bool default_save) {
         current_sysex_parameters[a] = double_tap_saved[k];
       } else held_value[k] = -32768;              // untouched by the double tap, or changed since: saved as it is
     }
-    dataFile.println(serialize(current_sysex_parameters, parameter_size));
+    memcpy(saving, current_sysex_parameters, sizeof saving);
     for (uint8_t k = 0; k < double_tap_pairs; k++) {
       int16_t a = double_tap_engaged_adress[k];
       if (double_tap_engaged && control_can_tap(a) && held_value[k] != -32768) current_sysex_parameters[a] = held_value[k];
     }
   }
-  Serial.print("Saved preset: ");
-  Serial.println(dataFile.name());
-  dataFile.close();
+  saving[0] = 0;
+  saving[1] = bank_number;   // as the text files had it, for the editor's display
+  if (preset_write(bank_number, saving)) Serial.printf("Saved preset %d\n", bank_number + 1);
+  else Serial.printf("Error: preset %d not saved\n", bank_number + 1);
 
   load_config(current_bank_number); //we do a full reload to initialise values
   
@@ -6352,27 +6489,15 @@ void load_config(int bank_number) {
   }
   trigger_chord = true; //to be ready to retrigger if needed
 
-  File entry = myfs.open(bank_name[bank_number]);
-  if (entry) {
-    // every slot from its default first, so a slot the file doesn't hold (all of page 1, in a
-    // preset saved before the array grew) comes up at its default, not the last preset's
-    for (uint16_t i = 0; i < parameter_size; i++) current_sysex_parameters[i] = parameter_default(bank_number, i);
-    // The file in one read. It used to come a character at a time into a String, which
-    // reallocated itself with each one: 2.4 ms of a 6.3 ms load.
-    size_t size = entry.size();
-    char *text = (char *)malloc(size + 1);
-    if (text) {
-      text[entry.read(text, size)] = 0;
-      deserialize(text, current_sysex_parameters);
-      free(text);
-    }
+  // a slot holds every setting (presets saved before the array grew were filled with defaults when
+  // they moved into presets.bin, see PRESET STORAGE)
+  static int16_t stored[parameter_size];
+  if (preset_read(bank_number, stored)) {
+    memcpy(current_sysex_parameters, stored, sizeof stored);
     apply_preset_version(bank_number);
     current_sysex_parameters[usb_audio_adress] = usb_audio_mode;   // the instrument's, whatever the preset holds
-    Serial.print("Loaded preset: ");
-    Serial.println(entry.name());
-    entry.close();
+    Serial.printf("Loaded preset %d\n", bank_number + 1);
   } else {
-    entry.close();
     Serial.print("No preset, writing factory default");
     save_config(bank_number, true); // reboot with default value
   }
@@ -6502,30 +6627,24 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   }
   // loading the preset
   Serial.println("Initialising filesystem");
-  // 512 kB at the top of flash for the twelve presets. A preset is its 512 settings as text, 1.2 kB
-  // (3 kB if every setting had five digits), but on the Teensy 4.0 LittleFS_Program's blocks are
-  // 32 kB (its SECTOR_SIZE), and a file too big to sit inside its directory's metadata (128 bytes
-  // here) takes a block of its own: twelve presets are twelve blocks, LittleFS keeps two, and a save
-  // needs a free one to write the new copy before the old goes, sixteen blocks, 512 kB. Firmware 70
-  // tried 128 kB, four blocks, and only two presets fit. Less needs the presets in fewer files.
-  // It was 1 MB, the size set at the start and never checked, then 512 kB from firmware 61.
-  // The filesystem sits at the top, so a new size moves where it starts: the first time, whatever
-  // is found there (most likely nothing, and LittleFS formats it) is formatted on purpose, so no
-  // leftover of the old one can pass for it, and the presets come up as the factory's. Back them
-  // up first (minicontrol's backup), and restore them after.
-  if (!myfs.begin(512 * 1024)) {
+  // 256 kB at the top of flash for presets.bin, the twelve presets in one file (see PRESET STORAGE).
+  // An older minichord's presets, a file each in 512 kB, are moved into it on the first boot.
+  if (!preset_fs_present(preset_storage_size) && preset_fs_present(preset_storage_old_size)) {
+    Serial.println("Preset storage: moving the presets from 512 kB to one file in 256 kB");
+    presets_migrate();
+  }
+  if (!preset_fs_mounted && !myfs.begin(preset_storage_size)) {
     Serial.printf("Error starting %s\n", "Program flash DISK");
     while (1) {
       set_led_color(0, 1.0, 1.0); // turn red light
     }
   }
-  // fs512b, not fs512: firmware 70's 128 kB overwrote the top four blocks of firmware 69's 512 kB,
-  // whose start it left alone, so that one can still mount, half overwritten, and must be formatted
-  if (!myfs.exists("fs512b")) {
-    Serial.println("Preset storage back to 512 kB: formatting it");
+  if (!myfs.exists("fs256")) {
+    Serial.println("Preset storage is new: formatting it");
     myfs.quickFormat();
     preset_storage_mark();
   }
+  preset_file_relayout();
   Serial.println("Loading the preset");
   load_config(current_bank_number);
   // initializing the strings

@@ -6,6 +6,6 @@ The sampled instruments the harp and chord voices can play (harp voice, 264; cho
 
     python3 generator/samples.py ~/minichord-lab/samples
 
-It prints each instrument's size. The sample data sits in flash beside the program, below the presets' storage at the top of flash (1 MB until firmware 61, 512 kB since: on the Teensy 4.0 LittleFS's blocks are 32 kB and each preset file takes one, so twelve presets need sixteen blocks; firmware 70's 128 kB held two). `pio run` reports what is left as "free for files": take 512 kB (524288 bytes) from it for what the next sample can use, about 291 kB at firmware 69.
+It prints each instrument's size. The sample data sits in flash beside the program, below the presets' storage at the top of flash (1 MB until firmware 61, 512 kB from 61 to 71, when each preset was a file of its own and on the Teensy 4.0 a file takes a 32 kB block; 256 kB since 72, the twelve presets in one file). `pio run` reports what is left as "free for files": take 256 kB (262144 bytes) from it for what the next sample can use, about 547 kB at firmware 72.
 
 See `LICENSE` for where the recordings come from and their terms (CC BY 3.0 and CC BY-SA 3.0).
