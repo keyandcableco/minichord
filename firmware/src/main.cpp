@@ -2911,10 +2911,12 @@ FLASHMEM void set_chord_note_source(uint8_t i, uint8_t value) {
 
 // Starts harp voice i's sample at the frequency it sounds; its level follows (apply_string_firmness).
 // The reed piano is struck as hard as the string was plucked, times the harp's bark (386), which sets
-// its tone: a sample has one strength, and the level does the rest.
+// its tone: a sample has one strength, and the level does the rest. The strength is the note's amplitude
+// (apply_string_firmness's gain, -24 dB at the softest), as a reed's swing is: so a soft pluck stays on the
+// pickup's flank and only the hard ones bark.
 void harp_sample_start(uint8_t i) {
   if (!harp_voice_source) return;
-  int strength = harp_voice_source == 10 ? (int)lroundf(127 * harp_reed_bark * (1 - string_softness(i))) : 127;
+  int strength = harp_voice_source == 10 ? (int)lroundf(127 * harp_reed_bark * powf(10.0f, -1.2f * string_softness(i))) : 127;
   harp_sample_array[i]->playFrequency(string_note_freq[i], strength);
 }
 

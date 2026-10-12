@@ -15,8 +15,9 @@
 // one swings through the peak and back on each cycle, folding the wave there, and barks. So the bark is
 // one fixed bend (pickup()) of the reed's swing, and it dies away as the swing does.
 //
-// What the instrument adds after it: the pickup's own low cut (a high-impedance input) and the little
-// amplifier and speaker's top end. Its tremolo (the 200A's "vibrato" knob, ~5.6 Hz) is the minichord's
+// What the instrument adds after it: the pickup's own low cut (a high-impedance input, 40 Hz), a body
+// (+5 dB around 400 Hz, broad, as the cabinet and amplifier give the midrange) and the little amplifier and
+// speaker's top end. Its tremolo (the 200A's "vibrato" knob, ~5.6 Hz) is the minichord's
 // own, the harp's and the chords'.
 //
 // Plain C++ and float, so it renders the same on a PC as on the Teensy. A voice is a ReedPiano; the
@@ -26,6 +27,9 @@ class ReedPiano
 public:
   static void setup(float sample_rate);   // once, before any voice sounds
   static bool ready() { return is_ready; }
+  // The voicing after the pickup: its low cut, and the body, a broad resonance (Hz, dB, Q) as a cabinet
+  // gives; 0 dB leaves it out. Shared by every voice; set before the notes it is for.
+  static void voicing(float lowcut_hz, float body_hz, float body_db, float body_q);
 
   // Strikes the reed at freq, strength 0-1: 1 swings a reed in the low middle well through the pickup's
   // peak, a full bark; 0.4 just reaches it. A reed still ringing is struck again where it is, as a real
@@ -45,6 +49,9 @@ private:
   static float table_slope;                    // the pickup's slope at rest, d pickup / d swing
   static float fs;
   static bool is_ready;
+  static float hp_coef;                                  // the low cut's one-pole
+  static float bb0, bb1, bb2, ba1, ba2;                  // the body's peaking biquad
+  static bool body_on;
   static float pickup(float x);
 
   void tune(float freq);
@@ -59,8 +66,9 @@ private:
   float c2 = 1, s2 = 0, r2 = 1, x2 = 0, y2 = 0;
   bool mode2 = true;   // off when the clank would be above hearing (and alias)
   bool clank = false;  // the clank still ringing (it dies in a few hundredths of a second)
-  float hp_in = 0, hp_out = 0, hp_a = 0.98f;
-  float lp = 0, lp_k = 0.5f;
+  float hp_in = 0, hp_out = 0;
+  float bz1 = 0, bz2 = 0;   // the body's state
+  float lp = 0;
   float quiet = 0;     // how long the swing has been inaudible, in samples
 };
 

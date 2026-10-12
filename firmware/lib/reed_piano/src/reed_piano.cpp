@@ -12,6 +12,10 @@ float ReedPiano::table[ReedPiano::TABLE_SIZE + 1];
 float ReedPiano::table_slope = 1;
 float ReedPiano::fs = 44100;
 bool ReedPiano::is_ready = false;
+float ReedPiano::hp_coef = 0.989f;
+float ReedPiano::bb0 = 1, ReedPiano::bb1 = 0, ReedPiano::bb2 = 0, ReedPiano::ba1 = 0, ReedPiano::ba2 = 0;
+bool ReedPiano::body_on = false;
+static float lp_coef = 0.5f;
 
 static const float TWO_PI_F = 6.28318531f;
 static const float OUT_RMS = 0.2f;   // a full-strength note's start, as loud as a sample (0.2 RMS)
@@ -44,7 +48,20 @@ FLASHMEM void ReedPiano::setup(float sample_rate) {
     gain_of_drive[g] = var > 0 ? sqrtf(var) : 0;
   }
   gain_of_drive[0] = 0;
+  lp_coef = 1 - expf(-TWO_PI_F * 5500 / fs);   // the amplifier and speaker's top
+  voicing(40, 400, 5, 0.9f);   // the body: a broad lift in the low middle, chosen by ear over 150, 250 and 200 Hz
   is_ready = true;
+}
+
+FLASHMEM void ReedPiano::voicing(float lowcut_hz, float body_hz, float body_db, float body_q) {
+  hp_coef = expf(-TWO_PI_F * lowcut_hz / fs);   // the pickup into the preamp's input, which also takes the bark's DC
+  body_on = body_db != 0 && body_hz > 0;
+  if (!body_on) return;
+  // a peaking filter (the Audio EQ Cookbook's), normalized by a0
+  float A = powf(10, body_db / 40), w = TWO_PI_F * body_hz / fs, al = sinf(w) / (2 * body_q), cw = cosf(w);
+  float a0 = 1 + al / A;
+  bb0 = (1 + al * A) / a0; bb1 = -2 * cw / a0; bb2 = (1 - al * A) / a0;
+  ba1 = -2 * cw / a0; ba2 = (1 - al / A) / a0;
 }
 
 float ReedPiano::pickup(float x) {
@@ -90,7 +107,7 @@ FLASHMEM void ReedPiano::frequency(float f) {
 FLASHMEM void ReedPiano::strike(float f, float st) {
   if (f <= 0) return;
   st = st < 0.02f ? 0.02f : st > 1 ? 1 : st;
-  if (!active) { x1 = y1 = x2 = y2 = 0; hp_in = hp_out = lp = 0; }
+  if (!active) { x1 = y1 = x2 = y2 = 0; hp_in = hp_out = lp = bz1 = bz2 = 0; }
   else { x1 *= 0.5f; y1 *= 0.5f; x2 *= 0.5f; y2 *= 0.5f; }   // the hammer's felt takes some of the old swing
   tune(f);
   strength = st;
@@ -105,8 +122,6 @@ FLASHMEM void ReedPiano::strike(float f, float st) {
   // the hammer gives the reed a velocity: its swing starts from where it is, never with a step
   y1 -= 1;
   if (mode2) { y2 -= st * (0.12f + 0.3f * st); clank = true; }   // a harder (shorter) hammer contact rings the clank more
-  hp_a = expf(-TWO_PI_F * 80 / fs);   // the pickup into the preamp's input: a low cut, which also takes the bark's DC
-  lp_k = 1 - expf(-TWO_PI_F * 5500 / fs);   // the amplifier and speaker's top
   quiet = 0;
   active = true;
 }
@@ -129,10 +144,16 @@ void ReedPiano::render(float *out, int n) {
       x += x2;
     }
     float v = (pickup(drive * x) - g0) * norm;
-    float h = hp_a * (hp_out + v - hp_in);
+    float h = hp_coef * (hp_out + v - hp_in);
     hp_in = v;
     hp_out = h;
-    lp += lp_k * (h - lp);
+    if (body_on) {   // transposed direct form II
+      float b = bb0 * h + bz1;
+      bz1 = bb1 * h - ba1 * b + bz2;
+      bz2 = bb2 * h - ba2 * b;
+      h = b;
+    }
+    lp += lp_coef * (h - lp);
     out[i] = lp;
   }
   if (clank && fabsf(x2) + fabsf(y2) < 1e-5f) { x2 = y2 = 0; clank = false; }
