@@ -251,6 +251,12 @@ add("concert harp, celtic harp, real harp, lyre, zither", "sound", "concert harp
 add("sitar, sitars, sitaar", "sound", "sitar", home="harp", hue=40,
     moves=(EXACT("voice", 8),) + env(1, 3500, 0.35, 1200) + (EXACT("cutoff", 5000), EXACT("string_model", 0)),
     note="the sampled sitar needs firmware 73")
+add("upright bass, upright basses, double bass, double basses, acoustic bass, stand-up bass, standup bass, "
+    "contrabass, bass fiddle, doghouse bass, string bass", "sound", "upright bass", home="chord", hue=25, moves={
+    "chord": (EXACT("voice1", 15),),
+    "harp": (EXACT("voice", 14),) + env(1, 1500, 0.0, 300) + (EXACT("cutoff", 4000), EXACT("string_model", 0))},
+    note="the sampled upright bass (VSCO 2's double bass, plucked) needs firmware 80; on the chords it plays the bass "
+         "note under the others")
 add("bass guitar, bass guitars, electric bass, fingered bass, finger bass, slap bass", "sound", "bass guitar", home="chord", hue=25, moves={
     "chord": (EXACT("voice1", 8),),
     "harp": (EXACT("voice", 7),) + env(1, 2000, 0.4, 300) + (EXACT("cutoff", 4000), EXACT("string_model", 0))},
@@ -290,7 +296,12 @@ add("brass, horn, horns, trumpet, trumpets, trombone, sax, saxophone", "sound", 
     "harp": synth_harp(9) + env(30, 400, 0.8, 200)
             + (EXACT("cutoff", 400), EXACT("filter_sens", 2.0), EXACT("fenv_attack", 60),
                EXACT("fenv_decay", 400), EXACT("fenv_sustain", 0.5))})
-add("accordion, accordions, harmonium, melodica, bandoneon, concertina, reed organ, reedy", "sound", "accordion",
+# The sampled accordion (voice source 15, firmware 80), FluidR3's, its musette reeds beating
+add("accordion, accordions, squeezebox, squeeze box, musette, piano accordion, button accordion, bandoneon, concertina",
+    "sound", "accordion", home="chord", hue=0,
+    moves=(EXACT("voice", 15),) + env(30, 200, 1.0, 120) + (EXACT("cutoff", 5000), EXACT("string_model", 0)),
+    note="the sampled accordion needs firmware 80 (its musette beating is in the recording)")
+add("harmonium, melodica, reed organ, reedy", "sound", "reed organ",
     home="chord", hue=0, moves={
         "chord": synth_chord(0.12, 5, 1.0, 0.1, 5, 1.01) + env(30, 200, 1.0, 120) + (SET("trem_amount", 0.1), IFZERO("trem_freq", 6)),
         "harp": synth_harp(5) + env(20, 200, 1.0, 120)})
@@ -483,10 +494,10 @@ add("bluegrass, bluegrass banjo, five string banjo, 5 string banjo, banjo rolls"
                EXACT("hammer_on", 1), EXACT("hammer_time", 60), EXACT("lift", 0), EXACT("strum", 75),
                EXACT("touch", 55)),
            "chord": synth_chord(0.14, 9, 1.0, 0.08, 3, 2.0, 0.04, 0, 1.0) + env(1, 900, 0.2, 200) + (
-               EXACT("retrigger", 1), EXACT("cutoff", 1800), EXACT("voice1", 8), EXACT("rhythm_style", 3),
+               EXACT("retrigger", 1), EXACT("cutoff", 1800), EXACT("voice1", 15), EXACT("rhythm_style", 3),
                EXACT("tempo", 136))},
     note="bluegrass: a popping banjo an octave up with hammer-ons quick enough for its rolls, a flat-picked guitar "
-         "and the sampled upright bass (firmware 73) in boom-chick")
+         "and the sampled upright bass (firmware 80) in boom-chick")
 add("pedal steel, pedal steel guitar, steel guitar, lap steel, slide guitar, bottleneck", "sound", "pedal steel",
     hue=195,
     moves={"harp": synth_harp(3) + env(15, 1200, 0.85, 500) + (
@@ -501,22 +512,22 @@ add("pedal steel, pedal steel guitar, steel guitar, lap steel, slide guitar, bot
 add("honky tonk piano, honky-tonk piano, honkytonk piano, honky tonk, honkytonk, honky-tonk, tack piano, saloon piano, barroom piano, barrelhouse piano, barrelhouse", "sound", "honky-tonk piano",
     hue=10,
     moves={"chord": (EXACT("voice", 1),) + env(1, 3500, 0.9, 300) + (
-               EXACT("cutoff", 3000), EXACT("string_model", 0), EXACT("ensemble", 45), EXACT("voice1", 8)),
+               EXACT("cutoff", 3000), EXACT("string_model", 0), EXACT("ensemble", 45), EXACT("voice1", 15)),
            "harp": (EXACT("voice", 1),) + env(1, 3500, 0.9, 500) + (
                EXACT("cutoff", 4000), EXACT("string_model", 0), EXACT("touch", 80))},
     note="honky-tonk: the sampled piano a little out of tune with itself (the ensemble), the sampled upright bass "
-         "under it (firmware 73); say boogie for the left hand")
+         "under it (firmware 80); say boogie for the left hand")
 add("washboard, washboard band, jug band, skiffle, spoons", "sound", "washboard band", home="global", hue=40,
     moves=(EXACT("harp_drums", 1), EXACT("drum_kit", 5), IFZERO("drum_level", 65)),
     note="washboard band: the harp's twelve strings are the brushes kit's pads (a suitcase kick at the bottom, "
          "the washboard's snare and knocks, the spoons); the chords stay as they are. Needs firmware 60")
 add("cajun, zydeco, cajun accordion, zydeco accordion", "sound", "Cajun accordion", hue=330,
-    moves={"chord": synth_chord(0.10, 9, 1.0, 0.08, 11, 1.0, 0.05, 9, 2.0) + env(12, 300, 0.95, 120) + (
-               EXACT("retrigger", 1), EXACT("cutoff", 2000), EXACT("ensemble", 50)),
+    moves={"chord": (EXACT("voice", 15),) + env(12, 300, 0.95, 120) + (
+               EXACT("retrigger", 1), EXACT("cutoff", 4000), EXACT("string_model", 0)),
            "harp": (EXACT("voice", 4),) + env(50, 1500, 0.9, 350) + (
                EXACT("cutoff", 4000), EXACT("string_model", 0), EXACT("touch", 60), EXACT("pressure", 1),
                EXACT("hammer_on", 1), EXACT("hammer_time", 80), EXACT("lift", 0))},
-    note="Cajun: a button accordion whose reeds beat against each other on the chords, and the sampled strings as "
+    note="Cajun: the sampled accordion on the chords, its reeds beating against each other (firmware 80), and the sampled strings as "
          "a fiddle on the harp, swelling as the finger presses and slurring as one lands beside a held note")
 add("synthwave, synth wave, retrowave, outrun, eighties pad, 80s pad", "sound", "synthwave pad",
     hue=290,
@@ -1542,7 +1553,8 @@ NOTE_INSTRUMENTS = {"pizzicato strings": 3, "plucked strings": 3, "pizz strings"
                     "bass guitar": 8, "electric bass": 8, "fingered bass": 8, "sitar": 9, "electric piano": 10,
                     "e piano": 10, "epiano": 10, "rhodes": 10,
                     "wurlitzer": 11, "wurly": 11, "reed piano": 11, "kalimba": 12, "mbira": 12, "marimba": 13,
-                    "organ": 14, "hammond": 14}
+                    "organ": 14, "hammond": 14, "upright bass": 15, "double bass": 15,
+                    "acoustic bass": 15, "string bass": 15, "accordion": 16, "squeezebox": 16}
 NOTE_POSITIONS = {"bass note": [0], "bottom note": [0], "lowest note": [0], "low note": [0], "first note": [0],
                   "bass": [0], "bottom": [0], "second note": [1], "tenor": [1], "third note": [2], "alto": [2],
                   "fourth note": [3], "top note": [3], "highest note": [3], "high note": [3], "soprano": [3],
@@ -1550,11 +1562,11 @@ NOTE_POSITIONS = {"bass note": [0], "bottom note": [0], "lowest note": [0], "low
                   "above": [1, 2, 3], "upper notes": [1, 2, 3], "upper voices": [1, 2, 3]}
 NOTE_VOICE_NAMES = {1: "its own synth", 2: "piano", 3: "pizzicato", 4: "choir", 5: "string quartet", 6: "song sample",
                     7: "vibraphone", 8: "bass guitar", 9: "sitar", 10: "electric piano", 11: "reed piano", 12: "kalimba",
-                    13: "marimba", 14: "organ"}
+                    13: "marimba", 14: "organ", 15: "upright bass", 16: "accordion"}
 # What chord voice and harp voice play, in place of the oscillators; the notes' own voices count one higher
 VOICE_NAMES = {1: "piano", 2: "pizzicato", 3: "choir", 4: "string quartet", 5: "song sample", 6: "vibraphone",
                7: "bass guitar", 8: "sitar", 9: "electric piano", 10: "reed piano", 11: "kalimba",
-               12: "marimba", 13: "organ"}
+               12: "marimba", 13: "organ", 14: "upright bass", 15: "accordion"}
 # The settings only the section's own oscillators hear; a sampled voice doesn't. A waveform names the synth itself
 WAVE_ROLES = ("wave", "wave2", "wave3")
 OSC_ROLES = WAVE_ROLES + ("amp1", "amp2", "amp3", "mult1", "mult2", "mult3", "noise")
@@ -2856,7 +2868,7 @@ def export_data(params, version):
 # {"at": k} the address setting k holds (a knob's or hover's target; false when unassigned); B a value,
 # a list, {"value": a} the value at a, or {"values": [a, ...]} theirs. Values as the description reads
 # them (floats as 0-1). "{target}" in a note is the {"at"} target's name.
-SAMPLE_VOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]   # 10 and 13, the reed piano and the organ, are models but take a sample's place
+SAMPLE_VOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]   # 10 and 13, the reed piano and the organ, are models but take a sample's place
 KNOBS = [(10, 11, "the chord knob's alternate"), (12, 13, "the harp knob's alternate"),
          (14, 15, "the mod knob"), (16, 17, "the mod knob's alternate")]
 CONFLICTS = [

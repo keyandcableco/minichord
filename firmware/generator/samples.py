@@ -93,6 +93,16 @@ INSTRUMENTS = [
     # the room's rumble. The strike, then a loop of the ring, as the kalimba.
     dict(name='marimba', title='marimba (VCSL, CC0)', rate=22050, aligned=True, level_from_start=True,
          notes=[('marimba/med', n) for n in (41, 48, 55, 65, 72, 79, 89)], loop=(0.3, 0.2, 0.08)),
+    # Firmware 80, voice source 14: an upright bass, VSCO 2 Community Edition's double bass plucked (CC0;
+    # Minichord Lab tools/fetch-vsco-strings.sh, the softer layer: the louder has only E1-E2). VSCO names it an
+    # octave low too. G1 and A2 are left out: noise near a semitone off at -3 and -6 dB. The pluck, then the ring.
+    dict(name='upright', title='upright bass (VSCO 2 double bass pizzicato, CC0)', rate=16000, aligned=True,
+         level_from_start=True, notes=[('solo/vsco-bass-pizz', n) for n in (36, 40, 49, 56)], loop=(0.35, 0.3, 0.12)),
+    # Firmware 80, voice source 15: an accordion, General MIDI's from FluidR3, its musette reeds tuned apart and
+    # beating 2-6 times a second. Its loop is about a second (matched: ending where the beating is at the same
+    # point and level as where it starts), so the beating carries on through the wrap.
+    dict(name='accordion', title='accordion (FluidR3)', rate=16000, aligned=True, matched=0.3,
+         notes=[('accordion/fluid', n) for n in (50, 58, 66, 74, 82)], loop=(0.4, 1.0, 0.25)),
 ]
 TARGET_RMS = 0.2
 # Recordings that sound away from the note they are named for, in cents, measured on the minichord
@@ -137,6 +147,10 @@ TUNING_CENTS = {
     ('kalimba/tanzania', 63): 54.0,
     ('kalimba/tanzania', 67): 17.0,
     ('kalimba/kenya', 78): 36.0,
+    # - upright bass and accordion: the energy-weighted pitch (the pluck's first 0.6 s; the accordion's held
+    #   0.4-2 s, the middle of its reeds), within 3 cents but the accordion's top two
+    ('accordion/fluid', 74): 3.4,
+    ('accordion/fluid', 82): 5.7,
 }
 
 
@@ -200,7 +214,9 @@ def matched_end(x, ls, le, xf, rate, root_hz, spread):
     note's own pitch can still wrap from one point of the vibrato to another, a jump of 20-30 cents. Its
     end is chosen instead, within spread (a fraction of the loop) of where it was asked for, in whole
     periods, where the stretch the crossfade blends (just before the end) is most like the one it blends
-    with (just before the start): the same point of the vibrato, the same bow, the same waveform."""
+    with (just before the start): the same point of the vibrato, the same bow, the same waveform, and the
+    same loudness (an accordion's detuned reeds beat, and a loop wrapping from a beat's peak to its trough
+    would bump; the correlation alone doesn't see level)."""
     period = rate / root_hz
     ref = x[ls - xf:ls]
     best, best_le = -2.0, le
@@ -213,6 +229,7 @@ def matched_end(x, ls, le, xf, rate, root_hz, spread):
             break
         seg = x[cand - xf:cand]
         c = float(np.dot(seg, ref) / (np.linalg.norm(seg) * np.linalg.norm(ref) + 1e-12))
+        c -= abs(math.log((np.linalg.norm(seg) + 1e-12) / (np.linalg.norm(ref) + 1e-12)))   # a level off by e costs 1
         if cand >= lo and c > best:
             best, best_le = c, cand
         k += 1
@@ -281,10 +298,12 @@ def main():
             structs.append(sample_struct(array, pcm, loop, root_hz, inst['rate'], fmt))
             ranges.append(127 if k == len(notes) - 1 else (note + notes[k + 1]) // 2)
             size += len(pcm) * (1 if fmt == 'mulaw' else 2)
-        cpp.append('static const AudioSynthWavetableMulaw::sample_data %s_samples[%d] = {\n%s\n};' % (
+        # PROGMEM: on the Teensy 4 const data is copied to RAM1 unless it says otherwise, and the player reads
+        # these once a note and once a block, from flash as it reads the samples themselves
+        cpp.append('PROGMEM static const AudioSynthWavetableMulaw::sample_data %s_samples[%d] = {\n%s\n};' % (
             inst['name'], len(structs), '\n'.join(structs)))
-        cpp.append('static const uint8_t %s_ranges[] = {%s};' % (inst['name'], ', '.join(map(str, ranges))))
-        cpp.append('const AudioSynthWavetableMulaw::instrument_data %s_instrument = {%d, %s_ranges, %s_samples};\n' % (
+        cpp.append('PROGMEM static const uint8_t %s_ranges[] = {%s};' % (inst['name'], ', '.join(map(str, ranges))))
+        cpp.append('PROGMEM const AudioSynthWavetableMulaw::instrument_data %s_instrument = {%d, %s_ranges, %s_samples};\n' % (
             inst['name'], len(structs), inst['name'], inst['name']))
         header.append('extern const AudioSynthWavetableMulaw::instrument_data %s_instrument;   // %s' % (inst['name'], inst['title']))
         report.append('%-10s %2d notes at %5d Hz, %s: %6.1f kB' % (inst['name'], len(notes), inst['rate'], fmt, size / 1024))

@@ -1410,7 +1410,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 22: lo=0; hi=1; return true;
       case 41: lo=0; hi=100; return true;
       case 217: lo=0; hi=100; return true;
-      case 264: lo=0; hi=13; return true;
+      case 264: lo=0; hi=15; return true;
       case 386: lo=0; hi=100; return true;
       case 218: lo=10; hi=2000; return true;
       case 219: lo=0; hi=100; return true;
@@ -1512,12 +1512,12 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 113: lo=0; hi=4; return true;
       case 114: lo=0; hi=1; return true;
       case 115: lo=0; hi=5; return true;
-      case 265: lo=0; hi=13; return true;
+      case 265: lo=0; hi=15; return true;
       case 387: lo=0; hi=100; return true;
-      case 270: lo=0; hi=14; return true;
-      case 271: lo=0; hi=14; return true;
-      case 272: lo=0; hi=14; return true;
-      case 273: lo=0; hi=14; return true;
+      case 270: lo=0; hi=16; return true;
+      case 271: lo=0; hi=16; return true;
+      case 272: lo=0; hi=16; return true;
+      case 273: lo=0; hi=16; return true;
       case 274: lo=0; hi=14; return true;
       case 275: lo=0; hi=2; return true;
       case 276: lo=0; hi=2; return true;

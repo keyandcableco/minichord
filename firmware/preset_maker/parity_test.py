@@ -113,6 +113,8 @@ SENTENCES = [
     "jazz organ chords with a kalimba harp", "rock organ, the mod knob is the level", "marimba harp, organ percussion",
     "church organ", "an organ on the top note", "jazz organ, hover is the swell", "full organ with a leslie",
     "mbira harp with a marimba on the bass note", "the knob changes the drawbars",
+    "accordion chords with an upright bass", "upright bass harp", "a harmonium", "cajun", "bluegrass",
+    "a musette accordion with a double bass on the bass note", "honky tonk",
 ]
 # The sampled voices, which a sound or a waveform for the synth has to take back: choir chords with their own piano
 # in the bass and string quartet on the third note, and a piano harp
