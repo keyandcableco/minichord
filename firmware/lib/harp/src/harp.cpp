@@ -55,6 +55,7 @@ harp::harp(){}
   void harp::set_thresholds(uint8_t touch, uint8_t release){}
   void harp::apply_thresholds(){}
   uint16_t harp::read_proximity(){ return 0; }
+  uint16_t harp::read_filtered(uint8_t zone){ return 0; }
 
   void harp::update(debouncer (&data_array)[12]){
       AT42QT2120::Status status = touch_sensor.getStatus();
@@ -139,6 +140,13 @@ harp::harp(){}
       int16_t delta = (int16_t)baseline[key] - (int16_t)filtered[key];
       strength[remap_array[key]] = delta > 0 ? delta : 0;
     }
+  }
+
+  uint16_t harp::read_filtered(uint8_t zone){
+    for (uint8_t key=0; key < 12; key++) {
+      if (remap_array[key] == zone) return touch_sensor.getDeviceChannelFilteredData(MPR121::ADDRESS_5A, key);
+    }
+    return 0;
   }
 
   void harp::set_thresholds(uint8_t touch, uint8_t release){

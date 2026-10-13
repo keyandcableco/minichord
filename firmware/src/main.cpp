@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=89; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395)
+int version_ID=90; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 90: the joystick plate, harp plate 4, 396-415)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -693,6 +693,10 @@ bool string_palmed[12] = {false, false, false, false, false, false, false, false
 // the harp ribbon, below, and plays twelve strings without it. 3 is the
 // fretless wrap, which adds an island of the bottom zone above the top one:
 // twelve strings as the stock strip, and a thirteenth place for the ribbon.
+// 4 is the joystick harp (and the joystick piano, the same plate drawn as a
+// keyboard): a thumbstick, a click and A and B read through six of the
+// contacts, and a strip of six pads with zippers between for twelve places
+// (see >>JOYSTICK<<).
 uint8_t harp_plate = 0;
 uint8_t harp_touch_threshold = 0;     // 0 for the stock thresholds, see harp::set_thresholds()
 uint8_t harp_release_threshold = 0;
@@ -1466,6 +1470,31 @@ bool hover_reapply = true;     // apply again even if the value hasn't changed
 int16_t hover_alt_target = 0;
 int16_t hover_alt_value = 0;
 void hover_set_target(int16_t adress);
+
+// The joystick plate (harp plate 4, see >>JOYSTICK<<): what the stick and its buttons do
+uint8_t joystick_mode = 1;               // 396: 0 settings, 1 bend and vibrato
+uint8_t joystick_orientation = 0;        // 397: how the stick sits: 1 swaps its axes, 2 turns left and right round, 4 up and down
+uint8_t joystick_bend_range = 2;         // 398: semitones at full left or right
+uint8_t joystick_bend_voices = 0;        // 399: what bends: 0 the harp and the chords, 1 the harp, 2 the chords
+float joystick_vibrato_depth = 0.3;      // 400: semitones either way at full up
+float joystick_vibrato_rate = 5.5;       // 401: Hz
+// up, down, left, right (402-409): the setting each direction pushes, and what it reaches at the
+// end of the stick's travel; A, B and the click (410-415): the setting each holds while pressed
+int16_t joystick_target[4] = {0, 0, 0, 0};
+int16_t joystick_to[4] = {0, 0, 0, 0};
+int16_t joystick_button_target[3] = {0, 0, 0};
+int16_t joystick_button_to[3] = {0, 0, 0};
+bool joystick_reapply = true;
+void joystick_set_mode(uint8_t mode);
+void joystick_set_target(uint8_t direction, int16_t adress);
+void joystick_set_button_target(uint8_t button, int16_t adress);
+// The bend the stick puts on every voice it reaches, in semitones, vibrato and all (0 off the plate)
+float joystick_harp_bend = 0;
+float joystick_chord_bend = 0;
+// Where each chord voice's glide offset is headed and when it gets there, so a bend can move it
+// without cutting the glide short (set_chord_voice_frequency, joystick_bend_apply)
+float chord_glide_offset[4] = {0, 0, 0, 0};
+uint32_t chord_glide_until[4] = {0, 0, 0, 0};
 
 // The phone follower: what plays into the minichord over USB moves settings, keeps rhythm mode on
 // its beat, and plays on its kicks (see PHONE)
@@ -2761,7 +2790,9 @@ void set_chord_voice_frequency(uint8_t i, int16_t current_note) {
       ? note_delta/24.0
       : log2f(note_freq / middle_freq) / 2.0f;
     uint16_t glide = (fingered_glide && !rythm_mode && !chord_legato) ? 0 : glide_length;   // struck afresh: there at once
-    chord_freq_dc_array[i]->amplitude(glide_offset,glide);
+    chord_glide_offset[i] = glide_offset;
+    chord_glide_until[i] = millis() + glide;
+    chord_freq_dc_array[i]->amplitude(glide_offset + joystick_chord_bend / 24.0f, glide);
     chord_sample_glide(i, note_freq, glide);
     mpe_chord_note_change(i, 12.0f * log2f(note_freq), glide, current_note);
     // chord_voice_filter_array[i]->frequency(1*freq);
@@ -2777,7 +2808,9 @@ void set_chord_voice_frequency(uint8_t i, int16_t current_note) {
     chord_osc_1_array[i]->frequency(osc_1_freq_multiplier * note_freq);
     chord_osc_2_array[i]->frequency(osc_2_freq_multiplier * note_freq);
     chord_osc_3_array[i]->frequency(osc_3_freq_multiplier * note_freq);
-    chord_freq_dc_array[i]->amplitude(0,0);
+    chord_glide_offset[i] = 0;
+    chord_glide_until[i] = 0;
+    chord_freq_dc_array[i]->amplitude(joystick_chord_bend / 24.0f, 0);   // the joystick's bend, two octaves a unit as glide's
     chord_sample_glide(i, note_freq, 0);
     mpe_chord_note_change(i, 12.0f * log2f(note_freq), 0, current_note);
     // chord_voice_filter_array[i]->frequency(1*freq);
@@ -2826,7 +2859,8 @@ void set_harp_voice_frequency(uint8_t i, uint16_t current_note) {
   if (midi_in_harp[i].owned) return;    // sounding an incoming note, until the harp plucks it
   harp_voice_current_note[i] = current_note;
   float note_freq =  pow(2,harp_octave_change)*c_frequency/4 * temper_ratio(current_note+transpose_steps);
-  if (harp_voice_glide[i] != 0) note_freq *= powf(2.0f, harp_voice_glide[i] / 12.0f);   // a ribbon touch's slide
+  float slide = harp_voice_glide[i] + joystick_harp_bend;   // a ribbon touch's slide, and the joystick's bend
+  if (slide != 0) note_freq *= powf(2.0f, slide / 12.0f);
   float transient_freq =  64.0*c_frequency/4 *temper_ratio((current_note+transpose_steps)%EDO+transient_note_level);
   string_note_freq[i] = note_freq;
   AudioNoInterrupts();
@@ -3026,7 +3060,7 @@ void chord_sample_glide(uint8_t i, float hz, uint16_t ms) {
   g.at = millis();
   g.ms = g.known ? ms : 0;
   g.known = true;
-  if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(exp2f(g.ms ? g.from : to));
+  if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(exp2f((g.ms ? g.from : to) + joystick_chord_bend / 12.0f));
 }
 
 // From loop(): a gliding sample on its way
@@ -3037,7 +3071,7 @@ FLASHMEM void chord_samples_glide() {
     if (g.ms) {
       float octaves = chord_sample_octaves(i);
       if (millis() - g.at >= g.ms) g.ms = 0;
-      if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(exp2f(octaves));
+      if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(exp2f(octaves + joystick_chord_bend / 12.0f));
     }
     interrupts();
   }
@@ -3046,6 +3080,7 @@ FLASHMEM void chord_samples_glide() {
 void chord_sample_start(uint8_t i) {
   if (!chord_source_of[i]) return;
   float hz = chord_sample_glides[i].known ? exp2f(chord_sample_octaves(i)) : chord_voice_note_freq[i];   // mid-glide: from where it is
+  if (joystick_chord_bend != 0) hz *= exp2f(joystick_chord_bend / 12.0f);
   chord_sample_array[i]->playFrequency(hz, chord_source_of[i] == 10 ? (int)lroundf(127 * chord_reed_bark) : 127);   // the reed piano struck as hard as 387 says
   chord_sample_array[i]->amplitude(fminf(1, chord_voice_level[i] * chord_sample_level));
 }
@@ -7629,15 +7664,22 @@ const float harp_lift_ratio = 0.7;           // a touch reading under this much 
 const float harp_peak_relax_ms = 80;         // how fast the peak follows a lighter touch, so a strum that eases off still moves
 const uint8_t harp_landing_ms = 4;           // a finger pressing down reads weak and uncertain at first; it sounds once it has settled
 
-const uint8_t harp_position_count = 24;
-
-// The ribbon reads any strip but the wheel, which is not a line. Harp drums (343) take the pads back
-// from the ribbon, the zipper plates, the hammer and the palm: each pad is a drum, whatever plays the strings.
-bool harp_ribbon_active() {
-  return harp_ribbon && harp_plate != 2 && !harp_drums;
+// Zipper 24 has 24 positions; the joystick plate's strip twelve, one a string
+uint8_t harp_position_count() {
+  return harp_plate == 4 ? 12 : 24;
 }
 
+// The ribbon reads any strip but the wheel, which is not a line, and the joystick plate, whose
+// strip is six of its contacts. Harp drums (343) take the pads back from the ribbon, the zipper
+// plates, the hammer and the palm: each pad is a drum, whatever plays the strings.
+bool harp_ribbon_active() {
+  return harp_ribbon && harp_plate != 2 && harp_plate != 4 && !harp_drums;
+}
+
+// The joystick plate's strip is always read as places, whatever the harp plays: its pads are only
+// half of them, and the other contacts are the stick's.
 bool harp_positions_active() {
+  if (harp_plate == 4) return true;
   return harp_plate == 1 && !harp_drums && !harp_ribbon_active() && (chromatic_harp_mode || scalar_harp_selection != 0);
 }
 
@@ -7786,13 +7828,28 @@ void harp_positions_reset() {
   }
 }
 
+// Contact Tc of a plate, T1 at the top as the plates are drawn, is harp zone 12 - c; upside down,
+// where the zones are read from the other end, c - 1.
+uint8_t contact_zone(uint8_t c) {
+  return upside_down ? c - 1 : 12 - c;
+}
+
+// Whether zone i is a string's: on the joystick plate only the strip's six (T2, T4 ... T12) are
+bool zone_is_strip(uint8_t i) {
+  if (harp_plate != 4) return true;
+  uint8_t c = upside_down ? i + 1 : 12 - i;
+  return c % 2 == 0;
+}
+
 // Each run of touched zones along a line is a finger. Its centre, in zones
 // along the line, takes in one zone more either side, which reads a little
 // before it counts as touched, so a finger nearing a band starts to move
-// before the far zone crosses its threshold. Line place m is harp zone m % 12.
+// before the far zone crosses its threshold. Line place m is harp zone m % 12,
+// or line_zone[m] for a line laid out otherwise.
 struct harp_run { float centre; float total; bool palmed; bool matched; };
 uint8_t harp_find_runs(const bool *line_down, uint8_t line_length, const bool *zone_down,
-                       const int16_t *strength, harp_run *runs, uint8_t max_runs) {
+                       const int16_t *strength, harp_run *runs, uint8_t max_runs,
+                       const uint8_t *line_zone = nullptr) {
   uint8_t run_count = 0;
   for (uint8_t k = 0; k < line_length && run_count < max_runs; k++) {
     if (!line_down[k]) continue;
@@ -7803,7 +7860,7 @@ uint8_t harp_find_runs(const bool *line_down, uint8_t line_length, const bool *z
     bool palmed = false;
     for (int8_t m = (int8_t)lo - 1; m <= (int8_t)hi + 1; m++) {
       if (m < 0 || m >= line_length) continue;
-      uint8_t zone = m % 12;
+      uint8_t zone = line_zone ? line_zone[m] : m % 12;
       bool inside = m >= lo && m <= hi;
       if (!inside && zone_down[zone]) continue;   // a neighbour another finger is on
       if (inside) palmed |= string_palmed[zone];
@@ -7825,7 +7882,7 @@ void handle_harp_positions() {
   bool any_down = false;
   for (uint8_t z = 0; z < 12; z++) {
     zone_down[z] = harp_array[z].read_value();
-    any_down |= zone_down[z];
+    any_down |= zone_down[z] && zone_is_strip(z);   // the joystick plate's stick and buttons aren't the strip
     // the palm's zones are free once lifted, as on the stock plate
     if (harp_array[z].read_transition() == 1) string_palmed[z] = false;
   }
@@ -7833,23 +7890,48 @@ void handle_harp_positions() {
   for (uint8_t t = 0; t < harp_touch_max; t++) any_touch |= harp_touches[t].active;
   if (!any_down && !any_touch) return;   // nothing to read: spare the bus
 
-  const uint8_t line_length = 13;
+  bool joystick = harp_plate == 4;
+  uint8_t line_length = 13;
   bool line_down[13];
-  for (uint8_t k = 0; k < 12; k++) line_down[k] = zone_down[k];
-  line_down[12] = false;
-  if (zone_down[0] && zone_down[11] && !zone_down[1]) {
-    line_down[0] = false;
-    line_down[12] = true;
+  const uint8_t *line_zone = nullptr;
+  uint8_t joystick_line[7];
+  if (joystick) {
+    // The joystick plate's strip, bottom to top: the island of T8 below T12, then T12, T10, T8,
+    // T6, T4 and T2, a zipper between each two. The island is read as T8 when T12 is touched
+    // with it and T10, between them, isn't.
+    static const uint8_t strip_contacts[7] = {8, 12, 10, 8, 6, 4, 2};
+    line_length = 7;
+    for (uint8_t k = 0; k < 7; k++) {
+      joystick_line[k] = contact_zone(strip_contacts[k]);
+      line_down[k] = zone_down[joystick_line[k]];
+    }
+    bool island = line_down[1] && line_down[3] && !line_down[2];
+    line_down[0] = island;
+    if (island) line_down[3] = false;
+    line_zone = joystick_line;
+  } else {
+    for (uint8_t k = 0; k < 12; k++) line_down[k] = zone_down[k];
+    line_down[12] = false;
+    if (zone_down[0] && zone_down[11] && !zone_down[1]) {
+      line_down[0] = false;
+      line_down[12] = true;
+    }
   }
   int16_t strength[12];
   harp_sensor.read_strength(strength);
 
   harp_run runs[7];
-  uint8_t run_count = harp_find_runs(line_down, line_length, zone_down, strength, runs, 7);
-  for (uint8_t r = 0; r < run_count; r++) runs[r].centre *= 2;   // in positions, two a zone
+  uint8_t run_count = harp_find_runs(line_down, line_length, zone_down, strength, runs, 7, line_zone);
+  for (uint8_t r = 0; r < run_count; r++) {
+    if (!joystick) { runs[r].centre *= 2; continue; }   // in positions, two a zone
+    // two places a pad, the island's zipper the first; turned round, the top as the player holds
+    // it is the top place
+    float place = runs[r].centre * 2 - 1;
+    runs[r].centre = upside_down ? 11 - place : place;
+  }
 
   uint32_t now = millis();
-  const float last = harp_position_count - 1;
+  const float last = harp_position_count() - 1;
   auto settle = [last](float x) -> uint8_t {
     if (x < 0) x = 0;
     if (x > last) x = last;
@@ -8102,7 +8184,7 @@ void handle_harp_ribbon() {
   bool any_down = false;
   for (uint8_t z = 0; z < 12; z++) {
     zone_down[z] = harp_array[z].read_value();
-    any_down |= zone_down[z];
+    any_down |= zone_down[z] && zone_is_strip(z);   // the joystick plate's stick and buttons aren't the strip
     if (harp_array[z].read_transition() == 1) string_palmed[z] = false;
   }
   bool any_touch = false;
@@ -8367,10 +8449,21 @@ void handle_harp() {
     // the palm keep their pluck.
     // On the ribbon and the zipper plates a finger reads up to three neighbouring zones, so there a run
     // of three or fewer is one finger, and only a wider run (a hand) counts zone by zone
+    // The joystick plate's strip is six of its zones, read in its own order; the stick's are no palm.
+    uint8_t order[12];
+    uint8_t zones = 12;
+    if (harp_plate == 4) {
+      static const uint8_t strip_contacts[6] = {12, 10, 8, 6, 4, 2};
+      zones = 6;
+      for (uint8_t k = 0; k < 6; k++) order[k] = contact_zone(strip_contacts[k]);
+    } else {
+      for (uint8_t k = 0; k < 12; k++) order[k] = k;
+    }
     uint8_t held = 0, run = 0;
     bool line = ribbon || positions;
-    for (int i = 0; i <= 12; i++) {
-      bool counts = i < 12 && harp_array[i].read_value() && (!harp_pluck_on_lift || now - pad_landed[i] <= palm_spread_ms);
+    for (int k = 0; k <= zones; k++) {
+      uint8_t i = k < zones ? order[k] : 0;
+      bool counts = k < zones && harp_array[i].read_value() && (!harp_pluck_on_lift || now - pad_landed[i] <= palm_spread_ms);
       if (counts) { run++; continue; }
       held += (line && run <= 3) ? (run > 0) : run;
       run = 0;
@@ -8383,7 +8476,7 @@ void handle_harp() {
     if (palm_down) {
       bool palm_held = false;
       for (int i = 0; i < 12; i++) {
-        if (!harp_array[i].read_value()) continue;
+        if (!harp_array[i].read_value() || !zone_is_strip(i)) continue;
         bool landed_with_palm = !harp_pluck_on_lift || pad_landed[i] + palm_spread_ms >= palm_landed;
         uint8_t landing = harp_pluck_on_lift ? palm_landing_lift_ms : palm_landing_ms;
         if (now - palm_landed < landing && landed_with_palm) string_palmed[i] = true;
@@ -9489,6 +9582,9 @@ void handle_hover(bool alternate) {
   float near = baseline - level;                   // how far a hand pulls the reading down
   bool touched = near > hover_touch_counts;
   for (int i = 0; i < 12 && !touched; i++) touched = harp_array[i].read_value();
+  // The joystick plate's pots join its contacts, so the twelve together are no antenna: hover rests
+  bool resting = harp_plate == 4;
+  if (resting) touched = false;
   // The baseline is what the plate reads with no hand. It follows the reading up quickly (a hand
   // leaving, or the air drying) and down slowly, so a hand held still isn't soaked up but a drift
   // with nobody near is; slower still within reach, and not at all while the plate is touched.
@@ -9497,7 +9593,7 @@ void handle_hover(bool alternate) {
   float rate = near < 0 ? 0.02f : touched ? 0 : near < pull_edge ? 0.0004f : 0.00002f;  // 0.1 s, 5 s, 100 s
   baseline -= near * rate;
 
-  float live = touched ? 1 : near <= pull_edge ? 0 : fminf(logf(near / pull_edge) / logf(pull_full / pull_edge), 1);
+  float live = resting ? 0 : touched ? 1 : near <= pull_edge ? 0 : fminf(logf(near / pull_edge) / logf(pull_full / pull_edge), 1);
   // Rises only once the hand has been that close all of hover_rise_ms: the lowest of the last
   // stretch, kept in slots holding each one's lowest.
   static float recent[hover_rise_ms / hover_slot_ms] = {0};
@@ -9557,6 +9653,241 @@ void handle_hover(bool alternate) {
     if (cc != sent) queue_midi_cc(hover_cc, cc, chord_channel, chord_port);
     sent = cc;
   }
+}
+
+//>>JOYSTICK<<
+// The joystick plate (harp plate 4): an Alps RKJXV1224005 thumbstick with a click, and A and B on
+// the chord buttons' own switch, read through the touch chip's contacts with no chip of their own
+// (minichord-harp-plates, joystick harp and joystick piano). While the chip measures one contact it
+// holds the other eleven at ground, so each axis's pot, its wiper on T1 (up and down) or T3 (left
+// and right) and the end it is pushed towards on the shared contact (T9), reads as a resistance:
+// about 25 counts a kilohm, a B10K sweeping 9 to 219 on the bench. A, the click and B join T5, T7
+// and T11 to the shared contact, and read as touches. The strip, T2 to T12, is read as twelve
+// places in handle_harp_positions.
+//
+// The stick is read from the chip's filtered counts, not against its baseline, which would soak up
+// a bend held still. Each axis's centre is the reading at rest, learned as the plate is first read
+// and followed slowly whenever the stick sits still near it, and its ends spread to the furthest
+// readings seen. Upside down, the stick is turned round with everything else; joystick orientation
+// (397) is for a stick whose pots aren't the way the plate expects.
+//
+// What it does (joystick mode, 396):
+//   0 settings: each direction pushes its own setting (402-409) from as the preset has it, at
+//     rest, to its value at the end of the stick's travel; applied, not saved, as the knobs do.
+//   1 bend and vibrato: left and right bend (398, 399), up adds vibrato (400, 401), and down
+//     pushes the down direction's setting, as in 0.
+// A, B and the click hold their settings (410-415) at their values while pressed, in every mode.
+// With knobs send MIDI on, the stick goes out as control changes 112 (left and right) and 113 (up
+// and down), 64 at rest, and A, B and the click as 114, 115 and 116, on the chord channel: past
+// the ones the minichord listens for (85-90 the looper, 102-111 the rhythm), so a computer that
+// sends them back changes nothing.
+struct stick_axis {
+  float centre, low, high;   // filtered counts: at rest, and the furthest seen either way
+  float level;               // smoothed reading
+  uint32_t still_since;
+  bool known;
+};
+stick_axis stick_axes[2] = {};   // 0 left and right (T3), 1 up and down (T1)
+float stick_x = 0, stick_y = 0;  // -1 to 1, left to right and down to up, as the player holds it
+const float stick_dead = 0.08f;           // the middle of the travel that is rest: a stick let go comes back near it, not to it
+const float stick_rest_counts = 114;      // the middle of a B10K's sweep, for a stick held off centre as it is first read
+const float stick_floor_counts = 9;       // the end a pot is pushed to, nothing between the contacts
+const uint8_t stick_read_ms = 4;
+const uint8_t joystick_cc = 112;
+
+// Joystick mode and targets, from their settings: a setting a direction or button leaves goes back
+// as the preset has it
+FLASHMEM void joystick_set_mode(uint8_t mode) {
+  joystick_mode = mode;
+  joystick_reapply = true;
+}
+
+FLASHMEM void joystick_set_target(uint8_t direction, int16_t adress) {
+  if (direction > 3 || adress == joystick_target[direction]) return;
+  if (control_can_sweep(joystick_target[direction])) apply_audio_parameter(joystick_target[direction], current_sysex_parameters[joystick_target[direction]]);
+  joystick_target[direction] = adress;
+  joystick_reapply = true;
+}
+
+FLASHMEM void joystick_set_button_target(uint8_t button, int16_t adress) {
+  if (button > 2 || adress == joystick_button_target[button]) return;
+  if (control_can_tap(joystick_button_target[button])) apply_audio_parameter(joystick_button_target[button], current_sysex_parameters[joystick_button_target[button]]);
+  joystick_button_target[button] = adress;
+  joystick_reapply = true;
+}
+
+// One axis, -1 to 1 from its filtered reading
+FLASHMEM static float stick_axis_read(stick_axis &a, float raw, uint32_t now) {
+  if (!a.known) {
+    a.centre = (raw > 60 && raw < 170) ? raw : stick_rest_counts;
+    float reach = a.centre - stick_floor_counts;
+    a.low = a.centre - reach * 0.8f;   // a little short of the ends, so full travel is reached before them
+    a.high = a.centre + reach * 0.8f;
+    a.level = raw;
+    a.still_since = now;
+    a.known = true;
+  }
+  float moved = raw - a.level;
+  a.level += moved * 0.35f;
+  if (fabsf(moved) > 3) a.still_since = now;
+  if (a.level < a.low) a.low = a.level;
+  if (a.level > a.high) a.high = a.level;
+  float offset = a.level - a.centre;
+  float v = offset < 0 ? offset / fmaxf(a.centre - a.low, 1) : offset / fmaxf(a.high - a.centre, 1);
+  // sitting still near the middle is rest: the centre follows it, slowly
+  if (fabsf(v) < 2 * stick_dead && now - a.still_since > 300) a.centre += (a.level - a.centre) * 0.02f;
+  float size = fabsf(v);
+  if (size <= stick_dead) return 0;
+  size = fminf((size - stick_dead) / (1 - stick_dead), 1);
+  return v < 0 ? -size : size;
+}
+
+// The bend reaches every sounding voice: the harp's retuned, the chords' through the offset glide
+// moves them by, so a glide on its way carries on
+FLASHMEM static void joystick_bend_apply(float harp_bend, float chord_bend) {
+  if (harp_bend != joystick_harp_bend) {
+    joystick_harp_bend = harp_bend;
+    for (uint8_t i = 0; i < 12; i++) {
+      noInterrupts();
+      if (string_enveloppe_array[i]->isActive()) set_harp_voice_frequency(i, harp_voice_current_note[i]);
+      interrupts();
+    }
+  }
+  if (chord_bend != joystick_chord_bend) {
+    joystick_chord_bend = chord_bend;
+    uint32_t now = millis();
+    for (uint8_t i = 0; i < 4; i++) {
+      noInterrupts();
+      if (!midi_in_chord[i].owned) {
+        uint32_t left = chord_glide_until[i] > now ? chord_glide_until[i] - now : 0;
+        chord_freq_dc_array[i]->amplitude(chord_glide_offset[i] + chord_bend / 24.0f, left);
+        if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(exp2f(chord_sample_octaves(i) + chord_bend / 12.0f));
+      }
+      interrupts();
+    }
+  }
+}
+
+// A setting pushed part of the way to a value (t 0 to 1), applied but not saved. Directions that
+// share a setting (left and right on one filter) take turns: the one pushed further has it.
+FLASHMEM static void joystick_push(const float *t) {
+  static int16_t applied[4] = {-32768, -32768, -32768, -32768};
+  static int16_t moving[4] = {0, 0, 0, 0};
+  static elapsedMillis since_refresh;
+  bool refresh = since_refresh > 250;
+  if (refresh) since_refresh = 0;
+  for (uint8_t d = 0; d < 4; d++) {
+    int16_t target = joystick_target[d];
+    if (moving[d] != target) {
+      if (control_can_sweep(moving[d])) apply_audio_parameter(moving[d], current_sysex_parameters[moving[d]]);
+      moving[d] = target;
+      applied[d] = -32768;
+    }
+    if (!control_can_sweep(target)) continue;
+    bool outpushed = false;
+    for (uint8_t e = 0; e < 4; e++) {
+      if (e != d && joystick_target[e] == target && (t[e] > t[d] || (t[e] == t[d] && e < d))) outpushed = true;
+    }
+    if (outpushed) { applied[d] = -32768; continue; }
+    int16_t from = current_sysex_parameters[target];
+    int16_t to = joystick_to[d];
+    int16_t lo, hi;
+    if (parameter_range(target, lo, hi)) to = constrain(to, lo, hi);
+    int16_t value = (int16_t)lroundf(from + (to - from) * t[d]);
+    // a preset load or an editor puts the stored value back: while pushed, apply it again now and then
+    if (value != applied[d] || joystick_reapply || (refresh && t[d] > 0)) {
+      apply_audio_parameter(target, value);
+      applied[d] = value;
+    }
+  }
+}
+
+// A, B and the click: each holds its setting at its value while pressed
+FLASHMEM static void joystick_hold(const bool *down) {
+  static bool was[3] = {false, false, false};
+  static elapsedMillis since_refresh;
+  bool refresh = since_refresh > 250;
+  if (refresh) since_refresh = 0;
+  for (uint8_t b = 0; b < 3; b++) {
+    int16_t target = joystick_button_target[b];
+    if (!control_can_tap(target)) { was[b] = false; continue; }
+    if (down[b]) {
+      if (!was[b] || refresh || joystick_reapply) {
+        int16_t to = joystick_button_to[b];
+        int16_t lo, hi;
+        if (parameter_range(target, lo, hi)) to = constrain(to, lo, hi);
+        apply_audio_parameter(target, to);
+      }
+    } else if (was[b]) {
+      apply_audio_parameter(target, current_sysex_parameters[target]);
+    }
+    was[b] = down[b];
+  }
+}
+
+FLASHMEM static void joystick_send_midi(const bool *down) {
+  static int16_t sent[5] = {-1, -1, -1, -1, -1};
+  if (!knob_midi) {
+    for (uint8_t k = 0; k < 5; k++) sent[k] = -1;   // sent again whenever it's switched back on
+    return;
+  }
+  int16_t value[5] = {(int16_t)lroundf(64 + stick_x * (stick_x < 0 ? 64 : 63)), (int16_t)lroundf(64 + stick_y * (stick_y < 0 ? 64 : 63)),
+                      down[0] ? 127 : 0, down[1] ? 127 : 0, down[2] ? 127 : 0};
+  for (uint8_t k = 0; k < 5; k++) {
+    if (value[k] != sent[k]) queue_midi_cc(joystick_cc + k, value[k], chord_channel, chord_port);
+    sent[k] = value[k];
+  }
+}
+
+FLASHMEM void handle_joystick() {
+  static bool was_on = false;
+  bool on = harp_plate == 4;
+  if (!on) {
+    if (was_on) {   // the plate taken off, or set to another: everything back as the preset has it
+      stick_x = stick_y = 0;
+      const float rest[4] = {0, 0, 0, 0};
+      const bool up[3] = {false, false, false};
+      joystick_push(rest);
+      joystick_hold(up);
+      joystick_bend_apply(0, 0);
+      stick_axes[0].known = stick_axes[1].known = false;
+      was_on = false;
+    }
+    return;
+  }
+  was_on = true;
+  static elapsedMillis since_read;
+  if (since_read < stick_read_ms) return;
+  float dt = since_read / 1000.0f;
+  since_read = 0;
+  uint32_t now = millis();
+
+  // falling towards the shared contact is left and up, until joystick orientation says otherwise
+  float x = -stick_axis_read(stick_axes[0], harp_sensor.read_filtered(contact_zone(3)), now);
+  float y = -stick_axis_read(stick_axes[1], harp_sensor.read_filtered(contact_zone(1)), now);
+  if (joystick_orientation & 1) { float swap = x; x = y; y = swap; }
+  if (joystick_orientation & 2) x = -x;
+  if (joystick_orientation & 4) y = -y;
+  if (upside_down) { x = -x; y = -y; }
+  stick_x = x;
+  stick_y = y;
+  bool down[3] = {harp_array[contact_zone(5)].read_value(), harp_array[contact_zone(11)].read_value(), harp_array[contact_zone(7)].read_value()};   // A, B, the click
+
+  // up, down, left, right
+  float t[4] = {fmaxf(y, 0), fmaxf(-y, 0), fmaxf(-x, 0), fmaxf(x, 0)};
+  float bend = 0;
+  if (joystick_mode == 1) {
+    static float phase = 0;
+    phase += 2 * PI * joystick_vibrato_rate * dt;
+    if (phase > 2 * PI) phase -= 2 * PI;
+    bend = x * joystick_bend_range + t[0] * joystick_vibrato_depth * sinf(phase);
+    t[0] = t[2] = t[3] = 0;   // the stick's bend and vibrato, not settings
+  }
+  joystick_bend_apply(joystick_bend_voices == 2 ? 0 : bend, joystick_bend_voices == 1 ? 0 : bend);
+  joystick_push(t);
+  joystick_hold(down);
+  joystick_reapply = false;
+  joystick_send_midi(down);
 }
 
 //>>VOCODER<<
@@ -10173,6 +10504,7 @@ void loop() {
 
   // Handle harp functions
   handle_harp();
+  handle_joystick();
   looper_update();
   vocoder_update();
   phone_update();

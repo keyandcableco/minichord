@@ -363,6 +363,66 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 389:
         ToneOrgan::percussion(value);
         break;
+      case 396:
+        joystick_set_mode(value);
+        break;
+      case 397:
+        joystick_orientation=value;
+        break;
+      case 398:
+        joystick_bend_range=value;
+        break;
+      case 399:
+        joystick_bend_voices=value;
+        break;
+      case 400:
+        joystick_vibrato_depth=value/100.0;
+        break;
+      case 401:
+        joystick_vibrato_rate=value/100.0;
+        break;
+      case 402:
+        joystick_set_target(0, constrain(value,0,parameter_size-1));
+        break;
+      case 403:
+        joystick_to[0]=value; joystick_reapply=true;
+        break;
+      case 404:
+        joystick_set_target(1, constrain(value,0,parameter_size-1));
+        break;
+      case 405:
+        joystick_to[1]=value; joystick_reapply=true;
+        break;
+      case 406:
+        joystick_set_target(2, constrain(value,0,parameter_size-1));
+        break;
+      case 407:
+        joystick_to[2]=value; joystick_reapply=true;
+        break;
+      case 408:
+        joystick_set_target(3, constrain(value,0,parameter_size-1));
+        break;
+      case 409:
+        joystick_to[3]=value; joystick_reapply=true;
+        break;
+      case 410:
+        joystick_set_button_target(0, constrain(value,0,parameter_size-1));
+        break;
+      case 411:
+        joystick_button_to[0]=value; joystick_reapply=true;
+        break;
+      case 412:
+        joystick_set_button_target(1, constrain(value,0,parameter_size-1));
+        break;
+      case 413:
+        joystick_button_to[1]=value; joystick_reapply=true;
+        break;
+      case 414:
+        joystick_set_button_target(2, constrain(value,0,parameter_size-1));
+        break;
+      case 415:
+        joystick_button_to[2]=value; joystick_reapply=true;
+        break;
       case 2:
         string_gain.amplitude(value/100.0,100);  harp_attack_velocity=value/100.0*127;
         break;
@@ -1277,7 +1337,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 32: lo=0; hi=100; return true;
       case 244: lo=0; hi=2; return true;
       case 384: lo=0; hi=1; return true;
-      case 243: lo=0; hi=3; return true;
+      case 243: lo=0; hi=4; return true;
       case 241: lo=0; hi=120; return true;
       case 242: lo=0; hi=119; return true;
       case 35: lo=0; hi=20; return true;
@@ -1394,6 +1454,26 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 385: lo=0; hi=1535; return true;
       case 388: lo=0; hi=7; return true;
       case 389: lo=0; hi=3; return true;
+      case 396: lo=0; hi=1; return true;
+      case 397: lo=0; hi=7; return true;
+      case 398: lo=0; hi=12; return true;
+      case 399: lo=0; hi=2; return true;
+      case 400: lo=0; hi=200; return true;
+      case 401: lo=50; hi=1200; return true;
+      case 402: lo=0; hi=511; return true;
+      case 403: lo=0; hi=4095; return true;
+      case 404: lo=0; hi=511; return true;
+      case 405: lo=0; hi=4095; return true;
+      case 406: lo=0; hi=511; return true;
+      case 407: lo=0; hi=4095; return true;
+      case 408: lo=0; hi=511; return true;
+      case 409: lo=0; hi=4095; return true;
+      case 410: lo=0; hi=511; return true;
+      case 411: lo=0; hi=4095; return true;
+      case 412: lo=0; hi=511; return true;
+      case 413: lo=0; hi=4095; return true;
+      case 414: lo=0; hi=511; return true;
+      case 415: lo=0; hi=4095; return true;
       case 2: lo=0; hi=100; return true;
       case 36: lo=0; hi=15; return true;
       case 236: lo=0; hi=4095; return true;

@@ -21,6 +21,12 @@ class harp{
   // How far each pad's reading is below its baseline, in harp order: how
   // strongly it is touched, not only whether. Used to find a finger between pads.
   void read_strength(int16_t (&strength)[12]);
+  // Zone i's filtered reading itself (harp order), without the chip's
+  // baseline: for parts on a plate (a joystick's pots) that sit still for long
+  // stretches, where the baseline would soak a held position up. One channel
+  // is a short read, where all twelve and their baselines are 48 bytes. 0 on
+  // a chip that has none.
+  uint16_t read_filtered(uint8_t zone);
   // The touch and release thresholds, 0 for the stock ones. Higher touches
   // need a firmer finger; the release is how far a finger rises before a pad
   // lets go. They reach the chip at the next apply_thresholds().
