@@ -737,6 +737,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 21:
         retrigger_chord=value;
         break;
+      case 395:
+        chord_touch=value; if (!chord_touch) { chord_touch_gain=1; chord_touch_vscale=1; chord_touch_firmness=1; chord_touch_unwind=true; }
+        break;
       case 202:
         
         break;
@@ -1501,6 +1504,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 39: lo=0; hi=1; return true;
       case 34: lo=0; hi=6; return true;
       case 21: lo=0; hi=1; return true;
+      case 395: lo=0; hi=1; return true;
       case 202: lo=0; hi=29; return true;
       case 203: lo=0; hi=29; return true;
       case 204: lo=0; hi=29; return true;

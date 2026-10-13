@@ -51,7 +51,7 @@ ROLES = {
     "out_bp": {"chord": 195, "harp": 91}, "out_hp": {"chord": 196, "harp": 92},
     "out_lfo_wave": {"harp": 93}, "out_lfo_freq": {"harp": 94}, "out_lfo_amount": {"harp": 95}, "out_lfo_sens": {"harp": 96},
     "harp_shuffle": {"harp": 40}, "inversion": {"chord": 37}, "roll": {"chord": 135}, "loose": {"chord": 136},
-    "retrigger": {"chord": 21}, "held_strings": {"harp": 22}, "cantus": {"chord": 115}, "brothers": {"chord": 390}, "brothers_again": {"chord": 394},
+    "retrigger": {"chord": 21}, "held_strings": {"harp": 22}, "cantus": {"chord": 115}, "brothers": {"chord": 390}, "brothers_again": {"chord": 394}, "chord_touch": {"chord": 395},
     "pan": {"global": 29}, "reverb_hidamp": {"global": 25}, "reverb_lowpass": {"global": 27},
     "vocoder_carrier": {"global": 261}, "vocoder_consonants": {"global": 262}, "formant_size": {"chord": 239},
     "rhythm_length": {"global": 188}, "swing": {"global": 190}, "rhythm_note": {"global": 191},
@@ -795,6 +795,10 @@ add("brothers, brother chords, barry harris brothers, barry harris block chords,
     "the harp chooses the chord or its brother (Barry Harris)", home="both", hue=280,
     moves={"chord": (EXACT("brothers", 1),), "harp": (EXACT("scale", 8), EXACT("chromatic", 0))},
     off={"chord": (EXACT("brothers", 0),)})
+add("chords follow the harp's touch, chords follow the harps touch, chords follow the harp, touch sensitive chords, "
+    "velocity sensitive chords, dynamic chords, chords swell with the harp, chords take the harp's touch", "setting",
+    "the chords follow the harp's touch", home="both",
+    moves={"chord": (EXACT("chord_touch", 1),), "harp": (MIN("touch", 60),)}, off={"chord": (EXACT("chord_touch", 0),)})
 add("brothers again, same note again, the same note again, revoice on the same note, re-voice on the same note, "
     "same note revoices, same note re-voices", "setting", "the same harp note again re-voices the block", home="chord",
     moves={"chord": (EXACT("brothers", 1), EXACT("brothers_again", 1))}, off={"chord": (EXACT("brothers_again", 0),)})
@@ -1521,6 +1525,7 @@ TARGETS = {
     "barry": "barry harris, jazz, jazzy, sixth chords",
     "brothers": "brothers, brother chords",
     "brothers_again": "brothers again",
+    "chord_touch": "chords follow the harp's touch, chord touch",
     "voice_leading": "voice leading",
     "touch": "touch, velocity",
     "palm_mute": "palm mute",
@@ -1645,7 +1650,7 @@ ON_OFF = {"ribbon": 245, "ribbon mode": 245, "harp ribbon": 245, "mpe": 110, "mp
           "knob midi": 238, "knob layer": 117, "pluck on lift": 216, "chromatic mode": 98, "chromatic": 98,
           "scalar harp mode": 36, "scalar mode": 36, "harp mode": 36, "scale mode": 36, "single port mode": 108,
           "single port": 108, "note off on lift": 215, "harp note off on lift": 215, "barry harris mode": 33,
-          "barry harris": 33, "brothers": 390, "brother chords": 390, "brothers again": 394, "voice leading": 111, "chord layout": 39, "alternate chord layout": 39,
+          "barry harris": 33, "brothers": 390, "brother chords": 390, "brothers again": 394, "chords follow the harp's touch": 395, "chord touch": 395, "voice leading": 111, "chord layout": 39, "alternate chord layout": 39,
           "alternate layout": 39, "alt layout": 39, "alternate chords": 39, "retrigger chords": 21,
           "palm mute": 213, "touch pressure": 253, "pressure": 253, "looper": None,
           "midi clock out": 266, "clock out": 266, "midi clock": 266,
@@ -2984,6 +2989,8 @@ CONFLICTS = [
      "note": "brothers takes over from the cantus under the standard chords; the cantus still steers the augmented, the alternate layout's chords and notes outside the scale"},
     {"about": [390, 36, 98], "when": [[390, "==", 1], [98, "==", 0], [36, "not in", [8, 9]]],
      "note": "brothers' brother chords come from notes between the chord's own: harp mode 8 or 9 plays them, other harp modes only some or none"},
+    {"about": [395, 252, 263], "when": [[395, "==", 1], [252, "==", 0], [263, "==", 0]],
+     "note": "the chords follow the harp's touch, but touch velocity and strum velocity are both off: every gesture is full"},
     {"about": [390, 21], "when": [[390, "==", 1], [21, "==", 0]],
      "note": "with retrigger chords off brothers slides the voices to each new block: a sound that decays isn't struck again"},
     {"about": [394, 390], "when": [[394, "in", [2, 3]], [390, "==", 0]],

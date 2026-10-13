@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=88; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on)
+int version_ID=89; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1179,6 +1179,15 @@ midi_in_voice midi_in_harp[12] = {};
 midi_in_voice midi_in_chord[4] = {};
 void midi_in_release(midi_in_voice *voices, uint8_t i, bool harp);
 float chord_voice_level[4] = {1, 1, 1, 1};   // each chord voice's loudness, from an incoming note's velocity
+// Chords follow the harp's touch (395): the chords take their dynamic from the harp hand. Each new
+// harp gesture sets it from its first string's softness (touch velocity and strum velocity's say,
+// as the string itself plays); a chord struck then, by the buttons or by brothers, plays at it, and
+// a chord already sounding glides to it. See CHORD TOUCH.
+uint8_t chord_touch = 0;
+float chord_touch_gain = 1;       // the chord voices' level at the harp's dynamic
+float chord_touch_vscale = 1;     // and their MIDI velocity's share of chord velocity
+float chord_touch_firmness = 1;   // and the firmness the looper keeps
+bool chord_touch_unwind = false;  // turned off: the voices still glide back to full
 float chord_noise_level = 0;                // the chord voices' noise (130), before that
 void apply_chord_voice_level(uint8_t i);
 void midi_in_message(uint8_t type, uint8_t cable, uint8_t channel, uint8_t data1, uint8_t data2);
@@ -1292,6 +1301,46 @@ static inline float string_softness(uint8_t i) {
   float s = touch_velocity ? touch_softness(f) : -1;
   if (string_strum_softness[i] >= 0) s = s < 0 ? string_strum_softness[i] : fminf(s, string_strum_softness[i]);
   return s < 0 ? 0 : s;
+}
+
+//>>CHORD TOUCH<<
+// The chord buttons are switches: a chord has no touch of its own. With chords follow the harp's
+// touch (395) on it takes the harp hand's: every new harp gesture sets the instrument's dynamic
+// from its first string, by the harp's own laws (down to 24 dB, MIDI velocity down to a tenth), so
+// the chords and the strings play as one hand plays them. Three ways it reaches them:
+//   strike  a chord brothers strikes plays at the touch that struck it
+//   follow  a chord already sounding glides there, in about 30 ms, so a held chord swells and
+//           fades under the harp as the hand digs in or lightens
+//   carry   a chord struck from the buttons starts at the harp's last dynamic, not at full
+// With touch velocity and strum velocity both off every gesture is full, as before. Not in rhythm
+// mode, whose notes carry their own accents, nor on a voice an incoming note holds.
+void apply_chord_voice_level(uint8_t i);
+FLASHMEM void chord_touch_take(uint8_t string) {
+  const float s = string_softness(string);
+  chord_touch_gain = powf(10.0f, -1.2f * s);
+  chord_touch_vscale = 1 - 0.9f * s;
+  chord_touch_firmness = 1 - sqrtf(s);
+}
+
+// From the loop: the sounding voices a step nearer the dynamic every 3 ms, a quarter of the way,
+// small enough steps that the gain never clicks
+FLASHMEM void chord_touch_glide() {
+  static elapsedMillis since;
+  if ((!chord_touch && !chord_touch_unwind) || rythm_mode || since < 3) return;
+  since = 0;
+  const float target = chord_touch ? chord_touch_gain : 1;
+  bool settled = true;
+  for (uint8_t i = 0; i < 4; i++) {
+    if (midi_in_chord[i].owned || !chord_envelope_array[i]->isActive()) continue;
+    float l = chord_voice_level[i];
+    if (l == target) continue;
+    l += (target - l) * 0.25f;
+    if (fabsf(target - l) < 0.002f) l = target;
+    else settled = false;
+    chord_voice_level[i] = l;
+    apply_chord_voice_level(i);
+  }
+  if (settled) chord_touch_unwind = false;
 }
 // How bright a plucked string model's pluck is: a soft one is muffled, never dull
 static inline float pluck_brightness(uint8_t i) {
@@ -2495,10 +2544,14 @@ void play_single_note(int i, IntervalTimer *timer) {
   timer->end();
   chords_take_voice(i);
   wake_chord_voice(i);
-  if (chord_voice_level[i] != 1) {   // a voice the rhythm played softer, now holding the chord
-    chord_voice_level[i] = 1;
+  // Full, or the harp's dynamic with chords follow the harp's touch on (also a voice the rhythm
+  // played softer, now holding the chord)
+  const float level = chord_touch ? chord_touch_gain : 1;
+  if (chord_voice_level[i] != level) {
+    chord_voice_level[i] = level;
     apply_chord_voice_level(i);
   }
+  const uint8_t velocity = chord_touch ? max(1, (int)lroundf(chord_attack_velocity * chord_touch_vscale)) : chord_attack_velocity;
   set_chord_voice_frequency(i, current_applied_chord_notes[i]);
   chord_vibrato_envelope_array[i]->noteOn();
   chord_vibrato_dc_envelope_array[i]->noteOn();
@@ -2512,9 +2565,9 @@ void play_single_note(int i, IntervalTimer *timer) {
     chord_started_notes[i]=0;}
   mpe_prepare_chord(i);
   mts_tune(midi_base_note_transposed + midi_out_note(current_applied_chord_notes[i]), mpe_offset_semitones(current_applied_chord_notes[i]), chord_port);
-  queue_midi(true, midi_base_note_transposed+ midi_out_note(current_applied_chord_notes[i]),chord_attack_velocity,mpe_chord_channel(i), chord_port);
+  queue_midi(true, midi_base_note_transposed+ midi_out_note(current_applied_chord_notes[i]),velocity,mpe_chord_channel(i), chord_port);
   chord_started_notes[i]=midi_base_note_transposed+ midi_out_note(current_applied_chord_notes[i]);
-  looper_capture(LOOP_START, 12 + i, chord_voice_note_freq[i], 1, chord_started_notes[i], chord_attack_velocity);
+  looper_capture(LOOP_START, 12 + i, chord_voice_note_freq[i], chord_touch ? chord_touch_firmness : 1, chord_started_notes[i], velocity);
 }
 
 // A note of the rhythm on chord voice i, from its timer's interrupt: firmness 0-1 sets how loud it
@@ -4651,10 +4704,11 @@ void apply_cantus() {
 // the chord moves at once, retuning only the voices that changed, the way a
 // legato chord change does: no retrigger, glide if the preset glides, and on
 // MIDI a new note on each moved voice's own channel.
-void cantus_follow(uint8_t string) {
+FLASHMEM void cantus_follow(uint8_t string) {
   static elapsedMillis since_pluck = cantus_strum_gap;   // the first pluck after power-up is a new gesture too
   const bool new_gesture = since_pluck >= cantus_strum_gap;
   since_pluck = 0;
+  if (new_gesture && chord_touch && !midi_in_harp[string].owned) chord_touch_take(string);   // the harp's dynamic (CHORD TOUCH)
   if ((cantus_voice == 0 && brothers_mode == 0) || !new_gesture) return;
   if (current_line < 0 && !continuous_chord) return;   // no chord to steer
   const int16_t pc = current_harp_notes[string] % EDO;
@@ -5012,7 +5066,7 @@ uint8_t get_chord_scale_index(ChordType chord_type, bool use_pentatonic) {
 // The eight-note scale Brothers walks under a chord, from its root: the
 // chord's own tones on the even degrees, its brother's on the odd. False when
 // the chord has none.
-bool brothers_scale(uint8_t (*chord)[7], uint8_t *scale) {
+FLASHMEM bool brothers_scale(uint8_t (*chord)[7], uint8_t *scale) {
   ChordType type = get_chord_type(chord);
   int8_t table = -1;
   switch (type) {
@@ -5061,7 +5115,7 @@ bool brothers_scale(uint8_t (*chord)[7], uint8_t *scale) {
 
 // Where the note sits in the held chord's Brothers scale: 1 a tone of the
 // chord, 2 a tone of its brother, 0 neither, or no scale.
-static uint8_t brothers_role(int16_t pc, uint8_t *degree) {
+FLASHMEM static uint8_t brothers_role(int16_t pc, uint8_t *degree) {
   if (pc < 0 || chord_context_slashed) return 0;
   uint8_t scale[8];
   if (!brothers_scale(current_chord, scale)) return 0;
@@ -5078,7 +5132,7 @@ static uint8_t brothers_role(int16_t pc, uint8_t *degree) {
 // The same note again: the next voicing in brothers again's pattern. The
 // voicing then holds for every note after it, so a line can be walked in
 // drop 2, until the chord ends or the same note is struck again.
-static void brothers_again_step() {
+FLASHMEM static void brothers_again_step() {
   switch (brothers_again) {
     case 1: brothers_drop = (brothers_drop + 1) % 4; break;
     case 2:
@@ -5092,7 +5146,7 @@ static void brothers_again_step() {
 
 // Voices the block for brothers_note, if Brothers has one: true when it did, and
 // the four chord voices hold it.
-bool apply_brothers() {
+FLASHMEM bool apply_brothers() {
   if (!brothers_mode) return false;
   uint8_t degree = 0;
   if (brothers_note < 0 || brothers_role(brothers_note % EDO, &degree) == 0) return false;
@@ -10006,6 +10060,7 @@ void loop() {
   harp_vibrato_settle();
   harp_strings_settle();
   rest_chord_voices();
+  chord_touch_glide();
   // Check sysex controller connection
   if (sysex_controler_connected && bitRead(USB1_PORTSC1, 7)) {
     sysex_controler_connected = false;
