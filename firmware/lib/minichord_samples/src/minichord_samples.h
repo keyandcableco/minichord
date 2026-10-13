@@ -2,15 +2,20 @@
 #ifndef MINICHORD_SAMPLES_H
 #define MINICHORD_SAMPLES_H
 #include <Audio.h>
+#include "wavetable_mulaw.h"
 
-// The sampled instruments, in voice source order (harp voice and chord voice 1-4, and after the song at 5, 6-9)
-extern const AudioSynthWavetable::instrument_data piano_instrument;   // piano (FluidR3)
-extern const AudioSynthWavetable::instrument_data pizzicato_instrument;   // pizzicato strings (Musyng Kite, FluidR3 in the middle)
-extern const AudioSynthWavetable::instrument_data choir_instrument;   // choir aah (Musyng Kite)
-extern const AudioSynthWavetable::instrument_data strings_instrument;   // string quartet (Musyng Kite): cello, viola, violin
-extern const AudioSynthWavetable::instrument_data vibraphone_instrument;   // vibraphone (FluidR3)
-extern const AudioSynthWavetable::instrument_data bass_instrument;   // fingered bass (FluidR3)
-extern const AudioSynthWavetable::instrument_data sitar_instrument;   // sitar (Musyng Kite)
-extern const AudioSynthWavetable::instrument_data epiano_instrument;   // electric piano (FluidR3)
+// The sampled instruments, in voice source order (harp voice and chord voice 1-4, and after the song at 5, 6-13)
+extern const AudioSynthWavetableMulaw::instrument_data piano_instrument;   // piano (FluidR3)
+extern const AudioSynthWavetableMulaw::instrument_data pizzicato_instrument;   // pizzicato strings (Musyng Kite, FluidR3 in the middle)
+extern const AudioSynthWavetableMulaw::instrument_data choir_instrument;   // choir aah (Musyng Kite)
+extern const AudioSynthWavetableMulaw::instrument_data strings_instrument;   // string quartet (Musyng Kite): cello, viola, violin
+extern const AudioSynthWavetableMulaw::instrument_data vibraphone_instrument;   // vibraphone (FluidR3)
+extern const AudioSynthWavetableMulaw::instrument_data bass_instrument;   // fingered bass (FluidR3)
+extern const AudioSynthWavetableMulaw::instrument_data sitar_instrument;   // sitar (Musyng Kite)
+extern const AudioSynthWavetableMulaw::instrument_data epiano_instrument;   // electric piano (FluidR3)
+extern const AudioSynthWavetableMulaw::instrument_data kalimba_instrument;   // kalimba (VCSL Tanzanian mbira, CC0)
+extern const AudioSynthWavetableMulaw::instrument_data marimba_instrument;   // marimba (VCSL, CC0)
+extern const AudioSynthWavetableMulaw::instrument_data upright_instrument;   // upright bass (VSCO 2 double bass pizzicato, CC0)
+extern const AudioSynthWavetableMulaw::instrument_data accordion_instrument;   // accordion (FluidR3)
 
 #endif

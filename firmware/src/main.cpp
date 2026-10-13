@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=75; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384)
+int version_ID=80; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -33,7 +33,6 @@ bool flag_save_needed=false; //to know if we need to save the preset
 potentiometer chord_pot(POT_CHORD_PIN);
 potentiometer harp_pot(POT_HARP_PIN);
 potentiometer mod_pot(POT_MOD_PIN);
-LittleFS_Program myfs; // to save the settings
 float color_led_blink_val = 1.0;
 bool led_blinking_flag = false;
 float led_attenuation = 0.0; 
@@ -867,9 +866,9 @@ bool sysex_controler_connected=false; //bool to remember if there is a controlle
 
 //>>AUDIO OBJECT ARRAYS<<
 // for the strings
-AudioSynthWavetable *harp_sample_array[12] = {&harp_sample_1, &harp_sample_2, &harp_sample_3, &harp_sample_4, &harp_sample_5, &harp_sample_6, &harp_sample_7, &harp_sample_8, &harp_sample_9, &harp_sample_10, &harp_sample_11, &harp_sample_12};
+AudioSynthWavetableMulaw *harp_sample_array[12] = {&harp_sample_1, &harp_sample_2, &harp_sample_3, &harp_sample_4, &harp_sample_5, &harp_sample_6, &harp_sample_7, &harp_sample_8, &harp_sample_9, &harp_sample_10, &harp_sample_11, &harp_sample_12};
 AudioMixer4Lean *harp_source_mix_array[12] = {&harp_source_mix_1, &harp_source_mix_2, &harp_source_mix_3, &harp_source_mix_4, &harp_source_mix_5, &harp_source_mix_6, &harp_source_mix_7, &harp_source_mix_8, &harp_source_mix_9, &harp_source_mix_10, &harp_source_mix_11, &harp_source_mix_12};
-AudioSynthWavetable *chord_sample_array[4] = {&chord_sample_1, &chord_sample_2, &chord_sample_3, &chord_sample_4};
+AudioSynthWavetableMulaw *chord_sample_array[4] = {&chord_sample_1, &chord_sample_2, &chord_sample_3, &chord_sample_4};
 AudioMixer4Lean *chord_source_mix_array[4] = {&chord_source_mix_1, &chord_source_mix_2, &chord_source_mix_3, &chord_source_mix_4};
 AudioSynthPluckedString *string_pluck_array[12] = {&pluck_string_1, &pluck_string_2, &pluck_string_3, &pluck_string_4, &pluck_string_5, &pluck_string_6, &pluck_string_7, &pluck_string_8, &pluck_string_9, &pluck_string_10, &pluck_string_11, &pluck_string_12};
 AudioSynthWaveformModulated *string_waveform_array[12] = {&waveform_string_1, &waveform_string_2, &waveform_string_3, &waveform_string_4, &waveform_string_5, &waveform_string_6, &waveform_string_7, &waveform_string_8, &waveform_string_9, &waveform_string_10, &waveform_string_11, &waveform_string_12};
@@ -1224,10 +1223,14 @@ uint8_t strum_velocity = 0;      // 0-100: how much softer a slow strum plays th
 float pluck_strum = -1;          // strum velocity's say on the plucks made now, -1 none (as pluck_strength)
 
 // Sampled voices (addresses 264, 265, and 270-273 for each chord note), see SAMPLES
-uint8_t harp_voice_source = 0;    // 0 the harp's own synth, 1 piano, 2 pizzicato, 3 choir, 4 strings, 5 the song, 6 vibraphone, 7 bass, 8 sitar, 9 electric piano
+uint8_t harp_voice_source = 0;    // 0 the harp's own synth, 1 piano, 2 pizzicato, 3 choir, 4 strings, 5 the song, 6 vibraphone, 7 bass, 8 sitar, 9 electric piano, 10 reed piano, 11 kalimba, 12 marimba, 13 organ, 14 upright bass, 15 accordion
 float string_blend = 0;           // the string model (217), 0-1; resting while a sample plays the harp
 void apply_string_blend();
 uint8_t chord_voice_source = 0;   // the same, for the chords as a whole (chord voice, 265)
+// How hard the reed piano (voice source 10) is struck at full strength, 0-1, which sets its bark: the
+// harp's (386) scaled by how hard each string is plucked, the chords' (387) as it is
+float harp_reed_bark = 0.6f;
+float chord_reed_bark = 0.6f;
 uint8_t chord_note_source[4] = {0, 0, 0, 0};   // each note's own (270-273): 0 as the chord voice, else 1 + a source
 uint8_t chord_source_of[4] = {0, 0, 0, 0};     // what each chord voice sounds now, as chord_voice_source counts
 void set_harp_source(uint8_t source);
@@ -1852,6 +1855,9 @@ bool usb_audio_restart_pending = false;
 elapsedMillis usb_audio_since;
 extern "C" uint8_t eeprom_read_byte(const uint8_t *addr);
 extern "C" void eeprom_write_byte(uint8_t *addr, uint8_t value);
+extern "C" void eepromemu_flash_write(void *addr, const void *data, uint32_t len);   // the core's raw flash routines (eeprom.c), for the preset store
+extern "C" void eepromemu_flash_erase_sector(void *addr);
+void preset_store_wipe();
 extern "C" void usb_desc_pick(int speaker);      // the core's usb_desc.c, as usb_audio_choice.py builds it
 static uint8_t usb_audio_stored() { uint8_t v = eeprom_read_byte((const uint8_t *)usb_audio_eeprom); return v <= 2 ? v : 0; }
 static bool usb_audio_speaker(uint8_t mode) { return mode != 2; }
@@ -1931,6 +1937,167 @@ FLASHMEM void upside_down_request(int value) {
 static inline uint8_t up_button_pin() { return upside_down ? DOWN_PGM_PIN : UP_PGM_PIN; }
 static inline uint8_t down_button_pin() { return upside_down ? UP_PGM_PIN : DOWN_PGM_PIN; }
 
+// ---------- LOCKS: settings the instrument keeps as its own, whatever preset is loaded ----------
+// A preset holds every setting, as it always has, and a preset file round-trips unchanged. But some
+// settings describe the instrument or the room rather than the sound: which harp plate is fitted,
+// how firm a touch it takes, the orchestra's A. A lock keeps the instrument's own value for an
+// address: a preset load skips it, as it already skips USB audio (244) and upside down (384), and a
+// change made to it live (an editor, the key change combo, MIDI tuning messages) is kept in the
+// Teensy's EEPROM a moment later rather than waiting for a save. A save writes the active values,
+// so a preset saved here describes this instrument, and the stock firmware loading that file finds
+// the right plate.
+// Which addresses may be locked goes by each parameter's "lock" in parameters.json (parameter_lock
+// in parameter_lookup.h): "never" for actions, the preset's name and the controls' own storage;
+// "default" for the ones locked until a player says otherwise (the plate, the touch and release
+// thresholds, the master tuning); "fixed" for 244 and 384, the instrument's by their own code,
+// which are only reported here. Writing lock (385) with an address locks it, with 1024 + the
+// address unlocks it; control command 9 reports the locked addresses (7D 6C, a count, then two
+// bytes an address, the fixed ones first); command 10 unlocks them all (0) or locks the default
+// ones again (1). The first boot with no locks in EEPROM locks the default ones, each at the value
+// the first preset loaded holds, so nothing changes until a player changes it.
+const int16_t lock_adress = 385;
+const uint8_t lock_max = 64;
+const int lock_eeprom = 16;                      // EEPROM, after USB audio and upside down: 'L', the layout, the count, a spare, then four bytes an entry
+const uint8_t lock_eeprom_layout = 1;
+struct lock_entry { uint16_t adress; int16_t value; };
+lock_entry lock_table[lock_max];
+uint8_t lock_count = 0;
+uint8_t lock_mask[parameter_size / 8];           // a bit an address, for the test in the loop
+bool locks_unseeded = false;                     // no locks in EEPROM yet: the defaults take the first preset's values
+bool locks_dirty = false;                        // a locked value changed live, to write once the changes stop
+elapsedMillis locks_since_change;
+const uint32_t lock_write_delay_ms = 2000;
+static inline bool lockable(int16_t a) { return a > 0 && a < (int16_t)parameter_size && parameter_lock[a] >= PARAMETER_LOCK_ALLOWED && parameter_lock[a] != PARAMETER_LOCK_FIXED; }
+static inline bool locked(int16_t a) { return a >= 0 && a < (int16_t)parameter_size && (lock_mask[a >> 3] & (1 << (a & 7))); }
+static int8_t lock_find(uint16_t a) {
+  for (uint8_t k = 0; k < lock_count; k++) if (lock_table[k].adress == a) return k;
+  return -1;
+}
+FLASHMEM static void lock_mask_rebuild() {
+  memset(lock_mask, 0, sizeof lock_mask);
+  for (uint8_t k = 0; k < lock_count; k++) lock_mask[lock_table[k].adress >> 3] |= 1 << (lock_table[k].adress & 7);
+}
+FLASHMEM static void lock_save() {
+  eeprom_write_byte((uint8_t *)(lock_eeprom + 0), 'L');
+  eeprom_write_byte((uint8_t *)(lock_eeprom + 1), lock_eeprom_layout);
+  eeprom_write_byte((uint8_t *)(lock_eeprom + 2), lock_count);
+  eeprom_write_byte((uint8_t *)(lock_eeprom + 3), 0);
+  for (uint8_t k = 0; k < lock_count; k++) {
+    int at = lock_eeprom + 4 + 4 * k;
+    eeprom_write_byte((uint8_t *)(at + 0), lock_table[k].adress & 0xFF);
+    eeprom_write_byte((uint8_t *)(at + 1), lock_table[k].adress >> 8);
+    eeprom_write_byte((uint8_t *)(at + 2), (uint16_t)lock_table[k].value & 0xFF);
+    eeprom_write_byte((uint8_t *)(at + 3), (uint16_t)lock_table[k].value >> 8);
+  }
+  locks_dirty = false;
+}
+// at power on, before the first preset loads
+FLASHMEM void lock_load() {
+  lock_count = 0;
+  locks_unseeded = eeprom_read_byte((const uint8_t *)(lock_eeprom + 0)) != 'L' || eeprom_read_byte((const uint8_t *)(lock_eeprom + 1)) != lock_eeprom_layout;
+  if (!locks_unseeded) {
+    uint8_t n = eeprom_read_byte((const uint8_t *)(lock_eeprom + 2));
+    if (n > lock_max) n = lock_max;
+    for (uint8_t k = 0; k < n; k++) {
+      int at = lock_eeprom + 4 + 4 * k;
+      uint16_t a = eeprom_read_byte((const uint8_t *)(at + 0)) | (eeprom_read_byte((const uint8_t *)(at + 1)) << 8);
+      int16_t v = (int16_t)(eeprom_read_byte((const uint8_t *)(at + 2)) | (eeprom_read_byte((const uint8_t *)(at + 3)) << 8));
+      if (!lockable(a) || lock_find(a) >= 0) continue;   // a setting that can't be locked any more (another firmware's table): dropped
+      lock_table[lock_count].adress = a;
+      lock_table[lock_count].value = v;
+      lock_count++;
+    }
+  }
+  lock_mask_rebuild();
+  Serial.printf("Locks: %d%s\n", lock_count, locks_unseeded ? " (none kept yet: the defaults will be locked at the first load)" : "");
+}
+// the default locks, each at the value the live settings hold now
+FLASHMEM static void lock_defaults() {
+  for (int16_t a = 1; a < (int16_t)parameter_size; a++) {
+    if (parameter_lock[a] != PARAMETER_LOCK_DEFAULT || lock_find(a) >= 0 || lock_count >= lock_max) continue;
+    lock_table[lock_count].adress = a;
+    lock_table[lock_count].value = current_sysex_parameters[a];
+    lock_count++;
+  }
+}
+// in load_config, once the preset's values are in: the locked ones give way to the instrument's
+FLASHMEM void lock_apply() {
+  if (locks_unseeded) {
+    locks_unseeded = false;
+    lock_defaults();
+    lock_mask_rebuild();
+    lock_save();
+    Serial.printf("Locked the %d default settings as this preset has them\n", lock_count);
+  }
+  for (uint8_t k = 0; k < lock_count; k++) current_sysex_parameters[lock_table[k].adress] = lock_table[k].value;
+}
+FLASHMEM static void lock_set(uint16_t a, bool on) {
+  if (a < parameter_size && parameter_lock[a] == PARAMETER_LOCK_FIXED) { Serial.printf("Setting %d is the instrument's already\n", a); return; }
+  if (!lockable(a)) { Serial.printf("Setting %d can't be locked\n", a); return; }
+  int8_t k = lock_find(a);
+  if (on && k < 0) {
+    if (lock_count >= lock_max) { Serial.println("No room for another lock"); return; }
+    lock_table[lock_count].adress = a;
+    lock_table[lock_count].value = current_sysex_parameters[a];
+    lock_count++;
+    Serial.printf("Locked %d at %d\n", a, current_sysex_parameters[a]);
+  } else if (!on && k >= 0) {
+    for (uint8_t j = k; j + 1 < lock_count; j++) lock_table[j] = lock_table[j + 1];
+    lock_count--;
+    Serial.printf("Unlocked %d\n", a);
+  } else return;
+  lock_mask_rebuild();
+  lock_save();
+}
+FLASHMEM void lock_reset(bool defaults) {
+  lock_count = 0;
+  if (defaults) lock_defaults();
+  lock_mask_rebuild();
+  lock_save();
+  Serial.printf(defaults ? "The default settings locked, %d\n" : "All settings unlocked\n", lock_count);
+}
+// lock (385): an address locks it, 1024 + an address unlocks it; an action, never a value to keep
+FLASHMEM void lock_action(int value) {
+  current_sysex_parameters[lock_adress] = 0;
+  if (parameters_loading || value <= 0) return;   // a preset holds 0 here; one that doesn't is no reason to lock anything
+  if (value < 1024) lock_set(value, true);
+  else if (value - 1024 < (int)parameter_size) lock_set(value - 1024, false);
+}
+// control command 9: the locked addresses to an editor, 7D 6C, a count, then two bytes an address
+FLASHMEM void lock_report() {
+  uint8_t data[3 + 2 * (lock_max + 2)];
+  uint8_t n = 0;
+  data[0] = 0x7D;
+  data[1] = 0x6C;
+  const uint16_t fixed[2] = {usb_audio_adress, upside_down_adress};
+  for (uint8_t k = 0; k < 2; k++) { data[3 + 2 * n] = fixed[k] % 128; data[4 + 2 * n] = fixed[k] / 128; n++; }
+  for (uint8_t k = 0; k < lock_count; k++) { data[3 + 2 * n] = lock_table[k].adress % 128; data[4 + 2 * n] = lock_table[k].adress / 128; n++; }
+  data[2] = n;
+  usbMIDI.sendSysEx(3 + 2 * n, data, 0);
+}
+// in the loop: a locked setting changed live (an editor, the key change combo, a pop, MIDI tuning)
+// becomes the instrument's new value, written once the changes have stopped for a moment. The knobs
+// and hover apply their sweep without writing the setting, so they move a locked setting for as
+// long as they hold it, as they do any other, and leave the lock as it was.
+void lock_update() {
+  static elapsedMillis since_check;
+  if (since_check < 50 || parameters_loading) return;
+  since_check = 0;
+  for (uint8_t k = 0; k < lock_count; k++) {
+    int16_t now = current_sysex_parameters[lock_table[k].adress];
+    if (now == lock_table[k].value) continue;
+    if (double_tap_engaged) {   // a double tap's toggle is held, not chosen: it is let go of without a trace
+      bool held = false;
+      for (uint8_t j = 0; j < double_tap_pairs; j++) if (double_tap_engaged_adress[j] == (int16_t)lock_table[k].adress) held = true;
+      if (held) continue;
+    }
+    lock_table[k].value = now;
+    locks_dirty = true;
+    locks_since_change = 0;
+  }
+  if (locks_dirty && locks_since_change > lock_write_delay_ms) lock_save();
+}
+
 // A setting's factory default in a bank: page 0's from the bank's factory preset, page 1's generated
 static inline int16_t parameter_default(int bank_number, uint16_t i) {
   return i < page_size ? default_bank_sysex_parameters[bank_number][i] : parameter_page1_defaults[i - page_size];
@@ -1972,12 +2139,6 @@ FLASHMEM void send_parameter_page(uint8_t page) {
   usbMIDI.sendSysEx(header + page_size * 2, midi_data_array, 0);
 }
 
-// The mark that the preset storage is the 256 kB one of firmware 72, formatted as such (see PRESET STORAGE)
-FLASHMEM void preset_storage_mark() {
-  File mark = myfs.open("fs256", FILE_WRITE);
-  if (mark) mark.close();
-}
-
 FLASHMEM void control_command(uint8_t command, uint8_t parameter) {
   switch (command) {
   case 0: // SIGNAL TO SEND BACK ALL DATA: page 0, as it always was, two bytes a setting and no header
@@ -1990,8 +2151,7 @@ FLASHMEM void control_command(uint8_t command, uint8_t parameter) {
   case 1: // SIGNAL TO WIPE MEMORY
     Serial.println("Wiping memory");
     digitalWrite(_MUTE_PIN, LOW); // muting the DAC
-    myfs.quickFormat();
-    preset_storage_mark();   // or the next boot would format it again, and whatever was saved since
+    preset_store_wipe();
     current_bank_number = 0;
     load_config(current_bank_number);
     digitalWrite(_MUTE_PIN, HIGH); // unmuting the DAC
@@ -2024,6 +2184,13 @@ FLASHMEM void control_command(uint8_t command, uint8_t parameter) {
     break;
   case 8: // rhythm mode: parameter 0 off, 1 on, 2 the other way, as a long press on hold
     set_rythm_mode(parameter == 2 ? !rythm_mode : parameter == 1);
+    break;
+  case 9: // the locked settings, for an editor (see LOCKS)
+    lock_report();
+    break;
+  case 10: // the locks: 0 none, 1 the default ones (see LOCKS)
+    lock_reset(parameter == 1);
+    lock_report();
     break;
   case 4: // loading a bank, so a remote can read every preset in turn
     if (parameter < preset_number) {
@@ -2660,7 +2827,10 @@ void apply_chord_voice_level(uint8_t i) {
 // A section's voices can sound a sampled instrument in place of their oscillators (harp voice,
 // chord voice): piano, pizzicato strings, choir, a string quartet, and after the song (5) a
 // vibraphone, a fingered bass, a sitar or an electric piano (lib/minichord_samples, made by
-// generator/samples.py). The sample runs through the voice's own envelope, filter and level, so
+// generator/samples.py); 10 is the reed piano, a model rather than samples (lib/reed_piano), played
+// by the same player, struck as hard as the harp is plucked; then a kalimba and a marimba (11, 12), and
+// the tonewheel organ (13), a model too (lib/tonewheel_organ), its drawbars and percussion 388-389; an
+// upright bass and an accordion (14, 15). The sample runs through the voice's own envelope, filter and level, so
 // the preset shapes it as it does the synth, and the voice's pitch (the ribbon, a retune, a chord
 // change) moves it. Its own envelope only passes it on; once the voice's envelope is done it stops,
 // so a voice not sounding costs nothing.
@@ -2671,16 +2841,16 @@ void apply_chord_voice_level(uint8_t i) {
 #define SONG_SAMPLE_LENGTH 14706   // a second at 14706 Hz
 DMAMEM int16_t phone_ring[SONG_SAMPLE_LENGTH] __attribute__((aligned(4)));
 DMAMEM int16_t song_pcm[SONG_SAMPLE_LENGTH] __attribute__((aligned(4)));
-static const AudioSynthWavetable::sample_data song_samples[1] = {{
-  song_pcm, false, 14, (float)(1 << 18) * (1.0f / AudioPhoneDeck::DECIMATE) / 261.6256f,
+static const AudioSynthWavetableMulaw::sample_data song_samples[1] = {{
+  song_pcm, nullptr, false, 14, (float)(1 << 18) * (1.0f / AudioPhoneDeck::DECIMATE) / 261.6256f,
   (uint32_t)(SONG_SAMPLE_LENGTH - 1) << 18, 0, 0, 65535,
   0, 1, 0, 1, 110, 0,                       // its envelope passes it on, as the instruments' do
   0, 0, 0.0f, 0.0f, 0, 0, 0.0f, 0.0f, 0, 0}};
 static const uint8_t song_ranges[] = {127};
-const AudioSynthWavetable::instrument_data song_instrument = {1, song_ranges, song_samples};
+const AudioSynthWavetableMulaw::instrument_data song_instrument = {1, song_ranges, song_samples};
 bool song_grabbed = false;
 
-static const AudioSynthWavetable::instrument_data *sampled_instrument(uint8_t source) {
+static const AudioSynthWavetableMulaw::instrument_data *sampled_instrument(uint8_t source) {
   switch (source) {
     case 1: return &piano_instrument;
     case 2: return &pizzicato_instrument;
@@ -2691,6 +2861,12 @@ static const AudioSynthWavetable::instrument_data *sampled_instrument(uint8_t so
     case 7: return &bass_instrument;
     case 8: return &sitar_instrument;
     case 9: return &epiano_instrument;
+    case 10: return &AudioSynthWavetableMulaw::reed_instrument;   // no samples: the reed piano's model (lib/reed_piano)
+    case 11: return &kalimba_instrument;
+    case 12: return &marimba_instrument;
+    case 13: return &AudioSynthWavetableMulaw::organ_instrument;   // no samples: the tonewheel organ's model (lib/tonewheel_organ)
+    case 14: return &upright_instrument;
+    case 15: return &accordion_instrument;
   }
   return nullptr;
 }
@@ -2700,7 +2876,7 @@ FLASHMEM void apply_string_blend() {
 }
 
 FLASHMEM void set_harp_source(uint8_t source) {
-  const AudioSynthWavetable::instrument_data *instrument = sampled_instrument(source);
+  const AudioSynthWavetableMulaw::instrument_data *instrument = sampled_instrument(source);
   harp_voice_source = instrument ? source : 0;
   for (uint8_t i = 0; i < 12; i++) {
     harp_sample_array[i]->stop();
@@ -2718,7 +2894,7 @@ FLASHMEM void set_harp_source(uint8_t source) {
 // voice plays one source either way.
 FLASHMEM static void apply_chord_source(uint8_t i) {
   uint8_t source = chord_note_source[i] ? chord_note_source[i] - 1 : chord_voice_source;
-  const AudioSynthWavetable::instrument_data *instrument = sampled_instrument(source);
+  const AudioSynthWavetableMulaw::instrument_data *instrument = sampled_instrument(source);
   chord_source_of[i] = instrument ? source : 0;
   chord_sample_array[i]->stop();
   if (instrument) chord_sample_array[i]->setInstrument(*instrument);
@@ -2733,17 +2909,23 @@ FLASHMEM void set_chord_source(uint8_t source) {
 }
 
 // value as stored: 0 the chord voice, 1 the synth, 2 piano, 3 pizzicato, 4 choir, 5 string quartet,
-// 6 the song, 7 vibraphone, 8 bass, 9 sitar, 10 electric piano (1 + the voice source)
+// 6 the song, 7 vibraphone, 8 bass, 9 sitar, 10 electric piano, 11 reed piano, 12 kalimba, 13 marimba,
+// 14 organ, 15 upright bass, 16 accordion (1 + the voice source)
 FLASHMEM void set_chord_note_source(uint8_t i, uint8_t value) {
   if (i > 3) return;
-  chord_note_source[i] = value <= 10 ? value : 0;
+  chord_note_source[i] = value <= 16 ? value : 0;
   apply_chord_source(i);
 }
 
-// Starts harp voice i's sample at the frequency it sounds; its level follows (apply_string_firmness)
+// Starts harp voice i's sample at the frequency it sounds; its level follows (apply_string_firmness).
+// The reed piano is struck as hard as the string was plucked, times the harp's bark (386), which sets
+// its tone: a sample has one strength, and the level does the rest. The strength is the note's amplitude
+// (apply_string_firmness's gain, -24 dB at the softest), as a reed's swing is: so a soft pluck stays on the
+// pickup's flank and only the hard ones bark.
 void harp_sample_start(uint8_t i) {
   if (!harp_voice_source) return;
-  harp_sample_array[i]->playFrequency(string_note_freq[i], 127);
+  int strength = harp_voice_source == 10 ? (int)lroundf(127 * harp_reed_bark * powf(10.0f, -1.2f * string_softness(i))) : 127;
+  harp_sample_array[i]->playFrequency(string_note_freq[i], strength);
 }
 
 // Glide on a sampled chord voice. The oscillators glide by their DC offset's ramp
@@ -2790,7 +2972,7 @@ FLASHMEM void chord_samples_glide() {
 void chord_sample_start(uint8_t i) {
   if (!chord_source_of[i]) return;
   float hz = chord_sample_glides[i].known ? exp2f(chord_sample_octaves(i)) : chord_voice_note_freq[i];   // mid-glide: from where it is
-  chord_sample_array[i]->playFrequency(hz, 127);
+  chord_sample_array[i]->playFrequency(hz, chord_source_of[i] == 10 ? (int)lroundf(127 * chord_reed_bark) : 127);   // the reed piano struck as hard as 387 says
   chord_sample_array[i]->amplitude(fminf(1, chord_voice_level[i] * chord_sample_level));
 }
 
@@ -6249,59 +6431,182 @@ FLASHMEM void acc_update() {
 //--->>FILE HANDLING UTILITIES
 /* ---- PRESET STORAGE ---------------------------------------------------------
  *
- * Until firmware 72 each preset was a file of its own (a.txt to l.txt, its settings as text). On
- * the Teensy 4.0 LittleFS_Program's blocks are 32 kB, and a file bigger than what fits inside its
- * directory's metadata (128 bytes) takes a block of its own, so twelve small files needed sixteen
- * blocks, 512 kB. Now the twelve are one file, presets.bin: a header, then a slot of parameter_size
- * settings for each preset, as they are in memory, 12 kB in all, one block. With LittleFS's two,
- * the one a save writes its copy to before the old one goes, and spares, 256 kB (eight blocks) is
- * plenty, and the other 256 kB of the old 512 go to the samples.
+ * Until firmware 72 each preset was a file of its own in a 512 kB LittleFS; 72 to 76 kept the
+ * twelve in one file, presets.bin, in a 256 kB one: on the Teensy 4.0 LittleFS_Program's blocks
+ * are 32 kB, and a file takes a block, its copy another, so 12 kB of presets held 256 kB of flash.
  *
- * A save writes its preset's slot in place (FILE_WRITE_BEGIN, a seek, a write) and marks it saved in
- * the header; LittleFS writes the block afresh and swaps it in as the file closes, so a save cut off
- * by the power leaves the file as it was. A slot never saved reads as missing, and load_config writes
- * the factory's into it, as it did a missing file. The header says how many settings a slot holds, so
- * a firmware with a bigger parameter array can find the old slots and lay the file out again.
+ * From firmware 77 the presets are in raw flash: the top 32 kB of program flash, in two halves of
+ * 16 kB (four 4 kB sectors each). A half holds an image: a header, then a slot of parameter_size
+ * settings for each preset, as they are in memory. A save erases the half not in use, writes every
+ * slot into it (the saved one new, the others copied from the live half), then its header, with a
+ * sequence number one higher and a CRC over the lot. The header goes in last, so a save cut off by
+ * the power leaves the other half whole, and at boot the half with the highest sequence whose CRC
+ * holds is the live one. Reading a preset is reading flash. The flash routines are the core's
+ * (eepromemu_flash_write, eepromemu_flash_erase_sector, which LittleFS used too); they run with
+ * interrupts off, so the DAC is muted around a save, as it was. The 224 kB the filesystem held
+ * above this go to the samples.
  *
- * The first boot of 72 on an older minichord moves the presets over (presets_migrate): the old 512 kB
- * filesystem is mounted, its twelve files read into memory, the new 256 kB one formatted (it overlaps
- * the top half of the old) and presets.bin written. Which layout is there is read off the flash
- * itself, by the "littlefs" a filesystem writes at the start of its first two blocks, before anything
- * is mounted: LittleFS_Program::begin formats whatever it can't mount, so mounting the wrong size to
- * find out would wipe the presets it was looking for. The presets are only in memory for the moment
- * between the old one's last read and the new file's close; a backup first is still wise.
+ * The first boot of 77 on a minichord with presets.bin reads it out of the old filesystem and
+ * writes the store from it; LittleFS stays in this firmware for that alone. Which is there is read
+ * off the flash itself (the "littlefs" a filesystem writes at the start of its first two blocks)
+ * before anything is mounted, since LittleFS_Program::begin formats whatever it can't mount. A
+ * firmware without LittleFS, flashed straight over 76 or older, finds no store and starts from the
+ * factory presets: back up first (minictl backup), restore after.
  */
-const char *preset_file = "presets.bin";
-const uint32_t preset_storage_size = 256 * 1024;
-const uint32_t preset_storage_old_size = 512 * 1024;   // firmware 61 to 71: a file a preset
-const uint32_t program_flash_size = 0x1F0000;          // the Teensy 4.0's, as LittleFS_Program has it
-const uint32_t preset_fs_block = 32768;                // and its block (SECTOR_SIZE)
-struct preset_header {
-  char magic[4];        // "MCPS"
+const uint32_t program_flash_size = 0x1F0000;          // the Teensy 4.0's (the EEPROM emulation sits above it)
+const uint32_t preset_store_size = 32 * 1024;
+const uint32_t preset_store_base = 0x60000000 + program_flash_size - preset_store_size;
+const uint32_t preset_half_size = preset_store_size / 2;
+const uint32_t flash_sector = 4096;
+const uint32_t preset_storage_old_size = 256 * 1024;   // firmware 72 to 76: presets.bin in a LittleFS
+const uint32_t preset_fs_block = 32768;                // its block (SECTOR_SIZE)
+struct preset_store_header {
+  char magic[4];        // "MCP2"
   uint16_t format;      // 1
   uint16_t parameters;  // settings in a slot
   uint16_t saved;       // a bit a preset: slot b holds a saved preset
   uint16_t spare;
+  uint32_t sequence;    // one higher each save: the highest valid half is the live one
+  uint32_t crc;         // CRC-32 of the slots, then of this header with crc 0
+};
+static_assert(sizeof(preset_store_header) == 20, "the preset store's header is 20 bytes");
+static_assert(sizeof(preset_store_header) + preset_number * parameter_size * 2 <= preset_half_size, "the presets don't fit a half of the store");
+struct preset_file_header {   // presets.bin's, firmware 72 to 76
+  char magic[4];        // "MCPS"
+  uint16_t format;
+  uint16_t parameters;
+  uint16_t saved;
+  uint16_t spare;
   uint32_t spare2;
 };
-static_assert(sizeof(preset_header) == 16, "the preset file's header is 16 bytes");
+static const uint8_t *preset_live = nullptr;   // the live half, or null when there is none
 
-static inline uint32_t preset_slot_at(int bank, uint16_t parameters) {
-  return sizeof(preset_header) + (uint32_t)bank * parameters * 2;
+static uint32_t crc32_update(uint32_t crc, const uint8_t *p, uint32_t n) {
+  crc = ~crc;
+  while (n--) {
+    crc ^= *p++;
+    for (int k = 0; k < 8; k++) crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1)));
+  }
+  return ~crc;
 }
-
-static void preset_header_fresh(preset_header &h) {
+// The core's flash write is one page-program command, so at most 256 bytes and within a page (LittleFS
+// wrote 128 at a time); the cache is purged where the flash changed, as the core does for a write.
+static void flash_program(void *addr, const void *data, uint32_t len) {
+  uint8_t *a = (uint8_t *)addr;
+  const uint8_t *d = (const uint8_t *)data;
+  while (len) {
+    uint32_t room = 256 - ((uint32_t)a & 255);
+    uint32_t n = len < room ? len : room;
+    eepromemu_flash_write(a, d, n);
+    a += n; d += n; len -= n;
+  }
+}
+static void flash_erase(void *addr, uint32_t len) {
+  for (uint32_t at = 0; at < len; at += flash_sector) eepromemu_flash_erase_sector((uint8_t *)addr + at);
+  arm_dcache_delete(addr, len);
+}
+static inline const uint8_t *preset_half(int h) { return (const uint8_t *)(preset_store_base + h * preset_half_size); }
+static inline const uint8_t *preset_slot(const uint8_t *half, int bank, uint16_t parameters) {
+  return half + sizeof(preset_store_header) + (uint32_t)bank * parameters * 2;
+}
+// whether a half holds a whole image: its header, and the CRC over its slots and header
+FLASHMEM static bool preset_half_valid(const uint8_t *half, preset_store_header &h) {
+  memcpy(&h, half, sizeof h);
+  if (memcmp(h.magic, "MCP2", 4) != 0 || h.format != 1 || h.parameters == 0) return false;
+  uint32_t bytes = (uint32_t)preset_number * h.parameters * 2;
+  if (sizeof h + bytes > preset_half_size) return false;
+  uint32_t crc = crc32_update(0, half + sizeof h, bytes);
+  preset_store_header z = h;
+  z.crc = 0;
+  return crc32_update(crc, (const uint8_t *)&z, sizeof z) == h.crc;
+}
+FLASHMEM static void preset_store_find() {
+  preset_live = nullptr;
+  uint32_t best = 0;
+  for (int k = 0; k < 2; k++) {
+    preset_store_header h;
+    if (preset_half_valid(preset_half(k), h) && (!preset_live || h.sequence > best)) {
+      preset_live = preset_half(k);
+      best = h.sequence;
+    }
+  }
+}
+// The image written afresh into the half not in use: slot b from fill(b, slot, context), which says
+// whether b holds a saved preset; then the header. True once the new half reads back as the live one.
+typedef bool (*preset_fill_fn)(int bank, int16_t *slot, void *context);
+FLASHMEM static bool preset_store_commit(preset_fill_fn fill, void *context) {
+  preset_store_header old;
+  bool had = preset_live && preset_half_valid(preset_live, old);
+  uint8_t *half = (uint8_t *)preset_half(preset_live == preset_half(0) ? 1 : 0);
+  flash_erase(half, preset_half_size);
+  preset_store_header h;
   memset(&h, 0, sizeof h);
-  memcpy(h.magic, "MCPS", 4);
+  memcpy(h.magic, "MCP2", 4);
   h.format = 1;
   h.parameters = parameter_size;
+  h.sequence = had ? old.sequence + 1 : 1;
+  uint32_t crc = 0;
+  DMAMEM static int16_t slot[parameter_size];   // in RAM2, where the room is
+  for (int b = 0; b < preset_number; b++) {
+    if (fill(b, slot, context)) h.saved |= 1 << b;
+    else memset(slot, 0, sizeof slot);
+    flash_program((void *)preset_slot(half, b, parameter_size), slot, sizeof slot);
+    crc = crc32_update(crc, (const uint8_t *)slot, sizeof slot);
+  }
+  preset_store_header z = h;
+  z.crc = 0;
+  h.crc = crc32_update(crc, (const uint8_t *)&z, sizeof z);
+  flash_program(half, &h, sizeof h);
+  preset_store_find();
+  return preset_live == half;
 }
-
-static bool preset_header_read(File &f, preset_header &h) {
-  f.seek(0);
-  return f.read((uint8_t *)&h, sizeof h) == sizeof h && memcmp(h.magic, "MCPS", 4) == 0 && h.parameters > 0;
+// One preset's settings out of its slot; false if it was never saved.
+FLASHMEM bool preset_read(int bank, int16_t *values) {
+  if (!preset_live) return false;
+  preset_store_header h;
+  memcpy(&h, preset_live, sizeof h);
+  if (!(h.saved & (1 << bank)) || h.parameters != parameter_size) return false;
+  memcpy(values, preset_slot(preset_live, bank, h.parameters), parameter_size * 2);
+  return true;
 }
-
+// One preset's settings into its slot, the others carried over; false if the store couldn't be written.
+struct preset_write_context { int bank; const int16_t *values; };
+static bool preset_write_fill(int b, int16_t *slot, void *context) {
+  preset_write_context *c = (preset_write_context *)context;
+  if (b == c->bank) { memcpy(slot, c->values, parameter_size * 2); return true; }
+  return preset_read(b, slot);
+}
+FLASHMEM bool preset_write(int bank, const int16_t *values) {
+  preset_write_context c = {bank, values};
+  return preset_store_commit(preset_write_fill, &c);
+}
+// every preset at once, from a table in memory (the relayout, and the move out of the old filesystem)
+struct preset_table_context { int16_t (*banks)[parameter_size]; uint16_t saved; };
+static bool preset_table_fill(int b, int16_t *slot, void *context) {
+  preset_table_context *c = (preset_table_context *)context;
+  memcpy(slot, c->banks[b], parameter_size * 2);
+  return (c->saved >> b) & 1;
+}
+FLASHMEM void preset_store_wipe() {
+  flash_erase((void *)preset_store_base, preset_store_size);
+  preset_live = nullptr;
+}
+// A store laid out for another parameter_size: every saved slot read at its old size (what it lacks at
+// its default, as a short preset always was) and the store written again at this one.
+FLASHMEM void preset_store_relayout() {
+  if (!preset_live) return;
+  preset_store_header h;
+  memcpy(&h, preset_live, sizeof h);
+  if (h.parameters == parameter_size) return;
+  Serial.printf("Presets hold %d settings, this firmware %d: laying the store out again\n", h.parameters, parameter_size);
+  int16_t banks[preset_number][parameter_size];   // 12 kB of stack, for this boot only
+  for (int b = 0; b < preset_number; b++) {
+    for (uint16_t i = 0; i < parameter_size; i++) banks[b][i] = parameter_default(b, i);
+    if (h.saved & (1 << b)) memcpy(banks[b], preset_slot(preset_live, b, h.parameters), min(h.parameters, parameter_size) * 2);
+  }
+  preset_table_context c = {banks, h.saved};
+  preset_store_commit(preset_table_fill, &c);
+}
 // Whether a LittleFS of this size starts at the top of flash: its first or second block holds "littlefs".
 FLASHMEM static bool preset_fs_present(uint32_t size) {
   const uint8_t *base = (const uint8_t *)(0x60000000 + program_flash_size - size);
@@ -6312,103 +6617,28 @@ FLASHMEM static bool preset_fs_present(uint32_t size) {
   }
   return false;
 }
-
-// One preset's settings into its slot; false if the file couldn't be written.
-FLASHMEM bool preset_write(int bank, const int16_t *values) {
-  File f = myfs.open(preset_file, FILE_WRITE_BEGIN);
-  if (!f) return false;
-  preset_header h;
-  if (!preset_header_read(f, h) || h.parameters != parameter_size) preset_header_fresh(h);
-  f.seek(preset_slot_at(bank, h.parameters));
-  bool ok = f.write((const uint8_t *)values, parameter_size * 2) == parameter_size * 2;
-  h.saved |= 1 << bank;
-  f.seek(0);
-  ok = ok && f.write((const uint8_t *)&h, sizeof h) == sizeof h;
-  f.close();
-  return ok;
-}
-
-// One preset's settings out of its slot; false if it was never saved.
-FLASHMEM bool preset_read(int bank, int16_t *values) {
-  File f = myfs.open(preset_file, FILE_READ);
-  if (!f) return false;
-  preset_header h;
-  bool ok = preset_header_read(f, h) && (h.saved & (1 << bank)) && h.parameters == parameter_size;
-  if (ok) {
-    f.seek(preset_slot_at(bank, h.parameters));
-    ok = f.read((uint8_t *)values, parameter_size * 2) == parameter_size * 2;
-  }
-  f.close();
-  return ok;
-}
-
-// A file laid out for another parameter_size: every saved slot read at its old size (what it lacks at
-// its default, as a short preset always was) and the file written again at this one.
-FLASHMEM void preset_file_relayout() {
-  File f = myfs.open(preset_file, FILE_READ);
-  if (!f) return;
-  preset_header h;
-  bool valid = preset_header_read(f, h);
-  if (!valid || h.parameters == parameter_size) { f.close(); return; }
-  Serial.printf("Presets hold %d settings, this firmware %d: laying the file out again\n", h.parameters, parameter_size);
-  int16_t banks[preset_number][parameter_size];   // 12 kB of stack, for this boot only
-  uint16_t saved = h.saved;
-  for (int b = 0; b < preset_number; b++) {
-    for (uint16_t i = 0; i < parameter_size; i++) banks[b][i] = parameter_default(b, i);
-    if (!(saved & (1 << b))) continue;
-    f.seek(preset_slot_at(b, h.parameters));
-    uint16_t n = min(h.parameters, parameter_size);
-    f.read((uint8_t *)banks[b], n * 2);
-  }
-  f.close();
-  myfs.remove(preset_file);
-  for (int b = 0; b < preset_number; b++) if (saved & (1 << b)) preset_write(b, banks[b]);
-}
-
-void deserialize(char *text, int16_t data_array[]);
-bool preset_fs_mounted = false;   // presets_migrate mounted the new one already
-
-// Firmware 61-71's presets, a text file each in a 512 kB filesystem, into presets.bin (see PRESET STORAGE).
-FLASHMEM void presets_migrate() {
+// Firmware 72-76's presets.bin, out of its 256 kB LittleFS, into the store (see PRESET STORAGE).
+FLASHMEM static void presets_migrate_file() {
+  if (!preset_fs_present(preset_storage_old_size)) return;
   static LittleFS_Program oldfs;
   if (!oldfs.begin(preset_storage_old_size)) return;
+  File f = oldfs.open("presets.bin", FILE_READ);
+  if (!f) return;
+  preset_file_header h;
+  f.seek(0);
+  bool valid = f.read((uint8_t *)&h, sizeof h) == sizeof h && memcmp(h.magic, "MCPS", 4) == 0 && h.parameters > 0;
   int16_t banks[preset_number][parameter_size];   // 12 kB of stack, for this boot only
-  uint16_t found = 0;
   for (int b = 0; b < preset_number; b++) {
     for (uint16_t i = 0; i < parameter_size; i++) banks[b][i] = parameter_default(b, i);
-    File entry = oldfs.open(bank_name[b]);
-    if (!entry) continue;
-    size_t size = entry.size();
-    char *text = (char *)malloc(size + 1);
-    if (text) {
-      text[entry.read(text, size)] = 0;
-      deserialize(text, banks[b]);
-      free(text);
-      found |= 1 << b;
-    }
-    entry.close();
+    if (!valid || !(h.saved & (1 << b))) continue;
+    f.seek(sizeof h + (uint32_t)b * h.parameters * 2);
+    f.read((uint8_t *)banks[b], min(h.parameters, parameter_size) * 2);
   }
-  Serial.printf("Moving %d presets into one file\n", __builtin_popcount(found));
-  if (!myfs.begin(preset_storage_size)) return;
-  preset_fs_mounted = true;
-  myfs.quickFormat();
-  preset_storage_mark();
-  for (int b = 0; b < preset_number; b++) {
-    if (!(found & (1 << b))) continue;
-    banks[b][0] = 0;
-    banks[b][1] = b;
-    if (!preset_write(b, banks[b])) Serial.printf("Couldn't write preset %d\n", b + 1);
-  }
-}
-
-void deserialize(char *text, int16_t data_array[]) {   // takes the text apart as it goes
-  char *p = strtok(text, ",");
-  int i = 0;
-  while (p && i < parameter_size) {
-    data_array[i] = atoi(p);
-    p = strtok(NULL, ",");
-    i++;
-  }
+  f.close();
+  if (!valid) return;
+  Serial.printf("Moving %d presets out of the old filesystem into the preset store\n", __builtin_popcount(h.saved));
+  preset_table_context c = {banks, h.saved};
+  if (!preset_store_commit(preset_table_fill, &c)) Serial.println("The preset store couldn't be written");
 }
 
 /* ---- preset versioning ------------------------------------------------------
@@ -6538,6 +6768,7 @@ void load_config(int bank_number) {
     apply_preset_version(bank_number);
     current_sysex_parameters[usb_audio_adress] = usb_audio_mode;   // the instrument's, whatever the preset holds
     current_sysex_parameters[upside_down_adress] = upside_down;
+    lock_apply();                                                  // and the locked settings, see LOCKS
     Serial.printf("Loaded preset %d\n", bank_number + 1);
   } else {
     Serial.print("No preset, writing factory default");
@@ -6670,25 +6901,13 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
     analogWrite(RYTHM_LED_PIN, 255);
   }
   // loading the preset
-  Serial.println("Initialising filesystem");
-  // 256 kB at the top of flash for presets.bin, the twelve presets in one file (see PRESET STORAGE).
-  // An older minichord's presets, a file each in 512 kB, are moved into it on the first boot.
-  if (!preset_fs_present(preset_storage_size) && preset_fs_present(preset_storage_old_size)) {
-    Serial.println("Preset storage: moving the presets from 512 kB to one file in 256 kB");
-    presets_migrate();
-  }
-  if (!preset_fs_mounted && !myfs.begin(preset_storage_size)) {
-    Serial.printf("Error starting %s\n", "Program flash DISK");
-    while (1) {
-      set_led_color(0, 1.0, 1.0); // turn red light
-    }
-  }
-  if (!myfs.exists("fs256")) {
-    Serial.println("Preset storage is new: formatting it");
-    myfs.quickFormat();
-    preset_storage_mark();
-  }
-  preset_file_relayout();
+  Serial.println("Initialising preset storage");
+  // the top 32 kB of flash, two halves (see PRESET STORAGE); the first boot of 77 moves presets.bin's
+  // presets out of the old filesystem
+  preset_store_find();
+  if (!preset_live) presets_migrate_file();
+  preset_store_relayout();
+  lock_load();                 // the instrument's own settings, before the first preset loads (see LOCKS)
   Serial.println("Loading the preset");
   load_config(current_bank_number);
   // initializing the strings
@@ -9431,6 +9650,7 @@ void phone_dj_update() {
 
 void loop() {
   usb_audio_update();
+  lock_update();
   // Process incoming MIDI messages
   // A chord sent in arrives as several notes at once: take what has come, up to a handful a pass
   for (uint8_t k = 0; k < 16 && usbMIDI.read(); k++) {

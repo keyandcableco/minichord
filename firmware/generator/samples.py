@@ -4,7 +4,8 @@
 The recordings are the General MIDI instruments rendered one note per file by the
 midi-js-soundfonts project (https://github.com/gleitz/midi-js-soundfonts), as the
 Minichord Lab keeps them in its samples/ folder: FluidR3_GM (CC BY 3.0) and Musyng Kite
-(CC BY-SA 3.0). Run with that folder's path:
+(CC BY-SA 3.0), and from firmware 79 a kalimba from the Versilian Community Sample Library (CC0). Run with
+that folder's path:
 
     python3 samples.py ~/minichord-lab/samples
 
@@ -14,7 +15,7 @@ one a seamless loop as the Lab does: the end of the loop crossfaded (equal power
 audio just before its start, so wrapping round is continuous, and the loop's start
 repeated past its end for the player's interpolation. A plucked one plays once, to where
 it has died away. Each note is levelled to the same loudness. The result is the Teensy
-wavetable player's data (AudioSynthWavetable::instrument_data), each note sounding across
+wavetable player's data (AudioSynthWavetableMulaw::instrument_data), each note sounding across
 the notes nearest it, with an envelope that just passes the sound on: the minichord's own
 envelope shapes it.
 
@@ -42,6 +43,9 @@ import sys
 import numpy as np
 
 AUDIO_RATE = 44117.64706          # the Teensy audio library's sample rate
+# From firmware 78 the instruments are kept as 8-bit G.711 mu-law (lib/wavetable_mulaw decodes them as
+# they are read), half the flash of 16-bit PCM; an instrument with fmt='pcm16' stays as it was.
+FORMAT = 'mulaw'
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib', 'minichord_samples', 'src')
 
 # name, files (folder, notes), rate, kind, and for a sustained one where its loop starts, how long
@@ -76,6 +80,29 @@ INSTRUMENTS = [
     # A Rhodes-style electric piano (General MIDI's Electric Piano 1); mellow, so at 16 kHz.
     dict(name='epiano', title='electric piano (FluidR3)', rate=16000, aligned=True, level_from_start=True,
          notes=[('epiano/fluid', n) for n in (42, 54, 66, 78)], loop=(0.55, 0.25, 0.12)),
+    # Firmware 79, voice source 11: a kalimba, the Tanzanian mbira of the Versilian Community Sample Library
+    # (VCSL, CC0; Minichord Lab tools/fetch-vcsl-kalimba.sh). Its middle tines only (C#3 to G4, and the
+    # Kenyan mbira's D5 on top): striking one sets the others ringing, and above G4 that halo of other notes,
+    # in the mbira's own tuning, is as loud as the note, which the minichord would carry to every pitch it
+    # plays the recording at. These are 96-100% the note itself. The pluck, then a loop of the ring.
+    dict(name='kalimba', title='kalimba (VCSL Tanzanian mbira, CC0)', rate=22050, aligned=True, level_from_start=True,
+         notes=[('kalimba/tanzania', n) for n in (49, 53, 58, 63, 67)] + [('kalimba/kenya', 78)], loop=(0.4, 0.25, 0.1)),
+    # Firmware 79, voice source 12: a marimba, VCSL's (CC0; tools/fetch-vcsl-marimba.sh), struck at medium
+    # strength. VCSL names its notes an octave low (its "C4" sounds 523 Hz); they are named here by what they
+    # sound, within 5 cents of equal temperament. Its top recording (C7) is left out: short and quiet, under
+    # the room's rumble. The strike, then a loop of the ring, as the kalimba.
+    dict(name='marimba', title='marimba (VCSL, CC0)', rate=22050, aligned=True, level_from_start=True,
+         notes=[('marimba/med', n) for n in (41, 48, 55, 65, 72, 79, 89)], loop=(0.3, 0.2, 0.08)),
+    # Firmware 80, voice source 14: an upright bass, VSCO 2 Community Edition's double bass plucked (CC0;
+    # Minichord Lab tools/fetch-vsco-strings.sh, the softer layer: the louder has only E1-E2). VSCO names it an
+    # octave low too. G1 and A2 are left out: noise near a semitone off at -3 and -6 dB. The pluck, then the ring.
+    dict(name='upright', title='upright bass (VSCO 2 double bass pizzicato, CC0)', rate=16000, aligned=True,
+         level_from_start=True, notes=[('solo/vsco-bass-pizz', n) for n in (36, 40, 49, 56)], loop=(0.35, 0.3, 0.12)),
+    # Firmware 80, voice source 15: an accordion, General MIDI's from FluidR3, its musette reeds tuned apart and
+    # beating 2-6 times a second. Its loop is about a second (matched: ending where the beating is at the same
+    # point and level as where it starts), so the beating carries on through the wrap.
+    dict(name='accordion', title='accordion (FluidR3)', rate=16000, aligned=True, matched=0.3,
+         notes=[('accordion/fluid', n) for n in (50, 58, 66, 74, 82)], loop=(0.4, 1.0, 0.25)),
 ]
 TARGET_RMS = 0.2
 # Recordings that sound away from the note they are named for, in cents, measured on the minichord
@@ -112,6 +139,24 @@ TUNING_CENTS = {
     # - bass, sitar and electric piano: the energy-weighted pitch over the first 0.8 s, within 3 cents
     #   throughout, so none; on the minichord every note within 5 cents (fw73_test.py harp).
     ('vibraphone/fluid', 66): -4.5,
+    # - kalimba: an mbira is tuned by ear to its own scale, so its tines sit up to half a semitone from equal
+    #   temperament; each is pitched by its fundamental's peak, 0.05-0.8 s after the strike (a tine's overtones
+    #   aren't harmonics, so a fit to them would mislead).
+    ('kalimba/tanzania', 53): 42.0,
+    ('kalimba/tanzania', 58): 57.0,
+    ('kalimba/tanzania', 63): 54.0,
+    ('kalimba/tanzania', 67): 17.0,
+    ('kalimba/kenya', 78): 36.0,
+    # - upright bass: the energy-weighted pitch over the pluck's first 0.6 s, within 2 cents, so none; on the
+    #   minichord within 3.3 (fw80_test.py, its fundamental's peak is no measure for a low pluck).
+    # - accordion: its musette reeds are tuned apart, so its pitch is the middle of them, energy-weighted over
+    #   the held 0.3-2.3 s and four harmonics. Measured on the minichord (fw80_test.py), every recording played
+    #   4-5 cents sharp of what the offline fit gave; these are the minichord's.
+    ('accordion/fluid', 50): 4.2,
+    ('accordion/fluid', 58): 5.0,
+    ('accordion/fluid', 66): 4.3,
+    ('accordion/fluid', 74): 5.1,
+    ('accordion/fluid', 82): 4.9,
 }
 
 
@@ -140,6 +185,8 @@ def build_note(root, inst, folder, note, root_hz):
         if inst.get('aligned'):                        # a whole number of the note's periods
             period = rate / root_hz
             le = ls + int(round(round(length_s * rate / period) * period))
+        if inst.get('matched'):
+            le = matched_end(x, ls, le, xf, rate, root_hz, inst['matched'])
         if le + 4 > len(x) or ls - xf < 0:
             raise SystemExit('%s/%d too short for its loop' % (folder, note))
         x = x[:le + 4].copy()
@@ -168,14 +215,53 @@ def build_note(root, inst, folder, note, root_hz):
     return pcm, loop
 
 
-def c_array(name, pcm):
+def matched_end(x, ls, le, xf, rate, root_hz, spread):
+    """A bowed note's vibrato moves its pitch several times a second, so a loop of whole periods of the
+    note's own pitch can still wrap from one point of the vibrato to another, a jump of 20-30 cents. Its
+    end is chosen instead, within spread (a fraction of the loop) of where it was asked for, in whole
+    periods, where the stretch the crossfade blends (just before the end) is most like the one it blends
+    with (just before the start): the same point of the vibrato, the same bow, the same waveform, and the
+    same loudness (an accordion's detuned reeds beat, and a loop wrapping from a beat's peak to its trough
+    would bump; the correlation alone doesn't see level)."""
+    period = rate / root_hz
+    ref = x[ls - xf:ls]
+    best, best_le = -2.0, le
+    lo, hi = int(le - spread * (le - ls)), int(le + spread * (le - ls))
+    k0 = max(1, int((lo - ls) / period))
+    k = k0
+    while True:
+        cand = ls + int(round(k * period))
+        if cand > hi or cand + 4 > len(x):
+            break
+        seg = x[cand - xf:cand]
+        c = float(np.dot(seg, ref) / (np.linalg.norm(seg) * np.linalg.norm(ref) + 1e-12))
+        c -= abs(math.log((np.linalg.norm(seg) + 1e-12) / (np.linalg.norm(ref) + 1e-12)))   # a level off by e costs 1
+        if cand >= lo and c > best:
+            best, best_le = c, cand
+        k += 1
+    return best_le
+
+
+def mulaw_encode(pcm):
+    """16-bit PCM to G.711 mu-law bytes (the standard encoder on the 14-bit value)"""
+    x = (pcm.astype(np.int32) >> 2)
+    sign = np.where(x < 0, 0x80, 0)
+    mag = np.minimum(np.abs(x), 8159) + 0x84
+    exp = np.floor(np.log2(mag)).astype(np.int32) - 7
+    mant = (mag >> (exp + 3)) & 0x0F
+    return (~(sign | (exp << 4) | mant) & 0xFF).astype(np.uint8)
+
+
+def c_array(name, pcm, fmt):
+    data = mulaw_encode(pcm) if fmt == 'mulaw' else pcm
     lines = []
-    for i in range(0, len(pcm), 24):
-        lines.append('  ' + ','.join(str(int(v)) for v in pcm[i:i + 24]) + ',')
-    return 'PROGMEM const int16_t %s[%d] __attribute__((aligned(4))) = {\n%s\n};\n' % (name, len(pcm), '\n'.join(lines))
+    for i in range(0, len(data), 24):
+        lines.append('  ' + ','.join(str(int(v)) for v in data[i:i + 24]) + ',')
+    ctype = 'uint8_t' if fmt == 'mulaw' else 'int16_t'
+    return 'PROGMEM const %s %s[%d] __attribute__((aligned(4))) = {\n%s\n};\n' % (ctype, name, len(data), '\n'.join(lines))
 
 
-def sample_struct(array, pcm, loop, root_hz, rate):
+def sample_struct(array, pcm, loop, root_hz, rate, fmt):
     length = len(pcm)
     index_bits = max(1, math.ceil(math.log2(length)))
     shift = 32 - index_bits
@@ -186,9 +272,10 @@ def sample_struct(array, pcm, loop, root_hz, rate):
         looped, loop_end, loop_length = 'true', le << shift, (le - ls) << shift
     else:
         looped, loop_end, loop_length = 'false', 0, 0
-    fields = [array, looped, index_bits, '%.9gf' % per_hertz, (length - 1) << shift, loop_end, loop_length, 65535,
+    fields = [('nullptr', array) if fmt == 'mulaw' else (array, 'nullptr'), looped, index_bits, '%.9gf' % per_hertz, (length - 1) << shift, loop_end, loop_length, 65535,
               0, 1, 0, 1, release, 0,                    # delay, attack, hold, decay, release, sustain: pass it on
               0, 0, '0.0f', '0.0f', 0, 0, '0.0f', '0.0f', 0, 0]   # no vibrato or tremolo of its own
+    fields = list(fields[0]) + fields[1:]            # sample (PCM) or mulaw, the other null
     return '  {' + ', '.join(str(f) for f in fields) + '},'
 
 
@@ -197,9 +284,10 @@ def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     cpp = ['// generated by generator/samples.py from the midi-js-soundfonts renderings - do not edit',
            '// FluidR3_GM: CC BY 3.0; Musyng Kite: CC BY-SA 3.0. See LICENSE in this folder.',
+           '// 8-bit mu-law (lib/wavetable_mulaw decodes it as it plays), unless an instrument says pcm16',
            '#include "minichord_samples.h"', '']
     header = ['// generated by generator/samples.py - do not edit', '#ifndef MINICHORD_SAMPLES_H',
-              '#define MINICHORD_SAMPLES_H', '#include <Audio.h>', '',
+              '#define MINICHORD_SAMPLES_H', '#include <Audio.h>', '#include "wavetable_mulaw.h"', '',
               '// The sampled instruments, in voice source order (harp voice and chord voice 1-4, and after the song at 5, 6-%d)'
               % (len(INSTRUMENTS) + 1)]
     total = 0
@@ -207,21 +295,24 @@ def main():
     for inst in INSTRUMENTS:
         structs, ranges, size = [], [], 0
         notes = [n for _, n in inst['notes']]
+        fmt = inst.get('fmt', FORMAT)
         for k, (folder, note) in enumerate(inst['notes']):
             root_hz = 440 * 2 ** ((note - 69 + TUNING_CENTS.get((folder, note), 0) / 100) / 12)
             pcm, loop = build_note(root, inst, folder, note, root_hz)
             array = 'sample_%s_%d' % (inst['name'], note)
-            cpp.append(c_array(array, pcm))
-            structs.append(sample_struct(array, pcm, loop, root_hz, inst['rate']))
+            cpp.append(c_array(array, pcm, fmt))
+            structs.append(sample_struct(array, pcm, loop, root_hz, inst['rate'], fmt))
             ranges.append(127 if k == len(notes) - 1 else (note + notes[k + 1]) // 2)
-            size += pcm.nbytes
-        cpp.append('static const AudioSynthWavetable::sample_data %s_samples[%d] = {\n%s\n};' % (
+            size += len(pcm) * (1 if fmt == 'mulaw' else 2)
+        # PROGMEM: on the Teensy 4 const data is copied to RAM1 unless it says otherwise, and the player reads
+        # these once a note and once a block, from flash as it reads the samples themselves
+        cpp.append('PROGMEM static const AudioSynthWavetableMulaw::sample_data %s_samples[%d] = {\n%s\n};' % (
             inst['name'], len(structs), '\n'.join(structs)))
-        cpp.append('static const uint8_t %s_ranges[] = {%s};' % (inst['name'], ', '.join(map(str, ranges))))
-        cpp.append('const AudioSynthWavetable::instrument_data %s_instrument = {%d, %s_ranges, %s_samples};\n' % (
+        cpp.append('PROGMEM static const uint8_t %s_ranges[] = {%s};' % (inst['name'], ', '.join(map(str, ranges))))
+        cpp.append('PROGMEM const AudioSynthWavetableMulaw::instrument_data %s_instrument = {%d, %s_ranges, %s_samples};\n' % (
             inst['name'], len(structs), inst['name'], inst['name']))
-        header.append('extern const AudioSynthWavetable::instrument_data %s_instrument;   // %s' % (inst['name'], inst['title']))
-        report.append('%-10s %2d notes at %5d Hz: %6.1f kB' % (inst['name'], len(notes), inst['rate'], size / 1024))
+        header.append('extern const AudioSynthWavetableMulaw::instrument_data %s_instrument;   // %s' % (inst['name'], inst['title']))
+        report.append('%-10s %2d notes at %5d Hz, %s: %6.1f kB' % (inst['name'], len(notes), inst['rate'], fmt, size / 1024))
         total += size
     header += ['', '#endif', '']
     with open(os.path.join(OUT_DIR, 'minichord_samples.cpp'), 'w') as f:

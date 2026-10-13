@@ -498,6 +498,27 @@ static const uint8_t parameter_control[%d] = {
         lookup_file_content += "    " + ", ".join(str(v) for v in control[row:row + 32]) + ",\n"
     lookup_file_content += """};
 
+// Which settings the instrument may keep as its own, whatever preset is loaded (the locks, see
+// LOCKS in main.cpp), from each parameter's "lock" in parameters.json: "never" for actions, the
+// preset's name and the controls' own storage; "allowed" (the default) for any other setting; "default"
+// for the ones locked until a player says otherwise; "fixed" for USB audio and upside down, the
+// instrument's by their own code. Addresses with no parameter are "never".
+#define PARAMETER_LOCK_NEVER 0
+#define PARAMETER_LOCK_ALLOWED 1
+#define PARAMETER_LOCK_DEFAULT 2
+#define PARAMETER_LOCK_FIXED 3
+static const uint8_t parameter_lock[%d] = {
+""" % PARAMETER_SIZE
+    lock = [0] * PARAMETER_SIZE
+    lock_values = {"never": 0, "allowed": 1, "default": 2, "fixed": 3}
+    for section in d:
+        for parameter in d[section]:
+            if "sysex_adress" in parameter:
+                lock[parameter["sysex_adress"]] = lock_values[parameter.get("lock", "allowed")]
+    for row in range(0, PARAMETER_SIZE, 32):
+        lookup_file_content += "    " + ", ".join(str(v) for v in lock[row:row + 32]) + ",\n"
+    lookup_file_content += """};
+
 // Page 1's factory defaults, as stored (floats in hundredths), from each parameter's
 // default_value: the same in every bank. Page 0's are the factory presets in main.cpp,
 // tuned by hand; page 1 needs nothing added there by hand.
