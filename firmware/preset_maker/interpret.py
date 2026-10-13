@@ -792,7 +792,7 @@ add("cantus, harp sets the melody, harp leads the chord, melody voice", "setting
 add("brothers, brother chords, barry harris brothers, barry harris block chords, sixth diminished, sixth diminished scale, "
     "6th diminished, harp chooses the chord, harp picks the chord", "setting",
     "the harp chooses the chord or its brother (Barry Harris)", home="both", hue=280,
-    moves={"chord": (EXACT("barry", 1), EXACT("brothers", 1)), "harp": (EXACT("scale", 8), EXACT("chromatic", 0))},
+    moves={"chord": (EXACT("brothers", 1),), "harp": (EXACT("scale", 8), EXACT("chromatic", 0))},
     off={"chord": (EXACT("brothers", 0),)})
 add("chords left harp right, harp right chords left, separated, split stereo, wide separation", "setting",
     "chords and harp apart", home="global", moves=(EXACT("pan", 0.2),))
@@ -2944,13 +2944,11 @@ CONFLICTS = [
      "note": "voice leading replaces chord spacing: the spacing isn't heard while voice leading is on"},
     {"about": [38, 120], "when": [[38, ">", 0], [111, "==", 0], [120, "==", 0]],
      "note": "with chord shuffling at 0 the chords sit too low for chord spacing to drop a note: it isn't heard"},
-    {"about": [390, 33], "when": [[390, "==", 1], [33, "==", 0], [39, "==", 0]],
-     "note": "brothers only works under the Barry Harris chords (major 6, minor 6, diminished): with Barry Harris mode off it isn't heard"},
     {"about": [390, 39], "when": [[390, "==", 1], [39, "==", 1]],
-     "note": "the alternate chord layout has no sixths or diminished chords for brothers to work under: it isn't heard"},
+     "note": "brothers walks the standard chords: under the alternate layout's sus and ninth chords it isn't heard"},
     {"about": [390, 115], "when": [[390, "==", 1], [115, ">", 0]],
-     "note": "under the Barry Harris chords brothers takes over from the cantus; the cantus still steers other chords and notes outside their scale"},
-    {"about": [390, 36, 98], "when": [[390, "==", 1], [33, "==", 1], [98, "==", 0], [36, "not in", [8, 9]]],
+     "note": "brothers takes over from the cantus under the standard chords; the cantus still steers the augmented, the alternate layout's chords and notes outside the scale"},
+    {"about": [390, 36, 98], "when": [[390, "==", 1], [98, "==", 0], [36, "not in", [8, 9]]],
      "note": "brothers' brother chords come from notes between the chord's own: harp mode 8 or 9 plays them, other harp modes only some or none"},
     {"about": [39, 31, 33], "when": [[39, "==", 1]],
      "note": "the alternate chord layout turns the sharp button off (and sharp function and Barry Harris mode with it)"},
