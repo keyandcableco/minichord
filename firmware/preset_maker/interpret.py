@@ -934,14 +934,17 @@ GROOVE_WORDS = [
     ("soca, soca beat, calypso drums", 34), ("afrobeat, afrobeat drums, fela beat, tony allen beat", 35),
     ("12 8 bell, bell pattern, agbekor, west african bell, african bell pattern", 36), ("highlife, highlife beat", 37),
     ("maqsum, maqsoum, belly dance beat, arabic beat", 38), ("baladi, baladi beat", 39), ("saidi, saidi beat", 40),
-    ("kehrwa, keharwa, kaherva", 41), ("dadra, dadra taal", 42), ("teental, teentaal, tintal, tabla beat", 43)]
+    ("kehrwa, keharwa, kaherva", 41), ("dadra, dadra taal", 42), ("teental, teentaal, tintal, tabla beat", 43),
+    ("cliqhop, cliqhop beat, glitch hop, glitch hop beat", 44), ("clicks and cuts, clicks n cuts, microhouse, microhouse beat", 45),
+    ("idm, idm beat, braindance, broken glitch beat", 46), ("microsound, microsound beat, sparse clicks", 47)]
 GROOVE_NAMES = ["rock", "pop eighths", "pop sixteenths", "ballad", "funk", "disco", "motown", "shuffle", "jazz swing", "waltz",
                 "march", "second line", "country two-beat", "folk", "six eight", "habanera", "house", "trap",
                 "amen-style break", "funky drummer-style", "think-style break", "boom bap", "drum and bass", "lo-fi",
                 "son clave", "rumba clave", "bossa nova", "samba", "cumbia", "baiao", "salsa", "one drop", "dembow", "soca",
-                "afrobeat", "12/8 bell", "highlife", "maqsum", "baladi", "saidi", "kehrwa", "dadra", "teental"]
+                "afrobeat", "12/8 bell", "highlife", "maqsum", "baladi", "saidi", "kehrwa", "dadra", "teental",
+                "cliqhop", "clicks and cuts", "idm", "microsound"]
 KIT_NAMES = ["808", "909", "CR-78", "studio", "brushes", "boom bap", "world percussion", "tabla and doumbek", "trap", "house",
-             "glitch"]
+             "glitch", "cliqhop"]
 for words, n in GROOVE_WORDS:
     add(words, "setting", f"drums: the {GROOVE_NAMES[n - 1]} groove", home="global", moves=(EXACT("drums", 1), EXACT("drum_groove", n)),
         off=(EXACT("drum_groove", 0),), note=DRUM_NOTE)
@@ -951,7 +954,9 @@ KIT_WORDS = [("808 kit, 808 drums, on the 808, tr 808, eight oh eight", 1), ("90
              ("boom bap kit, dusty drums, lo fi drums, crunchy drums, sp 1200 drums", 6),
              ("world percussion, congas, bongos, hand drums, latin percussion, percussion kit", 7),
              ("tabla, tablas, doumbek, darbuka, tabla and doumbek", 8), ("trap kit, 808 bass kick, trap drums kit", 9),
-             ("house kit, house drums kit, club drums", 10), ("glitch drums, bitcrushed drums, broken drums, glitchy drums, glitch kit", 11)]
+             ("house kit, house drums kit, club drums", 10), ("glitch drums, bitcrushed drums, broken drums, glitchy drums, glitch kit", 11),
+             ("cliqhop kit, cliqhop drums, blips and bleeps, bleeps and blips, blippy drums, clicky drums, supercollider drums, "
+              "pure data drums, computer music drums", 12)]
 for words, n in KIT_WORDS:
     add(words, "setting", f"drums: the {KIT_NAMES[n - 1]} kit", home="global", moves=(EXACT("drums", 1), EXACT("drum_kit", n)),
         off=(EXACT("drum_kit", 0),), note=DRUM_NOTE)
