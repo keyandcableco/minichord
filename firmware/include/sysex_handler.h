@@ -213,6 +213,12 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 266:
         midi_clock_out=value; acc_clock_out_changed();
         break;
+      case 391:
+        trs_midi_request(value);
+        break;
+      case 392:
+        trs_midi_source=value;
+        break;
       case 283:
         looper_quantize=value;
         break;
@@ -1332,6 +1338,8 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 332: lo=0; hi=2; return true;
       case 333: lo=0; hi=2; return true;
       case 266: lo=0; hi=3; return true;
+      case 391: lo=0; hi=2; return true;
+      case 392: lo=0; hi=2; return true;
       case 283: lo=0; hi=4; return true;
       case 284: lo=0; hi=2; return true;
       case 285: lo=0; hi=3; return true;

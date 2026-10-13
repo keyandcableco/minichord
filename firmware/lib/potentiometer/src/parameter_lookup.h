@@ -84,6 +84,8 @@ static const ParameterInfo parameter_lookup[] = {
     { 332, 1, 0, 2 }, // phone deck
     { 333, 1, 0, 2 }, // phone strum
     { 266, 1, 0, 3 }, // MIDI clock out
+    { 391, 1, 0, 2 }, // TRS MIDI out
+    { 392, 1, 0, 2 }, // TRS MIDI sends
     { 283, 1, 0, 4 }, // looper quantize
     { 284, 1, 0, 2 }, // looper count-in
     { 285, 1, 0, 3 }, // looper click
@@ -428,7 +430,7 @@ static const uint8_t parameter_control[512] = {
 // Which settings the instrument may keep as its own, whatever preset is loaded (the locks, see
 // LOCKS in main.cpp), from each parameter's "lock" in parameters.json: "never" for actions, the
 // preset's name and the controls' own storage; "allowed" (the default) for any other setting; "default"
-// for the ones locked until a player says otherwise; "fixed" for USB audio and upside down, the
+// for the ones locked until a player says otherwise; "fixed" for USB audio, upside down and TRS MIDI out, the
 // instrument's by their own code. Addresses with no parameter are "never".
 #define PARAMETER_LOCK_NEVER 0
 #define PARAMETER_LOCK_ALLOWED 1
@@ -447,7 +449,7 @@ static const uint8_t parameter_lock[512] = {
     1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1,
     1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-    3, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    3, 0, 1, 1, 1, 1, 0, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

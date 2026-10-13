@@ -487,7 +487,7 @@ static const uint8_t parameter_control[%d] = {
 // Which settings the instrument may keep as its own, whatever preset is loaded (the locks, see
 // LOCKS in main.cpp), from each parameter's "lock" in parameters.json: "never" for actions, the
 // preset's name and the controls' own storage; "allowed" (the default) for any other setting; "default"
-// for the ones locked until a player says otherwise; "fixed" for USB audio and upside down, the
+// for the ones locked until a player says otherwise; "fixed" for USB audio, upside down and TRS MIDI out, the
 // instrument's by their own code. Addresses with no parameter are "never".
 #define PARAMETER_LOCK_NEVER 0
 #define PARAMETER_LOCK_ALLOWED 1

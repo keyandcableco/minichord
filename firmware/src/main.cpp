@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=80; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15)
+int version_ID=82; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390 (feature-brothers); 82: TRS MIDI out, 391-392)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1426,6 +1426,147 @@ uint8_t phone_strum = 0;               // 333: 0 off, 1 down on every beat, 2 do
 void phone_dj_set();
 void phone_deck_action(int16_t action);
 
+// ---------- TRS MIDI OUT (391, 392): the jack board in the bottom shell ----------
+// A minichord can be fitted with a 2.5 mm TRS MIDI out jack (the board in the harp plates repo,
+// "trs midi PCB"): it lies on the bottom shell's floor and takes its data from the Teensy's pads 24
+// (Serial6's TX) and 29 (Serial7's TX), on the Teensy's underside, since every pin along its edges
+// is in use. A buffer on the board drives the jack's tip from pad 24 and its ring from pad 29, so:
+//   Type A, the TRS MIDI standard (tip = MIDI pin 5, the data; ring = pin 4, +3.3 V): Serial6 sends
+//   on 24 and 29 is held high. The board pulls an unwired pad 29 high itself, so one wire does.
+//   Type B (the two swapped): Serial7 sends on 29 and 24 is held high; both pads wired.
+// Off, both pins are left as inputs and the board's pull-ups keep the jack quiet. Everything the
+// queue sends over USB goes out on the jack too, at 31250 baud, with running status. That's a
+// thousand short messages a second, less than a glide's bends and pressure can ask for, so the
+// continuous ones give way: when the send buffer is short of room, a channel's newest bend and
+// pressure wait in a slot and go when there is room again, so the last of a glide always arrives;
+// notes, clock and tuning always go. A setting of the instrument like upside down, kept in EEPROM.
+const int trs_midi_adress = 391;
+const int trs_midi_eeprom = 2;                   // EEPROM byte, after USB audio and upside down; erased reads as off
+const uint8_t trs_pin_a = 24;                    // Serial6's TX: the tip
+const uint8_t trs_pin_b = 29;                    // Serial7's TX: the ring
+const int trs_room_reserved = 96;                // bytes kept free for notes when bends and pressure pile up
+uint8_t trs_midi_mode = 0;                       // 0 off, 1 Type A, 2 Type B
+uint8_t trs_midi_source = 0;                     // 392: 0 both ports, 1 the chords', 2 the harp's
+HardwareSerialIMXRT *trs_port = nullptr;
+uint8_t trs_running = 0;                         // the status byte last sent, for running status
+struct trs_pending_t { bool bend; bool pressure; int16_t bend_value; uint8_t pressure_value; };
+trs_pending_t trs_pending[16];
+DMAMEM uint8_t trs_tx_memory_a[512];
+DMAMEM uint8_t trs_tx_memory_b[512];
+
+FLASHMEM void trs_midi_apply() {
+  static bool memory_added = false;
+  if (!memory_added) {
+    Serial6.addMemoryForWrite(trs_tx_memory_a, sizeof trs_tx_memory_a);
+    Serial7.addMemoryForWrite(trs_tx_memory_b, sizeof trs_tx_memory_b);
+    memory_added = true;
+  }
+  trs_port = nullptr;
+  Serial6.end();                                 // both safe if never begun
+  Serial7.end();
+  if (trs_midi_mode == 1) {
+    pinMode(trs_pin_b, OUTPUT);
+    digitalWriteFast(trs_pin_b, HIGH);
+    Serial6.begin(31250);
+    trs_port = &Serial6;
+  } else if (trs_midi_mode == 2) {
+    pinMode(trs_pin_a, OUTPUT);
+    digitalWriteFast(trs_pin_a, HIGH);
+    Serial7.begin(31250);
+    trs_port = &Serial7;
+  } else {
+    pinMode(trs_pin_a, INPUT);
+    pinMode(trs_pin_b, INPUT);
+  }
+  trs_running = 0;
+  memset(trs_pending, 0, sizeof trs_pending);
+  current_sysex_parameters[trs_midi_adress] = trs_midi_mode;
+}
+FLASHMEM void trs_midi_request(int value) {
+  uint8_t mode = (value >= 1 && value <= 2) ? value : 0;
+  if (eeprom_read_byte((const uint8_t *)trs_midi_eeprom) != mode) eeprom_write_byte((uint8_t *)trs_midi_eeprom, mode);
+  if (mode != trs_midi_mode) Serial.println(mode == 0 ? "TRS MIDI out off" : mode == 1 ? "TRS MIDI out, Type A" : "TRS MIDI out, Type B");
+  trs_midi_mode = mode;
+  trs_midi_apply();
+}
+FLASHMEM void trs_midi_setup() {
+  uint8_t stored = eeprom_read_byte((const uint8_t *)trs_midi_eeprom);
+  trs_midi_mode = (stored == 1 || stored == 2) ? stored : 0;
+  trs_midi_apply();
+}
+
+FLASHMEM static void trs_channel_message(uint8_t status, uint8_t a, uint8_t b, uint8_t length) {
+  if (status != trs_running) {
+    trs_port->write(status);
+    trs_running = status;
+  }
+  trs_port->write(a);
+  if (length > 2) trs_port->write(b);
+}
+FLASHMEM static void trs_send_bend(uint8_t ch, int16_t bend) {
+  uint16_t v = (uint16_t)(constrain(bend, -8192, 8191) + 8192);
+  trs_channel_message(0xE0 | ch, v & 0x7F, (v >> 7) & 0x7F, 3);
+}
+
+// A channel's bend or pressure: now if there is room, otherwise kept (the newest) for trs_midi_service
+FLASHMEM static void trs_continuous(uint8_t kind, uint8_t ch, int16_t bend, uint8_t value) {
+  trs_pending_t &p = trs_pending[ch];
+  if (trs_port->availableForWrite() >= trs_room_reserved) {
+    if (kind == MIDI_EVT_BEND) { trs_send_bend(ch, bend); p.bend = false; }
+    else { trs_channel_message(0xD0 | ch, value, 0, 2); p.pressure = false; }
+  } else if (kind == MIDI_EVT_BEND) {
+    p.bend = true; p.bend_value = bend;
+  } else {
+    p.pressure = true; p.pressure_value = value;
+  }
+}
+
+// A note goes after its channel's waiting bend and pressure, as it did over USB: an MPE note's bend
+// comes before it, and the note would start at the old pitch
+FLASHMEM static void trs_flush_channel(uint8_t ch) {
+  trs_pending_t &p = trs_pending[ch];
+  if (p.bend) { trs_send_bend(ch, p.bend_value); p.bend = false; }
+  if (p.pressure) { trs_channel_message(0xD0 | ch, p.pressure_value, 0, 2); p.pressure = false; }
+}
+
+// Every event drain_midi_queue sends over USB comes here too
+FLASHMEM void trs_midi_send(const midi_event_t &e) {
+  if (!trs_port) return;
+  if (e.kind != MIDI_EVT_REALTIME && trs_midi_source && chord_port != harp_port &&
+      e.cable != (trs_midi_source == 1 ? chord_port : harp_port)) return;
+  uint8_t ch = (e.channel - 1) & 0x0F;
+  switch (e.kind) {
+    case MIDI_EVT_NOTE_ON:  trs_flush_channel(ch); trs_channel_message(0x90 | ch, e.note, e.velocity, 3); break;
+    case MIDI_EVT_NOTE_OFF: trs_flush_channel(ch); trs_channel_message(0x80 | ch, e.note, e.velocity, 3); break;
+    case MIDI_EVT_CC:
+      if (trs_port->availableForWrite() >= trs_room_reserved / 2) trs_channel_message(0xB0 | ch, e.note, e.velocity, 3);
+      break;
+    case MIDI_EVT_POLY:
+      if (trs_port->availableForWrite() >= trs_room_reserved) trs_channel_message(0xA0 | ch, e.note, e.velocity, 3);
+      break;
+    case MIDI_EVT_BEND:     trs_continuous(MIDI_EVT_BEND, ch, e.bend, 0); break;
+    case MIDI_EVT_PRESSURE: trs_continuous(MIDI_EVT_PRESSURE, ch, 0, e.velocity); break;
+    case MIDI_EVT_REALTIME: trs_port->write(e.note); break;          // real time leaves running status alone
+    case MIDI_EVT_TUNING: {
+      uint8_t m[12] = {0xF0, 0x7F, 0x7F, 0x08, 0x02, 0x00, 0x01, e.note, e.velocity,
+                       (uint8_t)((e.bend >> 7) & 0x7F), (uint8_t)(e.bend & 0x7F), 0xF7};
+      trs_port->write(m, sizeof m);
+      trs_running = 0;                                                 // a system exclusive ends running status
+      break;
+    }
+  }
+}
+// In the loop: the bends and pressure that waited for room
+FLASHMEM void trs_midi_service() {
+  if (!trs_port) return;
+  for (uint8_t ch = 0; ch < 16; ch++) {
+    trs_pending_t &p = trs_pending[ch];
+    if (!p.bend && !p.pressure) continue;
+    if (trs_port->availableForWrite() < trs_room_reserved) return;
+    trs_flush_channel(ch);
+  }
+}
+
 // Called from loop() only. The single point at which this firmware talks to usbMIDI.
 void drain_midi_queue() {
   bool sent = false;
@@ -1459,8 +1600,10 @@ void drain_midi_queue() {
         break;
       }
     }
+    trs_midi_send(e);
     sent = true;
   }
+  trs_midi_service();
   // No send_now() here. The packet a message leaves half full goes out on the next USB start-of-frame
   // (125 us at 480 Mbit, 1 ms at 12), from the SOF interrupt. Flushing it from here as well froze the
   // USB controller under load: the core's usb_midi_flush_output() has no lock, the interrupt's flush
@@ -1941,7 +2084,7 @@ static inline uint8_t down_button_pin() { return upside_down ? UP_PGM_PIN : DOWN
 // A preset holds every setting, as it always has, and a preset file round-trips unchanged. But some
 // settings describe the instrument or the room rather than the sound: which harp plate is fitted,
 // how firm a touch it takes, the orchestra's A. A lock keeps the instrument's own value for an
-// address: a preset load skips it, as it already skips USB audio (244) and upside down (384), and a
+// address: a preset load skips it, as it already skips USB audio (244), upside down (384) and TRS MIDI out (391), and a
 // change made to it live (an editor, the key change combo, MIDI tuning messages) is kept in the
 // Teensy's EEPROM a moment later rather than waiting for a save. A save writes the active values,
 // so a preset saved here describes this instrument, and the stock firmware loading that file finds
@@ -1949,7 +2092,7 @@ static inline uint8_t down_button_pin() { return upside_down ? UP_PGM_PIN : DOWN
 // Which addresses may be locked goes by each parameter's "lock" in parameters.json (parameter_lock
 // in parameter_lookup.h): "never" for actions, the preset's name and the controls' own storage;
 // "default" for the ones locked until a player says otherwise (the plate, the touch and release
-// thresholds, the master tuning); "fixed" for 244 and 384, the instrument's by their own code,
+// thresholds, the master tuning); "fixed" for 244, 384 and 391, the instrument's by their own code,
 // which are only reported here. Writing lock (385) with an address locks it, with 1024 + the
 // address unlocks it; control command 9 reports the locked addresses (7D 6C, a count, then two
 // bytes an address, the fixed ones first); command 10 unlocks them all (0) or locks the default
@@ -2065,12 +2208,12 @@ FLASHMEM void lock_action(int value) {
 }
 // control command 9: the locked addresses to an editor, 7D 6C, a count, then two bytes an address
 FLASHMEM void lock_report() {
-  uint8_t data[3 + 2 * (lock_max + 2)];
+  uint8_t data[3 + 2 * (lock_max + 3)];
   uint8_t n = 0;
   data[0] = 0x7D;
   data[1] = 0x6C;
-  const uint16_t fixed[2] = {usb_audio_adress, upside_down_adress};
-  for (uint8_t k = 0; k < 2; k++) { data[3 + 2 * n] = fixed[k] % 128; data[4 + 2 * n] = fixed[k] / 128; n++; }
+  const uint16_t fixed[3] = {usb_audio_adress, upside_down_adress, trs_midi_adress};
+  for (uint8_t k = 0; k < 3; k++) { data[3 + 2 * n] = fixed[k] % 128; data[4 + 2 * n] = fixed[k] / 128; n++; }
   for (uint8_t k = 0; k < lock_count; k++) { data[3 + 2 * n] = lock_table[k].adress % 128; data[4 + 2 * n] = lock_table[k].adress / 128; n++; }
   data[2] = n;
   usbMIDI.sendSysEx(3 + 2 * n, data, 0);
@@ -2114,7 +2257,7 @@ void pop_sysex_parameters() {
   if (!sysex_pushed) return;
   sysex_pushed = false;
   for (int i = 0; i < parameter_size; i++) {
-    if (i == 7 || i == usb_audio_adress || i == upside_down_adress) continue;   // the firmware version isn't a parameter, and USB audio and upside down are the instrument's
+    if (i == 7 || i == usb_audio_adress || i == upside_down_adress || i == trs_midi_adress) continue;   // the firmware version isn't a parameter, and USB audio, upside down and TRS MIDI are the instrument's
     if (current_sysex_parameters[i] == pushed_sysex_parameters[i]) continue;
     current_sysex_parameters[i] = pushed_sysex_parameters[i];
     apply_audio_parameter(i, pushed_sysex_parameters[i]);
@@ -6768,6 +6911,7 @@ void load_config(int bank_number) {
     apply_preset_version(bank_number);
     current_sysex_parameters[usb_audio_adress] = usb_audio_mode;   // the instrument's, whatever the preset holds
     current_sysex_parameters[upside_down_adress] = upside_down;
+    current_sysex_parameters[trs_midi_adress] = trs_midi_mode;
     lock_apply();                                                  // and the locked settings, see LOCKS
     Serial.printf("Loaded preset %d\n", bank_number + 1);
   } else {
@@ -6884,6 +7028,7 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   harp_sensor.recalibrate();
   upside_down = eeprom_read_byte((const uint8_t *)upside_down_eeprom) == 1;
   upside_down_apply();
+  trs_midi_setup();
   // The harp pads don't bounce: the touch chip already wants two readings in a row before it calls a
   // pad touched. The buttons' 10 ms was most of the harp's latency: from a pad's reading crossing
   // the touch threshold to the pluck took 17 ms (median, measured), and with 4 ms it takes 11.
