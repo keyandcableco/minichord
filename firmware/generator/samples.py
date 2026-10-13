@@ -4,7 +4,8 @@
 The recordings are the General MIDI instruments rendered one note per file by the
 midi-js-soundfonts project (https://github.com/gleitz/midi-js-soundfonts), as the
 Minichord Lab keeps them in its samples/ folder: FluidR3_GM (CC BY 3.0) and Musyng Kite
-(CC BY-SA 3.0). Run with that folder's path:
+(CC BY-SA 3.0), and from firmware 79 a kalimba from the Versilian Community Sample Library (CC0). Run with
+that folder's path:
 
     python3 samples.py ~/minichord-lab/samples
 
@@ -79,6 +80,19 @@ INSTRUMENTS = [
     # A Rhodes-style electric piano (General MIDI's Electric Piano 1); mellow, so at 16 kHz.
     dict(name='epiano', title='electric piano (FluidR3)', rate=16000, aligned=True, level_from_start=True,
          notes=[('epiano/fluid', n) for n in (42, 54, 66, 78)], loop=(0.55, 0.25, 0.12)),
+    # Firmware 79, voice source 11: a kalimba, the Tanzanian mbira of the Versilian Community Sample Library
+    # (VCSL, CC0; Minichord Lab tools/fetch-vcsl-kalimba.sh). Its middle tines only (C#3 to G4, and the
+    # Kenyan mbira's D5 on top): striking one sets the others ringing, and above G4 that halo of other notes,
+    # in the mbira's own tuning, is as loud as the note, which the minichord would carry to every pitch it
+    # plays the recording at. These are 96-100% the note itself. The pluck, then a loop of the ring.
+    dict(name='kalimba', title='kalimba (VCSL Tanzanian mbira, CC0)', rate=22050, aligned=True, level_from_start=True,
+         notes=[('kalimba/tanzania', n) for n in (49, 53, 58, 63, 67)] + [('kalimba/kenya', 78)], loop=(0.4, 0.25, 0.1)),
+    # Firmware 79, voice source 12: a marimba, VCSL's (CC0; tools/fetch-vcsl-marimba.sh), struck at medium
+    # strength. VCSL names its notes an octave low (its "C4" sounds 523 Hz); they are named here by what they
+    # sound, within 5 cents of equal temperament. Its top recording (C7) is left out: short and quiet, under
+    # the room's rumble. The strike, then a loop of the ring, as the kalimba.
+    dict(name='marimba', title='marimba (VCSL, CC0)', rate=22050, aligned=True, level_from_start=True,
+         notes=[('marimba/med', n) for n in (41, 48, 55, 65, 72, 79, 89)], loop=(0.3, 0.2, 0.08)),
 ]
 TARGET_RMS = 0.2
 # Recordings that sound away from the note they are named for, in cents, measured on the minichord
@@ -115,6 +129,14 @@ TUNING_CENTS = {
     # - bass, sitar and electric piano: the energy-weighted pitch over the first 0.8 s, within 3 cents
     #   throughout, so none; on the minichord every note within 5 cents (fw73_test.py harp).
     ('vibraphone/fluid', 66): -4.5,
+    # - kalimba: an mbira is tuned by ear to its own scale, so its tines sit up to half a semitone from equal
+    #   temperament; each is pitched by its fundamental's peak, 0.05-0.8 s after the strike (a tine's overtones
+    #   aren't harmonics, so a fit to them would mislead).
+    ('kalimba/tanzania', 53): 42.0,
+    ('kalimba/tanzania', 58): 57.0,
+    ('kalimba/tanzania', 63): 54.0,
+    ('kalimba/tanzania', 67): 17.0,
+    ('kalimba/kenya', 78): 36.0,
 }
 
 
@@ -143,6 +165,8 @@ def build_note(root, inst, folder, note, root_hz):
         if inst.get('aligned'):                        # a whole number of the note's periods
             period = rate / root_hz
             le = ls + int(round(round(length_s * rate / period) * period))
+        if inst.get('matched'):
+            le = matched_end(x, ls, le, xf, rate, root_hz, inst['matched'])
         if le + 4 > len(x) or ls - xf < 0:
             raise SystemExit('%s/%d too short for its loop' % (folder, note))
         x = x[:le + 4].copy()
@@ -169,6 +193,30 @@ def build_note(root, inst, folder, note, root_hz):
     pcm = np.round(np.clip(x, -1, 1) * 32767).astype(np.int16)
     pcm = np.append(pcm, np.int16(0))                  # and one past the last for a note played once
     return pcm, loop
+
+
+def matched_end(x, ls, le, xf, rate, root_hz, spread):
+    """A bowed note's vibrato moves its pitch several times a second, so a loop of whole periods of the
+    note's own pitch can still wrap from one point of the vibrato to another, a jump of 20-30 cents. Its
+    end is chosen instead, within spread (a fraction of the loop) of where it was asked for, in whole
+    periods, where the stretch the crossfade blends (just before the end) is most like the one it blends
+    with (just before the start): the same point of the vibrato, the same bow, the same waveform."""
+    period = rate / root_hz
+    ref = x[ls - xf:ls]
+    best, best_le = -2.0, le
+    lo, hi = int(le - spread * (le - ls)), int(le + spread * (le - ls))
+    k0 = max(1, int((lo - ls) / period))
+    k = k0
+    while True:
+        cand = ls + int(round(k * period))
+        if cand > hi or cand + 4 > len(x):
+            break
+        seg = x[cand - xf:cand]
+        c = float(np.dot(seg, ref) / (np.linalg.norm(seg) * np.linalg.norm(ref) + 1e-12))
+        if cand >= lo and c > best:
+            best, best_le = c, cand
+        k += 1
+    return best_le
 
 
 def mulaw_encode(pcm):

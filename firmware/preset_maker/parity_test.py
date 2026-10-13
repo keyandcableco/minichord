@@ -110,6 +110,9 @@ SENTENCES = [
     "a wurlitzer with tremolo", "a barky wurlitzer", "mellow wurlitzer chords with the bass guitar on the bass note",
     "barky wurly on the harp with touch velocity", "wurlitzer chords, the mod knob controls the bark",
     "reed piano on the top note", "dig in", "no bark", "funky barky filter", "rhodes chords",
+    "jazz organ chords with a kalimba harp", "rock organ, the mod knob is the level", "marimba harp, organ percussion",
+    "church organ", "an organ on the top note", "jazz organ, hover is the swell", "full organ with a leslie",
+    "mbira harp with a marimba on the bass note", "the knob changes the drawbars",
 ]
 # The sampled voices, which a sound or a waveform for the synth has to take back: choir chords with their own piano
 # in the bass and string quartet on the third note, and a piano harp

@@ -84,11 +84,13 @@ CODE_BLOCK_TO_TEST
  *
  */
 const AudioSynthWavetableMulaw::instrument_data AudioSynthWavetableMulaw::reed_instrument = {0, nullptr, nullptr};
+const AudioSynthWavetableMulaw::instrument_data AudioSynthWavetableMulaw::organ_instrument = {0, nullptr, nullptr};
 
 void AudioSynthWavetableMulaw::stop(void) {
 	cli();
-	if (reed_mode) {   // the voice's envelope is done by now: the reed stops at once
+	if (model) {   // the voice's envelope is done by now: the model stops at once
 		reed.stop();
+		organ.stop();
 		env_state = STATE_IDLE;
 		sei();
 		return;
@@ -136,8 +138,9 @@ void AudioSynthWavetableMulaw::playNote(int note, int amp) {
  */
 void AudioSynthWavetableMulaw::setState(int note, int amp, float freq) {
 	cli();
-	if (reed_mode) {   // the reed struck, as hard as amp says; amplitude() still sets its level
-		reed.strike(freq, amp / 127.0f);
+	if (model) {   // the reed struck, as hard as amp says, or the organ's key down; amplitude() sets the level
+		if (model == MODEL_REED) reed.strike(freq, amp / 127.0f);
+		else organ.strike(freq);
 		env_state = STATE_SUSTAIN;
 		state_change = true;
 		sei();
@@ -181,8 +184,9 @@ void AudioSynthWavetableMulaw::setState(int note, int amp, float freq) {
  * @param freq frequency of the generated output (between 0 and the board-specific sample rate)
  */
 void AudioSynthWavetableMulaw::setFrequency(float freq) {
-	if (reed_mode) {
-		reed.frequency(freq);
+	if (model) {
+		if (model == MODEL_REED) reed.frequency(freq);
+		else organ.frequency(freq);
 		return;
 	}
 	if (nullptr != current_sample)
@@ -204,8 +208,8 @@ void AudioSynthWavetableMulaw::setFrequency(float freq) {
  */
 void AudioSynthWavetableMulaw::update(void) {
 #if defined(KINETISK) || defined(__IMXRT1062__)
-	if (reed_mode) {
-		update_reed();
+	if (model) {
+		update_model();
 		return;
 	}
 	// exit if nothing to do
@@ -469,16 +473,17 @@ void AudioSynthWavetableMulaw::update(void) {
 #endif
 }
 
-// The reed piano in this voice's place: the model's block, at the voice's level (amplitude())
-void AudioSynthWavetableMulaw::update_reed(void) {
-	if (!reed.sounding()) {
+// A model in this voice's place: its block, at the voice's level (amplitude())
+void AudioSynthWavetableMulaw::update_model(void) {
+	if (model == MODEL_REED ? !reed.sounding() : !organ.sounding()) {
 		env_state = STATE_IDLE;
 		return;
 	}
 	audio_block_t *block = allocate();
 	if (block == NULL) return;
 	float buf[AUDIO_BLOCK_SAMPLES];
-	reed.render(buf, AUDIO_BLOCK_SAMPLES);
+	if (model == MODEL_REED) reed.render(buf, AUDIO_BLOCK_SAMPLES);
+	else organ.render(buf, AUDIO_BLOCK_SAMPLES);
 	const float g = tone_amp * (32767.0f / 65535.0f);
 	for (int i = 0; i < AUDIO_BLOCK_SAMPLES; i++) {
 		float v = buf[i] * g;

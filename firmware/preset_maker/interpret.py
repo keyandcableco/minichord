@@ -107,6 +107,8 @@ ROLES = {
     "drone_jawari": {"global": 381},
     # firmware 78: the reed piano's bark
     "reed_bark": {"chord": 387, "harp": 386},
+    # firmware 79: the tonewheel organ
+    "organ_drawbars": {"global": 388}, "organ_perc": {"global": 389},
     # the pitch bend envelope's start and decay, chord shuffling, the generator scale (firmware 38)
     "bend": {"chord": 170, "harp": 71}, "bend_decay": {"chord": 173, "harp": 74}, "chord_shuffle": {"chord": 120},
     "generator": {"harp": 267}, "generator_notes": {"harp": 268}, "generator_mode": {"harp": 269},
@@ -175,9 +177,30 @@ add("pluck, plucks, plucky, plucked, plucking, picked", "sound", "plucky", home=
     moves=env(1, 350, 0.0, 450))
 add("stab, stabs, stabby", "sound", "stabs", home="chord", hue=10, moves=env(1, 180, 0.0, 200, hold=20))
 add("drone, drones, droning", "sound", "drone", home="chord", hue=260, moves=env(1500, 1000, 1.0, 4000))
-add("organ, organs, hammond, b3, drawbar, church organ, combo organ", "sound", "organ", home="chord", hue=30, moves={
+# A pipe organ is still the synth's; the tonewheel organ (voice source 13, firmware 79) is a model of the Hammond kind
+add("church organ, pipe organ, cathedral organ", "sound", "church organ", home="chord", hue=30, moves={
     "chord": synth_chord(0.15, 0, 1.0, 0.1, 0, 2.0, 0.08, 0, 0.5) + env(5, 100, 1.0, 80) + (EXACT("cutoff", 3500),),
     "harp": synth_harp(0) + env(5, 100, 1.0, 80)})
+ORGAN_NOTE = ("the organ is a model of a tonewheel organ (voice 13): organ drawbars (388) picks the registration, organ "
+              "percussion (389) the struck harmonic; its swell is the level (on hover or a knob) and its Leslie the tremolo "
+              "and vibrato. Needs firmware 79")
+ORGAN = (EXACT("voice", 13),) + env(5, 100, 1.0, 80) + (EXACT("cutoff", 5000), EXACT("string_model", 0))
+add("organ, organs, hammond, hammond organ, b3, b-3, drawbar, drawbar organ, drawbars, tonewheel, tonewheel organ, "
+    "combo organ", "sound", "organ", home="chord", hue=30, moves=ORGAN, note=ORGAN_NOTE)
+for words, label, reg, perc in (
+        ("jazz organ, blues organ, jimmy smith, organ trio, soul jazz organ", "jazz organ", 0, 2),
+        ("rock organ, deep purple, hard rock organ", "rock organ", 1, 0),
+        ("ballad organ, soft jazz organ, mellow organ", "ballad organ", 2, 0),
+        ("flute organ, soft organ, gentle organ, pure organ", "flute organ", 3, 0),
+        ("gospel organ, soul organ, church hammond, sunday organ", "gospel organ", 4, 0),
+        ("shrill organ, hollow organ, screaming organ", "shrill organ", 5, 0),
+        ("reedy organ, clarinet organ", "reedy organ", 6, 0),
+        ("full organ, all drawbars, every drawbar, drawbars all out", "full organ", 7, 0)):
+    add(words, "sound", label, home="chord", hue=30,
+        moves=ORGAN + (EXACT("organ_drawbars", reg), EXACT("organ_perc", perc)), note=ORGAN_NOTE)
+add("organ percussion, percussive organ, percussion on the organ, organ with percussion, organ click",
+    "setting", "the organ's percussion (the third, fast)", home="global",
+    moves=(EXACT("organ_perc", 2),), off=(EXACT("organ_perc", 0),), note=ORGAN_NOTE)
 # The sampled electric piano, vibraphone, sitar and bass (voice source 6-9, firmware 73), as the piano is
 add("electric piano, e piano, epiano, rhodes, ep, dx7, dx 7, fm piano", "sound", "electric piano", home="chord", hue=35,
     moves=(EXACT("voice", 9),) + env(2, 2500, 0.3, 600) + (EXACT("cutoff", 4000), EXACT("string_model", 0)),
@@ -247,10 +270,13 @@ add("vibraphone, vibes, vibraphones", "sound", "vibraphone", home="harp", hue=20
     note="the sampled vibraphone needs firmware 73 (its motor's tremolo is in the recording)")
 add("music box, musicbox", "sound", "music box", home="harp", hue=320,
     moves=synth_harp(0) + env(1, 1200, 0.0, 1200) + (EXACT("transient", 0.15), ADD("octave", 1)))
-add("kalimba, mbira, thumb piano", "sound", "kalimba", home="harp", hue=35,
-    moves=synth_harp(3, 30) + env(1, 700, 0.0, 700) + (EXACT("string_damping", 50), EXACT("transient", 0.2)))
+# Sampled from firmware 79 (voice source 11-12): the kalimba, a Tanzanian mbira, and the marimba, both VCSL (CC0)
+add("kalimba, kalimbas, mbira, mbiras, thumb piano, sansa, likembe", "sound", "kalimba", home="harp", hue=35,
+    moves=(EXACT("voice", 11),) + env(1, 1800, 0.0, 900) + (EXACT("cutoff", 5000), EXACT("string_model", 0)),
+    note="the sampled kalimba needs firmware 79")
 add("marimba, marimbas, mallet, mallets", "sound", "marimba", home="harp", hue=30,
-    moves=synth_harp(0) + env(1, 450, 0.0, 400) + (EXACT("transient", 0.25),))
+    moves=(EXACT("voice", 12),) + env(1, 1500, 0.0, 700) + (EXACT("cutoff", 5000), EXACT("string_model", 0)),
+    note="the sampled marimba needs firmware 79")
 add("xylophone, xylophones", "sound", "xylophone", home="harp", hue=55,
     moves=synth_harp(0) + env(1, 250, 0.0, 250) + (EXACT("transient", 0.25), ADD("octave", 1)))
 add("flute, flutes, recorder, pan flute, panpipe, panpipes, ocarina, whistle", "sound", "flute", hue=160, moves={
@@ -1429,7 +1455,7 @@ TARGETS = {
     "spread": "spread, stereo, width, panning",
     "ensemble": "ensemble, chorus, shimmer",
     "tempo": "tempo, bpm, speed",
-    "level": "volume, level, loudness, mute, mutes, silence, silences, duck, ducks, ducking, pump, pumps, pumping",
+    "level": "volume, level, loudness, mute, mutes, silence, silences, duck, ducks, ducking, pump, pumps, pumping, swell, the swell, swell pedal, expression pedal, organ swell",
     "lfo_amount": "wah, sweep, wobble, wub",
     "noise": "noise, breath, air",
     "transpose": "transpose, transposes, transposition",
@@ -1478,6 +1504,8 @@ TARGETS = {
     "hammer_time": "hammer-on time, hammer on time",
     "drone_jawari": "jawari, jivari, drone jawari, tanpura jawari, the jawari, tanpura buzz, drone buzz",
     "reed_bark": "bark, reed bark, wurlitzer bark, the bark, growl, how hard it's struck",
+    "organ_drawbars": "drawbars, organ drawbars, registration, the registration, organ registration",
+    "organ_perc": "organ percussion",
 }
 # Where a knob sweeps each role, (low, high) in parameters.json units; its centre is stored in the preset
 SWEEP = {"trem_freq": (0.5, 8), "speed_ramp": (0, 40), "drum_reverb": (0, 100), "drone_reverb": (0, 100), "drone_jawari": (0, 100), "reed_bark": (0, 100), "hammer_time": (30, 300), "purity": (0, 100), "drone_level": (0, 100), "dj_filter": (0, 200), "phone_echo": (0, 100), "drum_level": (0, 100), "drum_kit": (0, 11),
@@ -1513,17 +1541,20 @@ NOTE_INSTRUMENTS = {"pizzicato strings": 3, "plucked strings": 3, "pizz strings"
                     "oscillators": 1, "synth voice": 1, "own synth": 1, "vibraphone": 7, "vibes": 7,
                     "bass guitar": 8, "electric bass": 8, "fingered bass": 8, "sitar": 9, "electric piano": 10,
                     "e piano": 10, "epiano": 10, "rhodes": 10,
-                    "wurlitzer": 11, "wurly": 11, "reed piano": 11}
+                    "wurlitzer": 11, "wurly": 11, "reed piano": 11, "kalimba": 12, "mbira": 12, "marimba": 13,
+                    "organ": 14, "hammond": 14}
 NOTE_POSITIONS = {"bass note": [0], "bottom note": [0], "lowest note": [0], "low note": [0], "first note": [0],
                   "bass": [0], "bottom": [0], "second note": [1], "tenor": [1], "third note": [2], "alto": [2],
                   "fourth note": [3], "top note": [3], "highest note": [3], "high note": [3], "soprano": [3],
                   "top": [3], "middle notes": [1, 2], "middle two": [1, 2], "inner voices": [1, 2], "middle": [1, 2],
                   "above": [1, 2, 3], "upper notes": [1, 2, 3], "upper voices": [1, 2, 3]}
 NOTE_VOICE_NAMES = {1: "its own synth", 2: "piano", 3: "pizzicato", 4: "choir", 5: "string quartet", 6: "song sample",
-                    7: "vibraphone", 8: "bass guitar", 9: "sitar", 10: "electric piano", 11: "reed piano"}
+                    7: "vibraphone", 8: "bass guitar", 9: "sitar", 10: "electric piano", 11: "reed piano", 12: "kalimba",
+                    13: "marimba", 14: "organ"}
 # What chord voice and harp voice play, in place of the oscillators; the notes' own voices count one higher
 VOICE_NAMES = {1: "piano", 2: "pizzicato", 3: "choir", 4: "string quartet", 5: "song sample", 6: "vibraphone",
-               7: "bass guitar", 8: "sitar", 9: "electric piano", 10: "reed piano"}
+               7: "bass guitar", 8: "sitar", 9: "electric piano", 10: "reed piano", 11: "kalimba",
+               12: "marimba", 13: "organ"}
 # The settings only the section's own oscillators hear; a sampled voice doesn't. A waveform names the synth itself
 WAVE_ROLES = ("wave", "wave2", "wave3")
 OSC_ROLES = WAVE_ROLES + ("amp1", "amp2", "amp3", "mult1", "mult2", "mult3", "noise")
@@ -2825,10 +2856,14 @@ def export_data(params, version):
 # {"at": k} the address setting k holds (a knob's or hover's target; false when unassigned); B a value,
 # a list, {"value": a} the value at a, or {"values": [a, ...]} theirs. Values as the description reads
 # them (floats as 0-1). "{target}" in a note is the {"at"} target's name.
-SAMPLE_VOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]   # 10, the reed piano, is a model but takes a sample's place
+SAMPLE_VOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]   # 10 and 13, the reed piano and the organ, are models but take a sample's place
 KNOBS = [(10, 11, "the chord knob's alternate"), (12, 13, "the harp knob's alternate"),
          (14, 15, "the mod knob"), (16, 17, "the mod knob's alternate")]
 CONFLICTS = [
+    *({"about": [a], "when": [[a, "!=", 0], [264, "!=", 13], [265, "!=", 13], [270, "!=", 14], [271, "!=", 14],
+                               [272, "!=", 14], [273, "!=", 14]],
+       "note": f"organ {what} only shapes the organ, and nothing plays it (harp or chord voice 13, or a note voice 14)"}
+      for a, what in ((388, "drawbars"), (389, "percussion"))),
     {"about": [386], "when": [[386, "!=", 60], [264, "!=", 10]],
      "note": "harp reed bark only shapes the reed piano, and the harp isn't playing it (harp voice 10)"},
     {"about": [387], "when": [[387, "!=", 60], [265, "!=", 10], [270, "!=", 11], [271, "!=", 11], [272, "!=", 11], [273, "!=", 11]],

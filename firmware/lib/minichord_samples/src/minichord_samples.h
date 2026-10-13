@@ -4,7 +4,7 @@
 #include <Audio.h>
 #include "wavetable_mulaw.h"
 
-// The sampled instruments, in voice source order (harp voice and chord voice 1-4, and after the song at 5, 6-9)
+// The sampled instruments, in voice source order (harp voice and chord voice 1-4, and after the song at 5, 6-11)
 extern const AudioSynthWavetableMulaw::instrument_data piano_instrument;   // piano (FluidR3)
 extern const AudioSynthWavetableMulaw::instrument_data pizzicato_instrument;   // pizzicato strings (Musyng Kite, FluidR3 in the middle)
 extern const AudioSynthWavetableMulaw::instrument_data choir_instrument;   // choir aah (Musyng Kite)
@@ -13,5 +13,7 @@ extern const AudioSynthWavetableMulaw::instrument_data vibraphone_instrument;   
 extern const AudioSynthWavetableMulaw::instrument_data bass_instrument;   // fingered bass (FluidR3)
 extern const AudioSynthWavetableMulaw::instrument_data sitar_instrument;   // sitar (Musyng Kite)
 extern const AudioSynthWavetableMulaw::instrument_data epiano_instrument;   // electric piano (FluidR3)
+extern const AudioSynthWavetableMulaw::instrument_data kalimba_instrument;   // kalimba (VCSL Tanzanian mbira, CC0)
+extern const AudioSynthWavetableMulaw::instrument_data marimba_instrument;   // marimba (VCSL, CC0)
 
 #endif
