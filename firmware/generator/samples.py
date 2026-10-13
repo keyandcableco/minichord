@@ -147,10 +147,16 @@ TUNING_CENTS = {
     ('kalimba/tanzania', 63): 54.0,
     ('kalimba/tanzania', 67): 17.0,
     ('kalimba/kenya', 78): 36.0,
-    # - upright bass and accordion: the energy-weighted pitch (the pluck's first 0.6 s; the accordion's held
-    #   0.4-2 s, the middle of its reeds), within 3 cents but the accordion's top two
-    ('accordion/fluid', 74): 3.4,
-    ('accordion/fluid', 82): 5.7,
+    # - upright bass: the energy-weighted pitch over the pluck's first 0.6 s, within 2 cents, so none; on the
+    #   minichord within 3.3 (fw80_test.py, its fundamental's peak is no measure for a low pluck).
+    # - accordion: its musette reeds are tuned apart, so its pitch is the middle of them, energy-weighted over
+    #   the held 0.3-2.3 s and four harmonics. Measured on the minichord (fw80_test.py), every recording played
+    #   4-5 cents sharp of what the offline fit gave; these are the minichord's.
+    ('accordion/fluid', 50): 4.2,
+    ('accordion/fluid', 58): 5.0,
+    ('accordion/fluid', 66): 4.3,
+    ('accordion/fluid', 74): 5.1,
+    ('accordion/fluid', 82): 4.9,
 }
 
 
