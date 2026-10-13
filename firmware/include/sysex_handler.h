@@ -848,6 +848,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 314:
         acc_style_b=value; acc_settings_changed();
         break;
+      case 393:
+        acc_meter=value; acc_meter_changed();
+        break;
       case 315:
         rhythm_fill_action(value);
         break;
@@ -1532,6 +1535,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 281: lo=0; hi=1; return true;
       case 282: lo=0; hi=1; return true;
       case 314: lo=0; hi=14; return true;
+      case 393: lo=0; hi=19; return true;
       case 315: lo=0; hi=3; return true;
       case 316: lo=0; hi=1; return true;
       case 317: lo=0; hi=1; return true;

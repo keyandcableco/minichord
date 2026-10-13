@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=85; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47)
+int version_ID=86; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1062,6 +1062,7 @@ uint8_t acc_bass_part = 0;      // voice 0: 0 plays the style's part, 1 holds th
 uint8_t acc_chord_part = 0;     // voices 1-3, the same
 uint8_t acc_follow = 0;         // 0 plays on, 1 only while a chord is held, 2 that and the bar starts on the press
 uint8_t acc_change = 0;         // a new chord comes in: 0 on the next note, 1 on the beat, 2 on the bar
+uint8_t acc_meter = 0;          // time signature (393): 0 the style's own, else the bar every part wraps to (see METER)
 // Variations, fills, breaks, intro and ending (see SECTIONS)
 uint8_t acc_style_b = 0;        // rhythm style B (314): the style a fill switches to and back from, 0 none
 bool rhythm_fill_combo = false; // modifier held with a tap of hold plays a fill (316)
@@ -1203,7 +1204,9 @@ void chord_memory_action(int16_t action);
 void chord_memory_step();
 void chord_memory_record_chord();
 uint32_t acc_bar_ms_after(uint32_t at_least);
-uint8_t acc_beats_per_bar();
+float acc_beats_per_bar();
+uint8_t acc_bar_eighths();
+uint32_t acc_bar_beats();
 uint32_t modifier_pressed_ms = 0;      // when the modifier was last pressed: a double tap's second tap lands then
 bool string_held(uint8_t i);
 
@@ -1766,6 +1769,7 @@ void acc_midi_stop();
 void acc_midi_clock();
 void acc_snapshot();
 void acc_settings_changed();
+void acc_meter_changed();
 void acc_clock_out_changed();
 void acc_tap(bool button = true);
 void acc_tap_reset();
@@ -3560,7 +3564,7 @@ FLASHMEM void looper_close(uint32_t at, bool now = false) {
       return;
     }
   } else if (looper_timed()) {
-    float beat = looper_beat_ms();
+    float beat = looper_beat_ms() / (acc_bar_eighths() % 2 ? 2 : 1);   // a 7/8's bar is three and a half
     length = (int32_t)(max(1L, lroundf(length / beat)) * beat);
   }
   if (length < 50) {                                   // a slip of the finger, not a loop
@@ -3652,15 +3656,16 @@ FLASHMEM static void looper_click_update() {
     if (count != heard) { heard = count; beat = true; bar = rythm_beat_bar; }
     own = INT32_MIN;
   } else if (state == LOOPER_COUNTIN || state == LOOPER_RECORDING || state == LOOPER_PLAYING) {
-    float beat_ms = looper_beat_ms();
+    float eighth_ms = looper_beat_ms() / 2;   // counted in eighths, for a time signature's groups of three
     int32_t from_start = (int32_t)(millis() - loop_start_ms);
-    int32_t n = (int32_t)floorf(from_start / beat_ms);
+    int32_t n = (int32_t)floorf(from_start / eighth_ms);
     if (own == INT32_MIN || n < own - 1) own = n - 1;   // came in partway: from the next
     if (n != own) {
       own = n;
-      beat = true;
-      int32_t per_bar = acc_beats_per_bar();
-      bar = ((n % per_bar) + per_bar) % per_bar == 0;
+      int32_t per_bar = acc_bar_eighths();
+      int32_t e = ((n % per_bar) + per_bar) % per_bar;
+      beat = acc_bar_beats() >> e & 1;
+      bar = e == 0;
     }
   } else {
     own = INT32_MIN;
@@ -5374,11 +5379,37 @@ volatile double acc_rest_to = 0;        // a break: nothing plays before this
 volatile double acc_countin_to = 0;     // the count-in's bar: sticks, and nothing else, before this
 
 static inline uint8_t acc_style_a() { return acc_style < acc_style_count ? acc_style : 0; }
+// B must count A's bar, unless a time signature sets the bar for both (METER)
 static inline bool acc_b_valid() {
-  return acc_style_b > 0 && acc_style_b < acc_style_count && acc_styles[acc_style_b].beats_per_bar == acc_styles[acc_style_a()].beats_per_bar;
+  return acc_style_b > 0 && acc_style_b < acc_style_count && (acc_meter || acc_styles[acc_style_b].beats_per_bar == acc_styles[acc_style_a()].beats_per_bar);
 }
 static inline uint8_t acc_style_index() { return acc_main_b && acc_b_valid() ? acc_style_b : acc_style_a(); }
-static inline double acc_bar_ticks() { return ACC_BEAT * acc_styles[acc_style_index()].beats_per_bar; }
+
+//>>METER<<
+// The time signature (393). Every style and groove is written in its own metre, and at 0 the style's
+// sets the bar, as it always has. Set, it is the bar for everything that counts one: the parts, the
+// drums, fills, breaks, the intro and ending, the count-in, the clock out's Start, chord memory and the
+// looper. 1 to 12 are that many beats, the tempo's: 2 is 2/4 (or 6/8, with a triplet groove), 3 3/4
+// (9/8), 4 4/4 (12/8). The rest are counted in eighths, half a beat each, grouped in twos and threes,
+// a beat on each group: 13 5/8 as 2+3, 14 as 3+2, 15 7/8 as 2+2+3, 16 as 3+2+2, 17 9/8 as 2+2+2+3, 18
+// 11/8 as 2+2+3+2+2, 19 8/8 as 3+3+2. A part written in another metre wraps to the bar: each bar starts
+// its bar again (the next of them, in a part of several), cut off where the bar is shorter and from
+// its own start again where it is longer; a fill is lined up to end on the bar line, its last part in
+// a shorter bar, the groove up to it in a longer one. A tabla theka stretched by laya keeps its cycle.
+struct acc_meter_t { uint8_t eighths; uint32_t beats; };   // beats: bit k, a beat begins on eighth k
+static const acc_meter_t acc_odd_meters[] = {
+  {5, 0b101}, {5, 0b1001}, {7, 0b10101}, {7, 0b101001}, {9, 0b1010101}, {11, 0b1010010101}, {8, 0b1001001},
+};
+#define ACC_METER_MAX (12 + sizeof(acc_odd_meters) / sizeof(acc_meter_t))
+uint8_t acc_bar_eighths() {
+  if (acc_meter > 12 && acc_meter <= ACC_METER_MAX) return acc_odd_meters[acc_meter - 13].eighths;
+  return 2 * (acc_meter ? acc_meter : acc_styles[acc_style_index()].beats_per_bar);
+}
+uint32_t acc_bar_beats() {
+  if (acc_meter > 12 && acc_meter <= ACC_METER_MAX) return acc_odd_meters[acc_meter - 13].beats;
+  return 0x55555555;   // every other eighth
+}
+static inline double acc_bar_ticks() { return ACC_BEAT / 2 * acc_bar_eighths(); }
 // the bar line a fill or a break runs to: the next, or the one after if less than a beat is left
 static inline double acc_section_end(double pos) {
   double bar = acc_bar_ticks();
@@ -5545,11 +5576,10 @@ void acc_step(uint8_t step) {
   }
 }
 
-// A beat begins
-void acc_beat(int64_t b) {
+// A beat begins, the bar's first or not
+void acc_beat(bool bar) {
   rythm_beat_ms = millis();   // for the looper
   const acc_style_t &st = acc_styles[acc_style_index()];
-  bool bar = b % st.beats_per_bar == 0;
   rythm_beat_bar = bar;
   rythm_beat_count = rythm_beat_count + 1;
   if (st.count == 0) return;   // the sixteen steps light the LED themselves
@@ -5569,6 +5599,46 @@ static inline double acc_swung(int64_t t, uint8_t unit) {
   if (t % unit == 0 && (t / unit) % 2 == 1) return t + (shuffle - 1) * unit;
   return t;
 }
+
+// A part written in bars of own ticks, length long, as it falls from t0 to t1 in the time signature's
+// bars from origin (METER): each bar starts the part's bar again, the next of them in a part of
+// several, cut off where the bar is shorter and from the part's own start again where it is longer.
+// The events are stride bytes apart, each beginning with its at; play plays one.
+typedef void (*acc_play_t)(const void *ev);
+FLASHMEM static void acc_wrapped_window(const void *events, size_t stride, uint16_t count, uint16_t length, uint16_t own, uint8_t swing_unit, double origin, double t0, double t1, acc_play_t play) {
+  int64_t bar = (int64_t)acc_bar_ticks();
+  uint16_t piece = length > own && length % own == 0 ? own : length;   // one of its bars, or the whole of a shorter part
+  if (!piece || !bar) return;
+  uint16_t pieces = length / piece;
+  int64_t first = (int64_t)floor((t0 - origin) / bar) - 1, last = (int64_t)floor((t1 - origin) / bar);
+  if (first < 0) first = 0;
+  for (int64_t i = first; i <= last; i++) {
+    double start = origin + i * bar;
+    uint16_t from = (i % pieces) * piece;
+    for (uint16_t e = 0; e < count; e++) {
+      const void *ev = (const uint8_t *)events + e * stride;
+      uint16_t at = *(const uint16_t *)ev;
+      if (at < from || at >= from + piece) continue;
+      for (int64_t p = at - from; p < bar; p += piece) {
+        double t = start + acc_swung(p, swing_unit);
+        if (t >= t0 && t < t1) play(ev);
+      }
+    }
+  }
+}
+
+// A fill written in a bar of own ticks, lined up to end on the fill's bar line: a shorter bar has its
+// last part (and a fill asked for late in the bar before gets the whole of it)
+FLASHMEM static void acc_wrapped_fill(const void *events, size_t stride, uint16_t count, uint16_t own, uint8_t swing_unit, double t0, double t1, acc_play_t play) {
+  double from = acc_fill_to - own;
+  for (uint16_t e = 0; e < count; e++) {
+    const void *ev = (const uint8_t *)events + e * stride;
+    double t = from + acc_swung(*(const uint16_t *)ev, swing_unit);
+    if (t >= t0 && t < t1 && t >= acc_fill_from) play(ev);
+  }
+}
+
+static void acc_play_event(const void *ev) { acc_event(*(const acc_event_t *)ev); }
 
 //>>DRUMS<<
 // Rhythm mode's drums: a synthesized kit (include/drum_machine.h) playing a groove (drum_patterns.h, from
@@ -5695,9 +5765,11 @@ void drum_strike(uint8_t v, uint8_t velocity, bool written, bool loose) {
 
 // The count-in: a stick on each beat of its bar, the first louder
 static void drum_countin_window(double t0, double t1) {
-  uint8_t beats = acc_styles[acc_style_index()].beats_per_bar;
-  for (int64_t b = (int64_t)ceil(t0 / ACC_BEAT); b * ACC_BEAT < t1 && b * ACC_BEAT < acc_countin_to; b++) {
-    drum_strike(DRUM_RIM, b % beats == 0 ? 124 : 90, false);
+  uint8_t eighths = acc_bar_eighths();
+  uint32_t beats = acc_bar_beats();
+  for (int64_t k = (int64_t)ceil(t0 / (ACC_BEAT / 2)); k * (ACC_BEAT / 2) < t1 && k * (ACC_BEAT / 2) < acc_countin_to; k++) {
+    uint8_t e = k % eighths;
+    if (beats >> e & 1) drum_strike(DRUM_RIM, e == 0 ? 124 : 90, false);
   }
 }
 
@@ -5711,9 +5783,19 @@ static double drum_stretch(const drum_groove_t &g) {
   return (double)g.bol_steps / per_beat[min(tabla_laya, (uint8_t)3)];
 }
 
-// The groove's own bars from t0 to t1. A theka stretched over several bars starts again (sam) on the
-// bar line its last fill, a tihai, landed on, as a tabla player's does.
+static void drum_play_event(const void *ev) {
+  const drum_event_t &d = *(const drum_event_t *)ev;
+  drum_strike(d.voice, d.velocity);
+}
+
+// The groove's own bars from t0 to t1, or wrapped to the time signature's (METER). A theka stretched
+// over several bars starts again (sam) on the bar line its last fill, a tihai, landed on, as a tabla
+// player's does.
 static void drum_groove_window(const drum_groove_t &g, double stretch, double t0, double t1) {
+  if (stretch == 1 && g.beats_per_bar * ACC_BEAT != acc_bar_ticks()) {   // another metre: wrapped to the bar
+    acc_wrapped_window(g.events, sizeof(drum_event_t), g.count, g.length, g.beats_per_bar * ACC_BEAT, g.swing_unit, acc_origin, t0, t1, drum_play_event);
+    return;
+  }
   if (stretch == 1) {
     int64_t origin = (int64_t)acc_origin;
     for (uint16_t e = 0; e < g.count; e++) {
@@ -5749,8 +5831,15 @@ static void drum_section_window(double t0, double t1) {
   const drum_groove_t &g = *drum_groove_playing();
   double stretch = drum_stretch(g);
   if (acc_fill_on && t0 >= acc_fill_from && t0 < acc_fill_to) {
+    uint16_t own = g.beats_per_bar * ACC_BEAT;
+    if (stretch == 1 && own != acc_bar_ticks()) {   // another metre: the groove up to the fill, the fill into the bar line
+      double from = acc_fill_to - own;
+      if (t0 < from) drum_groove_window(g, 1, t0, min(t1, from));
+      acc_wrapped_fill(g.fill, sizeof(drum_event_t), g.fill_count, own, g.swing_unit, t0, t1, drum_play_event);
+      return;
+    }
     double bar = acc_fill_to - acc_bar_ticks();
-    uint16_t own = 0;   // stretched: the theka plays on up to the fill's half, then the fill's bols as written
+    own = 0;   // stretched: the theka plays on up to the fill's half, then the fill's bols as written
     if (stretch != 1) {
       own = (g.beats_per_bar - max(g.beats_per_bar / 2, 1)) * ACC_BEAT;
       if (t0 < bar + own) drum_groove_window(g, stretch, t0, min(t1, bar + own));
@@ -5815,6 +5904,8 @@ static void acc_fill_finish() {
   }
 }
 
+static void acc_part_window(const acc_style_t &st, double t0, double t1);
+
 // What plays from t0 up to t1, all within one section (acc_window cuts at their edges)
 static void acc_section_window(double t0, double t1) {
   if (t0 < acc_countin_to) { drum_countin_window(t0, t1); return; }
@@ -5823,6 +5914,13 @@ static void acc_section_window(double t0, double t1) {
   if (drums_on && drums_only) return;   // the accompaniment rests
   const acc_style_t &st = acc_styles[acc_style_index()];
   if (acc_fill_on && t0 >= acc_fill_from && t0 < acc_fill_to) {
+    uint16_t own = st.beats_per_bar * ACC_BEAT;
+    if (own != acc_bar_ticks()) {   // another metre: the part up to the fill, the fill into the bar line
+      double from = acc_fill_to - own;
+      if (t0 < from) acc_part_window(st, t0, min(t1, from));
+      acc_wrapped_fill(st.fill, sizeof(acc_event_t), st.fill_count, own, st.swing_unit, t0, t1, acc_play_event);
+      return;
+    }
     double bar = acc_fill_to - acc_bar_ticks();   // the fill's bar begins here
     for (uint8_t e = 0; e < st.fill_count; e++) {
       const acc_event_t &ev = st.fill[e];
@@ -5831,13 +5929,32 @@ static void acc_section_window(double t0, double t1) {
     }
     return;
   }
+  acc_part_window(st, t0, t1);
+}
+
+// The style's part from t0 to t1, outside a fill
+static void acc_part_window(const acc_style_t &st, double t0, double t1) {
   int64_t origin = (int64_t)acc_origin;
+  uint16_t own = st.beats_per_bar * ACC_BEAT;
+  int64_t bar = (int64_t)acc_bar_ticks();
   if (st.count == 0) {
     for (int64_t k = (int64_t)floor(t0 / 12) - 1; k <= (int64_t)floor(t1 / 12) + 1; k++) {
       if (k * 12 < origin) continue;
-      double at = acc_swung(k * 12, 12);
-      if (at >= t0 && at < t1) acc_step((k - origin / 12) % rythm_loop_length);
+      if (own == bar) {
+        double at = acc_swung(k * 12, 12);
+        if (at >= t0 && at < t1) acc_step((k - origin / 12) % rythm_loop_length);
+        continue;
+      }
+      // another metre (METER): the sixteen steps are two of the style's bars, each bar starts the next
+      int64_t i = (k * 12 - origin) / bar, p = (k * 12 - origin) % bar;
+      uint8_t pieces = max(1, rythm_loop_length * 12 / own);
+      double at = origin + i * bar + acc_swung(p, 12);
+      if (at >= t0 && at < t1) acc_step(((i % pieces) * own + p % own) / 12 % rythm_loop_length);
     }
+    return;
+  }
+  if (own != bar) {
+    acc_wrapped_window(st.events, sizeof(acc_event_t), st.count, st.length, own, st.swing_unit, origin, t0, t1, acc_play_event);
     return;
   }
   for (uint8_t e = 0; e < st.count; e++) {
@@ -5854,8 +5971,14 @@ static void acc_section_window(double t0, double t1) {
 
 // Everything that falls from t0 up to t1
 void acc_window(double t0, double t1) {
-  // beats first, so a chord coming in on the beat does before the beat's notes
-  for (int64_t b = (int64_t)ceil(t0 / ACC_BEAT); b * ACC_BEAT < t1; b++) acc_beat(b);
+  // beats first, so a chord coming in on the beat does before the beat's notes: on the eighths the
+  // bar's beats begin on (METER), bars counted from the start
+  uint8_t eighths = acc_bar_eighths();
+  uint32_t beats = acc_bar_beats();
+  for (int64_t k = (int64_t)ceil(t0 / (ACC_BEAT / 2)); k * (ACC_BEAT / 2) < t1; k++) {
+    uint8_t e = k % eighths;
+    if (beats >> e & 1) acc_beat(e == 0);
+  }
   // cut where a section begins or ends inside the window, and move on at a fill's bar line
   double s = t0;
   while (s < t1) {
@@ -5900,7 +6023,7 @@ static void midi_clock_window(double t0, double t1) {
     midi_clock_stop();
     return;
   }
-  uint16_t bar = ACC_BEAT * acc_styles[acc_style_index()].beats_per_bar;
+  uint16_t bar = (uint16_t)acc_bar_ticks();
   for (int64_t t = (int64_t)ceil(t0); t < t1; t++) {
     if (!midi_clock_started && t % bar == 0) {
       midi_clock_started = midi_clock_out & 3;
@@ -6086,6 +6209,17 @@ FLASHMEM void acc_settings_changed() {
   stop_chord_voices(0xF & ~acc_held_mask());
 }
 
+// The time signature changed: the parts go on from the bar line just passed, counted in the new bars
+// as the beats are, so a part's bar starts where the bar does
+FLASHMEM void acc_meter_changed() {
+  if (!rythm_mode) return;
+  noInterrupts();
+  double bar = acc_bar_ticks();
+  if (acc_origin <= acc_pos) acc_origin = floor(acc_pos / bar) * bar;
+  interrupts();
+  acc_settings_changed();
+}
+
 // MIDI Start: the pattern begins on the next clock, as MIDI has it
 FLASHMEM void acc_midi_start() {
   noInterrupts();
@@ -6131,7 +6265,7 @@ FLASHMEM void acc_midi_clock() {
 // The looper's count-in, in rhythm mode: the time of the first bar line at least at_least ms off
 FLASHMEM uint32_t acc_bar_ms_after(uint32_t at_least) {
   double ticks_per_ms = rythm_bpm * ACC_BEAT / 60000.0;
-  double bar = ACC_BEAT * acc_styles[acc_style_index()].beats_per_bar;
+  double bar = acc_bar_ticks();
   noInterrupts();
   double now_pos = acc_pos;
   uint32_t now = millis();
@@ -6140,7 +6274,7 @@ FLASHMEM uint32_t acc_bar_ms_after(uint32_t at_least) {
   return now + (uint32_t)lround((target - now_pos) / ticks_per_ms);
 }
 
-uint8_t acc_beats_per_bar() { return acc_styles[acc_style_index()].beats_per_bar; }
+float acc_beats_per_bar() { return acc_bar_eighths() / 2.0f; }
 
 // from the loop: a clock gone quiet without a Stop (the computer's player closed, the cable out)
 FLASHMEM void rythm_clock_watch() {
@@ -6265,7 +6399,7 @@ FLASHMEM static double chord_memory_pos() {
   }
   return p;
 }
-FLASHMEM static double chord_memory_bar() { return ACC_BEAT * acc_styles[acc_style_index()].beats_per_bar; }
+FLASHMEM static double chord_memory_bar() { return acc_bar_ticks(); }
 
 // the bank's colour back once it neither records nor plays (step_led_animation shows those)
 FLASHMEM static void chord_memory_show() {
