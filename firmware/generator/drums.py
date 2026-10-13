@@ -9,8 +9,17 @@ burst of noise and square-wave metal through a filter, each with its own decay (
 plays a recorded stroke, sample='na' (one of drum_samples.py's STROKES, built into drum_samples.h by it);
 follow=1 retunes a stroke recorded at a known pitch to the key, as a tabla's dayan is.
 
+For glitch's blips and clicks (the cliqhop kit) a voice can also take: wave=1 a square body, wave=2 an FM
+body (fm_ratio, fm_index in radians, dying in fm_ms); source=1 a one-sample click for the burst (high
+passed a click, band passed with a high filter_q a ping), source=2 dust (clicks at random, dust a
+second); ring=1 the body rung by a square at metal_hz; scatter=n each hit's pitch times one of the first
+n of 1, 2, 1.5, 3, 4, 0.5, 6, 8; stutter=n the voice struck again n times, every stutter_blocks audio
+blocks (2.9 ms), its pitch times stutter_ratio and velocity times stutter_fade each time; decimate=n its
+samples held n times; follow=2 the chord's root, in the octave nearest tone_hz (a ping's filter moves too).
+
 A groove is written as a grid, a line a voice, a character a step, bars separated by |:
     . rest   g a whisper   o a ghost   x a hit   X an accent   r a roll: two hits in the step
+    2-6 a ratchet: that many hits in the step (as many as divide it: a sixteenth's 24ths are 6)
 steps is how many to the beat: 4 sixteenths, 3 triplets (shuffle, swing, 12/8), 2 eighths. The voices:
     K kick  S snare  R rim (claves, ka)  C clap  H hat (triangle)  O open hat  Y cymbal (crash, ride)
     T low tom  U high tom  L low conga (bayan)  M high conga (bongo, dayan)  B bell  Z shaker
@@ -53,7 +62,9 @@ BOLS = {
 def V(**kw):
     v = dict(tone_hz=0, tone_bend=1.0, bend_ms=10, tone_ms=100, tone_level=1.0, noise_level=0, metal_level=0,
              metal_hz=540, metal_ratio=1.4815, metal_count=2, filter=1, filter_hz=2000, filter_q=0.7, noise_ms=50,
-             retrigs=0, retrig_ms=10, level=0.8, pan=0.0, choke=0, follow=0, sample=-1)
+             retrigs=0, retrig_ms=10, level=0.8, pan=0.0, choke=0, follow=0, sample=-1,
+             wave=0, fm_ratio=1.0, fm_index=0, fm_ms=50, source=0, dust=0, ring=0, scatter=0,
+             stutter=0, stutter_blocks=4, stutter_ratio=1.0, stutter_fade=1.0, decimate=1)
     v.update(kw)
     return v
 
@@ -165,6 +176,43 @@ KITS = [
     kit('glitch', bits=6, hold=4, drive=1.5, KICK=dict(tone_hz=50, tone_bend=2.5, tone_ms=300),
         SNARE=dict(tone_hz=300, noise_ms=90), HAT=dict(metal_hz=205.3, noise_ms=20), OPEN=dict(metal_hz=205.3, noise_ms=150),
         CLAP=dict(retrigs=5, retrig_ms=6), CYMBAL=dict(noise_ms=700)),
+    # Glitch's clicks and cuts, done clean: blips, bleeps, pings and crackle, the sounds of SuperCollider
+    # and Pure Data patches rather than of a drum. The pitched ones follow the chord (follow=2: its root,
+    # in their own octave) and scatter among its root and fifth, so they bleep in tune
+    kit('cliqhop', drive=1.2,
+        # a tight sine thud, a click on top
+        KICK=dict(tone_hz=48, tone_bend=6.0, bend_ms=3, tone_ms=170, noise_level=0.5, source=1, filter=2, filter_hz=4000,
+                  noise_ms=3, level=1.0),
+        # a digital snap: an FM chirp, crushed, and a hiss
+        SNARE=dict(wave=2, tone_hz=330, tone_bend=1.5, bend_ms=8, fm_ratio=2.71, fm_index=7, fm_ms=18, tone_ms=60, tone_level=0.6,
+                   noise_level=0.8, filter=2, filter_hz=3500, noise_ms=55, decimate=3, level=0.75),
+        # the click itself: one sample, high passed
+        RIM=dict(tone_hz=0, source=1, noise_level=0.9, filter=2, filter_hz=6000, filter_q=0.7, noise_ms=2, level=0.7, pan=0.15),
+        # a zipper: a short burst struck six times, fading
+        CLAP=dict(noise_level=1.0, filter=1, filter_hz=2400, filter_q=2.0, noise_ms=10, retrigs=0, stutter=5, stutter_blocks=3,
+                  stutter_fade=0.82, level=1.0, pan=-0.1),
+        # a tick: a click rung high
+        HAT=dict(noise_level=0.35, metal_level=0, source=1, filter=1, filter_hz=9500, filter_q=8, noise_ms=30, level=0.5, pan=0.3),
+        # an arpeggio: a square blip struck again a fifth up, and again
+        OPEN=dict(wave=1, tone_hz=880, tone_ms=30, tone_level=0.4, noise_level=0, metal_level=0, stutter=3, stutter_blocks=4,
+                  stutter_ratio=1.5, stutter_fade=0.8, follow=2, choke=0, level=0.45, pan=0.35),
+        # a crackle that settles, over an FM bell
+        CYMBAL=dict(wave=2, tone_hz=1046, fm_ratio=3.5, fm_index=3, fm_ms=600, tone_ms=1600, tone_level=0.35, noise_level=0.9,
+                    metal_level=0, source=2, dust=3000, filter=2, filter_hz=2500, noise_ms=1100, follow=2, level=0.5, pan=-0.3),
+        # a rising bloop and a falling bip
+        TOM_LO=dict(tone_hz=220, tone_bend=0.5, bend_ms=25, tone_ms=160, noise_level=0, follow=2, level=0.7, pan=-0.25),
+        TOM_HI=dict(wave=1, tone_hz=660, tone_bend=1.5, bend_ms=6, tone_ms=55, tone_level=0.4, noise_level=0, follow=2, decimate=2,
+                    level=0.6, pan=0.25),
+        # pings: a click ringing a high q filter at the chord's root, or its fifth or octave
+        CONGA_LO=dict(tone_hz=523, tone_level=0, noise_level=0.6, source=1, filter=1, filter_hz=523, filter_q=160, noise_ms=900,
+                      follow=2, scatter=3, level=0.55, pan=-0.35),
+        CONGA_HI=dict(tone_hz=1046, tone_level=0, noise_level=0.5, source=1, filter=1, filter_hz=1046, filter_q=220, noise_ms=700,
+                      follow=2, scatter=5, level=0.45, pan=0.35),
+        # the bleep: an FM blip, somewhere among the chord's harmonics each time
+        BELL=dict(wave=2, tone_hz=1046, fm_ratio=1.0, fm_index=3, fm_ms=25, tone_ms=80, tone_level=0.6, metal_level=0, noise_level=0,
+                  follow=2, scatter=5, level=0.45, pan=0.2),
+        # dust: a moment's crackle
+        SHAKER=dict(noise_level=0.7, source=2, dust=5000, filter=1, filter_hz=5000, filter_q=1.0, noise_ms=45, level=0.4, pan=-0.2)),
 ]
 KIT_INDEX = {k['name']: i for i, k in enumerate(KITS)}
 
@@ -239,6 +287,13 @@ def fill_family(family, n):
         for i in range(n):
             put('S', i, v[i])
         put('K', n - 1, 110)
+    elif family == 'stutter':   # a glitch: the snare ratchets faster to the bar line, blips climbing
+        for i in range(n):
+            d = 1 if i < n // 2 else 2 if i < n - 2 else 3
+            for j in range(d):
+                put('S', i + j / d, v[i])
+            put('U', i + 0.5, 50 + 8 * i)
+        put('K', n - 1, 110)
     else:
         raise ValueError(family)
     return f
@@ -306,6 +361,18 @@ G('saidi', 'tabla and doumbek', fill='doumbek', K='x.....x.x.......', S='..x....
 G('kehrwa', 'tabla and doumbek', steps=2, fill='tabla', bols='DHA ge na ti   na ka dhi na')
 G('dadra', 'tabla and doumbek', beats=3, steps=2, swing=0, fill='tabla', bols='DHA dhi na   dha tu na')
 G('teental', 'tabla and doumbek', fill='tabla', bols='DHA dhin dhin dha  dha dhin dhin dha  dha tin tin ta  ta dhin dhin dha')
+# Glitch: clicks and cuts, cliqhop, IDM (on the cliqhop kit: K thud, S snap, R click, C zipper, H tick,
+# O arpeggio, Y crackle, T bloop, U bip, L M pings, B bleep, Z dust)
+G('cliqhop', 'cliqhop', swing=6, fill='stutter',
+  K='x.....x...x.....|x.....x..x..x...', S='........X.......|........X.....3.', R='..x...x..x.x..x.|.x..x...x..x...x',
+  H='x.xxx.x.x.xxx.x.|x.xxx.x.x.xx3.x.', B='...o.....o....o.|.o.....o...o....', L='o...............|........o.......')
+G('clicks and cuts', 'cliqhop', fill='stutter', K='x...x...x...x...', C='....x.......x...', R='..x...x...x...x.',
+  H='.xx..x.x.xx..xx.', L='x.....x.....x...', Z='.......o.......o', O='..........x.....')
+G('idm', 'cliqhop', fill='stutter',
+  K='x..x....x.x...x.|x....x.x..x....x', S='....x..3....x...|..x.....X...3.x.', H='xxx.xx.xxx.x6.xx|x.xx3.xxx.xxx.x6',
+  U='.....o.....o....|...o.......o..o.', B='..o.......o.....|......o.......o.', Z='o.......o.......|o.......o.......')
+G('microsound', 'cliqhop', fill='stutter', K='x...........o...', R='......x.....x..x', H='.x.x.x...x.x.x..', L='x.......x.....o.',
+  M='....o.......o...', Z='...o.......o....', Y='x...............')
 
 # Each accompaniment style's own drum part (rhythm style 274, its 0 to 14), a groove above by name
 STYLE_PARTS = ['rock', 'pop eighths', 'waltz', 'country two-beat', 'jazz swing', 'shuffle', 'folk', 'pop eighths',
@@ -329,6 +396,10 @@ def events_of(lines, beats, steps):
                     continue
                 if c == 'r':
                     out += [(at, LETTER[letter], 84), (at + unit // 2, LETTER[letter], 84)]
+                elif c in '23456':   # a ratchet: that many hits in the step
+                    d = int(c)
+                    assert unit % d == 0, f'{letter}: {d} hits in a step of {unit} 24ths fall between them'
+                    out += [(at + j * unit // d, LETTER[letter], 84) for j in range(d)]
                 else:
                     out.append((at, LETTER[letter], VELOCITY[c]))
     return sorted(out), bars
@@ -379,11 +450,14 @@ def c_kit(k):
     for name in VOICES:
         v = k['voices'][name]
         f = lambda x: ('%.6g' % x) + ('' if any(c in '%.6g' % x for c in '.e') else '.0') + 'f'
-        vs.append('    {%s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %s, %s, %s, %d, %s, %s, %s, %d, %d, %d},   // %s' % (
+        vs.append('    {%s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %s, %s, %s, %d, %s, %s, %s, %d, %d, %d, '
+                  '%d, %s, %s, %s, %d, %s, %d, %d, %d, %d, %s, %s, %d},   // %s' % (
             f(v['tone_hz']), f(v['tone_bend']), f(v['bend_ms']), f(v['tone_ms']), f(v['tone_level']), f(v['noise_level']),
             f(v['metal_level']), f(v['metal_hz']), f(v['metal_ratio']), v['metal_count'], v['filter'], f(v['filter_hz']),
             f(v['filter_q']), f(v['noise_ms']), v['retrigs'], f(v['retrig_ms']), f(v['level']), f(v['pan']), v['choke'],
-            v['follow'], v['sample'], name.lower() + (' (%s)' % STROKES[v['sample']][0] if v['sample'] >= 0 else '')))
+            v['follow'], v['sample'],
+            v['wave'], f(v['fm_ratio']), f(v['fm_index']), f(v['fm_ms']), v['source'], f(v['dust']), v['ring'], v['scatter'],
+            v['stutter'], v['stutter_blocks'], f(v['stutter_ratio']), f(v['stutter_fade']), v['decimate'], name.lower() + (' (%s)' % STROKES[v['sample']][0] if v['sample'] >= 0 else '')))
     return '  {"%s", %d, %d, %.3ff, {\n%s\n  }},' % (k['name'], k['bits'], k['hold'], k['drive'], '\n'.join(vs))
 
 def main():

@@ -10,11 +10,24 @@
 // A voice can instead play a recorded stroke (drum_samples.h, from generator/drum_samples.py): the
 // tabla's, which no sine and noise can be. A stroke choked fades in a few milliseconds rather than
 // stopping dead, as a hand laid on a skin does.
+// For the blips and clicks of glitch (the cliqhop kit) a voice can also: make its body a square or
+// an FM pair (a sine bent by another sine at fm_ratio times it, the bending dying away: a bleep, a
+// ping, a bell), ring its body with the metal's first square, strike its filter with a single click
+// (high passed: a click; band passed, with a high q: a ping that rings at the filter's pitch) or with
+// dust (clicks at random), pick each hit's pitch at random among harmonics, stutter (the whole voice
+// struck again every few audio blocks, its pitch stepping), and hold its own samples (a lower rate).
+// None of it is on unless a kit asks, so the other kits sound as they did.
 #ifndef DRUM_MACHINE_H
 #define DRUM_MACHINE_H
 #include <Arduino.h>
 #include <AudioStream.h>
 #include "tanpura.h"
+// what runs once a hit or a kit (not once a sample) is kept in flash, out of the fast RAM the audio needs
+#if defined(__arm__)
+#define DRUM_COLD __attribute__((section(".flashmem.drum_machine"), noinline))   // its own section: these are inline, as members
+#else
+#define DRUM_COLD
+#endif
 
 #define DRUM_VOICES 13
 enum { DRUM_KICK, DRUM_SNARE, DRUM_RIM, DRUM_CLAP, DRUM_HAT, DRUM_OPEN, DRUM_CYMBAL, DRUM_TOM_LO, DRUM_TOM_HI,
@@ -31,8 +44,19 @@ struct drum_voice_t {
   float level, pan;                                         // pan -1 left to 1 right
   uint8_t choke;                                            // a voice struck cuts off the others in its group (not 0)
   uint8_t follow;                                           // 1: the body takes the pitch the hit gives (an 808 bass),
-                                                            // or a recorded stroke is retuned to it (a dayan)
+                                                            // or a recorded stroke is retuned to it (a dayan);
+                                                            // 2: the pitch the hit gives, in the octave nearest its own
   int8_t sample;                                            // a recorded stroke in drum_samples to play, or -1
+  uint8_t wave;                                             // the body: 0 sine, 1 square, 2 FM
+  float fm_ratio, fm_index, fm_ms;                          // FM: the bending sine at fm_ratio times the body, as deep as
+                                                            // fm_index (radians), dying away in fm_ms
+  uint8_t source;                                           // the burst: 0 noise, 1 a click at each strike, 2 dust
+  float dust;                                               // dust: clicks a second
+  uint8_t ring;                                             // 1: the body rung by the metal's first square
+  uint8_t scatter;                                          // each hit's pitch times one of the first this many SCATTER
+  uint8_t stutter, stutter_blocks;                          // struck again this many times, every this many blocks (2.9 ms),
+  float stutter_ratio, stutter_fade;                        // ... its pitch and velocity times these each time
+  uint8_t decimate;                                         // this voice's samples held this many times (0 or 1 clean)
 };
 
 struct drum_sample_t {
@@ -66,7 +90,7 @@ class AudioDrumMachine : public AudioStream {
 public:
   AudioDrumMachine() : AudioStream(0, NULL) {}
 
-  void setKit(const drum_kit_t *k) {
+  DRUM_COLD void setKit(const drum_kit_t *k) {
     const float fs = AUDIO_SAMPLE_RATE_EXACT;
     __disable_irq();
     kit = k;
@@ -98,6 +122,18 @@ public:
       s.sample = p.sample >= 0 ? &drum_samples[p.sample] : nullptr;
       s.sample_base_inc = s.sample ? s.sample->rate / fs : 0;
       s.sample_amp = 0;
+      s.wave = p.wave;
+      s.ring = p.ring && p.metal_hz > 0;
+      s.ring_inc = p.metal_hz / fs;
+      s.fm_ratio = p.fm_ratio;
+      s.fm_depth = p.fm_index / 6.2831853f;   // radians to the phase's turns
+      s.fm_decay = decay(p.fm_ms, fs);
+      s.source = p.source;
+      s.dust_threshold = (uint32_t)fminf(p.dust / fs * 4294967296.0f, 4294967295.0f);
+      // a click's height, so the filter it strikes answers about as loud as noise through it would
+      s.click_gain = p.filter == 1 ? 1.0f / fmaxf(g * s.k, 1e-4f) : p.filter == 0 ? 1.0f / fmaxf(g, 1e-4f) : 1.0f;
+      s.decimate = p.decimate > 1 ? p.decimate : 1;
+      s.stutter_left = 0;
       s.active = false;
     }
     choke_damp = expf(-1.0f / (0.004f * fs));   // a choked stroke: a 4 ms fall, -60 dB in about 28 ms
@@ -138,6 +174,16 @@ public:
       start(pending[q]);
       pending[q--] = pending[--waiting];
     }
+    // stutters due: the voice struck again, its pitch stepped
+    for (uint8_t i = 0; i < DRUM_VOICES; i++) {
+      voice_t &s = voice[i];
+      if (!s.active || !s.stutter_left || ++s.stutter_count < kit->v[i].stutter_blocks) continue;
+      s.stutter_count = 0;
+      s.stutter_left--;
+      s.stutter_hz *= kit->v[i].stutter_ratio;
+      s.stutter_vel *= kit->v[i].stutter_fade;
+      strike(i, s.stutter_vel, s.stutter_hz);
+    }
     bool any = false;
     for (uint8_t i = 0; i < DRUM_VOICES; i++) any |= voice[i].active;
     if (!any && !drone.active()) return;
@@ -153,7 +199,7 @@ public:
       if (!s.active) continue;
       for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) x[n] = 0;
       // the body, a block at a time, while it's above -60 dB
-      if (s.tone_amp > SILENT) {
+      if (s.tone_amp > SILENT && s.wave == 0 && !s.ring) {
         float phase = s.phase, amp = s.tone_amp, bend = s.bend;
         const float base = s.tone_hz * inv_fs, span = s.bend_span * base, td = s.tone_decay, bd = s.bend_decay;
         for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) {
@@ -167,18 +213,59 @@ public:
           amp *= td;
         }
         s.phase = phase; s.tone_amp = amp; s.bend = bend;
+      } else if (s.tone_amp > SILENT) {
+        // a square, an FM pair, rung or not: the blips
+        float phase = s.phase, amp = s.tone_amp, bend = s.bend, mphase = s.fm_phase, depth = s.fm_now, rphase = s.ring_phase;
+        const float base = s.tone_hz * inv_fs, span = s.bend_span * base, td = s.tone_decay, bd = s.bend_decay;
+        const float mr = s.fm_ratio, fd = s.fm_decay, ri = s.ring_inc;
+        const uint8_t wave = s.wave, ring = s.ring;
+        for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) {
+          float inc = base + span * bend;
+          phase += inc;
+          bend *= bd;
+          phase -= (int32_t)phase;
+          float y;
+          if (wave == 1) {
+            y = phase < 0.5f ? 1.0f : -1.0f;
+          } else if (wave == 2) {
+            mphase += inc * mr;
+            mphase -= (int32_t)mphase;
+            float p = phase + depth * sine(mphase);
+            p -= floorf(p);
+            y = sine(p);
+            depth *= fd;
+          } else {
+            y = sine(phase);
+          }
+          if (ring) {
+            rphase += ri;
+            if (rphase >= 1.0f) rphase -= 1.0f;
+            if (rphase >= 0.5f) y = -y;
+          }
+          x[n] = y * amp;
+          amp *= td;
+        }
+        s.phase = phase; s.tone_amp = amp; s.bend = bend; s.fm_phase = mphase; s.fm_now = depth; s.ring_phase = rphase;
       }
       // the burst: noise and metal through the filter, a clap's strikes again
       if (s.noise_amp > SILENT || s.retrigs) {
         float amp = s.noise_amp, ic1 = s.ic1, ic2 = s.ic2;
         const float a1 = s.a1, a2 = s.a2, a3 = s.a3, k = s.k, nd = s.noise_decay;
         const float nl = s.noise_level * (1.0f / 2147483648.0f), ml = s.metal_level / s.metal_count;
-        const uint8_t mc = s.metal_level > 0 ? s.metal_count : 0, type = s.filter;
+        const uint8_t mc = s.metal_level > 0 ? s.metal_count : 0, type = s.filter, src = s.source;
+        const float cl = s.noise_level * s.click_gain;
         uint32_t r = noise;
         for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) {
-          if (s.retrigs && ++s.retrig_count >= s.retrig_samples) { s.retrig_count = 0; s.retrigs--; amp = s.noise_start; }
+          if (s.retrigs && ++s.retrig_count >= s.retrig_samples) { s.retrig_count = 0; s.retrigs--; amp = s.noise_start; s.click = true; }
           float burst = 0;
-          if (nl != 0) { r ^= r << 13; r ^= r >> 17; r ^= r << 5; burst = (int32_t)r * nl; }
+          if (src == 0) {
+            if (nl != 0) { r ^= r << 13; r ^= r >> 17; r ^= r << 5; burst = (int32_t)r * nl; }
+          } else if (src == 1) {
+            if (s.click) { burst = cl; s.click = false; }
+          } else {
+            r ^= r << 13; r ^= r >> 17; r ^= r << 5;
+            if (r < s.dust_threshold) burst = (r & 1) ? cl : -cl;
+          }
           if (mc) {
             float m = 0;
             for (uint8_t j = 0; j < mc; j++) {
@@ -218,9 +305,16 @@ public:
         s.sample_amp = amp * 32768.0f;
         if (s.sample_amp <= SILENT) s.sample_amp = 0;
       }
+      if (s.decimate > 1) {
+        for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) {
+          if (s.hold_count == 0) s.held = x[n];
+          x[n] = s.held;
+          if (++s.hold_count >= s.decimate) s.hold_count = 0;
+        }
+      }
       const float left = s.left, right = s.right;
       for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) { out_l[n] += x[n] * left; out_r[n] += x[n] * right; }
-      if (s.tone_amp <= SILENT && s.noise_amp <= SILENT && !s.retrigs && s.sample_amp <= 0) s.active = false;
+      if (s.tone_amp <= SILENT && s.noise_amp <= SILENT && !s.retrigs && s.sample_amp <= 0 && !s.stutter_left) s.active = false;
     }
     // the drone, clean, after the kit's grit
     float drone_l[AUDIO_BLOCK_SAMPLES] = {0}, drone_r[AUDIO_BLOCK_SAMPLES] = {0};
@@ -269,28 +363,41 @@ private:
     float sample_pos, sample_base_inc, sample_inc, sample_amp;
     bool sample_choked;
     uint32_t retrig_count, retrig_samples;
+    uint8_t wave, ring, source, decimate, hold_count, stutter_left, stutter_count;
+    bool click;
+    float fm_phase, fm_ratio, fm_depth, fm_decay, fm_now, ring_phase, ring_inc, click_gain, held, stutter_hz, stutter_vel;
+    uint32_t dust_threshold;
   };
+  static float sine(float phase) {   // phase 0 to 1, from the table, between its points
+    float idx = phase * 256.0f;
+    int32_t i0 = (int32_t)idx;
+    float a = AudioWaveformSine[i0], b = AudioWaveformSine[i0 + 1];
+    return (a + (b - a) * (idx - i0)) * (1.0f / 32767.0f);
+  }
+  // the pitches a scattered hit picks among: the octave, the fifth above, the twelfth, two octaves, the
+  // octave below, ... all of them the chord's root or fifth when the voice follows it
+  static constexpr float SCATTER[8] = {1.0f, 2.0f, 1.5f, 3.0f, 4.0f, 0.5f, 6.0f, 8.0f};
   static float decay(float ms, float fs) { return expf(-6.9078f / fmaxf(ms * fs / 1000.0f, 1.0f)); }   // to -60 dB in ms
 
-  void start(const hit_t &h) {
+  DRUM_COLD void start(const hit_t &h) {
     const drum_voice_t &p = kit->v[h.voice];
     voice_t &s = voice[h.voice];
     if (p.choke) {
       for (uint8_t i = 0; i < DRUM_VOICES; i++) {
-        if (i != h.voice && kit->v[i].choke == p.choke && voice[i].active) { voice[i].noise_amp *= 0.05f; voice[i].tone_amp *= 0.05f; voice[i].sample_choked = true; }
+        if (i != h.voice && kit->v[i].choke == p.choke && voice[i].active) { voice[i].noise_amp *= 0.05f; voice[i].tone_amp *= 0.05f; voice[i].sample_choked = true; voice[i].stutter_left = 0; }
       }
     }
     float vel = constrain(h.velocity, 0.0f, 1.0f);
-    s.tone_hz = (p.follow && h.pitch > 0) ? h.pitch : p.tone_hz;
-    s.tone_amp = p.tone_hz > 0 ? p.tone_level * vel : 0;
-    s.bend = 1.0f;
-    s.phase = 0;   // from the sine's zero crossing: no click
-    s.noise_start = s.noise_amp = (p.noise_level > 0 || p.metal_level > 0) ? vel : 0;
-    s.retrigs = p.retrigs;
-    s.retrig_count = 0;
-    s.ic1 = s.ic2 = 0;
-    s.sample_pos = 0;
-    s.sample_amp = s.sample ? vel : 0;
+    float hz = (p.follow == 1 && h.pitch > 0) ? h.pitch : p.tone_hz;
+    if (p.follow == 2 && h.pitch > 0 && hz > 0) {   // the hit's pitch in the octave nearest the voice's own
+      hz = h.pitch;
+      while (hz > p.tone_hz * 1.4142f) hz *= 0.5f;
+      while (hz < p.tone_hz * 0.7071f) hz *= 2.0f;
+    }
+    if (p.scatter) {
+      noise ^= noise << 13; noise ^= noise >> 17; noise ^= noise << 5;
+      hz *= SCATTER[noise % (p.scatter < 8 ? p.scatter : 8)];
+    }
     // a stroke that follows, at the pitch the hit gives, in whichever octave is nearest its own
     float ratio = 1.0f;
     if (s.sample && p.follow && h.pitch > 0 && s.sample->pitch_hz > 0) {
@@ -299,6 +406,42 @@ private:
       while (ratio < 0.7071f) ratio *= 2.0f;
     }
     s.sample_inc = s.sample_base_inc * ratio;
+    s.stutter_left = p.stutter;
+    s.stutter_count = 0;
+    s.stutter_hz = hz;
+    s.stutter_vel = vel;
+    strike(h.voice, vel, hz);
+  }
+
+  DRUM_COLD static void tune_filter(voice_t &s, float hz) {
+    const float fs = AUDIO_SAMPLE_RATE_EXACT;
+    float g = tanf(3.14159265f * fminf(hz, fs * 0.45f) / fs);
+    s.a1 = 1.0f / (1.0f + g * (g + s.k));
+    s.a2 = g * s.a1;
+    s.a3 = g * s.a2;
+    s.click_gain = 1.0f / fmaxf(g * s.k, 1e-4f);
+  }
+
+  // the voice sounded from the top: at the start of a hit, and at each of its stutters
+  DRUM_COLD void strike(uint8_t v, float vel, float hz) {
+    const drum_voice_t &p = kit->v[v];
+    voice_t &s = voice[v];
+    s.tone_hz = hz;
+    s.tone_amp = p.tone_hz > 0 ? p.tone_level * vel : 0;
+    s.bend = 1.0f;
+    s.phase = 0;   // from the sine's zero crossing: no click
+    s.fm_phase = 0;
+    s.fm_now = s.fm_depth;
+    s.ring_phase = 0;
+    s.noise_start = s.noise_amp = (p.noise_level > 0 || p.metal_level > 0) ? vel : 0;
+    s.click = true;
+    // a ping that follows: the filter it rings moves with the pitch
+    if (p.source && p.filter == 1 && p.tone_hz > 0) tune_filter(s, p.filter_hz * hz / p.tone_hz);
+    s.retrigs = p.retrigs;
+    s.retrig_count = 0;
+    s.ic1 = s.ic2 = 0;
+    s.sample_pos = 0;
+    s.sample_amp = s.sample ? vel : 0;
     s.sample_choked = false;
     s.active = s.tone_amp > 0 || s.noise_amp > 0 || s.sample_amp > 0;
   }

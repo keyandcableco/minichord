@@ -21,6 +21,7 @@ static void wav(const std::string &path, const std::vector<int16_t> &lr) {
   fwrite(lr.data(), 2, lr.size(), f); fclose(f);
 }
 struct Hit { double at; uint8_t v, vel; };
+static double bar_seconds = 2.5;
 static float dayan_hz = 261.63f;   // a minichord in C: the dayan at Sa, C4 (see dayan_tuning in main.cpp)
 static std::vector<int16_t> run(AudioDrumMachine &dm, std::vector<Hit> hits, double seconds, int &peak, int &clips) {
   std::vector<int16_t> lr;
@@ -32,6 +33,10 @@ static std::vector<int16_t> run(AudioDrumMachine &dm, std::vector<Hit> hits, dou
     while (h < hits.size() && hits[h].at < t + 128 / AUDIO_SAMPLE_RATE_EXACT) {
       const drum_voice_t &dv = dm.currentKit()->v[hits[h].v];
       float pitch = dv.follow && dv.sample >= 0 ? dayan_hz : 45.0f;   // the dayan in the key, an 808's bass at 45 Hz
+      if (dv.follow == 2) {   // blips on a chord's root: C, A minor, F, G a bar each (as main.cpp gives it, C1 to B1)
+        static const float roots[4] = {32.70f, 55.0f, 43.65f, 49.0f};
+        pitch = roots[(int)(hits[h].at / bar_seconds) % 4];
+      }
       dm.hit(hits[h].v, hits[h].vel / 127.0f, pitch, (uint32_t)((hits[h].at - t) * AUDIO_SAMPLE_RATE_EXACT));
       h++;
     }
@@ -51,8 +56,10 @@ int main() {
   if (getenv("DAYAN_HZ")) dayan_hz = atof(getenv("DAYAN_HZ"));   // another key than C
   for (int g = 0; g < drum_groove_count; g++) {
     const drum_groove_t &gr = drum_grooves[g];
-    AudioDrumMachine dm; dm.setKit(&drum_kits[gr.kit]); dm.level(0.7f);
+    int use_kit = getenv("KIT") ? atoi(getenv("KIT")) - 1 : gr.kit;
+    AudioDrumMachine dm; dm.setKit(&drum_kits[use_kit]); dm.level(0.7f);
     double bpm = 96, tick = 60.0 / bpm / 24, bar = gr.beats_per_bar * 24 * tick;
+    bar_seconds = bar;
     std::vector<Hit> hits;
     int bars_main = 4;
     for (double start = 0; start < bars_main * bar - 1e-9; start += gr.length * tick)
@@ -66,12 +73,14 @@ int main() {
     wav(fn, lr);
     printf("%-22s kit %-18s peak %5.1f dB  clipped %d\n", gr.name, drum_kits[gr.kit].name, 20 * log10(peak / 32767.0 + 1e-9), clips);
   }
+  bar_seconds = 1e9;
   for (int k = 0; k < drum_kit_count; k++) {
     AudioDrumMachine dm; dm.setKit(&drum_kits[k]); dm.level(0.7f);
     std::vector<Hit> hits;
-    for (int v = 0; v < DRUM_VOICES; v++) hits.push_back({v * 0.45, (uint8_t)v, 110});
+    double gap = getenv("KIT_GAP") ? atof(getenv("KIT_GAP")) : 0.45;
+    for (int v = 0; v < DRUM_VOICES; v++) hits.push_back({v * gap, (uint8_t)v, 110});
     int peak, clips;
-    auto lr = run(dm, hits, DRUM_VOICES * 0.45 + 1.5, peak, clips);
+    auto lr = run(dm, hits, DRUM_VOICES * gap + 1.5, peak, clips);
     std::string name = drum_kits[k].name; for (auto &c : name) if (c == ' ') c = '-';
     char fn[128]; snprintf(fn, sizeof fn, "kits/%02d-%s.wav", k + 1, name.c_str());
     wav(fn, lr);
