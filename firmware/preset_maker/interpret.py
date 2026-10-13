@@ -2984,6 +2984,8 @@ CONFLICTS = [
      "note": "brothers takes over from the cantus under the standard chords; the cantus still steers the augmented, the alternate layout's chords and notes outside the scale"},
     {"about": [390, 36, 98], "when": [[390, "==", 1], [98, "==", 0], [36, "not in", [8, 9]]],
      "note": "brothers' brother chords come from notes between the chord's own: harp mode 8 or 9 plays them, other harp modes only some or none"},
+    {"about": [390, 21], "when": [[390, "==", 1], [21, "==", 0]],
+     "note": "with retrigger chords off brothers slides the voices to each new block: a sound that decays isn't struck again"},
     {"about": [394, 390], "when": [[394, "in", [2, 3]], [390, "==", 0]],
      "note": "brothers again re-voices brothers' block: with brothers off it isn't heard"},
     {"about": [38, 390], "when": [[38, ">", 0], [390, "==", 1]],
