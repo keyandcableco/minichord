@@ -108,7 +108,7 @@ void ToneOrgan::render(float *out, int n) {
     return;
   }
   const int16_t *t = table[which];
-  const float g = table_gain * (1.0f / 32768);
+  const float g = table_gain;   // the table's int16 straight to 0.2 RMS (build_tables)
   const int shift = 32 - TABLE_BITS;
   const uint32_t pm = perc_mode == 1 ? 4 : 6;           // the 4' or the 2 2/3', in 16' turns
   const float pl = perc_level * (1.0f / 32000), pd = perc_decay, cd = click_decay, ck = click_k;
