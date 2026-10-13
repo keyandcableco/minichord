@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=80; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15)
+int version_ID=81; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -610,6 +610,13 @@ int16_t cantus_pc = -1;
 // ms of quiet on the harp before a pluck counts as a new gesture. Only the first
 // string of a strum moves the cantus; the rest of the strum is accompaniment.
 const uint16_t cantus_strum_gap = 80;
+// Brothers (390): under the Barry Harris chords the harp's note chooses the
+// chord, its own or its brother, as a block with that note on top. 0 off,
+// 1 close position. See apply_brothers().
+uint8_t brothers_mode = 0;
+// The harp note that last chose the block, in steps of the live division, or
+// -1 when the harp is not choosing the chord.
+int16_t brothers_note = -1;
 // The chord slot the harp and rhythm mode's extra voices replace while slashed.
 // Slash level itself when slash voice is off; otherwise the slot of whichever
 // tone the chosen voice gave up, so they follow the chord as it sounds.
@@ -1736,6 +1743,8 @@ bool apply_voice_leading(bool sharp, uint8_t *out);
 bool apply_slash_voice_leading(uint8_t *out);
 void apply_slash_voice(bool sharp);
 void apply_cantus();
+bool apply_brothers();
+void build_chord_notes();
 void cantus_follow(uint8_t string);
 void refresh_chord_voicing();
 void set_chord_voice_frequency(uint8_t i, int16_t current_note);
@@ -4560,6 +4569,9 @@ static bool cantus_is_chord_tone() {
   return false;
 }
 
+// Brothers' place for a note, defined with the chord scales below.
+static uint8_t brothers_role(int16_t pc, uint8_t *degree = nullptr);
+
 /* Cantus: the harp sets one chord voice, the way a slash does from the chord
  * buttons. The cantus voice (address 115) names which: 1 bass, 2 tenor, 3 alto,
  * 4 soprano counted from the bottom, or 5 for whichever voice can reach the
@@ -4629,12 +4641,26 @@ void cantus_follow(uint8_t string) {
   static elapsedMillis since_pluck = cantus_strum_gap;   // the first pluck after power-up is a new gesture too
   const bool new_gesture = since_pluck >= cantus_strum_gap;
   since_pluck = 0;
-  if (cantus_voice == 0 || !new_gesture) return;
+  if ((cantus_voice == 0 && brothers_mode == 0) || !new_gesture) return;
   if (current_line < 0 && !continuous_chord) return;   // no chord to steer
-  cantus_pc = current_harp_notes[string] % EDO;
+  const int16_t pc = current_harp_notes[string] % EDO;
+  // Brothers takes the notes of the sixth diminished scale, the cantus the rest.
+  const bool block_was = brothers_note >= 0;
+  bool rebuild = false;
+  if (brothers_mode && brothers_role(pc)) {
+    brothers_note = current_harp_notes[string];
+    cantus_pc = -1;
+  } else if (cantus_voice) {
+    brothers_note = -1;
+    cantus_pc = pc;
+    rebuild = block_was;   // the cantus steers the chord, not the block that was
+  } else {
+    return;   // outside the scale with no cantus: the block holds
+  }
   uint8_t before[4];
   for (uint8_t i = 0; i < 4; i++) before[i] = current_chord_notes[i];
-  apply_cantus();
+  if (rebuild) build_chord_notes();   // applies the cantus too
+  else if (!apply_brothers()) apply_cantus();
   for (uint8_t i = 0; i < 4; i++) {
     previous_voicing[i] = current_chord_notes[i];
     if (current_chord_notes[i] == before[i]) continue;
@@ -4925,6 +4951,81 @@ uint8_t get_chord_scale_index(ChordType chord_type, bool use_pentatonic) {
     default:                 return use_pentatonic ? 0 : 10;
   }
 }
+
+/* Brothers: under the Barry Harris chords, the harp's note chooses the chord.
+ * The sixth diminished scale alternates the chord's own tones with the tones
+ * of its brother: C6 is C E G A, and the scale's other four, D F G# B, are B°7.
+ * A chord tone gives the chord and a tone between gives the brother, each as a
+ * close block of four with the harp's note on top, so a walk up the scale walks
+ * the whole block with it, every voice a step: C6, B°7 over D, C6 over E, and
+ * so on, the way Barry Harris harmonised a line. C minor 6 has the same brother,
+ * and a diminished chord's brother is a sixth: C°7's is G6, D E G B.
+ *
+ * It is the cantus's opposite. The cantus moves one voice and keeps the chord,
+ * so a note outside it is a passing tone sung against the rest; here there are
+ * no passing tones, since every note of the scale has a chord of its own.
+ *
+ * Only under the major sixth, minor sixth and diminished seventh, unslashed,
+ * and only for notes of their eight-note scale (harp mode 8 or 9 plays exactly
+ * those). Anything else is left to the cantus if it is on, and otherwise the
+ * block holds. The block's top is the harp's note itself, moved by whole
+ * octaves so the harp's middle string lands around the top of the chord as the
+ * buttons alone would voice it: a walk up the harp climbs the block with it,
+ * with no drop back at the octave, and the same string always gives the same
+ * block, wherever the hand came from. */
+
+// Where the note sits in the held chord's sixth diminished scale: 1 a tone of
+// the chord, 2 a tone of its brother, 0 neither, or not a Barry Harris chord.
+// The chord's tones are the scale's even degrees in every division.
+static uint8_t brothers_role(int16_t pc, uint8_t *degree) {
+  if (pc < 0 || chord_context_slashed) return 0;
+  ChordType type = get_chord_type(current_chord);
+  if (type != CHORD_MAJ_SIXTH && type != CHORD_MIN_SIXTH && type != CHORD_FULL_DIM) return 0;
+  uint8_t index = get_chord_scale_index(type, false);
+  if (chord_scale_lengths[index] != 8) return 0;
+  int16_t rel = ((pc - sounding_root()) % EDO + EDO) % EDO;
+  for (uint8_t d = 0; d < 8; d++) {
+    if (chord_scale_intervals[index][d] == rel) {
+      if (degree) *degree = d;
+      return (d & 1) ? 2 : 1;
+    }
+  }
+  return 0;
+}
+
+// Voices the block for brothers_note, if Brothers has one: true when it did, and
+// the four chord voices hold it.
+bool apply_brothers() {
+  if (!brothers_mode) return false;
+  uint8_t degree = 0;
+  if (brothers_note < 0 || brothers_role(brothers_note % EDO, &degree) == 0) return false;
+  const uint8_t index = get_chord_scale_index(get_chord_type(current_chord), false);
+  const int16_t root = sounding_root();
+  int16_t ref = 0;   // the top of the plain chord
+  for (uint8_t i = 0; i < 4; i++) {
+    int16_t n = calculate_note_chord(i, false, chord_context_sharp);
+    if (n > ref) ref = n;
+  }
+  int16_t block[4];
+  const int16_t lo = ref - EDO / 2 + 1;
+  const int16_t mid = current_harp_notes[6];
+  block[3] = brothers_note + (lo + ((mid - lo) % EDO + EDO) % EDO) - mid;   // whole octaves from the harp
+  // Down the scale in thirds of it, every other degree: the rest of the block.
+  for (uint8_t k = 1; k < 4; k++) {
+    int16_t pc = root + chord_scale_intervals[index][(degree + 8 - 2 * k) % 8];
+    int16_t above = block[4 - k];
+    block[3 - k] = above - (((above - pc) % EDO + EDO) % EDO);
+  }
+  while (block[0] < 0) for (uint8_t i = 0; i < 4; i++) block[i] += EDO;
+  while (block[3] > chord_note_ceiling) for (uint8_t i = 0; i < 4; i++) block[i] -= EDO;
+  // Each voice keeps its place from the bottom, so a step of the block is a
+  // step of every voice, not voices trading notes.
+  uint8_t order[4];
+  voices_bottom_up(order);
+  for (uint8_t i = 0; i < 4; i++) current_chord_notes[order[i]] = (uint8_t)block[i];
+  return true;
+}
+
 
 // Modes 1-7: a fixed scale rooted on the key signature, ignoring the chord.
 uint8_t calculate_static_scale_note(uint8_t string, uint8_t mode, uint8_t key) {
@@ -8348,7 +8449,7 @@ void build_chord_notes() {
     }
   }
   if (by_voice) apply_slash_voice(chord_context_sharp);
-  apply_cantus();
+  if (!apply_brothers()) apply_cantus();
   for (int i = 4; i < 7; i++) {
     current_chord_notes[i] = calculate_note_chord(i, chord_context_slashed, chord_context_sharp);
   }
@@ -8408,6 +8509,8 @@ void update_chord_notes() {
     // A chord change keeps the cantus when the new chord has its note, the way
     // a singer holds a common tone, and lets it go otherwise.
     if (cantus_pc >= 0 && !cantus_is_chord_tone()) cantus_pc = -1;
+    // Brothers keeps the top note the same way, when the new chord has it.
+    if (brothers_note >= 0 && brothers_role(brothers_note % EDO) != 1) brothers_note = -1;
     build_chord_notes();
     chord_memory_record_chord();
     Serial.println("Updating frequencies");
@@ -8450,6 +8553,7 @@ void update_harp_notes() {
 
 void stop_chord_notes() {
   cantus_pc = -1;   // the chord is over, and the harp's hold on it with it
+  brothers_note = -1;
   stop_chord_voices(0xF);
 }
 

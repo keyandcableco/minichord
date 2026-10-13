@@ -797,6 +797,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 115:
         cantus_voice=value; if (!cantus_voice) cantus_pc=-1; refresh_chord_voicing();
         break;
+      case 390:
+        brothers_mode=value; if (!brothers_mode) brothers_note=-1; refresh_chord_voicing();
+        break;
       case 265:
         set_chord_source(value);
         break;
@@ -1512,6 +1515,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 113: lo=0; hi=4; return true;
       case 114: lo=0; hi=1; return true;
       case 115: lo=0; hi=5; return true;
+      case 390: lo=0; hi=1; return true;
       case 265: lo=0; hi=15; return true;
       case 387: lo=0; hi=100; return true;
       case 270: lo=0; hi=16; return true;
