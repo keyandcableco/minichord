@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=86; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393)
+int version_ID=87; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -617,6 +617,13 @@ uint8_t brothers_mode = 0;
 // The harp note that last chose the block, in steps of the live division, or
 // -1 when the harp is not choosing the chord.
 int16_t brothers_note = -1;
+// Brothers again (394): the same harp note struck again re-voices the block
+// under it, the way the held chord pressed again (324) climbs the chord. 0 off,
+// 1 climbs close, drop 2, drop 3, drop 2 and 4 and round again, 2 climbs and
+// comes back down, 3 close and drop 2 in turn. See brothers_again_step().
+uint8_t brothers_again = 1;
+uint8_t brothers_drop = 0;      // 0 close, 1 drop 2, 2 drop 3, 3 drop 2 and 4
+int8_t brothers_drop_dir = 1;   // which way pattern 2 is going
 // The chord slot the harp and rhythm mode's extra voices replace while slashed.
 // Slash level itself when slash voice is off; otherwise the slot of whichever
 // tone the chosen voice gave up, so they follow the chord as it sounds.
@@ -4577,6 +4584,7 @@ static bool cantus_is_chord_tone() {
 
 // Brothers' place for a note, defined with the chord scales below.
 static uint8_t brothers_role(int16_t pc, uint8_t *degree = nullptr);
+static void brothers_again_step();
 
 /* Cantus: the harp sets one chord voice, the way a slash does from the chord
  * buttons. The cantus voice (address 115) names which: 1 bass, 2 tenor, 3 alto,
@@ -4654,6 +4662,7 @@ void cantus_follow(uint8_t string) {
   const bool block_was = brothers_note >= 0;
   bool rebuild = false;
   if (brothers_mode && brothers_role(pc)) {
+    if (current_harp_notes[string] == brothers_note) brothers_again_step();
     brothers_note = current_harp_notes[string];
     cantus_pc = -1;
   } else if (cantus_voice) {
@@ -5058,6 +5067,21 @@ static uint8_t brothers_role(int16_t pc, uint8_t *degree) {
   return 0;
 }
 
+// The same note again: the next voicing in brothers again's pattern. The
+// voicing then holds for every note after it, so a line can be walked in
+// drop 2, until the chord ends or the same note is struck again.
+static void brothers_again_step() {
+  switch (brothers_again) {
+    case 1: brothers_drop = (brothers_drop + 1) % 4; break;
+    case 2:
+      if (brothers_drop >= 3) brothers_drop_dir = -1;
+      else if (brothers_drop == 0) brothers_drop_dir = 1;
+      brothers_drop += brothers_drop_dir;
+      break;
+    case 3: brothers_drop = brothers_drop ? 0 : 1; break;
+  }
+}
+
 // Voices the block for brothers_note, if Brothers has one: true when it did, and
 // the four chord voices hold it.
 bool apply_brothers() {
@@ -5081,6 +5105,14 @@ bool apply_brothers() {
     int16_t pc = root + scale[(degree + 8 - 2 * k) % 8];
     int16_t above = block[4 - k];
     block[3 - k] = above - (((above - pc) % EDO + EDO) % EDO);
+  }
+  // The drops keep the harp's note on top and open the block beneath it: a
+  // voice below it taken down an octave, as a pianist or a big band voices a line
+  int16_t b0 = block[0], b1 = block[1], b2 = block[2];
+  switch (brothers_drop) {
+    case 1: block[0] = b2 - EDO; block[1] = b0; block[2] = b1; break;              // drop 2
+    case 2: block[0] = b1 - EDO; block[1] = b0; block[2] = b2; break;              // drop 3
+    case 3: block[0] = b0 - EDO; block[1] = b2 - EDO; block[2] = b1; break;        // drop 2 and 4
   }
   while (block[0] < 0) for (uint8_t i = 0; i < 4; i++) block[i] += EDO;
   while (block[3] > chord_note_ceiling) for (uint8_t i = 0; i < 4; i++) block[i] -= EDO;
@@ -8754,6 +8786,8 @@ void update_harp_notes() {
 void stop_chord_notes() {
   cantus_pc = -1;   // the chord is over, and the harp's hold on it with it
   brothers_note = -1;
+  brothers_drop = 0;   // and the next starts close again
+  brothers_drop_dir = 1;
   stop_chord_voices(0xF);
 }
 

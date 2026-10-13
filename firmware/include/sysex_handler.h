@@ -798,7 +798,10 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         cantus_voice=value; if (!cantus_voice) cantus_pc=-1; refresh_chord_voicing();
         break;
       case 390:
-        brothers_mode=value; if (!brothers_mode) brothers_note=-1; refresh_chord_voicing(); for (int i=0;i<12;i++){ current_harp_notes[i]=harp_string_note(i,chord_context_slashed,chord_context_sharp); }
+        brothers_mode=value; if (!brothers_mode) { brothers_note=-1; brothers_drop=0; brothers_drop_dir=1; } refresh_chord_voicing(); for (int i=0;i<12;i++){ current_harp_notes[i]=harp_string_note(i,chord_context_slashed,chord_context_sharp); }
+        break;
+      case 394:
+        brothers_again=value; if (!brothers_again) { brothers_drop=0; brothers_drop_dir=1; } refresh_chord_voicing();
         break;
       case 265:
         set_chord_source(value);
@@ -1519,6 +1522,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 114: lo=0; hi=1; return true;
       case 115: lo=0; hi=5; return true;
       case 390: lo=0; hi=1; return true;
+      case 394: lo=0; hi=3; return true;
       case 265: lo=0; hi=15; return true;
       case 387: lo=0; hi=100; return true;
       case 270: lo=0; hi=16; return true;

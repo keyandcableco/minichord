@@ -18,6 +18,7 @@ import interpret
 SENTENCES = [
     # brothers (2026-10-12): Barry Harris's brother chords led by the harp
     "barry harris brothers on the harp", "brother chords with a vibraphone harp", "jazz chords, double tap toggles brothers",
+    "brothers again", "brother chords, the same note again re-voices", "drop 2 with brothers",
     # the folk, synth and ambient sets' instruments (2026-10-12): the scoop, the generator scale, chord shuffling
     "synth brass with the kick stabbing the chords", "orwell nine with lots of reverb", "berlin school at 110 bpm",
     "singing bowls", "a pedal steel on the harp and a honky tonk piano on the chords", "a washboard band",
