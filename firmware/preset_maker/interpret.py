@@ -71,6 +71,7 @@ ROLES = {
     "phone_strum": {"global": 333}, "drums": {"global": 334}, "drum_groove": {"global": 335}, "drum_groove_b": {"global": 336},
     "drum_kit": {"global": 337}, "drum_level": {"global": 338}, "drum_humanize": {"global": 339}, "drum_midi": {"global": 340},
     "count_in": {"global": 341}, "drums_only": {"global": 342}, "harp_drums": {"global": 343},
+    "time_signature": {"global": 393},
     "loop_quantize": {"global": 283}, "loop_countin": {"global": 284}, "loop_click": {"global": 285},
     "click_level": {"global": 286}, "chord_memory": {"global": 287}, "looper_pc": {"global": 256},
     "loop_length": {"global": 288},
@@ -1355,6 +1356,26 @@ for words, label, value, tempo in (
     add(words, "setting", label, home="global",
         moves=(EXACT("tabla_laya", value),) + ((EXACT("tempo", tempo), EXACT("drums", 1), IFZERO("drum_groove", 43)) if tempo else ()),
         off=(EXACT("tabla_laya", 0),), note=TABLA_NOTE)
+# ---- firmware 86: the time signature (393): the bar rhythm mode counts, every style and groove wrapped to it ----
+METER_NOTE = ("rhythm mode's bar: the style, the drums, fills, the count-in, chord memory and the looper count it, "
+              "and a style or groove in another metre wraps to it. Needs firmware 86")
+for words, label, value in (
+        ("two four, 2 4, 2 4 time, two four time, cut time, alla breve, in two", "2/4 time", 2),
+        ("four four, 4 4, 4 4 time, four four time, common time", "4/4 time", 4),
+        ("five four, 5 4, 5 4 time, five four time, quintuple time, in five", "5/4 time", 5),
+        ("six four, 6 4, 6 4 time, six four time", "6/4 time", 6),
+        ("seven four, 7 4, 7 4 time, seven four time, in seven", "7/4 time", 7),
+        ("five eight, 5 8, 5 8 time, five eight time", "5/8 time, 2+3", 13),
+        ("seven eight, 7 8, 7 8 time, seven eight time, rachenitsa, 2 2 3", "7/8 time, 2+2+3", 15),
+        ("lesnoto, 3 2 2, seven eight 3 2 2", "7/8 time, 3+2+2", 16),
+        ("nine eight, 9 8, 9 8 time, nine eight time, aksak, karsilama, 2 2 2 3", "9/8 time, 2+2+2+3", 17),
+        ("eleven eight, 11 8, 11 8 time, eleven eight time, kopanitsa", "11/8 time, 2+2+3+2+2", 18),
+        ("eight eight, 8 8, 3 3 2, three three two", "8/8 time, 3+3+2", 19)):
+    add(words, "setting", label, home="global", moves=(EXACT("time_signature", value),),
+        off=(EXACT("time_signature", 0),), note=METER_NOTE)
+add("the style's own time, the style's own metre, the style's own meter, no time signature", "setting",
+    "the style's own metre", home="global", moves=(EXACT("time_signature", 0),), note=METER_NOTE)
+
 REVERB_SEND_NOTE = "into the reverb the harp and the chords share (reverb size sets its room); as loud dry as before. " + FW69_NOTE
 add("drum reverb, reverb on the drums, drums in the reverb, wet drums, roomy drums, drums in the room, ambient drums, "
     "drums with reverb, reverb drums, reverberant drums", "setting", "the drums in the reverb", home="global",
@@ -1521,6 +1542,7 @@ TARGETS = {
                  "leslie fast and slow, fast leslie",
     "speed_ramp": "speed ramp, ramp",
     "tabla_laya": "laya, tabla laya, dugun",
+    "time_signature": "time signature, metre, meter, the metre, the meter, time",
     "drum_reverb": "drum reverb, drums reverb, reverb on the drums",
     "drone_reverb": "drone reverb, tanpura reverb, reverb on the drone, reverb on the tanpura",
     "hammer_time": "hammer-on time, hammer on time",
@@ -1627,7 +1649,8 @@ ON_OFF = {"ribbon": 245, "ribbon mode": 245, "harp ribbon": 245, "mpe": 110, "mp
           "kick note": 313, "rhythm intro": 317, "rhythm ending": 318, "palm break": 319,
           "double tap hold": 321, "tap and hold": 321, "revert and panic": 322, "panic button": 322,
           "melodic direction": 351, "mts output": 371, "mts": 371, "tanpura": 372, "koto press": 289,
-          "tabla laya": 377, "drum reverb": 378, "drone reverb": 379, "speed ramp": 380}
+          "tabla laya": 377, "drum reverb": 378, "drone reverb": 379, "speed ramp": 380,
+          "time signature": 393}
 ON_VALUE = {213: 5, 266: 3, 313: 36, 372: 1, 289: 2, 377: 1, 378: 50, 379: 50, 380: 20}
 # What has to be on for a control's setting to be heard
 PREPARE = {"delay_mix": DELAY_READY, "delay_time": (MIN("delay_mix", 0.3), IFZERO("delay_filter", 3000),
@@ -2895,6 +2918,8 @@ CONFLICTS = [
      "note": "hammer-on time shapes hammer-on, which is off (0)"},
     {"about": [377], "when": [[377, ">", 0], [335, "not in", [41, 42, 43]]],
      "note": "tabla laya only moves the tabla's thekas (drum grooves 41-43: kehrwa, dadra, teental), and no theka is chosen"},
+    {"about": [393], "when": [[393, ">", 0], [377, ">", 0], [335, "in", [41, 42, 43]]],
+     "note": "time signature leaves the tabla's theka alone: stretched by tabla laya it keeps its own cycle"},
     {"about": [378], "when": [[378, ">", 0], [334, "==", 0], [343, "==", 0]],
      "note": "drum reverb with no drums: neither drums nor harp drums is on"},
     {"about": [379], "when": [[379, ">", 0], [372, "==", 0]],

@@ -106,6 +106,8 @@ SENTENCES = [
     "bagpipe drone with grace notes", "trills on the harp", "grace notes, hammer on time 40", "slow hammer ons",
     "vilambit teental with a tanpura and reverb on the tanpura", "drut teental", "a bol a beat",
     "vilambit teental, dugun on the double tap", "wet drums boom bap", "the mod knob sets the drum reverb",
+    "rock groove in 7/8", "aksak with drums", "a waltz in five four", "kopanitsa", "lesnoto with travis picking",
+    "the style's own metre",
     "harp drums with reverb on the drums", "dry drums, dry tanpura", "turn on tabla laya and speed ramp",
     "a tanpura with open jawari", "more buzz on the tanpura", "closed jawari", "the mod knob is the jawari",
     "double tap opens the jawari",
