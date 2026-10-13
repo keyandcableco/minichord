@@ -16,6 +16,12 @@ import preset_maker as pm
 import interpret
 
 SENTENCES = [
+    # the Acoustic Piano set (2026-10-13): each bank's instrument and the hand's gesture
+    "a concert grand, hover is the sustain pedal", "a sonata, hover makes it legato", "a chopin nocturne",
+    "satie with lots of reverb", "ragtime, hover swings it", "boogie woogie piano, hover drops the chords an octave",
+    "barry harris, the mod knob controls brothers again, double tap toggles brothers", "jazz waltz, hover opens the voicing",
+    "gospel piano", "philip glass, hover moves the time signature", "felt piano, double tap starts the looper",
+    "lofi piano", "jazz chords with a vibraphone harp", "hover lowers the chords an octave",
     # brothers (2026-10-12): Barry Harris's brother chords led by the harp
     "barry harris brothers on the harp", "brother chords with a vibraphone harp", "jazz chords, double tap toggles brothers",
     "brothers again", "brother chords, the same note again re-voices", "drop 2 with brothers",

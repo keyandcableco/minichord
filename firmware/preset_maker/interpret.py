@@ -677,7 +677,117 @@ add("synth strings, string synth, strings synth", "sound", "synth strings", home
 add("orchestra hit, orchestra hits, orch hit, orchestral hit", "sound", "orchestra hit", home="chord", hue=10, moves={
     "chord": (EXACT("voice", 4),) + env(1, 300, 0.0, 300) + (EXACT("cutoff", 4000), SET("crunch", 0.1), SET("reverb", 0.4)),
     "harp": (EXACT("voice", 4),) + env(1, 300, 0.0, 300) + (EXACT("cutoff", 4000),)})
-RHYTHM_NOTE = "rhythm patterns play in rhythm mode, which is turned on at the instrument"
+# The Acoustic Piano bank set (minicontrol presets/piano, 2026-10-13): the sampled piano in each music it belongs
+# to, the left hand on the chord buttons (voice-led, a changed chord struck again), the right hand on the harp in
+# each chord's scale, louder as it's struck harder. Each note says what the hand over the plate did in the bank.
+def piano_left(decay, sustain, release, cutoff, *more):
+    return (EXACT("voice", 1),) + env(1, decay, sustain, release) + (
+        EXACT("cutoff", cutoff), EXACT("string_model", 0), EXACT("retrigger", 1), EXACT("voice_leading", 1)) + more
+
+
+def piano_right(decay, sustain, release, cutoff, touch=80, *more):
+    return (EXACT("voice", 1),) + env(1, decay, sustain, release) + (
+        EXACT("cutoff", cutoff), EXACT("string_model", 0), EXACT("scale", 8), EXACT("chromatic", 0),
+        EXACT("touch", touch), EXACT("strum", 30), EXACT("lift", 0)) + more
+
+
+PIANO_SET = "the Acoustic Piano set's bank"
+add("concert grand, concert grand piano, concert piano, steinway, bosendorfer, recital piano, classical piano",
+    "sound", "concert grand", hue=0,
+    moves={"chord": piano_left(4000, 0.6, 400, 2800),
+           "harp": piano_right(4000, 0.6, 500, 2000)},
+    note=f"concert grand: both hands of the sampled piano, the harp louder as it's struck harder; say hover is the "
+         f"sustain pedal and the mod knob opens the filter for the lid; {PIANO_SET} 1")
+add("sonata, sonatas, sonatina, sonata facile, classical sonata, mozart sonata, haydn", "sound", "classical sonata",
+    hue=30,
+    moves={"chord": piano_left(2500, 0.6, 350, 2400, EXACT("rhythm_style", 1), EXACT("tempo", 120),
+                               EXACT("rhythm_artic", 70), EXACT("rhythm_accents", 40)),
+           "harp": piano_right(2500, 0.6, 500, 2000)},
+    note=f"sonata: rhythm mode plays an Alberti bass, detached, under a melody on the harp; say hover makes it "
+         f"legato and the mod knob the tempo; {PIANO_SET} 2")
+add("nocturne, nocturnes, chopin, chopin nocturne, romantic piano", "sound", "nocturne", hue=60,
+    moves={"chord": piano_left(4500, 0.5, 600, 2400, EXACT("rhythm_style", 13), EXACT("tempo", 63),
+                               EXACT("rhythm_artic", 130), EXACT("rhythm_accents", 40), SET("reverb", 0.35)),
+           "harp": piano_right(4000, 0.6, 700, 2000, 80, SET("reverb", 0.35))},
+    note=f"nocturne: the left hand's wide arpeggio in six (rhythm mode), the melody on the harp; in the bank hover "
+         f"holds the tempo back (rubato) and the double tap turns on hammer-ons for trills; {PIANO_SET} 3")
+add("satie, erik satie, satie waltz", "sound", "Gymnopedie", hue=90,
+    moves={"chord": piano_left(4500, 0.5, 700, 2200, EXACT("layout", 1), EXACT("alt_maj", 4), EXACT("alt_min", 5),
+                               EXACT("rhythm_style", 2), EXACT("tempo", 72), EXACT("rhythm_artic", 110),
+                               EXACT("rhythm_accents", 30), SET("reverb", 0.4)),
+           "harp": piano_right(4500, 0.6, 800, 2000, 80, SET("reverb", 0.4))},
+    note=f"Gymnopedie: Satie's slow waltz in rhythm mode, every major chord a major seventh and every minor a minor "
+         f"seventh (the alternate layout, so the sharp button rests); say hover grows the room size; {PIANO_SET} 4")
+add("ragtime, ragtime piano, stride, stride piano, harlem stride, scott joplin, joplin, maple leaf rag", "sound",
+    "ragtime to stride", hue=120,
+    moves={"chord": piano_left(2500, 0.6, 300, 3200, EXACT("ensemble", 10), EXACT("rhythm_style", 3),
+                               EXACT("tempo", 100), EXACT("rhythm_artic", 80), EXACT("rhythm_accents", 70)),
+           "harp": piano_right(2500, 0.6, 500, 2000, 80, EXACT("hammer_on", 1), EXACT("hammer_time", 60))},
+    note=f"ragtime: the boom-chick left hand straight, as Joplin wrote it, crushed grace notes on the harp "
+         f"(hammer-ons); say hover swings it for stride; {PIANO_SET} 5")
+add("boogie woogie piano, boogie-woogie piano, boogie piano, rent party, rent party piano", "sound",
+    "boogie-woogie piano", hue=150,
+    moves={"chord": piano_left(2200, 0.6, 250, 3200, EXACT("rhythm_style", 5), EXACT("tempo", 160),
+                               EXACT("swing", 1.25), EXACT("rhythm_artic", 85), EXACT("rhythm_accents", 80)),
+           "harp": piano_right(2200, 0.6, 500, 2000, 80, EXACT("hammer_on", 1), EXACT("hammer_time", 50))},
+    note=f"boogie-woogie: the piano alone, the left hand's eight to the bar in rhythm mode, the blues crush on the "
+         f"harp (hammer-ons); say hover drops the chords an octave, into the rumble; {PIANO_SET} 6")
+add("barry harris, barry harris piano, sixth diminished blocks, bebop piano, bebop blocks, block chords, locked hands",
+    "sound", "Barry Harris blocks", hue=270,
+    moves={"chord": piano_left(5000, 0.7, 400, 2600, EXACT("barry", 1), EXACT("brothers", 1),
+                               EXACT("brothers_again", 1), EXACT("spacing", 0), EXACT("rhythm_style", 4),
+                               EXACT("rhythm_chords", 1), EXACT("tempo", 132), EXACT("swing", 1.3), EXACT("drums", 1),
+                               EXACT("drum_groove", 9), EXACT("drum_kit", 5), EXACT("drum_level", 31),
+                               EXACT("octave", 3), EXACT("chord_touch", 1)),
+           "harp": piano_right(4000, 0.6, 500, 2000, 70)},
+    note=f"Barry Harris: the major button a sixth, the minor a minor sixth, major + minor the diminished seventh; "
+         f"each harp note picks the block under it with the note on top, the sixth on its tones and the diminished "
+         f"brother between (brothers), struck afresh with retrigger chords on (firmware 88); the same string again "
+         f"opens it, drop 2, drop 3, drop 2 and 4 (brothers again); each block as loud as the harp note that picked "
+         f"it (chords follow the harp's touch, firmware 89), an octave up; say the mod knob for brothers again and the "
+         f"double tap for brothers; a walking bass and brushes in rhythm mode; {PIANO_SET} 7")
+add("jazz waltz, bill evans, piano trio, jazz piano trio, jazz trio", "sound", "jazz waltz trio", hue=240,
+    moves={"chord": piano_left(4000, 0.6, 450, 2400, EXACT("voice1", 15), EXACT("note1", 0.73), EXACT("note2", 0.45),
+                               EXACT("note3", 0.45), EXACT("note4", 0.45), EXACT("rhythm_style", 2),
+                               EXACT("tempo", 150), EXACT("swing", 1.25), EXACT("drums", 1), EXACT("drum_groove", 10),
+                               EXACT("drum_kit", 5), EXACT("drum_level", 31)),
+           "harp": piano_right(3500, 0.6, 500, 2000)},
+    note=f"jazz waltz: the piano over the sampled upright bass (firmware 80), brushes in three; say hover opens the "
+         f"voicing, close to drop 2 and on; {PIANO_SET} 8")
+add("gospel piano, church piano, gospel ballad, sunday gospel", "sound", "gospel piano", hue=300,
+    moves={"chord": piano_left(4000, 0.6, 500, 3000, EXACT("press_again", 1), EXACT("rhythm_style", 13),
+                               EXACT("tempo", 58), EXACT("rhythm_artic", 110), EXACT("rhythm_accents", 70),
+                               EXACT("drums", 1), EXACT("drum_groove", 15), EXACT("drum_kit", 4),
+                               EXACT("drum_level", 16), SET("reverb", 0.35)),
+           "harp": piano_right(3500, 0.6, 500, 2000, 80, EXACT("hammer_on", 1), EXACT("hammer_time", 50))},
+    note=f"gospel: a slow twelve-eight, the held chord pressed again climbing its inversions, blues crush notes on the "
+         f"harp; in the bank the drums wait at 0 and come up to 16 as the hand comes over the plate (this groove "
+         f"is loud: a hover the describer sets takes them to 100); {PIANO_SET} 9")
+add("philip glass, glassworks, glass arpeggios, minimalist piano, minimal piano, minimalism", "sound",
+    "Glass arpeggios", hue=180,
+    moves={"chord": piano_left(3000, 0.6, 350, 2600, EXACT("rhythm_style", 10), EXACT("tempo", 132),
+                               EXACT("rhythm_accents", 30), EXACT("time_signature", 4)),
+           "harp": piano_right(3000, 0.6, 500, 2000, 60)},
+    note=f"Glass: the chord's arpeggio up and down in eighths, over and over; in the bank hover takes beats from the "
+         f"bar (4/4 to 2/4) and with the modifier adds them (to 7/4), the time signature (firmware 86): say hover "
+         f"moves the time signature; {PIANO_SET} 10")
+add("felt piano, felted piano, nils frahm, olafur arnalds, muffled piano, hushed piano", "sound", "felt piano",
+    hue=210,
+    moves={"chord": piano_left(4000, 0.5, 600, 900, EXACT("rhythm_style", 9), EXACT("tempo", 76),
+                               EXACT("rhythm_artic", 120), EXACT("rhythm_accents", 20)),
+           "harp": piano_right(3500, 0.6, 700, 700, 90) + DELAY_READY + (SET("delay_mix", 0.2),)},
+    note=f"felt piano: a strip of felt between hammers and strings, soft and woody, a quiet echo on the melody; say "
+         f"hover opens the filter to lift the felt, and the double tap starts the looper; {PIANO_SET} 11")
+add("tape piano, lofi piano, lo fi piano, lo-fi piano, cassette piano, piano on tape", "sound", "tape piano",
+    hue=330,
+    moves={"chord": piano_left(3500, 0.6, 500, 1800, EXACT("ensemble", 20), EXACT("crunch", 0.08),
+                               EXACT("crunch_type", 1), EXACT("rhythm_style", 11), EXACT("rhythm_chords", 1),
+                               EXACT("tempo", 80), EXACT("swing", 1.12), EXACT("drums", 1), EXACT("drum_groove", 24),
+                               EXACT("drum_kit", 6), EXACT("drum_level", 35)),
+           "harp": piano_right(3000, 0.6, 500, 1500, 60) + DELAY_READY + (SET("delay_mix", 0.15),)},
+    note=f"tape piano: the piano on a worn cassette, its wow the ensemble (a sampled voice takes no vibrato), a "
+         f"little saturated, over a lazy lo-fi beat; say hover adds chorus for the wow; {PIANO_SET} 12")
+RHYTHM_NOTE ="rhythm patterns play in rhythm mode, which is turned on at the instrument"
 # Written accompaniment parts that follow the held chord (firmware 42, rhythm style 274); 0 is the 16-step
 # pattern (220-235), which the two that have no style of their own still write
 RHYTHM_STYLE_WORDS = (
@@ -1199,7 +1309,7 @@ for words, label, value in (("pentatonic, major pentatonic", "pentatonic harp", 
     add(words, "setting", label, home="harp", moves={"harp": (EXACT("scale", value), EXACT("chromatic", 0))})
 add("chromatic, chromatic harp", "setting", "chromatic harp", home="harp", moves={"harp": (EXACT("chromatic", 1),)},
     off={"harp": (EXACT("chromatic", 0),)})
-add("jazz, jazzy, barry harris, sixth chords, 6th chords", "setting", "jazz chords (Barry Harris)", home="chord",
+add("jazz, jazzy, sixth chords, 6th chords, jazz chords", "setting", "jazz chords (Barry Harris)", home="chord",
     hue=280, moves={"chord": (EXACT("barry", 1), MIN("voice_leading", 1))}, off={"chord": (EXACT("barry", 0),)})
 add("voice leading, smooth voice leading, smooth chords, smooth chord changes", "setting", "voice leading",
     home="chord", moves={"chord": (EXACT("voice_leading", 1),)}, off={"chord": (EXACT("voice_leading", 0),)})
@@ -1495,7 +1605,7 @@ TARGETS = {
     "formant": "formant, formants, sing, singing, sings",
     "vocoder": "vocoder, robot, talk, talking",
     "attack": "attack, fade in",
-    "release": "release, tail, ring out",
+    "release": "release, tail, ring out, sustain pedal, the pedal, pedal, damper pedal, dampers, the dampers",
     "sustain": "sustain",
     "decay": "decay",
     "octave": "octave, octaves",
@@ -1504,6 +1614,9 @@ TARGETS = {
     "spread": "spread, stereo, width, panning",
     "ensemble": "ensemble, chorus, shimmer",
     "tempo": "tempo, bpm, speed",
+    "swing": "swing, swings, the swing, shuffle feel",
+    "rhythm_artic": "articulation, legato, the left hand's touch",
+    "spacing": "voicing, the voicing, opens the voicing, chord spacing, spacing",
     "level": "volume, level, loudness, mute, mutes, silence, silences, duck, ducks, ducking, pump, pumps, pumping, swell, the swell, swell pedal, expression pedal, organ swell",
     "lfo_amount": "wah, sweep, wobble, wub",
     "noise": "noise, breath, air",
@@ -1539,7 +1652,7 @@ TARGETS = {
     "tape_stop": "tape stop, tape stops, stops the tape, stop the tape",
     "grab": "grab, grabs, grabs the song, grab the song, samples the song, sample the song",
     "drum_kit": "drum kit, drum kits, kits",
-    "drum_level": "drum level, drums level, drum volume",
+    "drum_level": "drum level, drums level, drum volume, the band, band, brings in the band",
     "purity": "purity, pureness, how pure, just intonation amount",
     "drone_level": "drone level, tanpura level, drone volume, tanpura volume",
     "drone": "tanpura, shruti box",
@@ -1567,6 +1680,7 @@ SWEEP = {"trem_freq": (0.5, 8), "speed_ramp": (0, 40), "drum_reverb": (0, 100), 
          "trem_amount": (0, 0.8), "crunch": (0, 0.7), "glide": (0, 800), "vowel": (0, 100), "formant": (0, 100),
          "vocoder": (0, 100), "attack": (1, 2000), "release": (100, 4000), "sustain": (0, 1), "decay": (50, 3000),
          "spread": (0, 100), "ensemble": (0, 100), "tempo": (60, 180), "level": (0.2, 1.8),
+         "swing": (1.0, 1.5), "rhythm_artic": (40, 180),
          "lfo_amount": (0, 1), "noise": (0, 0.3), "string_model": (0, 100), "transpose": (0, 12), "touch": (0, 100)}
 # What a double tap or a hand over the plate takes each role to
 TAP = {"resonance": 4.0, "reverb": 0.9, "reverb_size": 1.0, "delay_mix": 0.45, "delay_time": 500, "vib_amount": 0.3,
@@ -1579,7 +1693,8 @@ TAP = {"resonance": 4.0, "reverb": 0.9, "reverb_size": 1.0, "delay_mix": 0.45, "
        "dj_filter": 40, "phone_echo": 100, "tape_stop": 1, "grab": 2, "drum_level": 100,
        "purity": 100, "drone_level": 100, "drone": 1, "maqam_jins": 1, "sharp_fn": 1,
        "trem_freq": 6.7, "speed_ramp": 20, "tabla_laya": 2, "drum_reverb": 60, "drone_reverb": 60, "hammer_time": 50,
-       "drone_jawari": 100, "reed_bark": 100}
+       "drone_jawari": 100, "reed_bark": 100, "swing": 1.4, "rhythm_artic": 160, "spacing": 3,
+       "time_signature": 2}
 # the double tap's actions, which take a step rather than toggle a value
 TAP_ACTIONS = {"looper", "looper_pc", "chord_memory", "rhythm_fill", "rhythm_break", "rhythm_ending", "revert", "panic",
                "tape_stop", "grab"}
@@ -2242,7 +2357,7 @@ class Interpreter:
         cur = self._get(a)
         down = {"dark", "darker", "close", "closes", "muffle", "muffles", "muffled", "down", "lower", "less", "off",
                 "mute", "mutes", "silence", "silences", "kill", "kills", "cut", "cuts", "duck", "ducks", "ducking",
-                "pump", "pumps", "pumping"} & set(words)
+                "pump", "pumps", "pumping", "drop", "drops", "lowers"} & set(words)
         if role == "cutoff":
             lo, hi = SWEEP["cutoff"]["harp" if a == 49 else "chord"]
             if down:
