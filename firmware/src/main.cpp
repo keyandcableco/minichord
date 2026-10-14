@@ -694,7 +694,7 @@ bool string_palmed[12] = {false, false, false, false, false, false, false, false
 // fretless wrap, which adds an island of the bottom zone above the top one:
 // twelve strings as the stock strip, and a thirteenth place for the ribbon.
 uint8_t harp_plate = 0;
-// The neighbour guard (address 416), for the piano plate (harp plate 5), see neighbour_guard_filter()
+// The neighbour guard (address 416), for the piano plate (harp plate 5), see neighbour_guard_pass()
 uint8_t neighbour_guard = 5;          // tenths: a key landing under this share of a touching neighbour stays silent; 0 off
 const uint8_t neighbour_guard_promote = 8;   // tenths: a silent key that grows to this share plays
 const uint16_t neighbour_guard_attack_ms = 30;   // how long after landing a silent key's own attack can let it off
@@ -8355,9 +8355,12 @@ FLASHMEM bool neighbour_guard_active() {
 // strays became 13 and 1 of 210 notes of deliberate seconds went missing, where the first try missed 7.
 // What strays are left are a finger's edge at over half the key meant, as strong as a lighter second
 // finger: telling those apart would take the plate's geometry, not a rule.
-// Takes a pad's transition (harp_array's read_transition: 2 landed, 1 lifted, 0 neither) and gives what
-// the harp does with it.
-FLASHMEM int neighbour_guard_filter(uint8_t i, int value, const int16_t (&strength)[12], uint32_t now) {
+// The guard decides in two passes over the keys, so that no key's decision hangs on the order they are
+// read in (upside down reads them the other way): first every landing and lift, then whether a shadow held
+// from before is let off, measured against the shadows as they stand after the landings.
+// Pass one takes a pad's transition (harp_array's read_transition: 2 landed, 1 lifted, 0 neither) and gives
+// what the harp does with it.
+FLASHMEM int neighbour_guard_land(uint8_t i, int value, const int16_t (&strength)[12], uint32_t now) {
   uint16_t neighbours = piano_neighbours[upside_down][i];
   if (value == 2) {
     int16_t strongest = 0;
@@ -8372,10 +8375,13 @@ FLASHMEM int neighbour_guard_filter(uint8_t i, int value, const int16_t (&streng
     return pad_shadow[i] ? 0 : 2;
   }
   if (!pad_shadow[i]) return value;
-  if (value == 1 || !harp_array[i].read_value()) {   // lifted unheard: it never sounded, so nothing to let go
-    pad_shadow[i] = false;
-    return 0;
-  }
+  if (value == 1 || !harp_array[i].read_value()) pad_shadow[i] = false;   // lifted unheard: nothing to let go
+  return 0;
+}
+
+// Pass two: whether shadow i, held since before this pass, is let off now (lands now)
+FLASHMEM bool neighbour_guard_let_off(uint8_t i, const int16_t (&strength)[12], uint32_t now) {
+  uint16_t neighbours = piano_neighbours[upside_down][i];
   int16_t strongest = 0, sounding = 0, grown = strength[i] - shadow_from[i][i];
   for (uint8_t j = 0; j < 12; j++) {
     if (!(neighbours >> j & 1) || !harp_array[j].read_value()) continue;
@@ -8387,16 +8393,35 @@ FLASHMEM int neighbour_guard_filter(uint8_t i, int value, const int16_t (&streng
   int16_t least = harp_touch_threshold ? harp_touch_threshold : 40;   // the chip's touch threshold, see harp::set_thresholds()
   bool attack = early && strongest && strength[i] * 2 >= strongest && grown > neighbour_guard_attack;
   bool caught_up = (early || !harp_drums) && sounding && strength[i] >= least && strength[i] * 10 >= sounding * neighbour_guard_promote;
-  if (attack || caught_up) {
-    pad_shadow[i] = false;
-    return 2;   // lands now
-  }
-  return 0;
+  return attack || caught_up;
 }
 
-// With the guard off (another plate, or 0) no key is held silent
-FLASHMEM void neighbour_guard_settle() {
-  for (uint8_t i = 0; i < 12; i++) pad_shadow[i] = false;
+// Every key's transition this pass, as the guard has it: pad_move[i] is what the harp does (2 lands, 1
+// lifts, 0 neither). A shadow let off lands now, for the palm, koto and hammer-on's timing too (landed).
+FLASHMEM void neighbour_guard_pass(uint8_t (&pad_move)[12], const int16_t (&strength)[12], uint32_t *landed, uint32_t now) {
+  bool held_shadow[12];
+  for (uint8_t i = 0; i < 12; i++) {
+    held_shadow[i] = pad_shadow[i];
+    uint8_t raw = harp_array[i].read_transition();
+    pad_move[i] = neighbour_guard_land(i, raw, strength, now);
+    if (raw == 1 && pad_move[i] != 1) string_palmed[i] = false;   // a shadow under a palm lifts unheard, and unpalmed
+    held_shadow[i] &= pad_shadow[i];
+  }
+  bool let_off[12];
+  for (uint8_t i = 0; i < 12; i++) let_off[i] = held_shadow[i] && neighbour_guard_let_off(i, strength, now);
+  for (uint8_t i = 0; i < 12; i++) {
+    if (!let_off[i]) continue;
+    pad_shadow[i] = false;
+    pad_move[i] = 2;
+    landed[i] = now;
+  }
+}
+
+// With the guard off on another plate, no key is held silent. Turned off on the piano plate itself (416 at 0)
+// with a shadow still held, the shadow's lift is still swallowed (handle_harp), or it would pluck on lift a
+// note that never sounded.
+FLASHMEM void neighbour_guard_settle(bool stock) {
+  for (uint8_t i = 0; i < 12; i++) if (!stock || !harp_array[i].read_value()) pad_shadow[i] = false;
 }
 
 void handle_harp() {
@@ -8451,7 +8476,7 @@ void handle_harp() {
   static int16_t pad_firmest[12] = {0};
   bool stock = !positions && !ribbon;
   bool guard = stock && neighbour_guard_active();
-  if (!guard) neighbour_guard_settle();
+  if (!guard) neighbour_guard_settle(stock);
   if (stock && (touch_velocity || touch_pressure || (koto_press && harp_pluck_on_lift) || harp_drums || guard)) {
     bool any = false;
     for (int i = 0; i < 12; i++) any |= harp_array[i].read_value() || harp_array[i].read_raw();
@@ -8463,14 +8488,7 @@ void handle_harp() {
   // The neighbour guard decides every landing first, so the palm counts only keys that sound; a key it
   // lets off later lands then, for the palm, koto and hammer-on's timing too.
   uint8_t pad_move[12];
-  if (guard) {
-    for (int i = 0; i < 12; i++) {
-      uint8_t raw = harp_array[i].read_transition();
-      pad_move[i] = neighbour_guard_filter(i, raw, pad_strength, now);
-      if (pad_move[i] == 2 && raw != 2) pad_landed[i] = now;
-      if (raw == 1 && pad_move[i] != 1) string_palmed[i] = false;   // a shadow under a palm lifts unheard, and unpalmed
-    }
-  }
+  if (guard) neighbour_guard_pass(pad_move, pad_strength, pad_landed, now);
   if (palm_mute_pads && !harp_drums) {   // pads hit together are a flam, not a palm
     static bool palm_down = false;
     static uint32_t palm_landed = 0;
@@ -8518,6 +8536,10 @@ void handle_harp() {
   }
   for (int i = 0; i < 12 && stock; i++) {
     int value = guard ? pad_move[i] : harp_array[i].read_transition();
+    if (!guard && pad_shadow[i]) {   // the guard turned off under a shadow: its lift stays unheard
+      if (value == 1) pad_shadow[i] = string_palmed[i] = false;
+      value = 0;
+    }
     if (harp_drums) {   // the strings are the kit's pads: a hit on the touch, nothing pitched
       string_palmed[i] = false;   // a palm from before the drums came on
       if (value == 2) drum_pad(i, pad_strength[i]);

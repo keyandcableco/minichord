@@ -18,7 +18,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 244, 1, 0, 2 }, // usb audio
     { 384, 1, 0, 1 }, // upside down
     { 243, 1, 0, 5 }, // harp plate
-    { 416, 1, 0, 9 }, // neighbour guard
+    { 416, 1, 0, 7 }, // neighbour guard
     { 241, 0, 0, 120 }, // harp touch threshold
     { 242, 0, 0, 119 }, // harp release threshold
     { 35, 1, 0, 20 }, // chord key signature
