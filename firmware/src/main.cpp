@@ -16,7 +16,7 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=90; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 90: the joystick plate, harp plate 4, 396-415)
+int version_ID=91; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 90: the joystick plate, harp plate 4, 396-415; 91: harp drums on the joystick plate: the strip's places and A, B and the click strike the kit)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1109,6 +1109,7 @@ bool harp_drums = false;          // 343: the harp's strings play the kit
 uint8_t tabla_laya = 0;           // 377: a theka's bols 0 as written, 1 one a beat, 2 two, 3 four
 volatile double drum_landed = -1; // a stretched theka's sam: the bar line its last fill landed on (-1 none)
 void drum_pad(uint8_t string, int16_t strength);
+void drum_hit(uint8_t voice, uint8_t velocity);
 void drum_strike(uint8_t v, uint8_t velocity, bool written = true, bool loose = true);
 float touch_firmness(float strength);
 void drums_set();
@@ -5984,13 +5985,19 @@ static void drum_section_window(double t0, double t1) {
   drum_groove_window(g, stretch, t0, t1);
 }
 
-// The harp's strings as the kit's first twelve voices, low string the kick, as firmly as touched;
-// the looper records the hit
+// The harp's strings as the kit's first twelve voices, low string the kick, as firmly as touched
+// (the joystick plate's places too, which are its strings)
 void drum_pad(uint8_t string, int16_t strength) {
   float firm = strength > 0 ? touch_firmness(strength) : 1.0f;
   uint8_t velocity = (uint8_t)lroundf(127 * (0.35f + 0.65f * firm));
-  drum_strike(string, velocity, false);
-  looper_capture(LOOP_DRUM, string, 0, 0, 0, velocity);
+  drum_hit(string, velocity);
+}
+
+// A hit from the player's hand, a pad or the joystick plate's buttons: played loose, as a hand
+// plays (the humanize), out over MIDI with drum MIDI out, and the looper records it
+void drum_hit(uint8_t voice, uint8_t velocity) {
+  drum_strike(voice, velocity, false);
+  looper_capture(LOOP_DRUM, voice, 0, 0, 0, velocity);
 }
 
 // From the loop: the kit the groove (or the setting) wants, and the MIDI notes to end
@@ -7677,10 +7684,18 @@ bool harp_ribbon_active() {
 }
 
 // The joystick plate's strip is always read as places, whatever the harp plays: its pads are only
-// half of them, and the other contacts are the stick's.
+// half of them, and the other contacts are the stick's. In harp drums its places are the pads.
 bool harp_positions_active() {
   if (harp_plate == 4) return true;
   return harp_plate == 1 && !harp_drums && !harp_ribbon_active() && (chromatic_harp_mode || scalar_harp_selection != 0);
+}
+
+// Harp drums on the joystick plate: the strip's twelve places are the kit's twelve pads, the bottom
+// place the kick, as the stock strip's are, and A, B and the click the kick, the snare and the
+// closed hat (handle_joystick). A place strikes as a finger lands on it, not as one slides across
+// it, and nothing pitched sounds from the strip.
+bool strip_drums() {
+  return harp_plate == 4 && harp_drums;
 }
 
 // Whether voice i has a finger on it: on a zipper plate or the ribbon a touch
@@ -7790,7 +7805,13 @@ uint8_t harp_position_voice(uint8_t p) {
 // on touch, landing on a position plucks it and leaving it lets it ring;
 // plucking on lift, landing on one stops it and leaving it plucks it, whether
 // the finger leaves by lifting or by moving on to the next.
+// In harp drums on the joystick plate a landing is a hit on place p's pad, as firmly as the touch
+// read while it settled, and a leaving is nothing: a drum has no string to let go of or pluck.
 void harp_position_land(uint8_t p) {
+  if (strip_drums()) {
+    drum_pad(p, pluck_strength < 0 ? 0 : (int16_t)lroundf(fminf(pluck_strength, 32767)));
+    return;
+  }
   uint8_t v = harp_position_voice(p);
   if (harp_pluck_on_lift) {
     damp_string(v);
@@ -7802,6 +7823,7 @@ void harp_position_land(uint8_t p) {
 }
 
 void harp_position_leave(uint8_t p) {
+  if (strip_drums()) return;
   uint8_t v = harp_position_voice(p);
   if (harp_pluck_on_lift) {
     pluck_strum = strum_softness(p);
@@ -7813,10 +7835,11 @@ void harp_position_leave(uint8_t p) {
 }
 
 // Leave all touches without sounding them and give each voice its own string
-// back, for a change of plate or of harp mode.
-void harp_positions_reset() {
+// back, for a change of plate or of harp mode. Touches that were drum hits
+// (sounded false) have no string to let go of.
+void harp_positions_reset(bool sounded) {
   for (uint8_t t = 0; t < harp_touch_max; t++) {
-    if (harp_touches[t].active && !harp_touches[t].palmed && !harp_touches[t].landing && !harp_pluck_on_lift) {
+    if (sounded && harp_touches[t].active && !harp_touches[t].palmed && !harp_touches[t].landing && !harp_pluck_on_lift) {
       release_string(harp_touches[t].position % 12);
     }
     harp_touches[t].active = false;
@@ -7984,7 +8007,7 @@ void handle_harp_positions() {
     touch.peak = max(found.total, relaxed);
     touch.peak_at = now;
     pluck_strength = touch.peak;
-    if (!touch.palmed && !harp_pluck_on_lift) press_string(touch.position % 12, found.total);
+    if (!touch.palmed && !harp_pluck_on_lift && !strip_drums()) press_string(touch.position % 12, found.total);
     // A finger rising off a band lets go of one zone before the other, which
     // looks like a move onto the one it still touches. Lifting, its readings
     // fall away; moving, they hold. So a touch only moves while it reads firm.
@@ -7993,8 +8016,10 @@ void handle_harp_positions() {
     uint8_t to = settle(found.centre);
     if (to == touch.position) continue;
     // through every position on the way, as a strum faster than a reading
-    // still crosses each string
-    if (!touch.palmed) {
+    // still crosses each string; a drum finger sliding along the strip only
+    // moves, so a slide is no roll across the kit, and lifting and landing
+    // again is the next hit
+    if (!touch.palmed && !strip_drums()) {
       int8_t step = to > touch.position ? 1 : -1;
       for (uint8_t p = touch.position; p != to; p += step) {
         harp_position_leave(p);
@@ -8014,6 +8039,7 @@ void handle_harp_positions() {
     }
   }
   for (uint8_t i = 0; i < 12; i++) harp_voice_held[i] = false;
+  if (strip_drums()) return;   // a drum finger holds no string: one still ringing from before is let go of as usual
   for (uint8_t t = 0; t < harp_touch_max; t++) {
     if (harp_touches[t].active && !harp_touches[t].landing) harp_voice_held[harp_touches[t].position % 12] = true;
   }
@@ -8415,11 +8441,16 @@ void handle_harp() {
     harp_ribbon_reset();
     ribbon_was_active = ribbon;
   }
+  // Harp drums on or off on the joystick plate is a change of what the strip plays, as a change of
+  // plate is: strings held from before the drums are let go of, and a finger still on the strip
+  // lands afresh
+  static bool strip_drums_were = false;
   bool positions = harp_positions_active();
-  if (positions != positions_were_active || (positions && harp_plate != plate_was)) {
-    harp_positions_reset();
+  if (positions != positions_were_active || (positions && (harp_plate != plate_was || strip_drums() != strip_drums_were))) {
+    harp_positions_reset(!strip_drums_were);
     positions_were_active = positions;
   }
+  strip_drums_were = strip_drums();
   plate_was = harp_plate;
   // A fingertip strum holds two or three pads at a time and moves on; a hand
   // laid flat holds many at once. The pads the hand landed on before the count
@@ -9839,6 +9870,24 @@ FLASHMEM static void joystick_send_midi(const bool *down) {
   }
 }
 
+// Harp drums (343): A, B and the click strike the kick, the snare and the closed hat as each is
+// pressed, and nothing as it is let go of. They're switches, with no firmness to read, so each hits
+// a little over a groove's plain hit (96) and under its accents and a firm pad (124-127), and the
+// strip can still play over them. Read every pass, not at the stick's 4 ms, so a hit isn't late; a
+// button already held as the plate comes on, or as harp drums do, waits to be pressed again. Their
+// settings (410-415) and control changes go on as ever.
+const uint8_t joystick_drum_velocity = 110;
+FLASHMEM static void joystick_drums(bool fresh) {
+  static const uint8_t contacts[3] = {5, 11, 7};   // A, B, the click
+  static const uint8_t voices[3] = {DRUM_KICK, DRUM_SNARE, DRUM_HAT};
+  static bool was[3] = {false, false, false};   // followed whether or not the drums are on
+  for (uint8_t b = 0; b < 3; b++) {
+    bool down = harp_array[contact_zone(contacts[b])].read_value();
+    if (down && !was[b] && harp_drums && !fresh) drum_hit(voices[b], joystick_drum_velocity);
+    was[b] = down;
+  }
+}
+
 FLASHMEM void handle_joystick() {
   static bool was_on = false;
   bool on = harp_plate == 4;
@@ -9855,6 +9904,7 @@ FLASHMEM void handle_joystick() {
     }
     return;
   }
+  joystick_drums(!was_on);
   was_on = true;
   static elapsedMillis since_read;
   if (since_read < stick_read_ms) return;
