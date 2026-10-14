@@ -53,6 +53,7 @@ harp::harp(){}
   }
 
   void harp::set_thresholds(uint8_t touch, uint8_t release){}
+  void harp::set_strength_scale(uint16_t percent){}
   void harp::apply_thresholds(){}
   uint16_t harp::read_proximity(){ return 0; }
 
@@ -137,8 +138,15 @@ harp::harp(){}
     touch_sensor.getDeviceAllChannelsData(MPR121::ADDRESS_5A, filtered, baseline);
     for (uint8_t key=0; key < 12; key++){
       int16_t delta = (int16_t)baseline[key] - (int16_t)filtered[key];
-      strength[remap_array[key]] = delta > 0 ? delta : 0;
+      strength[remap_array[key]] = delta > 0 ? (int32_t)delta * 100 / strength_scale : 0;
     }
+  }
+
+  // Measured 2026-10-14: twin rows' pads, three times a stock pad, read 2-3 times as strongly (a normal tap
+  // about 400 against 150) and a hard press near the chip's floor, so touch velocity and pressure were full
+  // from a normal tap on; at 240 they spread as on the stock strip. 0 is taken as 100 (a preset from before).
+  FLASHMEM void harp::set_strength_scale(uint16_t percent){
+    strength_scale = percent ? constrain(percent, 25, 400) : 100;
   }
 
   void harp::set_thresholds(uint8_t touch, uint8_t release){

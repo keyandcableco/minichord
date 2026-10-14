@@ -38,9 +38,14 @@ class harp{
   // zone always has (harp order i becomes 11 - i, in update() and
   // read_strength() alike).
   void set_upside_down(bool flipped);
+  // How strongly the fitted plate reads against the stock strip, in percent (100 stock): read_strength()
+  // divides by it, so a plate with bigger pads plays touch velocity, pressure and the rest as the stock strip
+  // does. The chip's touch thresholds are its own (set_thresholds).
+  void set_strength_scale(uint16_t percent);
 
   private:
   bool upside_down = false;
+  uint16_t strength_scale = 100;
   bool thresholds_changed = false;
   #if CAP_CHIP==1
     AT42QT2120 touch_sensor;
