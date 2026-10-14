@@ -720,6 +720,9 @@ struct harp_touch {
   uint32_t landed_at;
   float centre_sum;  // the centres read while landing, weighted by how firmly
   float weight_sum;
+  // harp drums on the joystick plate (strip_drums)
+  float hit;         // how firmly it strikes: the most its own zones read together while it landed
+  bool again;        // landing again: a second finger come down beside it, read as part of its run
 };
 const uint8_t harp_touch_max = 6;
 harp_touch harp_touches[harp_touch_max];
@@ -5782,6 +5785,7 @@ static void acc_play_event(const void *ev) { acc_event(*(const acc_event_t *)ev)
 // (General MIDI's drum map). The harp's strings can play the kit too (drum_pad).
 struct drum_off_t { uint8_t note, port; uint32_t at; };
 static drum_off_t drum_offs[32];
+const uint8_t drum_off_gone = 0xFF;   // a note-off already sent, ahead of the same note struck again
 static volatile uint8_t drum_off_head = 0, drum_off_tail = 0;
 static uint32_t drum_random = 0x9E3779B9;
 static inline uint32_t drum_rand() { drum_random ^= drum_random << 13; drum_random ^= drum_random >> 17; drum_random ^= drum_random << 5; return drum_random; }
@@ -5863,6 +5867,19 @@ void drone_watch() {
   AudioInterrupts();
 }
 
+// The same note struck again before the last one's note-off (a pad, a button and the groove can all
+// strike the kick): that note-off goes now, ahead of the new note-on, so it doesn't cut the new one
+// short and every note-on has its own note-off. With interrupts off, from drum_strike.
+FLASHMEM __attribute__((noinline)) static void drum_off_early(uint8_t note, uint8_t port) {
+  bool sounding = false;
+  for (uint8_t i = drum_off_tail; i != drum_off_head; i = (i + 1) % 32) {
+    if (drum_offs[i].note != note || drum_offs[i].port != port) continue;
+    drum_offs[i].note = drum_off_gone;
+    sounding = true;
+  }
+  if (sounding) queue_midi(false, note, 0, 10, port);
+}
+
 // A hit, from the rhythm's timer or the loop: velocity 1-127 as written (or played); loose, it takes
 // the humanize (a looped hit was already played by a human)
 void drum_strike(uint8_t v, uint8_t velocity, bool written, bool loose) {
@@ -5884,9 +5901,10 @@ void drum_strike(uint8_t v, uint8_t velocity, bool written, bool loose) {
   if (drum_midi) {
     uint8_t port = drum_midi == 2 ? 1 : 0;
     uint8_t note = drum_gm_note[v];
-    queue_midi(true, note, (uint8_t)constrain(lroundf(vel * 127), 1, 127), 10, port);
     uint32_t primask = drum_primask();
     __disable_irq();
+    drum_off_early(note, port);
+    queue_midi(true, note, (uint8_t)constrain(lroundf(vel * 127), 1, 127), 10, port);
     uint8_t next = (drum_off_head + 1) % 32;
     if (next != drum_off_tail) { drum_offs[drum_off_head] = {note, port, millis() + 40}; drum_off_head = next; }
     if (!primask) __enable_irq();
@@ -6005,10 +6023,15 @@ FLASHMEM void drums_update() {
   const drum_kit_t *want = drum_kit_wanted();
   if (want != drum_machine.currentKit()) drum_machine.setKit(want);
   uint32_t now = millis();
+  // with the rhythm's timer held off, so a hit can't send its own early note-off between this one
+  // being read and sent
+  uint32_t primask = drum_primask();
+  __disable_irq();
   while (drum_off_tail != drum_off_head && (int32_t)(now - drum_offs[drum_off_tail].at) >= 0) {
-    queue_midi(false, drum_offs[drum_off_tail].note, 0, 10, drum_offs[drum_off_tail].port);
+    if (drum_offs[drum_off_tail].note != drum_off_gone) queue_midi(false, drum_offs[drum_off_tail].note, 0, 10, drum_offs[drum_off_tail].port);
     drum_off_tail = (drum_off_tail + 1) % 32;
   }
+  if (!primask) __enable_irq();
 }
 
 FLASHMEM void drums_set() {
@@ -7698,6 +7721,20 @@ bool strip_drums() {
   return harp_plate == 4 && harp_drums;
 }
 
+// A second finger coming down beside one already on the strip is read as part of the same run (the
+// strip's neighbouring places share a zone, or are two zones that touch), so it is no new touch.
+// It is told by its zones' readings jumping: by strip_again_min at least, and by strip_again_ratio of
+// what the run read just before, quicker than strip_base_ms, the time the readings each zone is
+// compared with take to follow it. A finger pressing harder or rolling over is slower than that, and
+// one sliding lets go of as much as it takes up, so neither strikes. A finger still pressing down
+// just after it struck strikes nothing for strip_again_after_ms. Guesses until read on a plate.
+const float strip_base_ms = 24;
+const float strip_again_min = 60;
+const float strip_again_ratio = 0.4;
+const uint8_t strip_again_after_ms = 30;
+float strip_base[12] = {0};      // each zone's reading lately, following it over strip_base_ms
+uint32_t strip_based_at = 0;     // micros, when strip_base last followed
+
 // Whether voice i has a finger on it: on a zipper plate or the ribbon a touch
 // sounding it, otherwise its own pad.
 bool string_held(uint8_t i) {
@@ -7805,8 +7842,9 @@ uint8_t harp_position_voice(uint8_t p) {
 // on touch, landing on a position plucks it and leaving it lets it ring;
 // plucking on lift, landing on one stops it and leaving it plucks it, whether
 // the finger leaves by lifting or by moving on to the next.
-// In harp drums on the joystick plate a landing is a hit on place p's pad, as firmly as the touch
-// read while it settled, and a leaving is nothing: a drum has no string to let go of or pluck.
+// In harp drums on the joystick plate a landing is a hit on place p's pad, as firmly as the touch's
+// own zones read while it settled (pluck_strength, its hit), and a leaving is nothing: a drum has no
+// string to let go of or pluck.
 void harp_position_land(uint8_t p) {
   if (strip_drums()) {
     drum_pad(p, pluck_strength < 0 ? 0 : (int16_t)lroundf(fminf(pluck_strength, 32767)));
@@ -7837,7 +7875,7 @@ void harp_position_leave(uint8_t p) {
 // Leave all touches without sounding them and give each voice its own string
 // back, for a change of plate or of harp mode. Touches that were drum hits
 // (sounded false) have no string to let go of.
-void harp_positions_reset(bool sounded) {
+FLASHMEM void harp_positions_reset(bool sounded) {
   for (uint8_t t = 0; t < harp_touch_max; t++) {
     if (sounded && harp_touches[t].active && !harp_touches[t].palmed && !harp_touches[t].landing && !harp_pluck_on_lift) {
       release_string(harp_touches[t].position % 12);
@@ -7869,7 +7907,7 @@ bool zone_is_strip(uint8_t i) {
 // before it counts as touched, so a finger nearing a band starts to move
 // before the far zone crosses its threshold. Line place m is harp zone m % 12,
 // or line_zone[m] for a line laid out otherwise.
-struct harp_run { float centre; float total; bool palmed; bool matched; };
+struct harp_run { float centre; float total; bool palmed; bool matched; uint8_t lo, hi; };
 uint8_t harp_find_runs(const bool *line_down, uint8_t line_length, const bool *zone_down,
                        const int16_t *strength, harp_run *runs, uint8_t max_runs,
                        const uint8_t *line_zone = nullptr) {
@@ -7891,9 +7929,112 @@ uint8_t harp_find_runs(const bool *line_down, uint8_t line_length, const bool *z
       moment += strength[zone] * m;
     }
     float centre = total > 0 ? moment / total : (lo + hi) / 2.0;
-    runs[run_count++] = harp_run{centre, total, palmed, false};
+    runs[run_count++] = harp_run{centre, total, palmed, false, lo, hi};
   }
   return run_count;
+}
+
+// Harp drums on the joystick plate (out of RAM1, whose code has no room left): the strip as read this
+// pass, and the zones whose strip_base waits (held: a second finger is landing on them) or takes the
+// reading at once (taken: a finger landing or just landed) as it follows them after the pass.
+struct strip_read {
+  const uint8_t *line_zone;   // the strip's line of seven, the island first
+  const bool *zone_down;
+  const int16_t *strength;
+  uint16_t held, taken;
+};
+
+// A run's zones (its own and the one either side it is read with) against where they have read
+// lately, for a second finger landing in it. The rise is how much more they read, less what any strip
+// zone no finger is on now reads less (a finger sliding off one zone onto the next); up is how much
+// the zones that rose rose, centre where along the strip, in places, and before what the run's zones
+// read lately.
+struct strip_rise { float rise, up, centre, before; uint16_t zones; };
+FLASHMEM __attribute__((noinline)) static strip_rise strip_rise_of(const harp_run &run, const strip_read &read) {
+  strip_rise r = {0, 0, run.centre, 0, 0};
+  float moment = 0;
+  for (int8_t m = (int8_t)run.lo - 1; m <= (int8_t)run.hi + 1; m++) {
+    if (m < 0 || m >= 7) continue;
+    uint8_t zone = read.line_zone[m];
+    bool inside = m >= run.lo && m <= run.hi;
+    if (r.zones & (1 << zone)) continue;   // T8, read as the island and as itself, counts once
+    if (!inside && read.zone_down[zone]) continue;   // a neighbour another finger is on
+    r.zones |= 1 << zone;
+    float d = read.strength[zone] - strip_base[zone];
+    r.rise += d;
+    r.before += strip_base[zone];
+    if (d > 0) {
+      float place = m * 2 - 1;
+      r.up += d;
+      moment += d * (upside_down ? 11 - place : place);
+    }
+  }
+  for (uint8_t k = 1; k < 7; k++) {
+    uint8_t zone = read.line_zone[k];
+    if (read.zone_down[zone] || (r.zones & (1 << zone))) continue;
+    r.rise += fminf(0, read.strength[zone] - strip_base[zone]);
+  }
+  if (r.up > 0) r.centre = moment / r.up;
+  return r;
+}
+
+// A touch landing in harp drums, this pass: a fresh one strikes as firmly as its own zones read, as
+// a stock pad does, without the zones either side the centre takes in (a place between two zones
+// reads on both, as much as one on a zone's core reads on that one); a second finger landing in a
+// run is where, and as firm as, the run's zones rose.
+FLASHMEM __attribute__((noinline)) static void strip_landing(harp_touch &touch, const harp_run &run, strip_read &read,
+                                                             bool settling) {
+  if (!touch.again) {
+    float own = 0;
+    for (int8_t m = (int8_t)run.lo - 1; m <= (int8_t)run.hi + 1; m++) {
+      if (m < 0 || m >= 7) continue;
+      read.taken |= 1 << read.line_zone[m];
+      if (m >= run.lo && m <= run.hi) own += read.strength[read.line_zone[m]];
+    }
+    touch.hit = max(touch.hit, own);
+    return;
+  }
+  strip_rise r = strip_rise_of(run, read);
+  touch.centre_sum += r.centre * r.up;
+  touch.weight_sum += r.up;
+  touch.hit = max(touch.hit, r.up);
+  if (settling) read.held |= r.zones;
+  else read.taken |= r.zones;
+}
+
+// A settled touch in harp drums: whether a finger has landed beside it, with it still down, read in
+// its run. It lands again where the readings rose, and strikes once it has settled as a touch does.
+// Just after it struck it strikes nothing, and its zones' readings lately are taken as they are.
+FLASHMEM __attribute__((noinline)) static bool strip_again(harp_touch &touch, const harp_run &run, strip_read &read,
+                                                           uint32_t now) {
+  if (now - touch.landed_at < strip_again_after_ms) {
+    strip_landing(touch, run, read, false);   // as a touch landing: its zones taken
+    return false;
+  }
+  if (touch.palmed) return false;
+  strip_rise r = strip_rise_of(run, read);
+  if (r.rise < strip_again_min || r.rise < strip_again_ratio * r.before) return false;
+  touch.landing = true;
+  touch.again = true;
+  touch.landed_at = now;
+  touch.centre_sum = r.centre * r.up;
+  touch.weight_sum = r.up;
+  touch.hit = r.up;
+  read.held |= r.zones;
+  return true;
+}
+
+// Each zone's reading lately follows it over strip_base_ms, but at once where taken and not at all
+// where held
+FLASHMEM __attribute__((noinline)) static void strip_follow(const strip_read &read) {
+  uint32_t us = micros();
+  float follow = fminf(1, (us - strip_based_at) / (strip_base_ms * 1000));
+  strip_based_at = us;
+  for (uint8_t z = 0; z < 12; z++) {
+    if (read.held & (1 << z)) continue;
+    if (read.taken & (1 << z)) strip_base[z] = read.strength[z];
+    else strip_base[z] += (read.strength[z] - strip_base[z]) * follow;
+  }
 }
 
 void handle_harp_positions() {
@@ -7918,6 +8059,7 @@ void handle_harp_positions() {
   bool line_down[13];
   const uint8_t *line_zone = nullptr;
   uint8_t joystick_line[7];
+  bool island_flipped = false;
   if (joystick) {
     // The joystick plate's strip, bottom to top: the island of T8 below T12, then T12, T10, T8,
     // T6, T4 and T2, a zipper between each two. The island is read as T8 when T12 is touched
@@ -7931,6 +8073,11 @@ void handle_harp_positions() {
     bool island = line_down[1] && line_down[3] && !line_down[2];
     line_down[0] = island;
     if (island) line_down[3] = false;
+    // the island read coming or going moves a finger's run by up to six places at once (T8 read
+    // below T12 or above T10), with the finger where it was
+    static bool island_was = false;
+    island_flipped = island != island_was;
+    island_was = island;
     line_zone = joystick_line;
   } else {
     for (uint8_t k = 0; k < 12; k++) line_down[k] = zone_down[k];
@@ -7960,13 +8107,19 @@ void handle_harp_positions() {
     if (x > last) x = last;
     return (uint8_t)lroundf(x);
   };
+
+  bool drums = strip_drums();
+  strip_read read = {line_zone, zone_down, strength, 0, 0};
+
   // Each touch follows the nearest run within reach; a touch with none has
   // lifted, and a run with none is a finger landing.
   for (uint8_t t = 0; t < harp_touch_max; t++) {
     harp_touch &touch = harp_touches[t];
     if (!touch.active) continue;
     int8_t best = -1;
-    float best_distance = 3;
+    // In harp drums a touch lost and a run found would strike again with the finger still down, so
+    // as the island read comes or goes the touch reaches as far as it moves its run
+    float best_distance = drums && island_flipped ? 7 : 3;
     for (uint8_t r = 0; r < run_count; r++) {
       if (runs[r].matched) continue;
       float distance = fabsf(runs[r].centre - touch.centre);
@@ -7976,7 +8129,7 @@ void handle_harp_positions() {
       touch.active = false;
       if (touch.palmed) continue;
       // a tap too quick to settle still sounds, where it was read
-      pluck_strength = touch.peak;
+      pluck_strength = drums ? touch.hit : touch.peak;
       if (touch.landing) {
         touch.position = settle(touch.weight_sum > 0 ? touch.centre_sum / touch.weight_sum : touch.position);
         harp_position_land(touch.position);
@@ -7989,20 +8142,26 @@ void handle_harp_positions() {
     touch.centre = found.centre;
     touch.palmed |= found.palmed;
     if (touch.landing) {
-      touch.centre_sum += found.centre * found.total;
-      touch.weight_sum += found.total;
+      bool settling = now - touch.landed_at < harp_landing_ms;
+      if (!touch.again) {
+        touch.centre_sum += found.centre * found.total;
+        touch.weight_sum += found.total;
+      }
+      if (drums) strip_landing(touch, found, read, settling);
       touch.peak = max(touch.peak, found.total);
       touch.peak_at = now;
-      if (now - touch.landed_at < harp_landing_ms) {
-        touch.position = settle(found.centre);
+      if (settling) {
+        if (!touch.again) touch.position = settle(found.centre);
         continue;
       }
       touch.landing = false;
+      touch.again = false;
       touch.position = settle(touch.weight_sum > 0 ? touch.centre_sum / touch.weight_sum : found.centre);
-      pluck_strength = touch.peak;
+      pluck_strength = drums ? touch.hit : touch.peak;
       if (!touch.palmed) harp_position_land(touch.position);
       continue;
     }
+    if (drums && strip_again(touch, found, read, now)) continue;
     float relaxed = touch.peak - touch.peak * (now - touch.peak_at) / harp_peak_relax_ms;
     touch.peak = max(found.total, relaxed);
     touch.peak_at = now;
@@ -8034,12 +8193,14 @@ void handle_harp_positions() {
       harp_touch &touch = harp_touches[t];
       if (touch.active) continue;
       touch = harp_touch{true, settle(runs[r].centre), runs[r].centre, runs[r].total, now, runs[r].palmed,
-                         true, now, runs[r].centre * runs[r].total, runs[r].total};
+                         true, now, runs[r].centre * runs[r].total, runs[r].total, 0, false};
+      if (drums) strip_landing(touch, runs[r], read, true);
       break;
     }
   }
+  if (drums) strip_follow(read);
   for (uint8_t i = 0; i < 12; i++) harp_voice_held[i] = false;
-  if (strip_drums()) return;   // a drum finger holds no string: one still ringing from before is let go of as usual
+  if (drums) return;   // a drum finger holds no string: one still ringing from before is let go of as usual
   for (uint8_t t = 0; t < harp_touch_max; t++) {
     if (harp_touches[t].active && !harp_touches[t].landing) harp_voice_held[harp_touches[t].position % 12] = true;
   }
