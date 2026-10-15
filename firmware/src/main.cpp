@@ -16,7 +16,8 @@
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
-int version_ID=93; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10)
+void apply_harp_thresholds();
+int version_ID=95; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -687,7 +688,10 @@ bool string_palmed[12] = {false, false, false, false, false, false, false, false
 // stock strip and any plate of twelve separate zones, 1 the Keymaster, 2 the
 // piano plate (the neighbour guard, below), 3 twin rows and 4 framed strings;
 // all but the piano play as the stock strip, each with its own touch
-// calibration (see harp_plate_strength). The plates not out yet start at 8,
+// calibration (see harp_plate_strength). The stock strip and framed strings
+// have the strip guard (417), and the stock strip's own thresholds are lower
+// while it is on; the Keymaster plays at the stock thresholds and needs no guard
+// (see apply_harp_thresholds()). The plates not out yet start at 8,
 // read between their zones as well as on them. Zipper 24's neighbouring zones
 // interlock so a finger between two touches both, with one more band above the
 // top zone where it meets an island of the bottom zone: 24 positions. The arcade
@@ -707,6 +711,12 @@ uint8_t neighbour_guard = 5;          // tenths: a key landing under this share 
 const uint8_t neighbour_guard_promote = 8;   // tenths: a silent key that grows to this share plays
 const uint16_t neighbour_guard_attack_ms = 30;   // how long after landing a silent key's own attack can let it off
 const int16_t neighbour_guard_attack = 8;        // counts it must grow by beyond its neighbours' growth together
+// The strip guard (address 417): the same on the stock strip (plate_stock) and framed strings (plate_framed_strings), in tenths
+// as 416, 9 by default; 0 plays every pad touched, as the stock strip always did, at the stock thresholds
+uint8_t strip_guard = 9;
+const uint8_t strip_guard_promote = 10;   // tenths: on the strip a silent string plays once level with its neighbour
+uint16_t came_from[12];               // the pads already held as each pad last landed, as bits, for a strum's runs
+bool guard_carried[12] = {false};     // a shadow a run let off this pass, to land with it
 bool pad_shadow[12] = {false};        // a key held silent as the edge of a finger on its neighbour
 uint32_t shadow_since[12];            // when it landed
 int16_t shadow_from[12][12];          // every key's strength as it landed
@@ -2341,7 +2351,8 @@ void update_formants() {
 // percent, and choosing the plate (243) is all a plate swap asks. Measured 2026-10-14 with plate_cal.py:
 // twin rows' pads, three times a stock pad's, read 2-3 times as strongly (a normal tap about 400 against
 // 150) and play as the stock strip does at 240; the piano plate and framed strings' strings read as the
-// stock strip does. Harp touch scale (418) trims on top, in percent: for a player's touch, or framed
+// stock strip does, and so does the Keymaster's round pads (taps 306 against the strip's 232, light taps
+// 132 against 126). Harp touch scale (418) trims on top, in percent: for a player's touch, or framed
 // strings played mostly on its pads, which read about 1.4 times its strings but share their zones, so the
 // firmware can't tell them apart. Choosing another plate puts the trim back to 100, so a trim made for one
 // plate never carries to the next; a preset load leaves both as it brings them (locked, usually: see LOCKS).
@@ -2368,6 +2379,7 @@ FLASHMEM void choose_harp_plate(int value) {
     if (sysex_controler_connected) send_parameter_page(harp_touch_scale_adress / page_size);   // so an editor's control follows
   }
   apply_harp_touch_scale();
+  apply_harp_thresholds();
 }
 
 #include <sysex_handler.h>
@@ -8382,8 +8394,47 @@ static const uint16_t piano_neighbours[2][12] = {
   {0x006, 0x005, 0x01b, 0x014, 0x02c, 0x0d0, 0x0a0, 0x360, 0x280, 0xd80, 0xa00, 0x600},
   {0x006, 0x005, 0x01b, 0x014, 0x06c, 0x050, 0x0b0, 0x340, 0x280, 0xd80, 0xa00, 0x600}};
 
+// The plates whose strings are twelve zones in a row, each beside the next, read as strings: the stock strip
+// and framed strings. The strip guard is theirs (on twin rows the harp's order zig-zags between two columns,
+// and it would hold back strums: 5 of 192 strum notes in replay; the keymaster's pads never come near each
+// other, so it needs none).
+FLASHMEM bool strip_family() {
+  return harp_plate == plate_stock || harp_plate == plate_framed_strings;
+}
+
+// The guard's share in tenths for the plate fitted, 0 where it is off
+FLASHMEM uint8_t neighbour_guard_level() {
+  return harp_plate == plate_piano ? neighbour_guard : strip_family() ? strip_guard : 0;
+}
+
+// The touch and release thresholds (241, 242): those when set, otherwise the plate's own. The stock strip's
+// own, while the strip guard is on and it is read as strings, are 15 and 7, so a light touch on the narrow tips
+// of its teeth plays (at 40, 39 of 132 light taps there played nothing) and the guard keeps what more it lets
+// through from sounding twice; every other plate's, and the strip's with the guard off, are the chip's stock
+// 40 and 20. The keymaster played 12 hard presses of 12 clean at 40, and at 15 a hard press sounded the next
+// pad. Framed strings gains next to nothing at 15 (2 of 168 more taps play), so it keeps 40 with its guard.
+FLASHMEM bool strip_own_thresholds() {
+  return harp_plate == plate_stock && strip_guard && !harp_ribbon_active() && !harp_positions_active();
+}
+
+// The touch threshold in force (the chip's own stock one is 40)
+FLASHMEM uint8_t harp_touch_threshold_now() {
+  return harp_touch_threshold ? harp_touch_threshold : strip_own_thresholds() ? 15 : 40;
+}
+
+FLASHMEM void apply_harp_thresholds() {
+  bool strip = strip_own_thresholds();
+  harp_sensor.set_thresholds(harp_touch_threshold ? harp_touch_threshold : strip ? 15 : 0,
+                             harp_release_threshold ? harp_release_threshold : strip ? 7 : 0);
+}
+
 FLASHMEM bool neighbour_guard_active() {
-  return neighbour_guard && harp_plate == plate_piano;
+  return neighbour_guard_level();
+}
+
+// The pads whose copper meets pad i's, as bits: on the stock strip the pad either side
+FLASHMEM uint16_t guard_neighbours(uint8_t i) {
+  return strip_family() ? ((1 << i >> 1) | (1 << i << 1)) & 0xfff : piano_neighbours[upside_down][i];
 }
 
 // Where the black keys are played, every key on the piano plate is a band 5.4 mm tall at a 6 mm pitch,
@@ -8408,16 +8459,41 @@ FLASHMEM bool neighbour_guard_active() {
 // The guard decides in two passes over the keys, so that no key's decision hangs on the order they are
 // read in (upside down reads them the other way): first every landing and lift, then whether a shadow held
 // from before is let off, measured against the shadows as they stand after the landings.
+// On the stock strip (the strip guard, 417) the pads are 5 mm apart, each beside the next, and a fingertip
+// covers two of them as well; but there a finger dragged across the strings, a strum, is the instrument's
+// own gesture, and each string it reaches lands beside a stronger one, the string it is leaving. Guarded
+// as above, 86 of 216 strum notes waited over 10 ms to catch up with the string before, up to 114 ms (18
+// strums, 2026-10-14). So on the strip a landing beside a stronger neighbour plays at once if it is the next
+// step of a run: the pad beyond that neighbour was already held when the neighbour landed, so the finger
+// came to it from there (came_from). A finger's edge lands beside the pad meant with nothing held beyond it,
+// and a tap after a strum lands with nothing held, so no time is measured. On four recordings of the strip
+// that held 516 of 582 strum steps (the rest a strum's first two strings) and 1 of 546 strays. A strum's
+// second string had nothing before it and lands as a shadow; the run reaching the third string carries it,
+// and it lands then too (guard_carried), or it would lift unheard as the finger moved on. Otherwise it plays
+// as it catches up, 12-15 ms late in a fast strum and up to 140 in a slow one, the only strum note held back.
 // Pass one takes a pad's transition (harp_array's read_transition: 2 landed, 1 lifted, 0 neither) and gives
 // what the harp does with it.
-FLASHMEM int neighbour_guard_land(uint8_t i, int value, const int16_t (&strength)[12], uint32_t now) {
-  uint16_t neighbours = piano_neighbours[upside_down][i];
+// held_before: the pads held before this pass's landings, as bits.
+FLASHMEM int neighbour_guard_land(uint8_t i, int value, const int16_t (&strength)[12], uint32_t now, uint16_t held_before) {
+  uint16_t neighbours = guard_neighbours(i);
   if (value == 2) {
     int16_t strongest = 0;
+    int8_t k = -1;
     for (uint8_t j = 0; j < 12; j++) {
-      if ((neighbours >> j & 1) && harp_array[j].read_value()) strongest = max(strongest, strength[j]);
+      if ((neighbours >> j & 1) && harp_array[j].read_value() && strength[j] > strongest) {
+        strongest = strength[j];
+        k = j;
+      }
     }
-    pad_shadow[i] = strongest && strength[i] * 10 < strongest * neighbour_guard;
+    pad_shadow[i] = strongest && strength[i] * 10 < strongest * neighbour_guard_level();
+    int8_t beyond = 2 * k - i;
+    if (strip_family() && k >= 0 && (held_before >> k & 1) && beyond >= 0 && beyond < 12 && (came_from[k] >> beyond & 1)) {   // a run
+      pad_shadow[i] = false;
+      if (pad_shadow[k]) {
+        pad_shadow[k] = false;
+        guard_carried[k] = true;
+      }
+    }
     if (pad_shadow[i]) {
       shadow_since[i] = now;
       for (uint8_t j = 0; j < 12; j++) shadow_from[i][j] = strength[j];
@@ -8431,7 +8507,7 @@ FLASHMEM int neighbour_guard_land(uint8_t i, int value, const int16_t (&strength
 
 // Pass two: whether shadow i, held since before this pass, is let off now (lands now)
 FLASHMEM bool neighbour_guard_let_off(uint8_t i, const int16_t (&strength)[12], uint32_t now) {
-  uint16_t neighbours = piano_neighbours[upside_down][i];
+  uint16_t neighbours = guard_neighbours(i);
   int16_t strongest = 0, sounding = 0, grown = strength[i] - shadow_from[i][i];
   for (uint8_t j = 0; j < 12; j++) {
     if (!(neighbours >> j & 1) || !harp_array[j].read_value()) continue;
@@ -8440,9 +8516,15 @@ FLASHMEM bool neighbour_guard_let_off(uint8_t i, const int16_t (&strength)[12], 
     grown -= max(0, strength[j] - shadow_from[i][j]);
   }
   bool early = now - shadow_since[i] <= neighbour_guard_attack_ms;
-  int16_t least = harp_touch_threshold ? harp_touch_threshold : 40;   // the chip's touch threshold, see harp::set_thresholds()
-  bool attack = early && strongest && strength[i] * 2 >= strongest && grown > neighbour_guard_attack;
-  bool caught_up = (early || !harp_drums) && sounding && strength[i] >= least && strength[i] * 10 >= sounding * neighbour_guard_promote;
+  int16_t least = harp_touch_threshold_now();
+  // On the stock strip two fingertips don't fit on teeth 5 mm apart, and a finger across two teeth reads
+  // near level on both and grows on both, so there no second finger's attack lets a shadow off, and one
+  // plays only once it has caught up with the string that sounds (a finger rolled over onto it): with
+  // these the strip played one note for 93 taps of 131 at a guard of 7, where with the piano's 69 did.
+  bool strip = strip_family();
+  bool attack = !strip && early && strongest && strength[i] * 2 >= strongest && grown > neighbour_guard_attack;
+  bool caught_up = (early || !harp_drums) && sounding && strength[i] >= least &&
+    strength[i] * 10 >= sounding * (strip ? strip_guard_promote : neighbour_guard_promote);
   return attack || caught_up;
 }
 
@@ -8450,12 +8532,24 @@ FLASHMEM bool neighbour_guard_let_off(uint8_t i, const int16_t (&strength)[12], 
 // lifts, 0 neither). A shadow let off lands now, for the palm, koto and hammer-on's timing too (landed).
 FLASHMEM void neighbour_guard_pass(uint8_t (&pad_move)[12], const int16_t (&strength)[12], uint32_t *landed, uint32_t now) {
   bool held_shadow[12];
+  uint8_t raw[12];
+  uint16_t held_before = 0;
+  for (uint8_t i = 0; i < 12; i++) {
+    raw[i] = harp_array[i].read_transition();
+    if (harp_array[i].read_value() && raw[i] != 2) held_before |= 1 << i;
+  }
   for (uint8_t i = 0; i < 12; i++) {
     held_shadow[i] = pad_shadow[i];
-    uint8_t raw = harp_array[i].read_transition();
-    pad_move[i] = neighbour_guard_land(i, raw, strength, now);
-    if (raw == 1 && pad_move[i] != 1) string_palmed[i] = false;   // a shadow under a palm lifts unheard, and unpalmed
+    pad_move[i] = neighbour_guard_land(i, raw[i], strength, now, held_before);
+    if (raw[i] == 1 && pad_move[i] != 1) string_palmed[i] = false;   // a shadow under a palm lifts unheard, and unpalmed
     held_shadow[i] &= pad_shadow[i];
+  }
+  for (uint8_t i = 0; i < 12; i++) if (raw[i] == 2) came_from[i] = held_before;
+  for (uint8_t i = 0; i < 12; i++) {   // carried by a strum on the strip, whichever side it came from
+    if (!guard_carried[i]) continue;
+    guard_carried[i] = held_shadow[i] = false;
+    pad_move[i] = 2;
+    landed[i] = now;
   }
   bool let_off[12];
   for (uint8_t i = 0; i < 12; i++) let_off[i] = held_shadow[i] && neighbour_guard_let_off(i, strength, now);

@@ -18,14 +18,17 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 416:
         neighbour_guard=value;
         break;
+      case 417:
+        strip_guard=value; apply_harp_thresholds();
+        break;
       case 418:
         harp_touch_scale=value; apply_harp_touch_scale();
         break;
       case 241:
-        harp_touch_threshold=value; harp_sensor.set_thresholds(harp_touch_threshold, harp_release_threshold);
+        harp_touch_threshold=value; apply_harp_thresholds();
         break;
       case 242:
-        harp_release_threshold=value; harp_sensor.set_thresholds(harp_touch_threshold, harp_release_threshold);
+        harp_release_threshold=value; apply_harp_thresholds();
         break;
       case 35:
         key_signature_selection=constrain(value,0,20); purity_follow_chord();
@@ -403,7 +406,7 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         harp_rank=value; for (int i=0;i<12;i++){ current_harp_notes[i]=calculate_note_harp(i,slash_chord,sharp_active); }
         break;
       case 245:
-        harp_ribbon=value;
+        harp_ribbon=value; apply_harp_thresholds();
         break;
       case 246:
         ribbon_span=value;
@@ -906,7 +909,7 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         drums_only=value;
         break;
       case 343:
-        harp_drums=value;
+        harp_drums=value; apply_harp_thresholds();
         break;
       case 377:
         tabla_laya=value;
@@ -1285,6 +1288,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 384: lo=0; hi=1; return true;
       case 243: lo=0; hi=10; return true;
       case 416: lo=0; hi=7; return true;
+      case 417: lo=0; hi=9; return true;
       case 418: lo=25; hi=400; return true;
       case 241: lo=0; hi=120; return true;
       case 242: lo=0; hi=119; return true;
