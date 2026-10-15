@@ -42,6 +42,9 @@ class harp{
   // divides by it, so a plate with bigger pads plays touch velocity, pressure and the rest as the stock strip
   // does. The chip's touch thresholds are its own (set_thresholds).
   void set_strength_scale(uint16_t percent);
+  // How many times hover's charge has been fitted (at boot, and at every recalibrate): a fit moves the
+  // idle reading, so hover starts its baseline again when this changes.
+  uint16_t proximity_fits = 0;
 
   private:
   bool upside_down = false;
