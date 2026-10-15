@@ -1,7 +1,7 @@
 name: Tell minictl
 
 # minictl (keyandcableco/minictl) carries this fork's describer and settings (its sync.py). Its sync
-# workflow runs every three hours by itself; this makes it run at once when a push to test-allFeatures
+# workflow runs every three hours by itself; this makes it run at once when a push to advanced
 # changes what it carries, by sending it a "firmware-changed" dispatch.
 #
 # Needs a secret, MINICTL_DISPATCH_TOKEN: a fine-grained personal access token with access to
@@ -10,7 +10,7 @@ name: Tell minictl
 
 on:
   push:
-    branches: [ test-allFeatures ]
+    branches: [ advanced ]
     paths:
       - 'firmware/preset_maker/**'
       - 'firmware/generator/parameters.json'
