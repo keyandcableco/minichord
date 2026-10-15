@@ -144,9 +144,10 @@ harp::harp(){}
 
   // Measured 2026-10-14: twin rows' pads, three times a stock pad, read 2-3 times as strongly (a normal tap
   // about 400 against 150) and a hard press near the chip's floor, so touch velocity and pressure were full
-  // from a normal tap on; at 240 they spread as on the stock strip. 0 is taken as 100 (a preset from before).
+  // from a normal tap on; at 240 they spread as on the stock strip. The plate's own scale times a player's
+  // trim (main.cpp, apply_harp_touch_scale), so up to 960. 0 is taken as 100.
   FLASHMEM void harp::set_strength_scale(uint16_t percent){
-    strength_scale = percent ? constrain(percent, 25, 400) : 100;
+    strength_scale = percent ? constrain(percent, 25, 1000) : 100;
   }
 
   void harp::set_thresholds(uint8_t touch, uint8_t release){

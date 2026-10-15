@@ -693,6 +693,9 @@ bool string_palmed[12] = {false, false, false, false, false, false, false, false
 // the harp ribbon, below, and plays twelve strings without it. 3 is the
 // fretless wrap, which adds an island of the bottom zone above the top one:
 // twelve strings as the stock strip, and a thirteenth place for the ribbon.
+// 5 is the piano plate (the neighbour guard, below); 6 twin rows and 7 framed
+// strings play as the stock strip, with their own touch calibration (see
+// harp_plate_strength). 4 belongs to a plate on another firmware.
 uint8_t harp_plate = 0;
 // The neighbour guard (address 416), for the piano plate (harp plate 5), see neighbour_guard_pass()
 uint8_t neighbour_guard = 5;          // tenths: a key landing under this share of a touching neighbour stays silent; 0 off
@@ -2324,6 +2327,42 @@ void update_formants() {
   float a = constrain(formant_amount, 0, 100) / 100.0;
   formant_mix.gain(0, 1 - a);
   for (int k = 0; k < 3; k++) formant_mix.gain(k + 1, a * formant_level[k] * formant_makeup);
+}
+
+// ---- Each plate's touch calibration -----------------------------------------
+// The harp's touch strengths (touch velocity and pressure, koto press, harp drums, chords following the
+// harp) were set by ear on the stock strip, and a plate with more copper under the finger reads more
+// strongly. So each plate carries its own calibration, how strongly it reads against the stock strip in
+// percent, and choosing the plate (243) is all a plate swap asks. Measured 2026-10-14 with plate_cal.py:
+// twin rows' pads, three times a stock pad's, read 2-3 times as strongly (a normal tap about 400 against
+// 150) and play as the stock strip does at 240; the piano plate and framed strings' strings read as the
+// stock strip does. Harp touch scale (418) trims on top, in percent: for a player's touch, or framed
+// strings played mostly on its pads, which read about 1.4 times its strings but share their zones, so the
+// firmware can't tell them apart. Choosing another plate puts the trim back to 100, so a trim made for one
+// plate never carries to the next; a preset load leaves both as it brings them (locked, usually: see LOCKS).
+const int16_t harp_touch_scale_adress = 418;
+const uint8_t harp_plate_count = 8;
+const uint16_t harp_plate_strength[harp_plate_count] = {100, 100, 100, 100, 100, 100, 240, 100};
+uint16_t harp_touch_scale = 100;   // 0, a preset saved before the setting, is taken as 100
+FLASHMEM void apply_harp_touch_scale() {
+  static uint32_t applied = 0;
+  uint32_t plate = harp_plate_strength[harp_plate < harp_plate_count ? harp_plate : 0];
+  uint32_t trim = harp_touch_scale ? harp_touch_scale : 100;
+  if (plate * trim / 100 == applied) return;
+  applied = plate * trim / 100;
+  harp_sensor.set_strength_scale(applied);
+  Serial.printf("Harp touch scale %lu: plate %d reads at %lu, trimmed to %lu%%\n", applied, harp_plate, plate, trim);
+}
+// harp plate (243): a plate chosen live, rather than loaded with a preset, brings its calibration untrimmed
+FLASHMEM void choose_harp_plate(int value) {
+  bool swapped = value != harp_plate && !parameters_loading;
+  harp_plate = value;
+  if (swapped && current_sysex_parameters[harp_touch_scale_adress] != 100) {
+    current_sysex_parameters[harp_touch_scale_adress] = 100;
+    harp_touch_scale = 100;
+    if (sysex_controler_connected) send_parameter_page(harp_touch_scale_adress / page_size);   // so an editor's control follows
+  }
+  apply_harp_touch_scale();
 }
 
 #include <sysex_handler.h>
