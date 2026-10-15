@@ -1227,6 +1227,7 @@ enum { LOOP_START, LOOP_RELEASE, LOOP_RETUNE, LOOP_DRUM };
 enum { LOOPER_EMPTY, LOOPER_RECORDING, LOOPER_PLAYING, LOOPER_STOPPED, LOOPER_COUNTIN };
 volatile uint8_t looper_state = LOOPER_EMPTY;   // see LOOPER
 volatile bool looper_overdub = false;
+bool looper_double_tap_owned = false;   // the double tap took the looper's latest step, so a running loop keeps it (see LOOPER)
 volatile uint32_t rythm_beat_ms = 0;   // when the rhythm's latest beat began (its even steps), for the looper
 volatile uint32_t rythm_beat_count = 0;   // beats the rhythm has begun, and whether the latest began a bar (the looper's click)
 volatile bool rythm_beat_bar = false;
@@ -3355,6 +3356,11 @@ void midi_in_settle() {
 // stop, then record a new loop. A loop closes where the second tap landed, not where the gesture
 // was recognised, a moment later. In rhythm mode, or with midi clock coming in, a loop starts on
 // the nearest beat and its length rounds to whole beats; otherwise it is as long as it was played.
+// A loop plays on through a preset change, in the new preset's sounds, and one the double tap
+// started keeps the double tap while it counts in, records or plays: in a preset without the
+// looper on its double tap, the double tap takes the looper's next step and does nothing else, so
+// the loop can always be stopped where it is. Once it stops, the double tap is the preset's again.
+// A loop last worked from minicontrol or midi leaves the double tap to the preset.
 // Overdub (minicontrol or midi only) adds to a playing loop, and a note captured on a pass isn't
 // played back over itself on that pass.
 //
@@ -3757,6 +3763,7 @@ void looper_send_step(uint32_t delay_ms) {
 
 FLASHMEM void looper_action(int16_t action) {
   current_sysex_parameters[looper_adress] = 0;         // an action, never a value to keep
+  looper_double_tap_owned = false;                     // worked from minicontrol or midi: the double tap stays the preset's
   switch (action) {
     case 1: if (looper_state == LOOPER_RECORDING) looper_close(millis()); else if (looper_state == LOOPER_COUNTIN) looper_clear(); else looper_record(millis()); break;
     case 2: looper_play(); break;
@@ -9472,16 +9479,34 @@ void trigger_chord_notes() {
 }
 
 
+// A loop the double tap started, still counting in, recording or playing, in a preset with no looper
+// of its own on the double tap (one on the computer, value 7, isn't): the double tap stays the
+// looper's until the loop stops (see LOOPER)
+static bool looper_keeps_double_tap() {
+  uint8_t state = looper_state;
+  if (!looper_double_tap_owned || (state != LOOPER_COUNTIN && state != LOOPER_RECORDING && state != LOOPER_PLAYING)) return false;
+  for (uint8_t k = 0; k < double_tap_pairs; k++) {
+    if (current_sysex_parameters[double_tap_control_adress[k]] == looper_adress && current_sysex_parameters[double_tap_value_adress[k]] != 7) return false;
+  }
+  return true;
+}
+
 // Applies the chosen values, or puts back what was there before. The actions (the looper, chord
 // memory, a rhythm fill) take their step only when asked to: a tap and hold letting go puts the
 // values back and leaves them be.
 void toggle_double_tap_target(bool actions = true) {
+  // A running loop kept from another preset takes the next step and nothing else does: the preset's
+  // own assignments wait until it stops. A tap and hold's let-go goes where its press went.
+  static bool pressed_for_looper = false;
+  if (!actions && pressed_for_looper) { pressed_for_looper = false; return; }
+  pressed_for_looper = actions && looper_keeps_double_tap();
+  if (pressed_for_looper) { looper_step(modifier_pressed_ms); return; }
   // The looper, assigned to the double tap, takes its next step, from where the second tap landed;
   // with the pair's value at 7 the step goes to a looper on the computer instead (see LOOPER)
   for (uint8_t k = 0; k < double_tap_pairs && actions; k++) {
     if (current_sysex_parameters[double_tap_control_adress[k]] != looper_adress) continue;
     if (current_sysex_parameters[double_tap_value_adress[k]] == 7) looper_send_step(millis() - modifier_pressed_ms);
-    else looper_step(modifier_pressed_ms);
+    else { looper_step(modifier_pressed_ms); looper_double_tap_owned = true; }
     break;
   }
   // chord memory, assigned to it, takes its next step
