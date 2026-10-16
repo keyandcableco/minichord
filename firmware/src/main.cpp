@@ -17,7 +17,7 @@
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
 void apply_harp_thresholds();
-int version_ID=96; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked)
+int version_ID=97; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -2037,6 +2037,12 @@ FLASHMEM void upside_down_request(int value) {
 static inline uint8_t up_button_pin() { return upside_down ? DOWN_PGM_PIN : UP_PGM_PIN; }
 static inline uint8_t down_button_pin() { return upside_down ? UP_PGM_PIN : DOWN_PGM_PIN; }
 
+#include <parameter_introduction.h>
+// A setting's factory default in a bank: page 0's from the bank's factory preset, page 1's generated
+static inline int16_t parameter_default(int bank_number, uint16_t i) {
+  return i < page_size ? default_bank_sysex_parameters[bank_number][i] : parameter_page1_defaults[i - page_size];
+}
+
 // ---------- LOCKS: settings the instrument keeps as its own, whatever preset is loaded ----------
 // A preset holds every setting, as it always has, and a preset file round-trips unchanged. But some
 // settings describe the instrument or the room rather than the sound: which harp plate is fitted,
@@ -2054,11 +2060,18 @@ static inline uint8_t down_button_pin() { return upside_down ? UP_PGM_PIN : DOWN
 // address unlocks it; control command 9 reports the locked addresses (7D 6C, a count, then two
 // bytes an address, the fixed ones first); command 10 unlocks them all (0) or locks the default
 // ones again (1). The first boot with no locks in EEPROM locks the default ones, each at the value
-// the first preset loaded holds, so nothing changes until a player changes it.
+// the first preset loaded holds, so nothing changes until a player changes it. A default lock a
+// newer firmware brings is locked when that firmware first starts on an instrument that already
+// has its locks (lock_upgrade): the table keeps the version whose default locks it holds.
 const int16_t lock_adress = 385;
 const uint8_t lock_max = 64;
-const int lock_eeprom = 16;                      // EEPROM, after USB audio and upside down: 'L', the layout, the count, a spare, then four bytes an entry
+const int lock_eeprom = 16;                      // EEPROM, after USB audio and upside down: 'L', the layout, the count, the version, then four bytes an entry
 const uint8_t lock_eeprom_layout = 1;
+// The version byte was a spare written 0 before firmware 97, and the locks came in with 76, so a 0
+// reads as 76: a table seeded later than that can't be told apart, and a setting brought in after 76
+// that a player unlocked before 97 is locked once more, the one cost. Settings from 76 and before a
+// player unlocked stay unlocked. version_ID has to stay under 256 for the byte, as for parameter_introduction.
+const uint8_t lock_first_version = 76;
 struct lock_entry { uint16_t adress; int16_t value; };
 lock_entry lock_table[lock_max];
 uint8_t lock_count = 0;
@@ -2081,7 +2094,7 @@ FLASHMEM static void lock_save() {
   eeprom_write_byte((uint8_t *)(lock_eeprom + 0), 'L');
   eeprom_write_byte((uint8_t *)(lock_eeprom + 1), lock_eeprom_layout);
   eeprom_write_byte((uint8_t *)(lock_eeprom + 2), lock_count);
-  eeprom_write_byte((uint8_t *)(lock_eeprom + 3), 0);
+  eeprom_write_byte((uint8_t *)(lock_eeprom + 3), version_ID);   // the default locks this firmware knows are in, or were unlocked here
   for (uint8_t k = 0; k < lock_count; k++) {
     int at = lock_eeprom + 4 + 4 * k;
     eeprom_write_byte((uint8_t *)(at + 0), lock_table[k].adress & 0xFF);
@@ -2090,6 +2103,25 @@ FLASHMEM static void lock_save() {
     eeprom_write_byte((uint8_t *)(at + 3), (uint16_t)lock_table[k].value >> 8);
   }
   locks_dirty = false;
+}
+// The default locks a newer firmware brings, on an instrument whose table an older one wrote: each
+// one introduced after the table's version and not in it is locked, at its factory default rather
+// than at the live value. Up to 96 these settings rode with each preset, and an editor's bank sets
+// from firmware 69 to 89 wrote a 0 into every setting they didn't know (neighbour guard and strip
+// guard off), so an upgraded instrument's presets often hold a 0 nobody chose; and this runs before
+// any preset is in. A player who did set one on purpose, preset by preset, finds the default once
+// and sets it again, and from then on it is the instrument's, whatever preset loads. A page 0
+// setting takes the factory value of the bank about to load.
+FLASHMEM static void lock_upgrade(uint8_t from) {
+  for (int16_t a = 1; a < (int16_t)parameter_size; a++) {
+    if (parameter_lock[a] != PARAMETER_LOCK_DEFAULT || parameter_introduction[a] <= from || lock_find(a) >= 0) continue;
+    if (lock_count >= lock_max) { Serial.printf("No room to lock %d\n", a); continue; }
+    lock_table[lock_count].adress = a;
+    lock_table[lock_count].value = parameter_default(current_bank_number, a);
+    Serial.printf("Locked %d at %d, new since firmware %d\n", a, lock_table[lock_count].value, from);
+    lock_count++;
+  }
+  lock_save();   // with this version, so it is done once
 }
 // at power on, before the first preset loads
 FLASHMEM void lock_load() {
@@ -2107,6 +2139,9 @@ FLASHMEM void lock_load() {
       lock_table[lock_count].value = v;
       lock_count++;
     }
+    uint8_t version = eeprom_read_byte((const uint8_t *)(lock_eeprom + 3));
+    if (version == 0) version = lock_first_version;
+    if (version < version_ID) lock_upgrade(version);
   }
   lock_mask_rebuild();
   Serial.printf("Locks: %d%s\n", lock_count, locks_unseeded ? " (none kept yet: the defaults will be locked at the first load)" : "");
@@ -2196,11 +2231,6 @@ void lock_update() {
     locks_since_change = 0;
   }
   if (locks_dirty && locks_since_change > lock_write_delay_ms) lock_save();
-}
-
-// A setting's factory default in a bank: page 0's from the bank's factory preset, page 1's generated
-static inline int16_t parameter_default(int bank_number, uint16_t i) {
-  return i < page_size ? default_bank_sysex_parameters[bank_number][i] : parameter_page1_defaults[i - page_size];
 }
 
 // Push and pop (control commands 5 and 6). A second push keeps the first unless it asks to replace
@@ -2384,7 +2414,6 @@ FLASHMEM void choose_harp_plate(int value) {
 }
 
 #include <sysex_handler.h>
-#include <parameter_introduction.h>
 // A parameter write is F0 <adress lo> <adress hi> <value lo> <value hi> F7. Universal system
 // exclusive messages are six bytes long too, F0 <7E or 7F> <device id> <sub id 1> <sub id 2> F7,
 // and hosts and DAWs send them unprompted, so they must not be read as a parameter write. Their
