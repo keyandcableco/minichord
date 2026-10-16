@@ -17,7 +17,7 @@
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
 void apply_harp_thresholds();
-int version_ID=95; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only)
+int version_ID=96; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -9746,14 +9746,32 @@ const uint8_t hover_cc = 25;
 const uint16_t hover_rise_ms = 200;
 const uint8_t hover_slot_ms = 10;
 const float hover_full_cm = 2;
-const float hover_pull_5cm = 1.09f / 709.0f;      // a palm at 5 cm, per count of the idle reading: the pull grows with the charge
-const float hover_touch_counts = 20.0f;           // past this it's a hand on the plate
+const float hover_touch_counts = 20.0f;           // past this it's a hand on the plate (more on a plate that pulls harder)
+const float hover_least_pull = 0.30f;             // no reach is set nearer the idle than this: the player's own movements stir about 0.1
 float hover_position = 0;                         // 0 to 1, after the hold: what the setting follows
 
-// How far a palm d cm above the plate pulls the reading, for an idle reading of idle. It falls off
-// as the distance to the 1.3 within 5 cm and faster beyond, as the plate starts to look small.
+// How far a palm d cm above the plate pulls the reading, for an idle reading of idle: pull_5cm per count
+// of the idle reading at 5 cm (the pull grows with the charge), falling off as the distance to k_near
+// within 5 cm and k_far beyond, as the plate starts to look small. Each plate is its own antenna: the
+// stock strip's numbers are from 2026-10-07; the others from 2026-10-14, a palm held by eye over each
+// (~/minichord-bench hover_cal.py), interim until a measurement against the stock strip with fixed heights.
+// The piano's wide keys pull four to six times the stock strip's near the plate and fall off far faster
+// (at 2 cm 23 counts, past the 20 that meant a hand on the plate, so hover froze short of full), framed
+// strings near the stock strip, the Keymaster's twelve small pads barely past 3 cm. Twin rows keeps the
+// stock strip's until it is measured with its charge fitted (its fit had clipped). The pull of a hand
+// actually on the plate scales with the plate too, so touched is 2.5 times the pull at full, at least 20.
+struct HoverPlate { float pull_5cm, k_near, k_far; };
+#define HOVER_STOCK {1.09f / 709.0f, 1.3f, 1.85f}
+static const HoverPlate hover_plates[harp_plate_count] = {
+  HOVER_STOCK,              // 0 the stock strip
+  {2.3e-4f, 3.7f, 3.7f},    // 1 the Keymaster
+  {6.1e-3f, 1.8f, 4.5f},    // 2 the piano plate
+  HOVER_STOCK,              // 3 twin rows, not yet measured
+  {1.05e-3f, 2.4f, 3.2f},   // 4 framed strings
+  HOVER_STOCK, HOVER_STOCK, HOVER_STOCK, HOVER_STOCK, HOVER_STOCK, HOVER_STOCK, HOVER_STOCK};
 static float hover_pull(float d, float idle) {
-  return hover_pull_5cm * idle * powf(5.0f / d, d <= 5 ? 1.3f : 1.85f);
+  const HoverPlate &p = hover_plates[harp_plate < harp_plate_count ? harp_plate : 0];
+  return p.pull_5cm * idle * powf(5.0f / d, d <= 5 ? p.k_near : p.k_far);
 }
 
 // What hover may move: what a knob may (its own settings, the double tap's and USB audio among the
@@ -9776,16 +9794,21 @@ void handle_hover(bool alternate) {
   float reading = harp_sensor.read_proximity();
   if (reading <= 0) return;                        // no proximity channel on this touch chip
   static float level = -1, baseline = -1;
+  static uint16_t fits = 0;                        // a charge fit moves the idle: start again from it (it
+  if (harp_sensor.proximity_fits != fits) {        // would otherwise read as a hand that never leaves)
+    fits = harp_sensor.proximity_fits;
+    level = baseline = -1;
+  }
   if (level < 0) level = baseline = reading;
   level += (reading - level) * 0.05f;              // about 40 ms of smoothing
   float near = baseline - level;                   // how far a hand pulls the reading down
-  bool touched = near > hover_touch_counts;
+  float pull_full = hover_pull(hover_full_cm, baseline);
+  float pull_edge = fmaxf(hover_pull(hover_reach, baseline), hover_least_pull);
+  bool touched = near > fmaxf(hover_touch_counts, 2.5f * pull_full);
   for (int i = 0; i < 12 && !touched; i++) touched = harp_array[i].read_value();
   // The baseline is what the plate reads with no hand. It follows the reading up quickly (a hand
   // leaving, or the air drying) and down slowly, so a hand held still isn't soaked up but a drift
   // with nobody near is; slower still within reach, and not at all while the plate is touched.
-  float pull_full = hover_pull(hover_full_cm, baseline);
-  float pull_edge = hover_pull(hover_reach, baseline);
   float rate = near < 0 ? 0.02f : touched ? 0 : near < pull_edge ? 0.0004f : 0.00002f;  // 0.1 s, 5 s, 100 s
   baseline -= near * rate;
 
