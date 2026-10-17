@@ -17,7 +17,8 @@
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
 void apply_harp_thresholds();
-int version_ID=98; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated)//>>BUTTON ARRAYS<<
+int version_ID=98; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated)
+//>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
 debouncer chord_matrix_array[22];
@@ -2413,9 +2414,12 @@ FLASHMEM void apply_harp_touch_scale() {
 // power on, and every plate_id_check_ms while the harp rests (a plate swapped with the power on), the
 // nearest print learned is chosen, if it is close (plate_id_near) and clearly nearer than the next. Whatever
 // is not clear changes nothing: a hand over the plate, a plate never learned. A plate's print follows it
-// slowly each time it is known, for days of drift no one has measured yet. Plates of the same copper (the
-// veena and zipper 24, fretless 31 and the fretless wrap) share a print, and a plate number.
-// Plate detect (422): 0 off, 1 on, 2 forgets every print learned and is on.
+// slowly each time it is known, for days of drift no one has measured yet. Plates of the same copper share a
+// print, and a plate number.
+// Plate detect (422): 0 off, 1 on, 2 forgets every print learned and is on, 3 learns the plate fitted again as
+// the one harp plate has (an editor's teach button: choosing the plate already chosen changes nothing) and
+// is on. 2 and 3 are things done, not kept: the setting goes back to 1, and a preset loaded never does them.
+// What it does is shown on the LED (plate_led_show), as a player has no serial monitor.
 const int16_t plate_detect_adress = 422;
 uint8_t plate_detect = 1;
 const int plate_id_eeprom = 320;                 // after the locks (16 to 291): 'P', the layout, then a print a plate
@@ -2429,7 +2433,42 @@ const uint8_t plate_id_samples = 32;
 struct plate_print { bool known; float pf[12]; };   // each zone's capacitance less the plate's mean, pF
 plate_print plate_prints[harp_plate_count];
 bool plate_id_learn_wanted = false;              // a plate was chosen live: learn it once it rests
+bool plate_id_check_wanted = false;              // a plate was just swapped in: look at once (PLATE SWAP)
+uint8_t plate_swap_state = 0;                    // SWAP_NONE while no swap is being waited out (PLATE SWAP)
+bool plate_swap_bare = false;                    // the last swap settled with no plate on
 void choose_harp_plate(int value);
+
+// Plate detect said on the LED for a second or so, over whatever it showed, which takes it back after
+// (step_led_animation): white three times, a plate learned; white twice, a plate found fitted and chosen; red
+// once, long, a plate not learned, as the harp reads as another plate already learned (it was chosen without
+// being fitted, or the two plates' copper is the same). Nothing stock lights it: only plate detect's doings.
+enum { PLATE_LED_NONE, PLATE_LED_LEARNED, PLATE_LED_FOUND, PLATE_LED_REFUSED };
+uint8_t plate_led_pattern = PLATE_LED_NONE;
+int8_t plate_led_shown = -1;                     // the step lit last: 1 lit, 0 dark
+elapsedMillis plate_led_timer;
+
+FLASHMEM static void plate_led_show(uint8_t pattern) {
+  plate_led_pattern = pattern;
+  plate_led_shown = -1;
+  plate_led_timer = 0;
+}
+
+// From step_led_animation while a pattern shows; the LED is written only when the step changes
+FLASHMEM void plate_led_step() {
+  uint32_t t = plate_led_timer;
+  int8_t step;   // 1 lit, 0 dark, -1 done
+  if (plate_led_pattern == PLATE_LED_REFUSED) step = t < 900 ? 1 : -1;
+  else step = t >= (plate_led_pattern == PLATE_LED_LEARNED ? 3u : 2u) * 300 ? -1 : t % 300 < 180;
+  if (step == plate_led_shown) return;
+  plate_led_shown = step;
+  float level = 1 - led_attenuation;
+  if (step < 0) {
+    plate_led_pattern = PLATE_LED_NONE;
+    set_led_color(bank_led_hue, bank_led_saturation(), level);   // an animation running takes it on its next step
+  } else if (!step) set_led_color(0, 1.0, 0);
+  else if (plate_led_pattern == PLATE_LED_REFUSED) set_led_color(0, 1.0, level);
+  else set_led_color(0, 0.01, level);   // white: saturation 0 turns the LED off
+}
 
 FLASHMEM static void plate_print_of(const uint16_t (&rest)[12], uint16_t &mean, float (&pf)[12]) {
   float sum = 0, c[12];
@@ -2447,7 +2486,10 @@ FLASHMEM static void plate_id_store(uint8_t plate, const uint16_t (&rest)[12]) {
   uint8_t bytes[plate_id_bytes] = {(uint8_t)(mean & 0xFF), (uint8_t)(mean >> 8)};
   for (uint8_t z = 0; z < 12; z++) bytes[2 + z] = (uint8_t)(int8_t)constrain((int)rest[z] - mean, -127, 127);
   if (eeprom_read_byte((const uint8_t *)plate_id_eeprom) != 'P' || eeprom_read_byte((const uint8_t *)(plate_id_eeprom + 1)) != plate_id_layout) {
-    for (uint8_t p = 0; p < harp_plate_count; p++) eeprom_write_byte((uint8_t *)(plate_id_eeprom + 2 + p * plate_id_bytes), 0);
+    for (uint8_t p = 0; p < harp_plate_count; p++) {   // every slot unlearned: its mean, both bytes, 0
+      eeprom_write_byte((uint8_t *)(plate_id_eeprom + 2 + p * plate_id_bytes), 0);
+      eeprom_write_byte((uint8_t *)(plate_id_eeprom + 3 + p * plate_id_bytes), 0);
+    }
     eeprom_write_byte((uint8_t *)plate_id_eeprom, 'P');
     eeprom_write_byte((uint8_t *)(plate_id_eeprom + 1), plate_id_layout);
   }
@@ -2467,7 +2509,7 @@ FLASHMEM void plate_id_load() {
   for (uint8_t p = 0; p < harp_plate_count; p++) {
     int at = plate_id_eeprom + 2 + p * plate_id_bytes;
     uint16_t mean = eeprom_read_byte((const uint8_t *)at) | (eeprom_read_byte((const uint8_t *)(at + 1)) << 8);
-    if (mean == 0 || mean == 0xFFFF) continue;
+    if (mean == 0 || mean > 1023) continue;   // unlearned (or, before this was fixed, half wiped: 0xFF00)
     uint16_t rest[12];
     for (uint8_t z = 0; z < 12; z++) rest[z] = mean + (int8_t)eeprom_read_byte((const uint8_t *)(at + 2 + z));
     uint16_t m;
@@ -2477,11 +2519,20 @@ FLASHMEM void plate_id_load() {
 }
 
 FLASHMEM void plate_detect_set(int value) {
-  if (value == 2) {   // forget every plate
-    eeprom_write_byte((uint8_t *)plate_id_eeprom, 0);
-    for (uint8_t p = 0; p < harp_plate_count; p++) plate_prints[p].known = false;
-    Serial.println("Plate detect: every plate forgotten");
+  if (value >= 2) {
+    // done once, when sent: kept as 2 it forgot every plate again at each preset load and power on
+    if (!parameters_loading && value == 2) {   // forget every plate
+      eeprom_write_byte((uint8_t *)plate_id_eeprom, 0);
+      for (uint8_t p = 0; p < harp_plate_count; p++) plate_prints[p].known = false;
+      Serial.println("Plate detect: every plate forgotten");
+    }
+    if (!parameters_loading && value == 3) {   // teach: learn the plate fitted as the one chosen, once it rests
+      plate_id_learn_wanted = true;
+      Serial.printf("Plate detect: learning plate %d, hands off the harp\n", harp_plate);
+    }
     value = 1;
+    current_sysex_parameters[plate_detect_adress] = 1;
+    if (sysex_controler_connected && !parameters_loading) send_parameter_page(plate_detect_adress / page_size);   // so an editor's control follows
   }
   plate_detect = value ? 1 : 0;
 }
@@ -2498,6 +2549,10 @@ FLASHMEM static bool plate_id_rest(uint16_t (&rest)[12]) {
   uint16_t now[12];
   bool touched;
   harp_sensor.read_rest(now, touched);
+  // touched as the harp has it: right after a swap a zone can sit a little under its rest, short of a touch,
+  // which read_rest's own test (past the release threshold) took for a finger, and nothing was ever looked at
+  touched = false;
+  for (uint8_t z = 0; z < 12; z++) touched |= harp_array[z].read_value();
   if (touched) { count = 0; return false; }
   for (uint8_t z = 0; z < 12; z++) {
     if (count == 0) { sum[z] = 0; lo[z] = hi[z] = now[z]; }
@@ -2517,7 +2572,12 @@ FLASHMEM void plate_id_update() {
   static elapsedMillis since_check;
   static bool booted = false;
   if (!plate_detect && !plate_id_learn_wanted) return;
-  bool due = plate_id_learn_wanted ? since_check >= plate_id_learn_ms : !booted ? millis() > 1500 : since_check >= plate_id_check_ms;
+  // never while a swap is waited out, nor with no plate on: on 2026-10-17 a learn still waiting for a quiet harp
+  // took its readings as the plate came off and learned the bare pins as the Keymaster, then found the bare pins
+  // to be the Keymaster twice
+  if (plate_swap_state != 0 || plate_swap_bare) return;
+  bool due = plate_id_learn_wanted ? since_check >= plate_id_learn_ms : !booted ? millis() > 1500 :
+             plate_id_check_wanted || since_check >= plate_id_check_ms;
   if (!due) return;
   uint16_t rest[12];
   if (!plate_id_rest(rest)) return;
@@ -2535,14 +2595,17 @@ FLASHMEM void plate_id_update() {
       for (uint8_t z = 0; z < 12; z++) d += (pf[z] - plate_prints[p].pf[z]) * (pf[z] - plate_prints[p].pf[z]);
       if (sqrtf(d / 12) <= plate_id_near) {
         Serial.printf("Plate detect: plate %d not learned, it reads as plate %d\n", harp_plate, p);
+        plate_led_show(PLATE_LED_REFUSED);
         return;
       }
     }
     plate_id_store(harp_plate, rest);
     Serial.printf("Plate detect: learned plate %d (mean %d)\n", harp_plate, mean);
+    plate_led_show(PLATE_LED_LEARNED);
     return;
   }
   booted = true;
+  plate_id_check_wanted = false;
   int8_t best = -1;
   float best_d = 1e9, next_d = 1e9;
   for (uint8_t p = 0; p < harp_plate_count; p++) {
@@ -2572,6 +2635,7 @@ FLASHMEM void plate_id_update() {
   plate_id_learn_wanted = false;   // found, not chosen
   harp_sensor.recalibrate();   // the baselines the old plate left
   if (sysex_controler_connected) send_parameter_page(harp_plate_adress / page_size);
+  plate_led_show(PLATE_LED_FOUND);
 }
 
 // harp plate (243): a plate chosen live, rather than loaded with a preset, brings its calibration untrimmed
@@ -2927,6 +2991,8 @@ void step_led_animation() {
     led_anim_timer = 0;
     key_change_led_on = !key_change_led_on;
     set_led_color(bank_led_hue, bank_led_saturation(), key_change_led_on ? 1.0 : 0.12);
+  } else if (plate_led_pattern) {
+    plate_led_step();   // plate detect's flashes, a second or so (PLATE ID)
   } else if (looper_state == LOOPER_COUNTIN) {
     // counting in: red, bright on each beat
     if (led_anim_timer < 20) return;
@@ -8780,8 +8846,196 @@ FLASHMEM void neighbour_guard_settle(bool stock) {
   for (uint8_t i = 0; i < 12; i++) if (!stock || !harp_array[i].read_value()) pad_shadow[i] = false;
 }
 
+//>>PLATE SWAP<<
+// A plate taken off or put on with the power on. The touch chip reads each zone against a resting level (its
+// baseline) that follows a change only a count at a time, and hardly at all while the zone reads as touched.
+// So a plate with more copper put on reads, on every zone at once, as twelve fingers held down: the strings
+// stuck held and nothing new played, until the baseline crawled down (for minutes). One with less copper read
+// above its rest, and a finger had to press far harder to count, for seconds. Plate detect couldn't help, as
+// it waited for an untouched harp. And a short on a line as a plate goes on can make the chip flag over
+// current, which stops it until the flag is cleared; it was never cleared, and the harp went silent (harp.cpp).
+// So the swap is watched, from the chip's readings every plate_swap_poll_ms:
+//  - coming off: plate_swap_zones zones or more read over plate_swap_lift above their rest. A touch only ever
+//    brings a reading down, so nothing else does that, but a hand lifted after a recalibration made under it,
+//    which wants recalibrating too.
+//  - going on: plate_swap_zones zones or more land within plate_swap_land_ms of each other. A hand rolls on
+//    over tens of milliseconds and seldom covers ten zones; a plate's copper lands on all twelve at once.
+//    Those landings are swallowed, so the twelve strings don't all sound as it goes on. But a plate pressed
+//    onto its pins can land slower than that: on the first real swap (2026-10-17, the piano plate onto bare
+//    pins) it did, and the harp sat silent 28 s, all twelve held, until the stuck rule below caught it. So
+//    once a swap settles with the plate off (its readings over plate_swap_bare_counts above where they were before),
+//    the harp is bare, and plate_swap_zones zones or more falling plate_swap_drop under their rest is a plate
+//    going on, however slowly it lands. Measured on that swap: off, 61-126 counts up; on, 134-186 down.
+//  - left stuck: all twelve zones touched and still to within plate_swap_steady_counts for plate_swap_stuck_ms.
+//  - the over current flag.
+// Then the strings are let go and the harp waits, playing nothing, until every zone holds still to within
+// plate_swap_steady_counts for plate_swap_settle_ms, recalibrates the chip there, swallows what the zones do as
+// they settle, and asks plate detect to look at once. Each step is said on the serial port, with the readings,
+// so the thresholds can be measured on real swaps: none of them has been yet.
+const uint16_t plate_swap_poll_ms = 20;
+const int16_t plate_swap_lift = 15;          // counts above rest
+const int16_t plate_swap_drop = 30;          // counts under rest, on a bare harp
+const int16_t plate_swap_bare_counts = 20;   // counts, on average, a settled swap reads above the plate before it
+const uint8_t plate_swap_left_zones = 3;     // zones left above their rest, untouched ...
+const uint16_t plate_swap_left_ms = 300;     // ... this long: recalibrated too
+const uint8_t plate_swap_zones = 10;
+const uint8_t plate_swap_land_ms = 30;
+const uint8_t plate_swap_steady_counts = 4;
+const uint16_t plate_swap_settle_ms = 300;
+const uint16_t plate_swap_stuck_ms = 3000;
+const uint16_t plate_swap_after_ms = 60;     // after recalibrating, how long the zones' transitions are swallowed
+enum { SWAP_NONE, SWAP_SETTLING, SWAP_AFTER };
+
+// every string let go and every way of playing set back, for a swap
+FLASHMEM static void harp_quiet() {
+  for (uint8_t i = 0; i < 12; i++) {
+    harp_array[i].read_transition();   // what landed with the plate is swallowed
+    pad_shadow[i] = string_palmed[i] = false;
+    if (string_enveloppe_array[i]->isActive()) release_string(i);
+  }
+  harp_positions_reset();
+  harp_ribbon_reset();
+}
+
+FLASHMEM static void plate_swap_begin(const char *why, const uint16_t (&f)[12], const uint16_t (&b)[12]) {
+  Serial.printf("Plate swap: %s; zones above (+) or below (-) their rest:", why);
+  for (uint8_t z = 0; z < 12; z++) Serial.printf(" %+d", (int)f[z] - (int)b[z]);
+  Serial.println();
+  harp_quiet();
+  plate_swap_state = SWAP_SETTLING;
+  if (plate_id_learn_wanted) Serial.println("Plate detect: the plate being learned was swapped: not learned");
+  plate_id_learn_wanted = false;   // the plate it was to learn is coming off, or another is going on
+}
+
+// From handle_harp, after the chip is read: true while a swap is being waited out (the harp does nothing else)
+FLASHMEM bool plate_swap_watch() {
+  static elapsedMillis since_poll, steady_for, since_after;
+  static uint16_t lo[12], hi[12];
+  static bool was_down[12] = {false};
+  static uint32_t landed_at[12] = {0};
+  static elapsedMillis all_still;
+  static uint16_t still_lo[12], still_hi[12];
+  static bool coming_off = false;            // this swap began as a plate coming off
+  static bool going_on = false;              // this swap began as a plate going on
+  static elapsedMillis left_for;             // how long plate_swap_left_zones or more have been left above rest
+  static int32_t before = 0;                 // the readings' sum before it (the plate's rest)
+  static int32_t bare_sum = 0;               // the readings' sum on the bare pins, once a swap has settled there
+  if (plate_swap_state == SWAP_AFTER) {
+    for (uint8_t i = 0; i < 12; i++) {
+      harp_array[i].read_transition();
+      was_down[i] = harp_array[i].read_value();
+    }
+    if (since_after < plate_swap_after_ms) return true;
+    plate_swap_state = SWAP_NONE;
+    plate_id_check_wanted = true;
+    Serial.println("Plate swap: playing again");
+    return false;
+  }
+  // going on: the landings this pass, and how many landed within plate_swap_land_ms
+  uint32_t now = millis();
+  uint8_t landing = 0;
+  bool all_down = true;
+  for (uint8_t i = 0; i < 12; i++) {
+    bool down = harp_array[i].read_value();
+    if (down && !was_down[i]) landed_at[i] = now;
+    was_down[i] = down;
+    all_down &= down;
+    if (down && now - landed_at[i] <= plate_swap_land_ms) landing++;
+  }
+  bool poll = since_poll >= plate_swap_poll_ms || plate_swap_state != SWAP_NONE || harp_sensor.over_current || landing >= plate_swap_zones;
+  if (!poll) return false;
+  since_poll = 0;
+  uint16_t f[12], b[12];
+  if (harp_sensor.over_current) {
+    harp_sensor.over_current = false;
+    uint16_t zero[12] = {0};
+    plate_swap_begin("the touch chip flagged over current", zero, zero);
+    harp_sensor.recalibrate();   // it stopped: start it again before there is anything to read
+    steady_for = 0;
+    for (uint8_t z = 0; z < 12; z++) lo[z] = 0xFFFF, hi[z] = 0;
+    return true;
+  }
+  harp_sensor.read_levels(f, b);
+  if (plate_swap_state == SWAP_NONE) {
+    uint8_t lifted = 0, dropped = 0;
+    for (uint8_t z = 0; z < 12; z++) {
+      lifted += f[z] > b[z] + plate_swap_lift;
+      dropped += f[z] + plate_swap_drop < b[z];
+    }
+    // all twelve held, and still: kept against the readings since all twelve went down
+    if (!all_down) all_still = 0;
+    bool still = all_down;
+    for (uint8_t z = 0; z < 12 && all_down; z++) {
+      if (all_still < plate_swap_poll_ms + 2) still_lo[z] = still_hi[z] = f[z];
+      still_lo[z] = min(still_lo[z], f[z]);
+      still_hi[z] = max(still_hi[z], f[z]);
+      if (still_hi[z] - still_lo[z] > plate_swap_steady_counts) { all_still = 0; still = false; }
+    }
+    bool any_down = false;
+    for (uint8_t i = 0; i < 12; i++) any_down |= harp_array[i].read_value();
+    if (lifted < plate_swap_left_zones || any_down) left_for = 0;
+    coming_off = going_on = false;
+    if (lifted >= plate_swap_zones || left_for >= plate_swap_left_ms) {
+      // a plate coming off; or some zones left above their rest, untouched: the rest of a plate pulled off one
+      // header at a time, or a hand lifted after a recalibration made under it
+      plate_swap_begin(lifted >= plate_swap_zones ? "a plate coming off" : "zones left above their rest", f, b);
+      coming_off = true;
+      before = 0;
+      for (uint8_t z = 0; z < 12; z++) before += b[z];
+    }
+    else if (plate_swap_bare && dropped >= plate_swap_zones) {
+      plate_swap_begin("a plate going on, onto the bare pins", f, b);
+      going_on = true;
+    }
+    else if (landing >= plate_swap_zones) {
+      plate_swap_begin("a plate going on", f, b);
+      going_on = true;
+    }
+    else if (still && all_still >= plate_swap_stuck_ms) plate_swap_begin("all twelve zones held still", f, b);
+    else return false;
+    left_for = 0;
+    steady_for = 0;
+    for (uint8_t z = 0; z < 12; z++) lo[z] = hi[z] = f[z];
+    return true;
+  }
+  // settling: wait for every zone to hold still, then recalibrate there
+  bool steady = true;
+  for (uint8_t z = 0; z < 12; z++) {
+    lo[z] = min(lo[z], f[z]);
+    hi[z] = max(hi[z], f[z]);
+    steady &= hi[z] - lo[z] <= plate_swap_steady_counts;
+  }
+  for (uint8_t i = 0; i < 12; i++) harp_array[i].read_transition();   // nothing plays meanwhile
+  if (!steady) {
+    steady_for = 0;
+    for (uint8_t z = 0; z < 12; z++) lo[z] = hi[z] = f[z];
+    return true;
+  }
+  if (steady_for < plate_swap_settle_ms) return true;
+  int32_t sum = 0;
+  for (uint8_t z = 0; z < 12; z++) sum += f[z];
+  // off and still off (not put straight back on, or another plate on, before it settled)
+  // coming off and settled well above the plate it left: no plate on. A plate pulled off one header at a time
+  // (logged 2026-10-17 08:07) settles half off first, and the rest is the swap below of zones left above rest,
+  // still a plate coming off
+  // Or near where the bare pins read before: a plate touched to the pins and lifted off again before it
+  // settled (logged 2026-10-17 08:12:45) began as one going on and settled bare, and plate detect, told a plate
+  // was on, matched the bare pins to a print learned from them
+  bool off_again = bare_sum && sum + 12 * plate_swap_bare_counts / 2 > bare_sum;
+  plate_swap_bare = (coming_off && sum > before + 12 * plate_swap_bare_counts) || off_again;
+  if (plate_swap_bare) bare_sum = max(bare_sum, sum);   // the highest: a plate pulled off in halves settles half bare first
+  Serial.printf("Plate swap: settled%s; recalibrating at", plate_swap_bare ? ", no plate on" : "");
+  for (uint8_t z = 0; z < 12; z++) Serial.printf(" %d", f[z]);
+  Serial.println();
+  harp_sensor.recalibrate();
+  plate_swap_state = SWAP_AFTER;
+  since_after = 0;
+  return true;
+}
+
 void handle_harp() {
   harp_sensor.update(harp_array);
+  if (plate_swap_watch()) return;
   if (harp_sensor.thresholds_pending()) {
     bool clear = true;
     for (int i = 0; i < 12; i++) clear &= !harp_array[i].read_value();

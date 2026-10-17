@@ -371,6 +371,11 @@ bool MPR121::overCurrentDetected(uint16_t touch_status)
   return touch_status & OVER_CURRENT_REXT;
 }
 
+void MPR121::clearOverCurrent(DeviceAddress device_address)
+{
+  write(device_address, TOUCH_STATUS_REGISTER_ADDRESS + 1, (uint8_t)(OVER_CURRENT_REXT >> BITS_PER_BYTE));
+}
+
 bool MPR121::anyTouched(uint16_t touch_status)
 {
   return touch_status & touch_status_mask_;

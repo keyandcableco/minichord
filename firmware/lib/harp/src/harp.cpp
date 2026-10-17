@@ -57,6 +57,7 @@ harp::harp(){}
   void harp::apply_thresholds(){}
   uint16_t harp::read_proximity(){ return 0; }
   void harp::read_rest(uint16_t (&rest)[12], bool &touched){ for (uint8_t k = 0; k < 12; k++) rest[k] = 0; touched = true; }
+  void harp::read_levels(uint16_t (&filtered)[12], uint16_t (&baseline)[12]){ for (uint8_t k = 0; k < 12; k++) filtered[k] = baseline[k] = 0; }
 
   void harp::update(debouncer (&data_array)[12]){
       AT42QT2120::Status status = touch_sensor.getStatus();
@@ -287,6 +288,17 @@ harp::harp(){}
     }
   }
 
+  FLASHMEM void harp::read_levels(uint16_t (&filtered)[12], uint16_t (&baseline)[12]){
+    uint16_t f[12], b[12];
+    touch_sensor.getDeviceAllChannelsData(MPR121::ADDRESS_5A, f, b);
+    for (uint8_t key=0; key < 12; key++){
+      uint8_t zone = remap_array[key];
+      if (upside_down) zone = 11 - zone;
+      filtered[zone] = f[key];
+      baseline[zone] = b[key];
+    }
+  }
+
   // Measured 2026-10-14: twin rows' pads, three times a stock pad, read 2-3 times as strongly (a normal tap
   // about 400 against 150) and a hard press near the chip's floor, so touch velocity and pressure were full
   // from a normal tap on; at 240 they spread as on the stock strip. The plate's own scale times a player's
@@ -316,8 +328,13 @@ harp::harp(){}
   void harp::update(debouncer (&data_array)[12]){
       uint16_t touch_status = touch_sensor.getTouchStatus(MPR121::ADDRESS_5A);
       if (touch_sensor.overCurrentDetected(touch_status)){
-        Serial.println("Over current detected!\n\n");
-        touch_sensor.startAllChannels();
+        // It used to start the channels again without clearing the flag (and without hover's proximity
+        // channel), and the chip, stopped until the flag is cleared, measured nothing: a silent harp, this
+        // line printed every pass. Now the flag is cleared and the caller recalibrates.
+        touch_sensor.clearOverCurrent(MPR121::ADDRESS_5A);
+        if (!over_current) Serial.println("Harp: over current flagged, cleared");
+        over_current = true;
+        over_current_count++;
         return;
       }
       for (uint8_t key=0; key < 12; key++){

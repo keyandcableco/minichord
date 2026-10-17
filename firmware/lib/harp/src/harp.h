@@ -43,6 +43,14 @@ class harp{
   // capacitance grows, so the plate fitted shows in it (plate ID, main.cpp). Whether a zone reads as
   // touched, the same way round, in touched.
   void read_rest(uint16_t (&filtered)[12], bool &touched);
+  // Each zone's reading and the chip's resting level for it (its baseline), by where the zone is on the plate:
+  // a touch only ever brings a reading below its rest, so readings well above it mean the plate came off
+  // (the plate swap watch, main.cpp)
+  void read_levels(uint16_t (&filtered)[12], uint16_t (&baseline)[12]);
+  // The chip stops measuring when it flags over current (a short on a line as a plate goes on, say), until the
+  // flag is cleared: update() clears it, reads nothing that pass, and sets this, for the caller to recalibrate
+  bool over_current = false;
+  uint16_t over_current_count = 0;
   // How strongly the fitted plate reads against the stock strip, in percent (100 stock): read_strength()
   // divides by it, so a plate with bigger pads plays touch velocity, pressure and the rest as the stock strip
   // does. The chip's touch thresholds are its own (set_thresholds).

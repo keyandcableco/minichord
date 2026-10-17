@@ -94,6 +94,8 @@ public:
 
   uint16_t getTouchStatus(DeviceAddress device_address);
   bool overCurrentDetected(uint16_t touch_status);
+  // The over current flag (OVCF) stops the chip until it is cleared: written 1, in the touch status's high byte
+  void clearOverCurrent(DeviceAddress device_address);
   bool anyTouched(uint16_t touch_status);
   uint8_t getTouchCount(uint16_t touch_status);
   bool deviceChannelTouched(uint16_t touch_status,

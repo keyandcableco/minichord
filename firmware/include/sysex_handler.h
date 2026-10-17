@@ -21,6 +21,9 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 417:
         strip_guard=value; apply_harp_thresholds();
         break;
+      case 422:
+        plate_detect_set(value);
+        break;
       case 418:
         harp_touch_scale=value; apply_harp_touch_scale();
         break;
@@ -1289,6 +1292,7 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 243: lo=0; hi=10; return true;
       case 416: lo=0; hi=7; return true;
       case 417: lo=0; hi=9; return true;
+      case 422: lo=0; hi=3; return true;
       case 418: lo=25; hi=400; return true;
       case 241: lo=0; hi=120; return true;
       case 242: lo=0; hi=119; return true;
