@@ -56,6 +56,7 @@ harp::harp(){}
   void harp::set_strength_scale(uint16_t percent){}
   void harp::apply_thresholds(){}
   uint16_t harp::read_proximity(){ return 0; }
+  void harp::read_rest(uint16_t (&rest)[12], bool &touched){ for (uint8_t k = 0; k < 12; k++) rest[k] = 0; touched = true; }
 
   void harp::update(debouncer (&data_array)[12]){
       AT42QT2120::Status status = touch_sensor.getStatus();
@@ -270,6 +271,19 @@ harp::harp(){}
     for (uint8_t key=0; key < 12; key++){
       int16_t delta = (int16_t)baseline[key] - (int16_t)filtered[key];
       strength[remap_array[key]] = delta > 0 ? (int32_t)delta * 100 / strength_scale : 0;
+    }
+  }
+
+  FLASHMEM void harp::read_rest(uint16_t (&rest)[12], bool &touched){
+    uint16_t filtered[12];
+    uint16_t baseline[12];
+    touch_sensor.getDeviceAllChannelsData(MPR121::ADDRESS_5A, filtered, baseline);
+    touched = false;
+    for (uint8_t key=0; key < 12; key++){
+      uint8_t zone = remap_array[key];
+      if (upside_down) zone = 11 - zone;
+      rest[zone] = filtered[key];
+      touched |= (int16_t)baseline[key] - (int16_t)filtered[key] >= (int16_t)release_threshold;
     }
   }
 

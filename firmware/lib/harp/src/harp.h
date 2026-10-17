@@ -38,6 +38,11 @@ class harp{
   // zone always has (harp order i becomes 11 - i, in update() and
   // read_strength() alike).
   void set_upside_down(bool flipped);
+  // Each zone's resting reading, the chip's filtered data, by where the zone is on the plate (as the harp
+  // reads it the right way up, whichever way up the minichord is held): it falls as the zone's
+  // capacitance grows, so the plate fitted shows in it (plate ID, main.cpp). Whether a zone reads as
+  // touched, the same way round, in touched.
+  void read_rest(uint16_t (&filtered)[12], bool &touched);
   // How strongly the fitted plate reads against the stock strip, in percent (100 stock): read_strength()
   // divides by it, so a plate with bigger pads plays touch velocity, pressure and the rest as the stock strip
   // does. The chip's touch thresholds are its own (set_thresholds).

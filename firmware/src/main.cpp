@@ -17,8 +17,7 @@
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
 void apply_harp_thresholds();
-int version_ID=97; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96)
-//>>BUTTON ARRAYS<<
+int version_ID=98; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated)//>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
 debouncer chord_matrix_array[22];
@@ -2400,9 +2399,185 @@ FLASHMEM void apply_harp_touch_scale() {
   harp_sensor.set_strength_scale(applied);
   Serial.printf("Harp touch scale %lu: plate %d reads at %lu, trimmed to %lu%%\n", applied, harp_plate, plate, trim);
 }
+//>>PLATE ID<<
+// Which plate is fitted, from how its zones read at rest. The touch chip charges every zone with the same
+// current for the same time, and reads 1024 I T / (C VDD): the more copper a zone has, the lower it reads.
+// Most of each zone's capacitance is the minichord's own wiring, about 11 pF, and a plate's copper adds a
+// pF or so on top, but the pattern over the twelve zones is the plate's. Measured 2026-10-14 on one
+// minichord (~/minichord-bench results/platecal_*, rest and rest_after), with the part common to every zone
+// taken out (the supply, the temperature): the five plates then fitted, the stock strip, the Keymaster,
+// the piano, twin rows and framed strings, were 0.08 to 0.25 pF apart (rms over the zones), and each plate
+// read within 0.012 pF of itself over four hours. So a plate is known by its print, the twelve readings.
+// Another minichord's wiring is its own, so the prints are learned on each instrument, not shipped: choosing
+// a plate live (243) with it fitted learns it, once nothing has touched it for plate_id_learn_ms. Then at
+// power on, and every plate_id_check_ms while the harp rests (a plate swapped with the power on), the
+// nearest print learned is chosen, if it is close (plate_id_near) and clearly nearer than the next. Whatever
+// is not clear changes nothing: a hand over the plate, a plate never learned. A plate's print follows it
+// slowly each time it is known, for days of drift no one has measured yet. Plates of the same copper (the
+// veena and zipper 24, fretless 31 and the fretless wrap) share a print, and a plate number.
+// Plate detect (422): 0 off, 1 on, 2 forgets every print learned and is on.
+const int16_t plate_detect_adress = 422;
+uint8_t plate_detect = 1;
+const int plate_id_eeprom = 320;                 // after the locks (16 to 291): 'P', the layout, then a print a plate
+const uint8_t plate_id_layout = 1;
+const uint8_t plate_id_bytes = 14;               // the mean reading (two bytes), each zone's difference from it (one each)
+const float plate_id_k = 1024 * 63 * 0.5f / 3.3f;   // pF x counts at the touch charge (63 uA, 0.5 us), for C = k / reading
+const float plate_id_near = 0.035f;              // pF (rms over the zones): a print this close is the plate
+const uint16_t plate_id_learn_ms = 2000;
+const uint16_t plate_id_check_ms = 3000;
+const uint8_t plate_id_samples = 32;
+struct plate_print { bool known; float pf[12]; };   // each zone's capacitance less the plate's mean, pF
+plate_print plate_prints[harp_plate_count];
+bool plate_id_learn_wanted = false;              // a plate was chosen live: learn it once it rests
+void choose_harp_plate(int value);
+
+FLASHMEM static void plate_print_of(const uint16_t (&rest)[12], uint16_t &mean, float (&pf)[12]) {
+  float sum = 0, c[12];
+  uint32_t total = 0;
+  for (uint8_t z = 0; z < 12; z++) { c[z] = plate_id_k / max(rest[z], (uint16_t)1); sum += c[z]; total += rest[z]; }
+  mean = total / 12;
+  for (uint8_t z = 0; z < 12; z++) pf[z] = c[z] - sum / 12;
+}
+
+FLASHMEM static void plate_id_store(uint8_t plate, const uint16_t (&rest)[12]) {
+  int at = plate_id_eeprom + 2 + plate * plate_id_bytes;
+  uint32_t total = 0;
+  for (uint8_t z = 0; z < 12; z++) total += rest[z];
+  uint16_t mean = total / 12;
+  uint8_t bytes[plate_id_bytes] = {(uint8_t)(mean & 0xFF), (uint8_t)(mean >> 8)};
+  for (uint8_t z = 0; z < 12; z++) bytes[2 + z] = (uint8_t)(int8_t)constrain((int)rest[z] - mean, -127, 127);
+  if (eeprom_read_byte((const uint8_t *)plate_id_eeprom) != 'P' || eeprom_read_byte((const uint8_t *)(plate_id_eeprom + 1)) != plate_id_layout) {
+    for (uint8_t p = 0; p < harp_plate_count; p++) eeprom_write_byte((uint8_t *)(plate_id_eeprom + 2 + p * plate_id_bytes), 0);
+    eeprom_write_byte((uint8_t *)plate_id_eeprom, 'P');
+    eeprom_write_byte((uint8_t *)(plate_id_eeprom + 1), plate_id_layout);
+  }
+  for (uint8_t k = 0; k < plate_id_bytes; k++) {
+    if (eeprom_read_byte((const uint8_t *)(at + k)) != bytes[k]) eeprom_write_byte((uint8_t *)(at + k), bytes[k]);
+  }
+  uint16_t back[12];
+  for (uint8_t z = 0; z < 12; z++) back[z] = mean + (int8_t)bytes[2 + z];
+  uint16_t m;
+  plate_print_of(back, m, plate_prints[plate].pf);
+  plate_prints[plate].known = true;
+}
+
+FLASHMEM void plate_id_load() {
+  for (uint8_t p = 0; p < harp_plate_count; p++) plate_prints[p].known = false;
+  if (eeprom_read_byte((const uint8_t *)plate_id_eeprom) != 'P' || eeprom_read_byte((const uint8_t *)(plate_id_eeprom + 1)) != plate_id_layout) return;
+  for (uint8_t p = 0; p < harp_plate_count; p++) {
+    int at = plate_id_eeprom + 2 + p * plate_id_bytes;
+    uint16_t mean = eeprom_read_byte((const uint8_t *)at) | (eeprom_read_byte((const uint8_t *)(at + 1)) << 8);
+    if (mean == 0 || mean == 0xFFFF) continue;
+    uint16_t rest[12];
+    for (uint8_t z = 0; z < 12; z++) rest[z] = mean + (int8_t)eeprom_read_byte((const uint8_t *)(at + 2 + z));
+    uint16_t m;
+    plate_print_of(rest, m, plate_prints[p].pf);
+    plate_prints[p].known = true;
+  }
+}
+
+FLASHMEM void plate_detect_set(int value) {
+  if (value == 2) {   // forget every plate
+    eeprom_write_byte((uint8_t *)plate_id_eeprom, 0);
+    for (uint8_t p = 0; p < harp_plate_count; p++) plate_prints[p].known = false;
+    Serial.println("Plate detect: every plate forgotten");
+    value = 1;
+  }
+  plate_detect = value ? 1 : 0;
+}
+
+// The harp at rest, averaged over plate_id_samples readings: false while any zone is touched or the
+// readings wander (a hand coming near), which ends the average and starts it again.
+FLASHMEM static bool plate_id_rest(uint16_t (&rest)[12]) {
+  static uint32_t sum[12];
+  static uint16_t lo[12], hi[12];
+  static uint8_t count = 0;
+  static elapsedMillis since;
+  if (since < 2) return false;
+  since = 0;
+  uint16_t now[12];
+  bool touched;
+  harp_sensor.read_rest(now, touched);
+  if (touched) { count = 0; return false; }
+  for (uint8_t z = 0; z < 12; z++) {
+    if (count == 0) { sum[z] = 0; lo[z] = hi[z] = now[z]; }
+    sum[z] += now[z];
+    lo[z] = min(lo[z], now[z]);
+    hi[z] = max(hi[z], now[z]);
+    if (hi[z] - lo[z] > 4) { count = 0; return false; }
+  }
+  if (++count < plate_id_samples) return false;
+  for (uint8_t z = 0; z < 12; z++) rest[z] = (sum[z] + plate_id_samples / 2) / plate_id_samples;
+  count = 0;
+  return true;
+}
+
+// From the loop: learn a plate just chosen, or find the plate fitted
+FLASHMEM void plate_id_update() {
+  static elapsedMillis since_check;
+  static bool booted = false;
+  if (!plate_detect && !plate_id_learn_wanted) return;
+  bool due = plate_id_learn_wanted ? since_check >= plate_id_learn_ms : !booted ? millis() > 1500 : since_check >= plate_id_check_ms;
+  if (!due) return;
+  uint16_t rest[12];
+  if (!plate_id_rest(rest)) return;
+  since_check = 0;
+  uint16_t mean;
+  float pf[12];
+  plate_print_of(rest, mean, pf);
+  if (plate_id_learn_wanted) {
+    plate_id_learn_wanted = false;
+    // a plate chosen without being fitted (an editor setting up presets) reads as the plate that is: not
+    // learned, if another plate's print is that close
+    for (uint8_t p = 0; p < harp_plate_count; p++) {
+      if (p == harp_plate || !plate_prints[p].known) continue;
+      float d = 0;
+      for (uint8_t z = 0; z < 12; z++) d += (pf[z] - plate_prints[p].pf[z]) * (pf[z] - plate_prints[p].pf[z]);
+      if (sqrtf(d / 12) <= plate_id_near) {
+        Serial.printf("Plate detect: plate %d not learned, it reads as plate %d\n", harp_plate, p);
+        return;
+      }
+    }
+    plate_id_store(harp_plate, rest);
+    Serial.printf("Plate detect: learned plate %d (mean %d)\n", harp_plate, mean);
+    return;
+  }
+  booted = true;
+  int8_t best = -1;
+  float best_d = 1e9, next_d = 1e9;
+  for (uint8_t p = 0; p < harp_plate_count; p++) {
+    if (!plate_prints[p].known) continue;
+    float d = 0;
+    for (uint8_t z = 0; z < 12; z++) d += (pf[z] - plate_prints[p].pf[z]) * (pf[z] - plate_prints[p].pf[z]);
+    d = sqrtf(d / 12);
+    if (d < best_d) { next_d = best_d; best_d = d; best = p; }
+    else if (d < next_d) next_d = d;
+  }
+  if (best < 0 || best_d > plate_id_near || best_d * 2 > next_d) return;   // not clear: leave it be
+  // the print follows the plate slowly: a quarter of the way, written only when that moves a count
+  uint16_t was[12], blended[12];
+  int at = plate_id_eeprom + 2 + best * plate_id_bytes;
+  uint16_t m0 = eeprom_read_byte((const uint8_t *)at) | (eeprom_read_byte((const uint8_t *)(at + 1)) << 8);
+  bool moved = false;
+  for (uint8_t z = 0; z < 12; z++) {
+    was[z] = m0 + (int8_t)eeprom_read_byte((const uint8_t *)(at + 2 + z));
+    blended[z] = (was[z] * 3 + rest[z] + 2) / 4;
+    moved |= blended[z] != was[z];
+  }
+  if (moved) plate_id_store(best, blended);
+  if (best == harp_plate) return;
+  Serial.printf("Plate detect: plate %d fitted (%.3f pF from its print, the next %.3f)\n", best, best_d, next_d);
+  current_sysex_parameters[harp_plate_adress] = best;
+  choose_harp_plate(best);
+  plate_id_learn_wanted = false;   // found, not chosen
+  harp_sensor.recalibrate();   // the baselines the old plate left
+  if (sysex_controler_connected) send_parameter_page(harp_plate_adress / page_size);
+}
+
 // harp plate (243): a plate chosen live, rather than loaded with a preset, brings its calibration untrimmed
 FLASHMEM void choose_harp_plate(int value) {
   bool swapped = value != harp_plate && !parameters_loading;
+  if (value != harp_plate && !parameters_loading && plate_detect) plate_id_learn_wanted = true;
   harp_plate = value;
   if (swapped && current_sysex_parameters[harp_touch_scale_adress] != 100) {
     current_sysex_parameters[harp_touch_scale_adress] = 100;
@@ -7386,6 +7561,7 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   chord_matrix.setup();
   harp_sensor.setup();
   harp_sensor.recalibrate();
+  plate_id_load();
   upside_down = eeprom_read_byte((const uint8_t *)upside_down_eeprom) == 1;
   upside_down_apply();
   // The harp pads don't bounce: the touch chip already wants two readings in a row before it calls a
@@ -10517,6 +10693,7 @@ void loop() {
 
   // Handle harp functions
   handle_harp();
+  plate_id_update();
   looper_update();
   vocoder_update();
   phone_update();
