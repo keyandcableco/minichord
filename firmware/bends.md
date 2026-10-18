@@ -30,7 +30,8 @@ warble of a few Hz (4.6 Hz at -3 semitones, 14 Hz an octave down) and 17 ms of l
   `parameter_range` moved to flash too: ITCM padding 1268 -> 4180 B. Flash +6 kB.
 - CPU on the minichord (fw102_test.py cpu, 16 voices sounding, 2026-10-18): 26.2% with no bends; held
   deep, pitch drop +2.0 points, starve +3.1, crush +1.5, drop + starve + crush +3.4, all four with a
-  stutter +4.2. Nothing extra at rest. Audio blocks in use at most 243 -> 258 (pool 900).
+  stutter +4.2. At rest it only passes blocks on (not measured against 99). Audio blocks in use at
+  most 243 -> 258 (pool 900).
 
 ## Trying each one (once 102 is flashed)
 In minicontrol the Bends group has every setting; or from a DAW / `minictl`, send the CCs:
