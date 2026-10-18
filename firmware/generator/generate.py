@@ -470,8 +470,11 @@ static const ParameterInfo parameter_lookup[] = {
                 scale = 100 if parameter["data_type"] == "float" else 1
                 min_value = int(round(parameter["min_value"] * scale))
                 max_value = int(round(parameter["max_value"] * scale))
-                is_selector = 1 if (parameter["data_type"] == "int"
-                                    and max_value - min_value <= SELECTOR_MAX_SPAN) else 0
+                # "sweep": "whole" for a setting a knob should take across all of its range whatever the
+                # preset holds, as a bend's depth (430...): around a value of 0 a knob would sweep 0 to 0
+                is_selector = 1 if ((parameter["data_type"] == "int"
+                                     and max_value - min_value <= SELECTOR_MAX_SPAN)
+                                    or parameter.get("sweep") == "whole") else 0
                 name = parameter.get("name", "unnamed")
                 lookup_file_content += "    { %d, %d, %d, %d }, // %s\n" % (
                     parameter["sysex_adress"], is_selector, min_value, max_value, name)

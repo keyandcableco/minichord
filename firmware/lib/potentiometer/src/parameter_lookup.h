@@ -69,15 +69,15 @@ static const ParameterInfo parameter_lookup[] = {
     { 260, 0, 0, 100 }, // vocoder
     { 261, 1, 0, 2 }, // vocoder carrier
     { 262, 0, 0, 100 }, // vocoder consonants
-    { 430, 0, 0, 100 }, // pitch drop
+    { 430, 1, 0, 100 }, // pitch drop
     { 431, 1, 1, 24 }, // pitch drop range
     { 432, 0, 0, 2000 }, // pitch drop sag
-    { 433, 0, 0, 100 }, // voltage starve
-    { 434, 0, 0, 100 }, // bitcrush
+    { 433, 1, 0, 100 }, // voltage starve
+    { 434, 1, 0, 100 }, // bitcrush
     { 435, 1, 0, 2 }, // bitcrush mode
-    { 436, 0, 0, 100 }, // clock bend
+    { 436, 1, 0, 100 }, // clock bend
     { 437, 1, 0, 1 }, // clock bend direction
-    { 438, 0, 0, 100 }, // stutter
+    { 438, 1, 0, 100 }, // stutter
     { 439, 1, 0, 1 }, // stutter sync
     { 303, 0, 0, 511 }, // phone follow 1 control
     { 304, 0, 0, 4095 }, // phone follow 1 value
