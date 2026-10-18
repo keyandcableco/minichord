@@ -42,7 +42,19 @@ In minicontrol the Bends group has every setting; or from a DAW / `minictl`, sen
 4. Clock bend: rhythm mode on (long press on hold), CC 115 at 127 drags to a quarter; 437 = 1 rushes.
 5. Stutter: play anything, CC 116 at 30 for a beat-repeat, 127 for a buzz; 439 = 1 with rhythm mode
    for slices of the beat (1/4 to 1/64).
-A knob works too: point the mod knob's alternate at 430-438 (knob targets reach 511).
+From a Linux terminal, `amidi` sends the CCs (channel 1; `amidi -l` gives the port, hw:3,0,0 on 2026-10-18):
+
+    amidi -p hw:3,0,0 -S 'B0 70 7F'    # CC 112 (0x70) pitch drop at 127; 'B0 70 00' lets go
+    amidi -p hw:3,0,0 -S 'B0 71 50'    # CC 113 (0x71) voltage starve at 80
+    amidi -p hw:3,0,0 -S 'B0 72 7F'    # CC 114 (0x72) bitcrush
+    amidi -p hw:3,0,0 -S 'B0 73 7F'    # CC 115 (0x73) clock bend (rhythm mode on)
+    amidi -p hw:3,0,0 -S 'B0 74 40'    # CC 116 (0x74) stutter at 64
+    amidi -p hw:3,0,0 -S 'B0 79 00'    # CC 121: every CC depth let go
+
+A knob: `minictl set --raw 16 433` puts voltage starve on the mod knob's alternate (the modifier held);
+it sweeps the bend's whole 0-100 (firmware 102 from 0ef047e on; before it, a knob on a bend at 0 did
+nothing). Hover: `minictl set --raw 249 438 250 100` makes a hand over the harp a stutter, deeper as
+it comes closer. Both are live settings: `minictl revert` after a `minictl snapshot`, or reload the bank.
 
 ## Checks
 - On a PC: `tools/bent_render` (see its header) renders each bend to wav and checks rest is bit for
