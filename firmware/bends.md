@@ -62,6 +62,19 @@ it sweeps the bend's whole 0-100 (firmware 102 from 0ef047e on; before it, a kno
 nothing). Hover: `minictl set --raw 249 438 250 100` makes a hand over the harp a stutter, deeper as
 it comes closer. Both are live settings: `minictl revert` after a `minictl snapshot`, or reload the bank.
 
+## A setup for playing them (live, any bank)
+Every bend on a control at once, over a rock groove, nothing saved (the user's "much cooler" setup,
+2026-10-18, on bank 7):
+
+    minictl snapshot
+    minictl set --raw 117 0 14 430 10 434 12 436 16 438 249 433 250 100 325 0 200 442 201 100 334 1 335 1 187 100 442 0
+    minictl rhythm on
+
+Mod knob: pitch drop. A hand over the harp: voltage starve, deeper the closer. With the modifier held:
+chord knob bitcrush, harp knob clock bend, mod knob stutter (alternates hold where they're left: back
+to the bottom to let go). Double tap of the modifier: bends interact on (100) and off. `minictl revert`
+puts the bank back.
+
 ## Checks
 - On a PC: `tools/bent_render` (see its header) renders each bend to wav and checks rest is bit for
   bit, no blocks leak, pool use, and the drop's pitch (-3.00/-5.99/-11.98 st).
