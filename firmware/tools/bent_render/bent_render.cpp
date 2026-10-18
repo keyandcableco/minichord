@@ -30,6 +30,7 @@ struct Groove {
   double t = 0;
   float chord_f[4] = {130.81f, 164.81f, 196.0f, 261.63f};   // C major, from C3
   double ph[2][4] = {};
+  float drum_part = 0;   // the last sample's drums, which go in on their own inputs
   float operator()(int side) {
     double beat = fmod(t, 0.5), eighth = fmod(t, 0.25);
     float env = expf(-(float)beat * 3.0f);
@@ -43,12 +44,14 @@ struct Groove {
     float hat = (eighth > 0.125 && eighth < 0.135) ? ((rand() / (float)RAND_MAX) * 2 - 1) * 0.08f * expf(-(float)(eighth - 0.125) * 400) : 0;
     if (side == 1) t += 1.0 / FS;
     if (!drums) kick = hat = 0;
-    return (y + kick + hat) * 32767.0f * 0.5f;
+    drum_part = (kick + hat) * 32767.0f * 0.5f;
+    return y * 32767.0f * 0.5f;
   }
 };
 
 struct Run {
-  std::vector<int16_t> in, out;   // interleaved
+  std::vector<int16_t> in, out;   // interleaved; in is the mix and the drums summed, as the last mix did
+  std::vector<int16_t> drums;     // the drums alone
   int most_held = 0, most_pool = 0;
   double us_per_block = 0;
 };
@@ -68,14 +71,20 @@ static Run render(float seconds, std::function<void(AudioEffectBend &, float)> s
     float t = b * AUDIO_BLOCK_SAMPLES / FS;
     set(bend, t);
     audio_block_t *in[2] = {AudioStream::allocate(), AudioStream::allocate()};
+    audio_block_t *dr[2] = {AudioStream::allocate(), AudioStream::allocate()};
     for (int n = 0; n < AUDIO_BLOCK_SAMPLES; n++) {
       for (int c = 0; c < 2; c++) {
         float x = g(c);
         in[c]->data[n] = (int16_t)std::max(-32768.0f, std::min(32767.0f, x));
+        dr[c]->data[n] = (int16_t)std::max(-32768.0f, std::min(32767.0f, g.drum_part));
       }
     }
-    for (int n = 0; n < AUDIO_BLOCK_SAMPLES; n++) for (int c = 0; c < 2; c++) r.in.push_back(in[c]->data[n]);
-    bend.feed(0, in[0]); bend.feed(1, in[1]);
+    for (int n = 0; n < AUDIO_BLOCK_SAMPLES; n++) for (int c = 0; c < 2; c++) {
+      int32_t sum = in[c]->data[n] + dr[c]->data[n];
+      r.in.push_back((int16_t)std::max(-32768, std::min(32767, sum)));
+      r.drums.push_back(dr[c]->data[n]);
+    }
+    bend.feed(0, in[0]); bend.feed(1, in[1]); bend.feed(2, dr[0]); bend.feed(3, dr[1]);
     auto t0 = std::chrono::steady_clock::now();
     bend.update();
     spent += std::chrono::duration<double, std::micro>(std::chrono::steady_clock::now() - t0).count();
@@ -86,7 +95,7 @@ static Run render(float seconds, std::function<void(AudioEffectBend &, float)> s
   }
   r.us_per_block = spent / blocks;
   // let go of everything, a second more, and count what's kept
-  bend.pitch_drop(0, 12, 150); bend.starve(0); bend.crush(0, 0); bend.stutter(0, 0);
+  bend.pitch_drop(0, 12, 150); bend.starve(0); bend.crush(0, 0); bend.stutter(0, 0, 1102, true);
   for (int b = 0; b < 400; b++) {
     audio_block_t *in[2] = {AudioStream::allocate(), AudioStream::allocate()};
     memset(in[0]->data, 0, sizeof(in[0]->data)); memset(in[1]->data, 0, sizeof(in[1]->data));
@@ -203,20 +212,33 @@ int main(int argc, char **argv) {
   write_wav(dir + "/3 bitcrush.wav", crush.out);
   printf("    %.2f us a block\n", crush.us_per_block);
 
-  printf("stutter: presses at 0.1, 0.5 and 1, free; then 0.3 and 0.8 in sync with 120 bpm\n");
-  Run stut = render(10, [](AudioEffectBend &b, float t) {
-    float d = press(t, 0.6f, 1.8f, 0.1f) + press(t, 2.6f, 3.6f, 0.5f) + press(t, 4.6f, 5.6f, 1.0f);
-    float s = press(t, 6.6f, 7.6f, 0.3f) + press(t, 8.6f, 9.6f, 0.8f);
-    b.stutter(d + s, t > 6.2f ? (uint32_t)(FS * 0.5f) : 0);
-  });
+  printf("stutter: presses at 0.1, 0.5 and 1, free; then 0.3 and 0.8 in sync with 120 bpm; the drums playing on\n");
+  auto stutter_presses = [](bool drums_through) {
+    return [drums_through](AudioEffectBend &b, float t) {
+      float d = press(t, 0.6f, 1.8f, 0.1f) + press(t, 2.6f, 3.6f, 0.5f) + press(t, 4.6f, 5.6f, 1.0f);
+      float s = press(t, 6.6f, 7.6f, 0.3f) + press(t, 8.6f, 9.6f, 0.8f);
+      b.stutter(d + s, t > 6.2f ? (uint32_t)(FS * 0.5f) : 0, 1102, drums_through);
+    };
+  };
+  Run stut = render(10, stutter_presses(true));
   write_wav(dir + "/4 stutter.wav", stut.out);
+  Run stut_all = render(10, stutter_presses(false));
+  write_wav(dir + "/4b stutter, the drums too.wav", stut_all.out);
+  {
+    // the kick on 3.0 and 3.5 s (inside the second press): there with the drums playing through, in the
+    // output as the drums alone put it, and not where they stutter too
+    auto kick_db = [](const std::vector<int16_t> &x, float at) { return rms_db(x, at, at + 0.06f); };
+    double through = kick_db(stut.out, 3.0f) - kick_db(stut.out, 2.9f), caught = kick_db(stut_all.out, 3.0f) - kick_db(stut_all.out, 2.9f);
+    printf("    the kick at 3.0 s against the 60 ms before it: %+.1f dB with the drums playing on, %+.1f dB with them stuttering\n", through, caught);
+    CHECK(through > 6 && caught < 3, "the drums don't carry on through the stutter (or do when they shouldn't)");
+  }
   printf("    %.2f us a block, most held %d blocks, pool +%d of 900\n", stut.us_per_block, stut.most_held, stut.most_pool);
   CHECK(stut.most_held <= 2 * (AudioEffectBend::HISTORY + AudioEffectBend::STUTTER_BLOCKS), "held more than it should");
 
   printf("all at once: drop 0.4, starve 0.4, crush 0.4, stutter 0.6\n");
   Run all = render(6, [](AudioEffectBend &b, float t) {
     float d = press(t, 0.5f, 5.0f, 1.0f);
-    b.pitch_drop(0.4f * d, 12, 150); b.starve(0.4f * d); b.crush(0.4f * d, 0); b.stutter(t > 2 && t < 4 ? 0.6f : 0, 0);
+    b.pitch_drop(0.4f * d, 12, 150); b.starve(0.4f * d); b.crush(0.4f * d, 0); b.stutter(t > 2 && t < 4 ? 0.6f : 0, 0, 1102, true);
   });
   write_wav(dir + "/5 all at once.wav", all.out);
   printf("    %.2f us a block (dry %.2f), most held %d, pool +%d\n", all.us_per_block, dry.us_per_block, all.most_held, all.most_pool);

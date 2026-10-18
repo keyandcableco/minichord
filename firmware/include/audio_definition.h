@@ -660,8 +660,10 @@ AudioConnection          clickCord2(looper_click_tick, 0, stereo_r_mixer, 3);
 
 // USB audio recording tap; absent when the USB type has no audio interfaces.
 #ifdef AUDIO_INTERFACE
-AudioConnection          drumCord1(drum_machine, 0, stereo_l_mixer, 3);   // input 3 is the click's without USB audio
-AudioConnection          drumCord2(drum_machine, 1, stereo_r_mixer, 3);
+// the drums into the bends rather than the last mix: added there as the mix's input 3 would have
+// added them, before a stutter or after it (stutter drums, 441), so the beat can carry on under one
+AudioConnection          drumCord1(drum_machine, 0, bent_bus, 2);
+AudioConnection          drumCord2(drum_machine, 1, bent_bus, 3);
 AudioConnection          patchCord2025(bent_bus, 0, USB_out, 1);
 AudioConnection          patchCord2026(bent_bus, 1, USB_out, 0);
 // the headphone/speaker path: the minichord, and the host's sound beside it, each USB channel to the

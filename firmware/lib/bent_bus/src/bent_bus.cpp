@@ -5,7 +5,26 @@
 #define FLASHMEM
 #endif
 
-FLASHMEM AudioEffectBend::AudioEffectBend() : AudioStream(2, inputQueueArray) {}
+FLASHMEM AudioEffectBend::AudioEffectBend() : AudioStream(4, inputQueueArray) {}
+
+// the drums into the mix, as the last mix's AudioMixer4 added them (gain 1, saturating), so with no bend
+// the sum is the one it was; each block's reference passed on or let go
+FLASHMEM void AudioEffectBend::add_drums(audio_block_t **cur, bool *own, audio_block_t **drums) {
+  for (uint8_t c = 0; c < 2; c++) {
+    if (!drums[c]) continue;
+    if (!cur[c]) { cur[c] = drums[c]; own[c] = false; drums[c] = nullptr; continue; }
+    audio_block_t *b = own[c] ? cur[c] : allocate();
+    if (b) {
+      for (uint32_t n = 0; n < AUDIO_BLOCK_SAMPLES; n++) {
+        int32_t y = cur[c]->data[n] + drums[c]->data[n];
+        b->data[n] = y > 32767 ? 32767 : y < -32768 ? -32768 : y;
+      }
+      if (b != cur[c]) { release(cur[c]); cur[c] = b; own[c] = true; }
+    }
+    release(drums[c]);
+    drums[c] = nullptr;
+  }
+}
 
 // one more reference to a block kept (the library's release() takes one away), as transmit adds one
 // for each cord; the USB interrupt allocates and releases too, so with interrupts held
@@ -29,23 +48,26 @@ FLASHMEM void AudioEffectBend::release_slice() {
 }
 
 // the slice's length for the stutter's depth now: from the longest at a touch to the shortest at full,
-// evenly in octaves; in sync, a quarter of a beat halving down to a 64th as it deepens
+// evenly in octaves; in sync, half a beat halving down to a 32nd as it deepens, none shorter than the
+// shortest (doubled up to it) nor longer than the longest
 FLASHMEM uint32_t AudioEffectBend::loop_wanted() {
   float x = (stutter_target - 0.03f) / 0.97f;
   x = x < 0 ? 0 : x > 1 ? 1 : x;
   const uint32_t longest = STUTTER_BLOCKS * AUDIO_BLOCK_SAMPLES;
   uint32_t beat = stutter_beat;
   if (beat) {
-    uint32_t len = beat >> (2 + (uint8_t)(x * 4.0f + 0.5f));
+    uint32_t len = beat >> (1 + (uint8_t)(x * 4.0f + 0.5f));
     while (len > longest) len >>= 1;
+    while (len < stutter_shortest && len * 2 <= longest) len <<= 1;
     return len < 64 ? 64 : len;
   }
-  return (uint32_t)(longest * powf((float)STUTTER_SHORTEST / longest, x));
+  return (uint32_t)(longest * powf((float)stutter_shortest / longest, x));
 }
 
 FLASHMEM void AudioEffectBend::update(void) {
   const uint32_t N = AUDIO_BLOCK_SAMPLES;
   audio_block_t *cur[2] = {receiveReadOnly(0), receiveReadOnly(1)};   // each holds one reference
+  audio_block_t *drums[2] = {receiveReadOnly(2), receiveReadOnly(3)};
   bool own[2] = {false, false};   // a block of this update's own, which nothing else holds: written in place
 
   // ---- the settings, once a block
@@ -98,9 +120,13 @@ FLASHMEM void AudioEffectBend::update(void) {
 
   rest = !stuttering && !looping && wet == 0 && !shifting && starve_now == 0 && gain == 1 && crackle == 0 && crush_now == 0;
 
+  // ---- the drums: into the mix now, unless a stutter is on and they're to keep playing through it
+  bool drums_after = stutter_drums_through && (stuttering || looping);
+  if (!drums_after) add_drums(cur, own, drums);
+
   // ---- the stutter: from the press on, the blocks kept; once there's a slice's worth, it plays over and over
   if (stuttering && slice_blocks < STUTTER_BLOCKS) {
-    for (uint8_t c = 0; c < 2; c++) { hold(cur[c]); slice[c][slice_blocks] = cur[c]; }
+    for (uint8_t c = 0; c < 2; c++) { hold(cur[c]); slice[c][slice_blocks] = cur[c]; own[c] = false; }
     slice_blocks++;
   }
   uint32_t captured = slice_blocks * N;
@@ -138,6 +164,7 @@ FLASHMEM void AudioEffectBend::update(void) {
       for (uint8_t c = 0; c < 2; c++) {
         if (cur[c]) release(cur[c]);
         cur[c] = out[c];
+        own[c] = true;
       }
       if (stutter_fade >= 128) release_slice();
     } else {
@@ -146,12 +173,15 @@ FLASHMEM void AudioEffectBend::update(void) {
     }
   }
 
+  if (drums_after) add_drums(cur, own, drums);
+
   // ---- the pitch shifter's history: what the stutter left, kept (so it is no longer this update's own)
   uint8_t slot = block_number & (HISTORY - 1);
   for (uint8_t c = 0; c < 2; c++) {
     if (history[c][slot]) release(history[c][slot]);
     hold(cur[c]);
     history[c][slot] = cur[c];
+    own[c] = false;
   }
   const uint32_t first = block_number * N;   // this block's first sample, counted from the start (wraps after a day)
   block_number++;

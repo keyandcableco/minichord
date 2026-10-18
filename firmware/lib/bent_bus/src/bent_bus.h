@@ -4,7 +4,8 @@
 // it, and the host's song and the looper's click don't. In signal order:
 //
 //   stutter   a slice of the sound from the press on, played over and over while held: shorter the
-//             deeper (139 ms at a touch, 9 ms, a buzz, at full), or a beat's fraction in sync
+//             deeper (280 ms at a touch, down to its shortest, 25 ms, at full), or a beat's fraction in
+//             sync; the drums keep playing through it unless they are to stutter too
 //   pitch     the whole instrument sags in pitch, drums and all, as a slowed clock would: a two-head
 //             delay-line pitch shifter; the starve's wobble goes through it too
 //   starve    a starved supply: the pitch wobbles and sags, the rails close in (a fuzz that gets
@@ -24,6 +25,8 @@
 class AudioEffectBend : public AudioStream {
 public:
   AudioEffectBend();   // in flash (bent_bus.cpp): inline, it put its state's zeroing in the static constructors' ITCM
+  // Inputs 0 and 1 the mix, left and right; 2 and 3 the drums, added to it here (as the last mix did, at
+  // gain 1) before the stutter or, with drums_through, after it, so the beat carries on under a stutter
 
   // depth 0..1; semitones at depth 1; the time the pitch takes to sag and to come back, in ms (to 95%,
   // three time constants)
@@ -34,8 +37,12 @@ public:
   void starve(float depth) { starve_target = depth; }
   // mode 0 bits and rate, 1 bits only, 2 rate only
   void crush(float depth, uint8_t mode) { crush_target = depth; crush_mode = mode; }
-  // beat_samples: the beat's length while the rhythm runs, for slices in time with it; 0 free
-  void stutter(float depth, uint32_t beat_samples) { stutter_target = depth; stutter_beat = beat_samples; }
+  // beat_samples: the beat's length while the rhythm runs, for slices in time with it, 0 free; shortest:
+  // the slice at full depth, samples; drums_through: the drums keep playing rather than stuttering
+  void stutter(float depth, uint32_t beat_samples, uint32_t shortest, bool drums_through) {
+    stutter_target = depth; stutter_beat = beat_samples; stutter_drums_through = drums_through;
+    stutter_shortest = shortest < 64 ? 64 : shortest > STUTTER_BLOCKS * AUDIO_BLOCK_SAMPLES ? STUTTER_BLOCKS * AUDIO_BLOCK_SAMPLES : shortest;
+  }
 
   // what it's doing, for the serial report
   bool resting() { return rest; }
@@ -46,17 +53,17 @@ public:
   static const uint16_t WINDOW = 1536;        // the pitch shifter's window, samples (35 ms): its heads jump every
                                               // 35 ms / (1 - speed), a warble of 4.6 Hz 3 semitones down, 14 Hz an octave down
   static const uint8_t HISTORY = 16;          // blocks kept a side for it (2048 samples, a power of 2)
-  static const uint8_t STUTTER_BLOCKS = 48;   // the longest slice a side (139 ms)
-  static const uint16_t STUTTER_SHORTEST = 384;   // the shortest, samples (8.7 ms)
+  static const uint8_t STUTTER_BLOCKS = 96;   // the longest slice a side (279 ms)
 
 private:
   static constexpr float BLOCK_MS = AUDIO_BLOCK_SAMPLES * 1000.0f / AUDIO_SAMPLE_RATE_EXACT;
-  audio_block_t *inputQueueArray[2];
+  audio_block_t *inputQueueArray[4];
 
   // settings, from the loop
   volatile float drop_target = 0, sag_coef = 1, starve_target = 0, crush_target = 0, stutter_target = 0;
   volatile uint8_t crush_mode = 0;
-  volatile uint32_t stutter_beat = 0;
+  volatile uint32_t stutter_beat = 0, stutter_shortest = 1102;   // 25 ms
+  volatile bool stutter_drums_through = true;
 
   bool rest = true;
   uint8_t held = 0;
@@ -100,6 +107,7 @@ private:
   static void hold(audio_block_t *b);
   static inline int16_t sample(audio_block_t *b, uint32_t n) { return b ? b->data[n] : 0; }
   static inline int16_t clip16(float x) { return x > 32767.0f ? 32767 : x < -32768.0f ? -32768 : (int16_t)x; }
+  void add_drums(audio_block_t **cur, bool *own, audio_block_t **drums);
 };
 
 #endif

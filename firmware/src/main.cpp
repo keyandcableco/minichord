@@ -2655,7 +2655,7 @@ FLASHMEM void choose_harp_plate(int value) {
 
 //>>BENDS<<
 // What a circuit bender wires into an Omnichord's body-contact points: pitch drop (430-432), voltage
-// starve (433), bitcrush (434-435), clock bend (436-437) and stutter (438-439), each with a depth from
+// starve (433), bitcrush (434-435), clock bend (436-437) and stutter (438-441), each with a depth from
 // 0 to 100. Four are bent_bus (lib/bent_bus) on the whole mix; clock bend multiplies the rhythm's
 // clock (acc_tick). A depth comes from its setting, which a preset keeps and the knobs, hover and the
 // double tap can move, or live from control change 112-116 (any channel, 0 to 127), which is never
@@ -2667,6 +2667,8 @@ uint16_t pitch_drop_sag = 150;               // ms (432)
 uint8_t bitcrush_mode = 0;                   // 0 bits and rate, 1 bits, 2 rate (435)
 bool clock_bend_faster = false;              // clock bend speeds the rhythm up rather than slowing it (437)
 bool stutter_sync = false;                   // stutter's slices a beat's fraction while the rhythm runs (439)
+uint8_t stutter_shortest_ms = 25;            // the slice at full depth (440)
+bool stutter_drums = false;                  // the drums stutter too, rather than playing on through it (441)
 
 FLASHMEM void bend_apply() {
   float d[5];
@@ -2677,7 +2679,7 @@ FLASHMEM void bend_apply() {
   bent_bus.pitch_drop(d[0], pitch_drop_range, pitch_drop_sag);
   bent_bus.starve(d[1]);
   bent_bus.crush(d[2], bitcrush_mode);
-  bent_bus.stutter(d[4], beat);
+  bent_bus.stutter(d[4], beat, (uint32_t)(stutter_shortest_ms * AUDIO_SAMPLE_RATE_EXACT / 1000), !stutter_drums);
 }
 
 // Stutter (438) from its setting: never from a preset, which would load the instrument frozen in a
