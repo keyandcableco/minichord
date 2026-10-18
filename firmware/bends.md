@@ -11,7 +11,7 @@ exactly as it was, bit for bit: no stock control does anything new.
 | voltage starve | 433 | 113 | pitch wobbles and sags, fuzz as the rails close in, brown-outs, crackle |
 | bitcrush | 434, mode 435 (0 both, 1 bits, 2 rate) | 114 | 16 to 4 bits (across the sound's own peak), 44.1 to 1.8 kHz |
 | clock bend | 436, direction 437 (0 slower, 1 faster) | 115 | rhythm mode, its drums and the MIDI clock out to 1/4 or 4x |
-| stutter | 438 (a preset always loads it at 0), sync 439 | 116 | a slice from the press repeats: 139 ms at a touch, 9 ms at full |
+| stutter | 438 (a preset always loads it at 0), sync 439, shortest 440 (25 ms), drums 441 | 116 | a slice from the press repeats: 280 ms at a touch down to the shortest at full; the drums play on through it (441 = 1 catches them too) |
 
 CC 121 (reset all controllers) lets every CC depth go.
 
@@ -25,7 +25,7 @@ warble of a few Hz (4.6 Hz at -3 semitones, 14 Hz an octave down) and 17 ms of l
 
 ## Cost
 - RAM2 had 5 kB free, so no buffers: the object keeps audio pool blocks by reference. 32 always, up to
-  96 more while a stutter is held (pool 900; worst measured use before was 689).
+  192 more while a stutter is held (pool 900; worst measured use before was 689).
 - RAM1: variables +736 B (free for the stack 23264 -> 22528); code in flash, and the generated
   `parameter_range` moved to flash too: ITCM padding 1268 -> 4180 B. Flash +6 kB.
 - CPU on the minichord (fw102_test.py cpu, 16 voices sounding, 2026-10-18): 26.2% with no bends; held
@@ -40,8 +40,9 @@ In minicontrol the Bends group has every setting; or from a DAW / `minictl`, sen
 2. Voltage starve: CC 113 at 50 for a sick supply, 127 for brown-outs and fuzz.
 3. Bitcrush: CC 114 swept 0 -> 127; 435 = 1 for bits only, 2 for rate only.
 4. Clock bend: rhythm mode on (long press on hold), CC 115 at 127 drags to a quarter; 437 = 1 rushes.
-5. Stutter: play anything, CC 116 at 30 for a beat-repeat, 127 for a buzz; 439 = 1 with rhythm mode
-   for slices of the beat (1/4 to 1/64).
+5. Stutter: play anything, CC 116 at 30 for a long beat-repeat, 127 for a fast roll; 440 under 20 ms
+   for a buzz at the end; 439 = 1 with rhythm mode for slices of the beat (1/2 to 1/32); 441 = 1 to
+   freeze the drums with it.
 From a Linux terminal, `amidi` sends the CCs (channel 1; `amidi -l` gives the port, hw:3,0,0 on 2026-10-18):
 
     amidi -p hw:3,0,0 -S 'B0 70 7F'    # CC 112 (0x70) pitch drop at 127; 'B0 70 00' lets go
