@@ -17,7 +17,7 @@
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
 void apply_harp_thresholds();
-int version_ID=99; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated; 99: the arcade wheel's bearing from the centre of its readings, corrected, quiet while A or B is pressed, and the neighbour guard on it; zipper 24's wrap island read by a margin, and where that can't tell the ends apart, by the end a touch is at or last left; hover measured on both)
+int version_ID=102; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated; 99: the arcade wheel's bearing from the centre of its readings, corrected, quiet while A or B is pressed, and the neighbour guard on it; zipper 24's wrap island read by a margin, and where that can't tell the ends apart, by the end a touch is at or last left; hover measured on both; 102: the bends, pitch drop, voltage starve, bitcrush, clock bend and stutter, 430-439, and control change 112-116 (100 is the places and 101 the joystick harp, on their own branches))
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1089,6 +1089,7 @@ float shuffle = 1;
 bool rythm_timer_running = false;
 volatile bool rythm_clock_synced = false;   // the steps following a MIDI clock (see the clock in processMIDI)
 IntervalTimer rythm_timer;       // the rhythm's clock, every millisecond (see ACCOMPANIMENT)
+volatile float clock_bend_ratio = 1;   // the rhythm's clock bent (clock bend, 436): its tempo times this (see BENDS)
 // The accompaniment's settings (274-280), see ACCOMPANIMENT
 uint8_t acc_style = 0;          // 0 the sixteen steps of rythm pattern, else a written part (accompaniment_styles.h)
 uint8_t acc_bass_part = 0;      // voice 0: 0 plays the style's part, 1 holds the chord's note, 2 rests
@@ -2652,6 +2653,66 @@ FLASHMEM void choose_harp_plate(int value) {
   apply_harp_thresholds();
 }
 
+//>>BENDS<<
+// What a circuit bender wires into an Omnichord's body-contact points: pitch drop (430-432), voltage
+// starve (433), bitcrush (434-435), clock bend (436-437) and stutter (438-439), each with a depth from
+// 0 to 100. Four are bent_bus (lib/bent_bus) on the whole mix; clock bend multiplies the rhythm's
+// clock (acc_tick). A depth comes from its setting, which a preset keeps and the knobs, hover and the
+// double tap can move, or live from control change 112-116 (any channel, 0 to 127), which is never
+// kept; the deeper counts. At 0 the instrument is as it was: nothing stock changes.
+uint8_t bend_setting[5] = {0, 0, 0, 0, 0};   // pitch drop, voltage starve, bitcrush, clock bend, stutter
+uint8_t bend_cc[5] = {0, 0, 0, 0, 0};        // the same from control change 112-116
+uint8_t pitch_drop_range = 12;               // semitones at 100 (431)
+uint16_t pitch_drop_sag = 150;               // ms (432)
+uint8_t bitcrush_mode = 0;                   // 0 bits and rate, 1 bits, 2 rate (435)
+bool clock_bend_faster = false;              // clock bend speeds the rhythm up rather than slowing it (437)
+bool stutter_sync = false;                   // stutter's slices a beat's fraction while the rhythm runs (439)
+
+FLASHMEM void bend_apply() {
+  float d[5];
+  for (uint8_t k = 0; k < 5; k++) d[k] = max(bend_setting[k], bend_cc[k]) / 100.0f;
+  clock_bend_ratio = powf(2.0f, (clock_bend_faster ? 2.0f : -2.0f) * d[3]);   // a quarter or four times the tempo at 100
+  bool in_time = stutter_sync && rythm_mode && rythm_timer_running && !rythm_clock_synced;
+  uint32_t beat = in_time ? (uint32_t)(AUDIO_SAMPLE_RATE_EXACT * 60.0f / (rythm_bpm * clock_bend_ratio)) : 0;
+  bent_bus.pitch_drop(d[0], pitch_drop_range, pitch_drop_sag);
+  bent_bus.starve(d[1]);
+  bent_bus.crush(d[2], bitcrush_mode);
+  bent_bus.stutter(d[4], beat);
+}
+
+// Stutter (438) from its setting: never from a preset, which would load the instrument frozen in a
+// slice (a knob or hover left on it when the preset was saved), so a load sets it to 0
+FLASHMEM void stutter_setting(int value) {
+  if (parameters_loading) {
+    value = 0;
+    current_sysex_parameters[438] = 0;
+  }
+  bend_setting[4] = value;
+  bend_apply();
+}
+
+// From the loop: stutter in sync follows the tempo as it moves, and the rhythm starting and stopping
+FLASHMEM void bend_watch() {
+  static elapsedMillis since;
+  if (!stutter_sync || since < 50) return;
+  since = 0;
+  bend_apply();
+}
+
+// Control change 112-116: a bend's depth, live. 121 (reset all controllers) lets them all go; it
+// carries on to whatever else listens for it.
+FLASHMEM bool bend_cc_message(uint8_t controller, uint8_t value) {
+  if (controller == 121) {
+    for (uint8_t k = 0; k < 5; k++) bend_cc[k] = 0;
+    bend_apply();
+    return false;
+  }
+  if (controller < 112 || controller > 116) return false;
+  bend_cc[controller - 112] = (value * 100 + 63) / 127;
+  bend_apply();
+  return true;
+}
+
 #include <sysex_handler.h>
 // A parameter write is F0 <adress lo> <adress hi> <value lo> <value hi> F7. Universal system
 // exclusive messages are six bytes long too, F0 <7E or 7F> <device id> <sub id 1> <sub id 2> F7,
@@ -2717,6 +2778,8 @@ bool is_universal_sysex(const byte *data) {
 void processMIDI(void) {
   byte type;
   type = usbMIDI.getType();
+  // The bends' depths, live (see BENDS)
+  if (type == usbMIDI.ControlChange && bend_cc_message(usbMIDI.getData1(), usbMIDI.getData2())) return;
   // The looper, from a foot controller or a computer: control change 85 record, 86 play, 87 stop,
   // 88 clear, 89 overdub, 90 the next step, on any channel, acting as the value rises past 63
   if (type == usbMIDI.ControlChange && usbMIDI.getData1() >= 85 && usbMIDI.getData1() <= 90) {
@@ -6507,7 +6570,7 @@ void acc_tick() {
     acc_countin_to = 0;   // the press is the count
     midi_clock_stop();   // and a Start on the tick that begins it again
   }
-  double step = rythm_bpm * ACC_BEAT / 60000.0;
+  double step = rythm_bpm * clock_bend_ratio * ACC_BEAT / 60000.0;   // bent by clock bend (436), 1 unbent
   if (acc_phase_error != 0) {   // toward a tap: up to 30% quicker or slower until there (acc_tap)
     double c = acc_phase_error;
     if (c > 0.3 * step) c = 0.3 * step;
@@ -10942,6 +11005,7 @@ void loop() {
   harp_strings_settle();
   rest_chord_voices();
   chord_touch_glide();
+  bend_watch();
   // Check sysex controller connection
   if (sysex_controler_connected && bitRead(USB1_PORTSC1, 7)) {
     sysex_controler_connected = false;
