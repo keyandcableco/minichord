@@ -13,6 +13,11 @@ exactly as it was, bit for bit: no stock control does anything new.
 | clock bend | 436, direction 437 (0 slower, 1 faster) | 115 | rhythm mode, its drums and the MIDI clock out to 1/4 or 4x |
 | stutter | 438 (a preset always loads it at 0), sync 439, shortest 440 (25 ms), drums 441 | 116 | a slice from the press repeats: 280 ms at a touch down to the shortest at full; the drums play on through it (441 = 1 catches them too) |
 
+Bends interact (442, 0-100) makes them act on one another, as a bent Omnichord's one clock and one
+supply would: the pitch drop drags the rhythm's clock as it sags (at 100 exactly as far as the pitch)
+and lowers the sample rate; the voltage starve drags the clock as its supply sags, nearly stops it in a
+brown-out, and takes bits away. At 0 each bend is on its own.
+
 CC 121 (reset all controllers) lets every CC depth go.
 
 ## Where it sits
