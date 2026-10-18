@@ -218,7 +218,9 @@ FLASHMEM void AudioEffectBend::update(void) {
           audio_block_t **h = history[c];
           float a0 = sample(h[(sa >> 7) & (HISTORY - 1)], sa & 127), a1 = sample(h[((sa - 1) >> 7) & (HISTORY - 1)], (sa - 1) & 127);
           float b0 = sample(h[(sb >> 7) & (HISTORY - 1)], sb & 127), b1 = sample(h[((sb - 1) >> 7) & (HISTORY - 1)], (sb - 1) & 127);
-          float shifted = (a0 + (a1 - a0) * fa) * ga + (b0 + (b1 - b0) * fb) * (1 - ga);
+          // the two heads meet a partial at unrelated phases (768 samples apart), so their crossfade holds
+          // on average 2/3 of its power (-1.8 dB) on a held note: made up here, or a bend got quieter
+          float shifted = ((a0 + (a1 - a0) * fa) * ga + (b0 + (b1 - b0) * fb) * (1 - ga)) * 1.2247f;
           out[c]->data[n] = clip16(sample(cur[c], n) + (shifted - sample(cur[c], n)) * wet);
         }
       }

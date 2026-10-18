@@ -194,6 +194,19 @@ int main(int argc, char **argv) {
     CHECK(std::equal(drop.in.begin() + from, drop.in.end(), drop.out.begin() + from), "not the input bit for bit half a second after letting go");
   }
 
+  printf("level through the shifter: the chord held half a semitone down (its heads crossing every 1.2 s) against dry\n");
+  {
+    // the heads sit half a window apart, so on one steady partial their crossfade loses or gains by its
+    // frequency; over a chord's partials it averages 2/3 of the power, which the shifter makes up
+    auto chord_only = [](AudioEffectBend &b, float t, bool drop) { if (drop) b.pitch_drop(0.5f / 12, 12, 150); (void)t; };
+    Run plain = render(8, [&](AudioEffectBend &b, float t) { chord_only(b, t, false); });
+    Run held = render(8, [&](AudioEffectBend &b, float t) { chord_only(b, t, true); });
+    // the drums are on their own inputs and in the output either way; the chord is what's shifted
+    double d = rms_db(held.out, 1.0f, 8.0f) - rms_db(plain.out, 1.0f, 8.0f);
+    printf("    %+.2f dB\n", d);
+    CHECK(fabs(d) < 0.7, "the shifter changes the level of a held chord by %.2f dB", d);
+  }
+
   printf("voltage starve: 0.3, 0.6 and 1, two seconds each\n");
   Run starve = render(8, [](AudioEffectBend &b, float t) {
     b.starve(press(t, 0.5f, 2.3f, 0.3f) + press(t, 2.75f, 4.6f, 0.6f) + press(t, 5.0f, 7.0f, 1.0f));
