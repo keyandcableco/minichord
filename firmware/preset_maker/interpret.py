@@ -110,6 +110,10 @@ ROLES = {
     "reed_bark": {"chord": 387, "harp": 386},
     # firmware 79: the tonewheel organ
     "organ_drawbars": {"global": 388}, "organ_perc": {"global": 389},
+    # firmware 102: the bends
+    "pitch_drop": {"global": 430}, "pitch_drop_range": {"global": 431}, "pitch_drop_sag": {"global": 432},
+    "starve": {"global": 433}, "bitcrush": {"global": 434}, "bitcrush_mode": {"global": 435},
+    "clock_bend": {"global": 436}, "clock_bend_direction": {"global": 437}, "stutter_sync": {"global": 439},
     # the pitch bend envelope's start and decay, chord shuffling, the generator scale (firmware 38)
     "bend": {"chord": 170, "harp": 71}, "bend_decay": {"chord": 173, "harp": 74}, "chord_shuffle": {"chord": 120},
     "generator": {"harp": 267}, "generator_notes": {"harp": 268}, "generator_mode": {"harp": 269},
@@ -1517,6 +1521,40 @@ add("jawari, jivari, juari, open jawari, more jawari, buzzing tanpura, buzzy tan
 add("closed jawari, less jawari, no jawari, smooth tanpura, plain tanpura, dull tanpura, tanpura without buzz, "
     "no buzz on the tanpura, tanpura not buzzing", "setting", "the jawari closed: a plain tanpura", home="global",
     moves=(SET("drone_jawari", 10), IFZERO("drone", 1)), off=(EXACT("drone_jawari", 60),), note=JAWARI_NOTE)
+# ---- firmware 102: the bends ----
+# What a circuit bender wires into an Omnichord, on the whole instrument. Best played live (control change 112-116,
+# a knob or hover); a preset can keep a little starve, crush, pitch drop or clock bend
+# as its sound. Stutter is never kept (a preset loads it at 0), so it has no words here: "stutter" stays glitchy.
+BENDS_NOTE = ("the bends act on everything that comes out; each is a depth from 0 to 100, kept in the preset or played "
+              "live with control change 112 (pitch drop), 113 (voltage starve), 114 (bitcrush), 115 (clock bend) and 116 "
+              "(stutter), the deeper counting. Needs firmware 102")
+add("bitcrush, bitcrushed, bit crush, bit crushed, bitcrusher, bit crusher, crushed bits, low bit, low bits, "
+    "decimated, decimator, sample rate reduction, downsampled, aliased, aliasing", "effect", "bitcrush", home="global",
+    moves=(SET("bitcrush", 50),), off=(EXACT("bitcrush", 0),), note=BENDS_NOTE)
+add("grainy bits, bit reduction, fewer bits, quantised, quantized", "setting", "bitcrush, bits only", home="global",
+    moves=(SET("bitcrush", 50), EXACT("bitcrush_mode", 1)), off=(EXACT("bitcrush", 0),), note=BENDS_NOTE)
+add("voltage starve, voltage starved, starved, starve, starving, brownout, brown out, browning out, browned out, "
+    "dying battery, low battery, flat battery, battery dying, dead battery, sagging power, power sag, undervolted, "
+    "crackle, crackly, crackling", "effect", "voltage starve", home="global",
+    moves=(SET("starve", 40),), off=(EXACT("starve", 0),), note=BENDS_NOTE)
+add("pitch drop, pitch dropped, pitch sag, sagging pitch, melting, melted, melting pitch, droopy, drooping",
+    "effect", "pitch drop", home="global",
+    moves=(SET("pitch_drop", 15), IFZERO("pitch_drop_range", 12)), off=(EXACT("pitch_drop", 0),),
+    note="pitch drop bends the whole instrument down (pitch drop range at 100, 12 semitones); kept in a preset it is "
+         "a detuned, warbling sound, played live it sags and recovers. " + BENDS_NOTE)
+add("slow sag, slow droop, slow pitch drop", "setting", "pitch drop sagging slowly", home="global",
+    moves=(EXACT("pitch_drop_sag", 1000),), note=BENDS_NOTE)
+add("clock bend, bent clock, dragging tempo, dragging rhythm, rhythm dragging", "effect", "clock bend", home="global",
+    moves=(SET("clock_bend", 30), EXACT("clock_bend_direction", 0)), off=(EXACT("clock_bend", 0),),
+    note="clock bend slows (or with clock bend direction 1 speeds up) rhythm mode's clock, its drums and the MIDI "
+         "clock it sends. " + BENDS_NOTE)
+add("rushing tempo, rushing rhythm, rhythm rushing, sped up clock", "effect", "clock bend, faster", home="global",
+    moves=(SET("clock_bend", 30), EXACT("clock_bend_direction", 1)), off=(EXACT("clock_bend", 0),), note=BENDS_NOTE)
+add("circuit bent, circuit-bent, circuit bending, circuit bend, bent omnichord, bent toy, bent", "effect",
+    "circuit bent", home="global", hue=60,
+    moves=(SET("starve", 20), SET("bitcrush", 25)), off=(EXACT("starve", 0), EXACT("bitcrush", 0)),
+    note="a little voltage starve and bitcrush kept in the preset; the bends play deeper live. " + BENDS_NOTE)
+
 SPEED_RAMP_NOTE = ("the tremolo's and the vibrato's rates wind up to a new rate and coast down, as a rotating speaker's rotors "
                    "do; put the tremolo speed on the double tap or a knob to switch. " + FW69_NOTE)
 add("speed ramp, ramped tremolo, tremolo ramp, tremolo spins up, tremolo winds up, spin up and down, spins up and down, "
