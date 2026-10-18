@@ -2697,6 +2697,16 @@ FLASHMEM void stutter_setting(int value) {
   bend_apply();
 }
 
+// After a load's knob updates: a knob's alternate on stutter is put back at the value it remembers,
+// after parameters_loading, so stutter_setting let it through, and a stutter starting at the load
+// catches its silence and loops it (the Circuit Bent set loaded silent so, its alternates remembered
+// at the middle). A load leaves no stutter running, whatever a knob remembers.
+FLASHMEM void stutter_after_load() {
+  current_sysex_parameters[438] = 0;
+  bend_setting[4] = 0;
+  bend_apply();
+}
+
 // From the loop: stutter in sync follows the tempo as it moves, and the rhythm starting and stopping;
 // and with bends interact (442) the clock is bent by the others as a bent Omnichord's one clock and one
 // supply would be: it drags with the pitch drop as it sags (at 100 exactly as far as the pitch), drags
@@ -7619,6 +7629,7 @@ void load_config(int bank_number) {
   chord_pot.force_update();
   harp_pot.force_update();
   mod_pot.force_update();
+  stutter_after_load();   // nor from a knob's alternate, put back just now (see BENDS)
   // A preset load replaces every parameter, including whatever a double tap had
   // toggled, and the value it saved belongs to the preset being left. So the
   // gesture ends here rather than claiming to still hold something it does not.
