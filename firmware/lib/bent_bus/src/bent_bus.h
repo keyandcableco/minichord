@@ -44,6 +44,14 @@ public:
     stutter_shortest = shortest < 64 ? 64 : shortest > STUTTER_BLOCKS * AUDIO_BLOCK_SAMPLES ? STUTTER_BLOCKS * AUDIO_BLOCK_SAMPLES : shortest;
   }
 
+  // how much the bends act on one another, 0..1 (bends interact): the starve takes bits as its supply
+  // sags, all of them in a brown-out; the pitch drop lowers the sample rate as it sags (to 5 kHz at an
+  // octave). The clock's side of it is main.cpp's, from what these report.
+  void interact(float amount) { interact_amount = amount; }
+  float supply_level() { return supply; }        // the starve's supply now, 1 full
+  bool browned_out() { return dropout > 0; }
+  float drop_semitones() { return drop_now; }    // the pitch drop as sagged so far
+
   // what it's doing, for the serial report
   bool resting() { return rest; }
   uint8_t held_blocks() { return held; }
@@ -62,6 +70,7 @@ private:
   // settings, from the loop
   volatile float drop_target = 0, sag_coef = 1, starve_target = 0, crush_target = 0, stutter_target = 0;
   volatile uint8_t crush_mode = 0;
+  volatile float interact_amount = 0;
   volatile uint32_t stutter_beat = 0, stutter_shortest = 1102;   // 25 ms
   volatile bool stutter_drums_through = true;
 

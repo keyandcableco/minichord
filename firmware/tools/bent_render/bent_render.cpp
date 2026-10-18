@@ -95,7 +95,7 @@ static Run render(float seconds, std::function<void(AudioEffectBend &, float)> s
   }
   r.us_per_block = spent / blocks;
   // let go of everything, a second more, and count what's kept
-  bend.pitch_drop(0, 12, 150); bend.starve(0); bend.crush(0, 0); bend.stutter(0, 0, 1102, true);
+  bend.pitch_drop(0, 12, 150); bend.starve(0); bend.crush(0, 0); bend.stutter(0, 0, 1102, true); bend.interact(0);
   for (int b = 0; b < 400; b++) {
     audio_block_t *in[2] = {AudioStream::allocate(), AudioStream::allocate()};
     memset(in[0]->data, 0, sizeof(in[0]->data)); memset(in[1]->data, 0, sizeof(in[1]->data));
@@ -243,6 +243,33 @@ int main(int argc, char **argv) {
   write_wav(dir + "/5 all at once.wav", all.out);
   printf("    %.2f us a block (dry %.2f), most held %d, pool +%d\n", all.us_per_block, dry.us_per_block, all.most_held, all.most_pool);
   CHECK(all.most_pool <= 2 * (AudioEffectBend::HISTORY + AudioEffectBend::STUTTER_BLOCKS) + 6, "used more of the pool than it should");
+
+  printf("bends interact: a pitch drop and then a starve, each with interact 0 and 1\n");
+  {
+    auto scene = [](float k) {
+      return [k](AudioEffectBend &b, float t) {
+        b.interact(k);
+        b.pitch_drop(press(t, 0.5f, 2.5f, 1.0f), 12, 150);
+        b.starve(press(t, 3.5f, 5.5f, 0.7f));
+      };
+    };
+    Run alone = render(6.5f, scene(0)), together = render(6.5f, scene(1));
+    write_wav(dir + "/6 interact.wav", together.out);
+    // with the drop held an octave down, the sample rate at 5 kHz: little left over 3 kHz that alone had
+    auto above = [](const std::vector<int16_t> &x, float from, float to) {   // energy over 3 kHz by a first difference, dB
+      size_t a = (size_t)(from * FS) * 2, b = (size_t)(to * FS) * 2; double e = 0, d = 0;
+      for (size_t i = a + 2; i < b; i += 2) { double dx = x[i] - x[i - 2]; d += dx * dx; e += (double)x[i] * x[i]; }
+      return 10 * log10(d / (e + 1e-9));
+    };
+    double hf_alone = above(alone.out, 1.5f, 2.4f), hf_together = above(together.out, 1.5f, 2.4f);
+    // with the starve, fewer bits: the steps show as a rougher difference
+    double st_alone = above(alone.out, 4.5f, 5.4f), st_together = above(together.out, 4.5f, 5.4f);
+    printf("    held drop: brightness %+.1f dB alone, %+.1f with interact; held starve: %+.1f alone, %+.1f with interact\n",
+           hf_alone, hf_together, st_alone, st_together);
+    CHECK(hf_together != hf_alone && st_together != st_alone, "interact changes nothing");
+    size_t from = (size_t)(6.2f * FS) * 2;
+    CHECK(std::equal(together.in.begin() + from, together.in.end(), together.out.begin() + from), "not bit for bit after letting go with interact on");
+  }
 
   printf("rest again after all that: bit for bit\n");
   Run again = render(2, [](AudioEffectBend &b, float t) { if (t < 1) { b.crush(0.5f, 0); b.starve(0.5f); } else { b.crush(0, 0); b.starve(0); } });

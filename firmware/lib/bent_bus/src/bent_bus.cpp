@@ -118,7 +118,15 @@ FLASHMEM void AudioEffectBend::update(void) {
   crush_now += (cv - crush_now) * 0.3f;
   if (cv == 0 && crush_now < 1e-4f) crush_now = 0;
 
-  rest = !stuttering && !looping && wet == 0 && !shifting && starve_now == 0 && gain == 1 && crackle == 0 && crush_now == 0;
+  // the bends on one another: the starve's supply takes bits, the drop's sag the sample rate
+  float k = interact_amount;
+  float bits_bent = k * (1 - supply) * 3;   // all of them gone once the supply is a third down
+  bits_bent = bits_bent < 0.001f ? 0 : bits_bent > 1 ? 1 : bits_bent;
+  float rate_bent = k * (drop_now < 12 ? drop_now / 12 : 1) * 0.6f;
+  if (rate_bent < 0.001f) rate_bent = 0;
+  bool crushing = crush_now > 0 || bits_bent > 0 || rate_bent > 0;
+
+  rest = !stuttering && !looping && wet == 0 && !shifting && starve_now == 0 && gain == 1 && crackle == 0 && !crushing;
 
   // ---- the drums: into the mix now, unless a stutter is on and they're to keep playing through it
   bool drums_after = stutter_drums_through && (stuttering || looping);
@@ -230,21 +238,23 @@ FLASHMEM void AudioEffectBend::update(void) {
 
   // ---- the starve's rails, level and crackle, then the crush: a sample at a time, both sides together
   bool starving = starve_now > 0 || gain != 1 || crackle != 0;
-  if (starving || crush_now > 0) {
+  if (starving || crushing) {
     for (uint8_t c = 0; c < 2; c++) {
       if (own[c]) continue;
       audio_block_t *b = allocate();
-      if (!b) { starving = false; crush_now = 0; break; }   // no room this block: as it is
+      if (!b) { starving = crushing = false; break; }   // no room this block: as it is
       for (uint32_t n = 0; n < N; n++) b->data[n] = sample(cur[c], n);
       if (cur[c]) release(cur[c]);
       cur[c] = b;
       own[c] = true;
     }
   }
-  if (own[0] && own[1] && (starving || crush_now > 0)) {
+  if (own[0] && own[1] && (starving || crushing)) {
     float bits = 0, rate = 0;
     if (crush_mode != 2) bits = crush_now;
     if (crush_mode != 1) rate = crush_now;
+    bits = bits > bits_bent ? bits : bits_bent;
+    rate = rate > rate_bent ? rate : rate_bent;
     // the bits counted across the sound's own peak, so a quiet preset crushes as a loud one does rather
     // than falling silent between steps: 16 at 0, 10 at a quarter, 7.5 at half, 4 at full
     const float steps = exp2f(16.0f - 12.0f * sqrtf(bits)) * 0.5f;
@@ -266,7 +276,7 @@ FLASHMEM void AudioEffectBend::update(void) {
         crackle *= 0.7f;
         if (crackle < 1 && crackle > -1) crackle = 0;
       }
-      if (crush_now > 0) {
+      if (crushing) {
         hold_phase += hold_step;
         float a = fmaxf(fabsf(y[0]), fabsf(y[1]));
         peak = a > peak ? a : peak * 0.99992f;   // falls 3 dB in a quarter of a second

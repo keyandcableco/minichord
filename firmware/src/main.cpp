@@ -1089,7 +1089,7 @@ float shuffle = 1;
 bool rythm_timer_running = false;
 volatile bool rythm_clock_synced = false;   // the steps following a MIDI clock (see the clock in processMIDI)
 IntervalTimer rythm_timer;       // the rhythm's clock, every millisecond (see ACCOMPANIMENT)
-volatile float clock_bend_ratio = 1;   // the rhythm's clock bent (clock bend, 436): its tempo times this (see BENDS)
+volatile float clock_bend_ratio = 1;   // the rhythm's clock bent (clock bend, 436, and bends interact, 442): its tempo times this (see BENDS)
 // The accompaniment's settings (274-280), see ACCOMPANIMENT
 uint8_t acc_style = 0;          // 0 the sixteen steps of rythm pattern, else a written part (accompaniment_styles.h)
 uint8_t acc_bass_part = 0;      // voice 0: 0 plays the style's part, 1 holds the chord's note, 2 rests
@@ -2669,11 +2669,15 @@ bool clock_bend_faster = false;              // clock bend speeds the rhythm up 
 bool stutter_sync = false;                   // stutter's slices a beat's fraction while the rhythm runs (439)
 uint8_t stutter_shortest_ms = 25;            // the slice at full depth (440)
 bool stutter_drums = false;                  // the drums stutter too, rather than playing on through it (441)
+uint8_t bends_interact = 0;                  // how much the bends act on one another (442)
+float clock_bend_base = 1;                   // clock bend's own ratio, before the others act on the clock
 
 FLASHMEM void bend_apply() {
   float d[5];
   for (uint8_t k = 0; k < 5; k++) d[k] = max(bend_setting[k], bend_cc[k]) / 100.0f;
-  clock_bend_ratio = powf(2.0f, (clock_bend_faster ? 2.0f : -2.0f) * d[3]);   // a quarter or four times the tempo at 100
+  clock_bend_base = powf(2.0f, (clock_bend_faster ? 2.0f : -2.0f) * d[3]);   // a quarter or four times the tempo at 100
+  if (!bends_interact) clock_bend_ratio = clock_bend_base;   // else bend_watch moves it, with the others
+  bent_bus.interact(bends_interact / 100.0f);
   bool in_time = stutter_sync && rythm_mode && rythm_timer_running && !rythm_clock_synced;
   uint32_t beat = in_time ? (uint32_t)(AUDIO_SAMPLE_RATE_EXACT * 60.0f / (rythm_bpm * clock_bend_ratio)) : 0;
   bent_bus.pitch_drop(d[0], pitch_drop_range, pitch_drop_sag);
@@ -2693,12 +2697,21 @@ FLASHMEM void stutter_setting(int value) {
   bend_apply();
 }
 
-// From the loop: stutter in sync follows the tempo as it moves, and the rhythm starting and stopping
+// From the loop: stutter in sync follows the tempo as it moves, and the rhythm starting and stopping;
+// and with bends interact (442) the clock is bent by the others as a bent Omnichord's one clock and one
+// supply would be: it drags with the pitch drop as it sags (at 100 exactly as far as the pitch), drags
+// as the starve's supply sags and nearly stops in a brown-out
 FLASHMEM void bend_watch() {
-  static elapsedMillis since;
-  if (!stutter_sync || since < 50) return;
+  static elapsedMillis since, since_sync;
+  if (since < 10) return;
   since = 0;
-  bend_apply();
+  if (stutter_sync && since_sync >= 50) { since_sync = 0; bend_apply(); }
+  if (!bends_interact) return;
+  float k = bends_interact / 100.0f;
+  float r = clock_bend_base * exp2f(-k * bent_bus.drop_semitones() / 12.0f);
+  r *= fmaxf(0.05f, 1 - k * (1 - bent_bus.supply_level()) * 1.2f);
+  if (bent_bus.browned_out()) r *= 1 - 0.9f * k;
+  clock_bend_ratio = r;
 }
 
 // Control change 112-116: a bend's depth, live. 121 (reset all controllers) lets them all go; it
