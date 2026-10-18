@@ -16,6 +16,9 @@ import preset_maker as pm
 import interpret
 
 SENTENCES = [
+    # the bends (firmware 102)
+    "bitcrushed chords with a dying battery", "circuit bent", "melting pitch, slow sag", "dragging tempo",
+    "very bitcrushed, grainy bits", "rushing tempo, crackly", "no bitcrush",
     # the Acoustic Piano set (2026-10-13): each bank's instrument and the hand's gesture
     "a concert grand, hover is the sustain pedal", "a sonata, hover makes it legato", "a chopin nocturne",
     "satie with lots of reverb", "ragtime, hover swings it", "boogie woogie piano, hover drops the chords an octave",
