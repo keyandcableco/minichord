@@ -53,6 +53,10 @@ nothing for a note they match, up to 3 dB at the crossing for sound they can't (
   deep, pitch drop +2.0 points, starve +3.1, crush +1.5, drop + starve + crush +3.4, all four with a
   stutter +4.2. At rest it only passes blocks on (not measured against 99). Audio blocks in use at
   most 243 -> 258 (pool 900).
+- With the splice (2026-10-19, firmware 103 bench build arrival103t, the same 16 voices): 27.9% with
+  no bends; pitch drop +3.7 points (blocks at most 39.0%), starve +4.0, crush +0.9, drop + starve +
+  crush +4.4, all four with a stutter +4.9 (at most 41.5%). The first splice, every offset on every
+  sample, took ~0.8 ms a splice (+5.7 for a drop, blocks to 58.7%). RAM1 +1.9 kB (its buffers).
 
 ## Trying each one (once 102 is flashed)
 In minicontrol the Bends group has every setting; or from a DAW / `minictl`, send the CCs:
