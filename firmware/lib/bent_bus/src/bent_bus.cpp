@@ -65,6 +65,54 @@ FLASHMEM uint32_t AudioEffectBend::loop_wanted() {
   return (uint32_t)(longest * powf((float)stutter_shortest / longest, x));
 }
 
+// a head's jump (0 A, 1 B), at sample t: it would land WINDOW from where it was; it lands instead up to
+// SPLICE_REACH either side of that, wherever the stretch it then reads (SPLICE_LENGTH samples back from
+// it, left and right together) is most like the other head's. On a held note the two then read the same
+// waveform a whole number of periods apart, and every partial comes out at exactly the ratio: a fixed jump
+// lands each one on a grid as wide as the jump rate (14 Hz an octave down), up to half of it off the
+// note. rho, how alike they were, sets how the crossfade's level is made up.
+FLASHMEM void AudioEffectBend::splice(uint32_t t, uint8_t head) {
+  float p = head ? phase + 0.5f : phase;   // the jumping head's place in the window, just after its jump
+  if (p >= 1) p -= 1;
+  float po = head ? phase : phase + 0.5f;  // the other head's
+  if (po >= 1) po -= 1;
+  uint32_t other = t - (uint32_t)(SPLICE_DELAY + po * WINDOW + head_off[head ^ 1]);
+  uint32_t near = t - (uint32_t)(SPLICE_DELAY + p * WINDOW) + SPLICE_REACH;   // the newest start it may take
+  static int16_t a[SPLICE_LENGTH], b[SPLICE_LENGTH + 2 * SPLICE_REACH];
+  auto mono = [this](uint32_t s) -> int16_t {
+    return (sample(history[0][(s >> 7) & (HISTORY - 1)], s & 127) + sample(history[1][(s >> 7) & (HISTORY - 1)], s & 127)) >> 1;
+  };
+  float ea = 0;
+  for (uint32_t j = 0; j < SPLICE_LENGTH; j++) { a[j] = mono(other - j); ea += (float)a[j] * a[j]; }
+  for (uint32_t j = 0; j < SPLICE_LENGTH + 2 * SPLICE_REACH; j++) b[j] = mono(near - j);
+  // b[k + j] is the stretch for an offset of k - SPLICE_REACH (k = 0 the newest): every other offset,
+  // then the best one's neighbours
+  auto score = [&](int32_t k, float *eb_out) {
+    float ab = 0, eb = 0;
+    for (uint32_t j = 0; j < SPLICE_LENGTH; j++) { float y = b[k + j]; ab += a[j] * y; eb += y * y; }
+    if (eb_out) *eb_out = eb;
+    return ab / sqrtf(ea * eb + 1.0f);
+  };
+  int32_t best = SPLICE_REACH; float top = -2;
+  for (int32_t k = 0; k <= 2 * SPLICE_REACH; k += 2) { float c = score(k, nullptr); if (c > top) { top = c; best = k; } }
+  for (int32_t k = best - 1; k <= best + 1; k += 2) {
+    if (k < 0 || k > 2 * SPLICE_REACH) continue;
+    float c = score(k, nullptr); if (c > top) { top = c; best = k; }
+  }
+  if (ea < 1.0f) { head_off[head] = 0; rho = 0; return; }   // silence: where it would have landed
+  head_off[head] = (float)(best - SPLICE_REACH);
+  // how alike, over a longer stretch: the best of many short matches flatters, and the level made up
+  // from it would come out short
+  uint32_t mine = near - best;
+  float ab = 0, e0 = 0, e1 = 0;
+  for (uint32_t j = 0; j < 4 * SPLICE_LENGTH; j++) {
+    float x = mono(other - j), y = mono(mine - j);
+    ab += x * y; e0 += x * x; e1 += y * y;
+  }
+  float c = ab / sqrtf(e0 * e1 + 1.0f);
+  rho = c < 0 ? 0 : c;
+}
+
 FLASHMEM void AudioEffectBend::update(void) {
   const uint32_t N = AUDIO_BLOCK_SAMPLES;
   audio_block_t *cur[2] = {receiveReadOnly(0), receiveReadOnly(1)};   // each holds one reference
@@ -112,7 +160,7 @@ FLASHMEM void AudioEffectBend::update(void) {
   bool shifting = drop_t > 0 || starve_now > 0 || drop_now > 0;
   float wet_aim = shifting ? 1 : 0;
   float ratio_new = shifting ? exp2f(-semis / 12.0f) : 1;
-  if (wet == 0 && shifting) { phase = 0.5f; ratio = 1; }   // in at the window's middle: the live sound 17 ms late
+  if (wet == 0 && shifting) { phase = 0.5f; ratio = 1; head_off[0] = head_off[1] = 0; rho = 0; }   // in at the window's middle: the live sound 25 ms late
 
   // the crush
   float cv = crush_target;
@@ -200,22 +248,30 @@ FLASHMEM void AudioEffectBend::update(void) {
   block_number++;
 
   // ---- the pitch: two heads reading the history a little slower (or quicker) than it's written, each
-  // falling behind across the window and jumping back while the other one sounds, crossfaded
+  // falling behind across the window and jumping back while the other one sounds (to where the other
+  // reads: splice), crossfaded
   if (wet > 0 || wet_aim > 0) {
     audio_block_t *out[2] = {allocate(), allocate()};
     if (out[0] && out[1]) {
       const float step = 1.0f / (44.1f * 10);   // the shifter in or out over 10 ms
       for (uint32_t n = 0; n < N; n++) {
         float r = ratio + (ratio_new - ratio) * (n + 1) * (1.0f / N);
+        float was = phase;
         phase += (1 - r) * (1.0f / WINDOW);
-        if (phase >= 1) phase -= 1;
-        if (phase < 0) phase += 1;
+        // a head jumps while it's silent: A as the phase wraps, B as it crosses the middle; each lands
+        // where it reads what the other is reading, so the two stay in step through their crossfade
+        if (phase >= 1) { phase -= 1; splice(first + n, 0); }
+        else if (phase < 0) { phase += 1; splice(first + n, 0); }
+        else if ((was < 0.5f) != (phase < 0.5f)) splice(first + n, 1);
         if (wet < wet_aim) { wet += step; if (wet > 1) wet = 1; }
         else if (wet > wet_aim) { wet -= step; if (wet < 0) wet = 0; }
         float pb = phase + 0.5f;
         if (pb >= 1) pb -= 1;
         float ga = phase < 0.5f ? 2 * phase : 2 - 2 * phase;
-        float da = 1 + phase * WINDOW, db = 1 + pb * WINDOW;
+        // the crossfade's level held: heads in step (rho 1) add as one; unrelated, as their powers
+        float gb = 1 - ga;
+        float level = 1.0f / sqrtf(ga * ga + gb * gb + 2 * ga * gb * rho);
+        float da = SPLICE_DELAY + phase * WINDOW + head_off[0], db = SPLICE_DELAY + pb * WINDOW + head_off[1];
         uint32_t ia = (uint32_t)da, ib = (uint32_t)db;
         float fa = da - ia, fb = db - ib;
         uint32_t sa = first + n - ia, sb = first + n - ib;   // the sample at or after each head, then the one before it
@@ -223,9 +279,7 @@ FLASHMEM void AudioEffectBend::update(void) {
           audio_block_t **h = history[c];
           float a0 = sample(h[(sa >> 7) & (HISTORY - 1)], sa & 127), a1 = sample(h[((sa - 1) >> 7) & (HISTORY - 1)], (sa - 1) & 127);
           float b0 = sample(h[(sb >> 7) & (HISTORY - 1)], sb & 127), b1 = sample(h[((sb - 1) >> 7) & (HISTORY - 1)], (sb - 1) & 127);
-          // the two heads meet a partial at unrelated phases (768 samples apart), so their crossfade holds
-          // on average 2/3 of its power (-1.8 dB) on a held note: made up here, or a bend got quieter
-          float shifted = ((a0 + (a1 - a0) * fa) * ga + (b0 + (b1 - b0) * fb) * (1 - ga)) * 1.2247f;
+          float shifted = ((a0 + (a1 - a0) * fa) * ga + (b0 + (b1 - b0) * fb) * gb) * level;
           out[c]->data[n] = clip16(sample(cur[c], n) + (shifted - sample(cur[c], n)) * wet);
         }
       }
@@ -300,7 +354,7 @@ FLASHMEM void AudioEffectBend::update(void) {
     }
   }
 
-  uint8_t count = 0;
+  uint16_t count = 0;
   for (uint8_t c = 0; c < 2; c++) {
     for (uint8_t k = 0; k < HISTORY; k++) count += history[c][k] != nullptr;
     count += slice_blocks;

@@ -14,7 +14,7 @@
 //
 // Each takes a depth from 0 to 1; at 0 they all rest and the blocks go through untouched, bit for
 // bit. RAM2 has no room for buffers, so the history is the audio library's own blocks, held rather
-// than released (zero copy): 2 x 16 always, for the pitch shifter's window, and up to 2 x 48 more
+// than released (zero copy): 2 x 32 always, for the pitch shifter's window, and up to 2 x 48 more
 // while a stutter is held. Settings arrive from the loop; the work is in update(), which is in
 // flash (bent_bus.cpp): RAM1's code is a few hundred bytes from a 32 kB step.
 #ifndef BENT_BUS_H
@@ -56,13 +56,16 @@ public:
 
   // what it's doing, for the serial report
   bool resting() { return rest; }
-  uint8_t held_blocks() { return held; }
+  uint16_t held_blocks() { return held; }
 
   virtual void update(void);
 
   static const uint16_t WINDOW = 1536;        // the pitch shifter's window, samples (35 ms): its heads jump every
                                               // 35 ms / (1 - speed), a warble of 4.6 Hz 3 semitones down, 14 Hz an octave down
-  static const uint8_t HISTORY = 16;          // blocks kept a side for it (2048 samples, a power of 2)
+  static const uint8_t HISTORY = 32;          // blocks kept a side for it (4096 samples, a power of 2)
+  static const uint16_t SPLICE_REACH = 320;   // how far either side of its jump a head may land (a period of 69 Hz)
+  static const uint16_t SPLICE_LENGTH = 128;  // the stretch compared to find where
+  static const uint16_t SPLICE_DELAY = SPLICE_REACH + 1;   // the heads' shortest delay, so one landing short still reads the past
   static const uint8_t STUTTER_BLOCKS = 96;   // the longest slice a side (279 ms)
 
 private:
@@ -77,7 +80,7 @@ private:
   volatile bool stutter_drums_through = true;
 
   bool rest = true;
-  uint8_t held = 0;
+  uint16_t held = 0;   // up to 2 x (32 + 96)
 
   // pitch: the stutter's output kept, block n at history[side][n & 15]
   audio_block_t *history[2][HISTORY] = {};
@@ -86,6 +89,8 @@ private:
   float drop_now = 0;            // the drop as sagged so far
   float ratio = 1;               // the read speed it makes, at the end of the last block
   float phase = 0.5f;            // the heads' place in the window
+  float head_off[2] = {0, 0};    // where each head landed at its last jump, from where a fixed jump would put it
+  float rho = 0;                 // how alike the heads read at the last jump, 0 to 1
   float wet = 0;                 // the shifter's share of the sound, 0 to 1, moved a little each sample
 
   // starve
@@ -116,6 +121,7 @@ private:
   float noise() { return (int32_t)random() * (1.0f / 2147483648.0f); }   // -1..1
   uint32_t loop_wanted();
   void release_slice();
+  void splice(uint32_t t, uint8_t head);
   static void hold(audio_block_t *b);
   static inline int16_t sample(audio_block_t *b, uint32_t n) { return b ? b->data[n] : 0; }
   static inline int16_t clip16(float x) { return x > 32767.0f ? 32767 : x < -32768.0f ? -32768 : (int16_t)x; }

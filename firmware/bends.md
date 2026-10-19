@@ -33,12 +33,20 @@ CC 121 (reset all controllers) lets every CC depth go.
 outputs: the speaker, headphones and USB recording hear it; the host's song and the looper click don't.
 Chain: stutter -> pitch shifter (drop + starve wobble) -> starve (rails, level, crackle) -> crush.
 Clock bend is one multiply in `acc_tick` (does nothing while the rhythm follows an external MIDI clock;
-the looper keeps its own time). Pitch drop is a two-head delay-line shifter (1536-sample window): a
-warble of a few Hz (4.6 Hz at -3 semitones, 14 Hz an octave down) and 17 ms of latency while it bends.
+the looper keeps its own time). Pitch drop is a two-head delay-line shifter (1536-sample window, 25 ms
+of latency while it bends). Each head jumps while the other sounds (every 35 ms / (1 - speed): 4.6 Hz
+at -3 semitones, 14 Hz an octave down), and lands within 320 samples of a whole window back, wherever
+what it reads best matches the other head (splice): on a held note the two read the same waveform, so
+every partial comes out at exactly the depth's ratio and their crossfade keeps its level. Before
+(firmware 102 to 2d72dbd) the jump was a fixed window, which puts each partial on a grid as wide as
+the jump rate, up to half a step off: on A3, 105.1 Hz an octave down rather than 110 (-12.77
+semitones), -3.14 and -6.32 at 3 and 6, notes elsewhere sharp; and the level moved by up to 1.4 dB
+from note to note. The crossfade's level is made up by how alike the heads were at the jump (rho):
+nothing for a note they match, up to 3 dB at the crossing for sound they can't (noise).
 
 ## Cost
-- RAM2 had 5 kB free, so no buffers: the object keeps audio pool blocks by reference. 32 always, up to
-  192 more while a stutter is held (pool 900; worst measured use before was 689).
+- RAM2 had 5 kB free, so no buffers: the object keeps audio pool blocks by reference. 64 always (32
+  before the splice), up to 192 more while a stutter is held (pool 900; worst measured use before was 689).
 - RAM1: variables +736 B (free for the stack 23264 -> 22528); code in flash, and the generated
   `parameter_range` moved to flash too: ITCM padding 1268 -> 4180 B. Flash +6 kB.
 - CPU on the minichord (fw102_test.py cpu, 16 voices sounding, 2026-10-18): 26.2% with no bends; held

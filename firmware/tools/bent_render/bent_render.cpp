@@ -9,7 +9,7 @@
 //   - at depth 0 everything comes out bit for bit as it went in, before any bend and after each
 //   - no block is kept once every bend is let go but the pitch shifter's 32 (the pool's count)
 //   - the most blocks held at once, against the 900 the minichord has
-//   - pitch drop: the chord's fundamental, measured, lands at the depth's semitones
+//   - pitch drop: the chord's fundamental, measured, lands at the depth's semitones, and so does a lone sine
 // and exits 1 if anything fails.
 #include "bent_bus.h"
 #include <cstdio>
@@ -27,11 +27,18 @@ static const float FS = AUDIO_SAMPLE_RATE_EXACT;
 // the test groove, sample by sample, both sides (the chord a little wider on the right)
 struct Groove {
   bool drums = true, solo = false;
+  float sine = 0;   // instead, one sine at this frequency, steady (a note with nothing but its fundamental)
   double t = 0;
   float chord_f[4] = {130.81f, 164.81f, 196.0f, 261.63f};   // C major, from C3
   double ph[2][4] = {};
   float drum_part = 0;   // the last sample's drums, which go in on their own inputs
   float operator()(int side) {
+    if (sine) {
+      ph[side][0] += sine / FS; ph[side][0] -= floor(ph[side][0]);
+      if (side == 1) t += 1.0 / FS;
+      drum_part = 0;
+      return sinf(2 * (float)M_PI * (float)ph[side][0]) * 0.25f * 32767.0f;
+    }
     double beat = fmod(t, 0.5), eighth = fmod(t, 0.25);
     float env = expf(-(float)beat * 3.0f);
     float y = 0;
@@ -57,9 +64,10 @@ struct Run {
 };
 
 // blocks of the groove through a fresh bend object; set(bend, seconds) moves the depths before each block
-static Run render(float seconds, std::function<void(AudioEffectBend &, float)> set, bool drums = true, float quiet_until = 0) {
+static Run render(float seconds, std::function<void(AudioEffectBend &, float)> set, bool drums = true, float quiet_until = 0, float sine = 0) {
   AudioEffectBend bend;
   Groove g;
+  g.sine = sine;
   g.drums = drums;
   g.solo = !drums;
   Run r;
@@ -107,6 +115,10 @@ static Run render(float seconds, std::function<void(AudioEffectBend &, float)> s
   int kept = audio_pool().used - base_used;
   CHECK(kept == 2 * AudioEffectBend::HISTORY, "blocks kept after letting go: %d, not %d", kept, 2 * AudioEffectBend::HISTORY);
   CHECK(bend.resting(), "not resting after letting go");
+  // the bend object goes, and the blocks it keeps would stay taken (on the minichord it never goes): the pool
+  // emptied, so the renders after this one have all of it
+  for (auto &b : audio_pool().blocks) b.ref_count = 0;
+  audio_pool().used = audio_pool().most = 0;
   return r;
 }
 
@@ -135,7 +147,7 @@ static double rms_db(const std::vector<int16_t> &s, float from, float to) {
 // heads, jumping, put sidebands round each partial as strong as it, and their mean is pulled by the
 // fades; within each head's stretch the period is exact, and that is what the ear hears as the pitch.
 static double pitch_hz(const std::vector<int16_t> &s, float from, float to, double lo, double hi) {
-  size_t a = (size_t)(from * FS), b = (size_t)(to * FS);
+  size_t a = (size_t)(from * FS), b = std::min((size_t)(to * FS), s.size() / 2);
   int l0 = (int)(FS / hi), l1 = (int)(FS / lo) + 1;
   std::vector<double> r(l1 + 2, 0);
   for (int lag = l0 - 1; lag <= l1 + 1; lag++) {
@@ -191,6 +203,14 @@ int main(int argc, char **argv) {
     printf("    root %.1f Hz -> %.1f (%+.2f st), %.1f (%+.2f st), %.1f (%+.2f st); %.2f us a block, most held %d, pool +%d\n",
            f0, f1, s1, f2, s2, f3, s3, drop.us_per_block, drop.most_held, drop.most_pool);
     CHECK(fabs(s1 + 3) < 0.15 && fabs(s2 + 6) < 0.15 && fabs(s3 + 12) < 0.15, "the drop isn't 3, 6 and 12 semitones");
+    // a lone sine, A3, where a fixed jump of the heads would land it on the grid the jumps make (220 Hz
+    // minus whole steps of 14.4 Hz an octave down: 105.1, not 110) and a saw's harmonics hide it
+    for (float depth : {0.25f, 0.5f, 1.0f}) {
+      Run s = render(2.5f, [depth](AudioEffectBend &b, float t) { b.pitch_drop(t > 0.3f ? depth : 0, 12, 150); }, false, 0, 220);
+      double want = 220 * pow(2, -12 * depth / 12), got = 12 * log2(pitch_hz(s.out, 1.0f, 2.4f, want * 0.93, want / 0.93) / 220);
+      printf("    a sine at 220 Hz, depth %.2f: %+.2f st\n", depth, got);
+      CHECK(fabs(got + 12 * depth) < 0.05, "a sine at 220 Hz lands at %+.2f semitones, not %+.2f", got, -12 * depth);
+    }
     size_t from = (size_t)(7.7f * FS) * 2;   // let go at 7.0, eased off by 7.2, sagged back by 7.35, the shifter out 10 ms later
     CHECK(std::equal(drop.in.begin() + from, drop.in.end(), drop.out.begin() + from), "not the input bit for bit half a second after letting go");
   }
