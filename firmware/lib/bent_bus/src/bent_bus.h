@@ -65,6 +65,7 @@ public:
   static const uint8_t HISTORY = 32;          // blocks kept a side for it (4096 samples, a power of 2)
   static const uint16_t SPLICE_REACH = 320;   // how far either side of its jump a head may land (a period of 69 Hz)
   static const uint16_t SPLICE_LENGTH = 128;  // the stretch compared to find where
+  static const uint16_t SPLICE_REST = 512;    // samples between one head's splices at the most
   static const uint16_t SPLICE_DELAY = SPLICE_REACH + 1;   // the heads' shortest delay, so one landing short still reads the past
   static const uint8_t STUTTER_BLOCKS = 96;   // the longest slice a side (279 ms)
 
@@ -91,6 +92,8 @@ private:
   float phase = 0.5f;            // the heads' place in the window
   float head_off[2] = {0, 0};    // where each head landed at its last jump, from where a fixed jump would put it
   float rho = 0;                 // how alike the heads read at the last jump, 0 to 1
+  uint8_t splice_due = 0;        // the heads (bit 0 A, 1 B) that have jumped and wait to be matched
+  uint16_t splice_rest[2] = {0, 0};   // samples before each may be matched again
   float wet = 0;                 // the shifter's share of the sound, 0 to 1, moved a little each sample
 
   // starve

@@ -82,35 +82,47 @@ FLASHMEM void AudioEffectBend::splice(uint32_t t, uint8_t head) {
   auto mono = [this](uint32_t s) -> int16_t {
     return (sample(history[0][(s >> 7) & (HISTORY - 1)], s & 127) + sample(history[1][(s >> 7) & (HISTORY - 1)], s & 127)) >> 1;
   };
-  float ea = 0;
-  for (uint32_t j = 0; j < SPLICE_LENGTH; j++) { a[j] = mono(other - j); ea += (float)a[j] * a[j]; }
+  for (uint32_t j = 0; j < SPLICE_LENGTH; j++) a[j] = mono(other - j);
   for (uint32_t j = 0; j < SPLICE_LENGTH + 2 * SPLICE_REACH; j++) b[j] = mono(near - j);
-  // b[k + j] is the stretch for an offset of k - SPLICE_REACH (k = 0 the newest): every other offset,
-  // then the best one's neighbours
-  auto score = [&](int32_t k, float *eb_out) {
-    float ab = 0, eb = 0;
-    for (uint32_t j = 0; j < SPLICE_LENGTH; j++) { float y = b[k + j]; ab += a[j] * y; eb += y * y; }
-    if (eb_out) *eb_out = eb;
-    return ab / sqrtf(ea * eb + 1.0f);
+  // b[k + j] is the stretch for an offset of k - SPLICE_REACH (k = 0 the newest), scored against a every
+  // stride samples; two sums each, so the adds don't wait on one another
+  auto energy = [&](uint32_t stride) {
+    float e = 0;
+    for (uint32_t j = 0; j < SPLICE_LENGTH; j += stride) e += (float)a[j] * a[j];
+    return e;
   };
+  auto score = [&](int32_t k, uint32_t stride, float ea) {
+    float ab0 = 0, ab1 = 0, eb0 = 0, eb1 = 0;
+    const int16_t *y = b + k;
+    for (uint32_t j = 0; j < SPLICE_LENGTH; j += 2 * stride) {
+      float y0 = y[j], y1 = y[j + stride];
+      ab0 += a[j] * y0; eb0 += y0 * y0;
+      ab1 += a[j + stride] * y1; eb1 += y1 * y1;
+    }
+    return (ab0 + ab1) / sqrtf(ea * (eb0 + eb1) + 1.0f);
+  };
+  // every 4th offset on every 4th sample, then the best one's neighbours on every sample: a tenth of the
+  // work of every offset on every sample (the Teensy took ~0.8 ms a splice so, a quarter of a block)
+  float coarse = energy(4), fine = energy(1);
+  if (fine < 1.0f) { head_off[head] = 0; rho = 0; return; }   // silence: where it would have landed
   int32_t best = SPLICE_REACH; float top = -2;
-  for (int32_t k = 0; k <= 2 * SPLICE_REACH; k += 2) { float c = score(k, nullptr); if (c > top) { top = c; best = k; } }
-  for (int32_t k = best - 1; k <= best + 1; k += 2) {
+  for (int32_t k = 0; k <= 2 * SPLICE_REACH; k += 4) { float c = score(k, 4, coarse); if (c > top) { top = c; best = k; } }
+  int32_t around = best; top = -2;
+  for (int32_t k = around - 3; k <= around + 3; k++) {
     if (k < 0 || k > 2 * SPLICE_REACH) continue;
-    float c = score(k, nullptr); if (c > top) { top = c; best = k; }
+    float c = score(k, 1, fine); if (c > top) { top = c; best = k; }
   }
-  if (ea < 1.0f) { head_off[head] = 0; rho = 0; return; }   // silence: where it would have landed
   head_off[head] = (float)(best - SPLICE_REACH);
   // how alike, over a longer stretch: the best of many short matches flatters, and the level made up
   // from it would come out short
   uint32_t mine = near - best;
   float ab = 0, e0 = 0, e1 = 0;
-  for (uint32_t j = 0; j < 4 * SPLICE_LENGTH; j++) {
+  for (uint32_t j = 0; j < 4 * SPLICE_LENGTH; j += 2) {   // 512 samples, every other one
     float x = mono(other - j), y = mono(mine - j);
     ab += x * y; e0 += x * x; e1 += y * y;
   }
   float c = ab / sqrtf(e0 * e1 + 1.0f);
-  rho = c < 0 ? 0 : c;
+  rho = c < 0 ? 0 : c * c;
 }
 
 FLASHMEM void AudioEffectBend::update(void) {
@@ -160,7 +172,7 @@ FLASHMEM void AudioEffectBend::update(void) {
   bool shifting = drop_t > 0 || starve_now > 0 || drop_now > 0;
   float wet_aim = shifting ? 1 : 0;
   float ratio_new = shifting ? exp2f(-semis / 12.0f) : 1;
-  if (wet == 0 && shifting) { phase = 0.5f; ratio = 1; head_off[0] = head_off[1] = 0; rho = 0; }   // in at the window's middle: the live sound 25 ms late
+  if (wet == 0 && shifting) { phase = 0.5f; ratio = 1; head_off[0] = head_off[1] = 0; rho = 0; splice_due = 2; splice_rest[0] = splice_rest[1] = 0; }   // in at the window's middle: the live sound 25 ms late, and B (silent) matched to it at once
 
   // the crush
   float cv = crush_target;
@@ -260,9 +272,15 @@ FLASHMEM void AudioEffectBend::update(void) {
         phase += (1 - r) * (1.0f / WINDOW);
         // a head jumps while it's silent: A as the phase wraps, B as it crosses the middle; each lands
         // where it reads what the other is reading, so the two stay in step through their crossfade
-        if (phase >= 1) { phase -= 1; splice(first + n, 0); }
-        else if (phase < 0) { phase += 1; splice(first + n, 0); }
-        else if ((was < 0.5f) != (phase < 0.5f)) splice(first + n, 1);
+        if (phase >= 1) { phase -= 1; splice_due |= 1; }
+        else if (phase < 0) { phase += 1; splice_due |= 1; }
+        else if ((was < 0.5f) != (phase < 0.5f)) splice_due |= 2;
+        // at most one splice a head every SPLICE_REST samples: a starve's wobble round no shift at all
+        // keeps the phase crossing back and forth, and a head jumped again so soon is still all but silent
+        for (uint8_t k = 0; k < 2; k++) {
+          if (splice_rest[k]) splice_rest[k]--;
+          else if (splice_due & (1 << k)) { splice(first + n, k); splice_due &= ~(1 << k); splice_rest[k] = SPLICE_REST; }
+        }
         if (wet < wet_aim) { wet += step; if (wet > 1) wet = 1; }
         else if (wet > wet_aim) { wet -= step; if (wet < 0) wet = 0; }
         float pb = phase + 0.5f;
