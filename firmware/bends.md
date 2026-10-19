@@ -18,6 +18,14 @@ supply would: the pitch drop drags the rhythm's clock as it sags (at 100 exactly
 and lowers the sample rate; the voltage starve drags the clock as its supply sags, nearly stops it in a
 brown-out, and takes bits away. At 0 each bend is on its own.
 
+Spring back (443: 0 none, 1 pitch drop, clock bend and stutter, 2 every bend; off by default) makes a bend
+set by a knob (or an editor) come back by itself, as a bender's touch point does when the finger lifts: it
+counts fully while the knob moves and, 150 ms after the knob stops, eases back to nothing over spring time
+(444, 1000 ms); a stutter lets go at the end of it. The CCs hold as long as the controller does; hover comes
+back with the hand. Stutter refresh (445, 2000 ms; 0 never): a stutter held that long goes back to the live
+sound and, still held, catches a new slice, so one left on rolls along with the music and never holds a
+slice of silence for ever.
+
 CC 121 (reset all controllers) lets every CC depth go.
 
 ## Where it sits

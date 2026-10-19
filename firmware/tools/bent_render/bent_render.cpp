@@ -57,7 +57,7 @@ struct Run {
 };
 
 // blocks of the groove through a fresh bend object; set(bend, seconds) moves the depths before each block
-static Run render(float seconds, std::function<void(AudioEffectBend &, float)> set, bool drums = true) {
+static Run render(float seconds, std::function<void(AudioEffectBend &, float)> set, bool drums = true, float quiet_until = 0) {
   AudioEffectBend bend;
   Groove g;
   g.drums = drums;
@@ -74,9 +74,10 @@ static Run render(float seconds, std::function<void(AudioEffectBend &, float)> s
     audio_block_t *dr[2] = {AudioStream::allocate(), AudioStream::allocate()};
     for (int n = 0; n < AUDIO_BLOCK_SAMPLES; n++) {
       for (int c = 0; c < 2; c++) {
-        float x = g(c);
+        float x = g(c), dx = g.drum_part;
+        if (t < quiet_until) x = dx = 0;   // the instrument silent, as at a bank load
         in[c]->data[n] = (int16_t)std::max(-32768.0f, std::min(32767.0f, x));
-        dr[c]->data[n] = (int16_t)std::max(-32768.0f, std::min(32767.0f, g.drum_part));
+        dr[c]->data[n] = (int16_t)std::max(-32768.0f, std::min(32767.0f, dx));
       }
     }
     for (int n = 0; n < AUDIO_BLOCK_SAMPLES; n++) for (int c = 0; c < 2; c++) {
@@ -282,6 +283,18 @@ int main(int argc, char **argv) {
     CHECK(hf_together != hf_alone && st_together != st_alone, "interact changes nothing");
     size_t from = (size_t)(6.2f * FS) * 2;
     CHECK(std::equal(together.in.begin() + from, together.in.end(), together.out.begin() + from), "not bit for bit after letting go with interact on");
+  }
+
+  printf("a stutter caught in silence (pressed at a bank load, before anything plays) and held 5 s, refresh 0 and 1 s\n");
+  {
+    auto held = [](uint32_t refresh) {
+      return [refresh](AudioEffectBend &b, float t) { b.stutter(t < 6.0f ? 1.0f : 0, 0, 1102, false, refresh); };
+    };
+    Run frozen = render(7, held(0), true, 1.0f), rolling = render(7, held((uint32_t)FS), true, 1.0f);
+    write_wav(dir + "/4c stutter refreshing.wav", rolling.out);
+    double f = rms_db(frozen.out, 2.5f, 5.5f), r = rms_db(rolling.out, 2.5f, 5.5f), live = rms_db(rolling.in, 2.5f, 5.5f);
+    printf("    held from silence, 2.5-5.5 s: %.1f dB without refresh, %.1f dB with (the music %.1f dB)\n", f, r, live);
+    CHECK(f < -90 && r > live - 6, "a refreshing stutter doesn't leave the silence it caught (or one without refresh does)");
   }
 
   printf("rest again after all that: bit for bit\n");

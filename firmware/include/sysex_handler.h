@@ -207,6 +207,15 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 442:
         bends_interact=value; bend_apply();
         break;
+      case 443:
+        spring_back=value; bend_apply();
+        break;
+      case 444:
+        spring_ms=value < 50 ? 1000 : value;
+        break;
+      case 445:
+        stutter_refresh_ms=value; bend_apply();
+        break;
       case 303:
         phone_set_target(0,constrain(value,0,parameter_size-1));
         break;
@@ -1393,6 +1402,9 @@ FLASHMEM bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 440: lo=3; hi=100; return true;
       case 441: lo=0; hi=1; return true;
       case 442: lo=0; hi=100; return true;
+      case 443: lo=0; hi=2; return true;
+      case 444: lo=50; hi=5000; return true;
+      case 445: lo=0; hi=10000; return true;
       case 303: lo=0; hi=511; return true;
       case 304: lo=0; hi=4095; return true;
       case 305: lo=0; hi=2; return true;

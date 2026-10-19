@@ -45,6 +45,7 @@ FLASHMEM void AudioEffectBend::release_slice() {
   slice_blocks = 0;
   looping = false;
   stutter_fade = 0;
+  looped = 0;
 }
 
 // the slice's length for the stutter's depth now: from the longest at a touch to the shortest at full,
@@ -174,6 +175,10 @@ FLASHMEM void AudioEffectBend::update(void) {
         cur[c] = out[c];
         own[c] = true;
       }
+      // held long enough: back to the live sound as on a release, and, still held, a new slice from there
+      looped += N;
+      uint32_t refresh = stutter_refresh;
+      if (stuttering && refresh && looped >= refresh && !stutter_fade) stutter_fade = 1;
       if (stutter_fade >= 128) release_slice();
     } else {
       if (out[0]) release(out[0]);

@@ -38,9 +38,11 @@ public:
   // mode 0 bits and rate, 1 bits only, 2 rate only
   void crush(float depth, uint8_t mode) { crush_target = depth; crush_mode = mode; }
   // beat_samples: the beat's length while the rhythm runs, for slices in time with it, 0 free; shortest:
-  // the slice at full depth, samples; drums_through: the drums keep playing rather than stuttering
-  void stutter(float depth, uint32_t beat_samples, uint32_t shortest, bool drums_through) {
-    stutter_target = depth; stutter_beat = beat_samples; stutter_drums_through = drums_through;
+  // the slice at full depth, samples; drums_through: the drums keep playing rather than stuttering;
+  // refresh: after this many samples of a slice repeating, a held stutter catches a new one (0 never), so
+  // one left on rolls with the music rather than holding what it caught (silence, at worst) for ever
+  void stutter(float depth, uint32_t beat_samples, uint32_t shortest, bool drums_through, uint32_t refresh = 0) {
+    stutter_target = depth; stutter_beat = beat_samples; stutter_drums_through = drums_through; stutter_refresh = refresh;
     stutter_shortest = shortest < 64 ? 64 : shortest > STUTTER_BLOCKS * AUDIO_BLOCK_SAMPLES ? STUTTER_BLOCKS * AUDIO_BLOCK_SAMPLES : shortest;
   }
 
@@ -71,7 +73,7 @@ private:
   volatile float drop_target = 0, sag_coef = 1, starve_target = 0, crush_target = 0, stutter_target = 0;
   volatile uint8_t crush_mode = 0;
   volatile float interact_amount = 0;
-  volatile uint32_t stutter_beat = 0, stutter_shortest = 1102;   // 25 ms
+  volatile uint32_t stutter_beat = 0, stutter_shortest = 1102, stutter_refresh = 0;   // 25 ms; never
   volatile bool stutter_drums_through = true;
 
   bool rest = true;
@@ -108,6 +110,7 @@ private:
   bool looping = false;          // playing the slice back (once it's as long as the loop)
   uint32_t loop_length = 0, loop_at = 0;
   uint16_t stutter_fade = 0;     // samples into the way back to the live sound, after a release
+  uint32_t looped = 0;           // samples the slice has been repeating, toward a refresh
 
   uint32_t random() { seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5; return seed; }
   float noise() { return (int32_t)random() * (1.0f / 2147483648.0f); }   // -1..1

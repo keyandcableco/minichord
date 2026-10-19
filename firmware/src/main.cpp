@@ -2670,11 +2670,16 @@ bool stutter_sync = false;                   // stutter's slices a beat's fracti
 uint8_t stutter_shortest_ms = 25;            // the slice at full depth (440)
 bool stutter_drums = false;                  // the drums stutter too, rather than playing on through it (441)
 uint8_t bends_interact = 0;                  // how much the bends act on one another (442)
+uint8_t spring_back = 0;                     // which bends a knob lets spring back (443): 0 none, 1 pitch drop, clock bend
+                                             // and stutter, 2 every bend
+uint16_t spring_ms = 1000;                   // how long they take to come back (444)
+uint16_t stutter_refresh_ms = 2000;          // a held stutter catches a new slice this often (445), 0 never
+float spring_factor[5] = {1, 1, 1, 1, 1};    // how much of each bend's setting still counts, as it springs back
 float clock_bend_base = 1;                   // clock bend's own ratio, before the others act on the clock
 
 FLASHMEM void bend_apply() {
   float d[5];
-  for (uint8_t k = 0; k < 5; k++) d[k] = max(bend_setting[k], bend_cc[k]) / 100.0f;
+  for (uint8_t k = 0; k < 5; k++) d[k] = fmaxf(bend_setting[k] * spring_factor[k], bend_cc[k]) / 100.0f;
   clock_bend_base = powf(2.0f, (clock_bend_faster ? 2.0f : -2.0f) * d[3]);   // a quarter or four times the tempo at 100
   if (!bends_interact) clock_bend_ratio = clock_bend_base;   // else bend_watch moves it, with the others
   bent_bus.interact(bends_interact / 100.0f);
@@ -2683,7 +2688,8 @@ FLASHMEM void bend_apply() {
   bent_bus.pitch_drop(d[0], pitch_drop_range, pitch_drop_sag);
   bent_bus.starve(d[1]);
   bent_bus.crush(d[2], bitcrush_mode);
-  bent_bus.stutter(d[4], beat, (uint32_t)(stutter_shortest_ms * AUDIO_SAMPLE_RATE_EXACT / 1000), !stutter_drums);
+  bent_bus.stutter(d[4], beat, (uint32_t)(stutter_shortest_ms * AUDIO_SAMPLE_RATE_EXACT / 1000), !stutter_drums,
+                   (uint32_t)(stutter_refresh_ms * AUDIO_SAMPLE_RATE_EXACT / 1000));
 }
 
 // Stutter (438) from its setting: never from a preset, which would load the instrument frozen in a
@@ -2711,11 +2717,38 @@ FLASHMEM void stutter_after_load() {
 // and with bends interact (442) the clock is bent by the others as a bent Omnichord's one clock and one
 // supply would be: it drags with the pitch drop as it sags (at 100 exactly as far as the pitch), drags
 // as the starve's supply sags and nearly stops in a brown-out
+// Spring back (443, 444): a knob stays where it is left, and a bend left on stays on (a stutter looping what
+// it caught, a dragged clock, a dropped pitch, and a bank load taking the mod knob's position): a bend
+// that springs back counts its setting fully while it moves and, a moment after it stops, eases back to
+// 0 over spring_ms (a stutter lets go at the end of it). Moving it again bends again. Only the setting
+// eases: the control changes 112-116 hold as long as the controller does, and hover and a plate's touch
+// come back with the hand.
+FLASHMEM bool bend_springs() {
+  static uint8_t seen[5] = {0, 0, 0, 0, 0};
+  static uint32_t moved[5] = {0, 0, 0, 0, 0};
+  const uint32_t settle = 150;   // a knob still this long has been let go
+  bool changed = false;
+  for (uint8_t k = 0; k < 5; k++) {
+    float f = 1;
+    if (bend_setting[k] != seen[k]) { seen[k] = bend_setting[k]; moved[k] = millis(); }
+    bool springs = spring_back == 2 || (spring_back == 1 && (k == 0 || k == 3 || k == 4));
+    uint32_t still = millis() - moved[k];
+    if (springs && bend_setting[k] && still > settle) {
+      if (k == 4) f = still > settle + spring_ms ? 0 : 1;
+      else f = fmaxf(0, 1 - (still - settle) / (float)max(spring_ms, (uint16_t)1));
+    }
+    if (f != spring_factor[k]) { spring_factor[k] = f; changed = true; }
+  }
+  return changed;
+}
+
 FLASHMEM void bend_watch() {
   static elapsedMillis since, since_sync;
   if (since < 10) return;
   since = 0;
-  if (stutter_sync && since_sync >= 50) { since_sync = 0; bend_apply(); }
+  bool apply = bend_springs();
+  if (stutter_sync && since_sync >= 50) { since_sync = 0; apply = true; }
+  if (apply) bend_apply();
   if (!bends_interact) return;
   float k = bends_interact / 100.0f;
   float r = clock_bend_base * exp2f(-k * bent_bus.drop_semitones() / 12.0f);
