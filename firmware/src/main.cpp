@@ -12,12 +12,15 @@
 #include <harp.h>
 #include <potentiometer.h>
 #include "minichord_samples.h"
+#define BENT_BOARD_CODE FLASHMEM
+#define BENT_BOARD_DATA PROGMEM
+#include "bent_board.h"
 
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
 void apply_harp_thresholds();
-int version_ID=102; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated; 99: the arcade wheel's bearing from the centre of its readings, corrected, quiet while A or B is pressed, and the neighbour guard on it; zipper 24's wrap island read by a margin, and where that can't tell the ends apart, by the end a touch is at or last left; hover measured on both; 102: the bends, pitch drop, voltage starve, bitcrush, clock bend and stutter, 430-439, and control change 112-116 (100 is the places and 101 the joystick harp, on their own branches))
+int version_ID=111; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated; 99: the arcade wheel's bearing from the centre of its readings, corrected, quiet while A or B is pressed, and the neighbour guard on it; zipper 24's wrap island read by a margin, and where that can't tell the ends apart, by the end a touch is at or last left; hover measured on both; 102: the bends, pitch drop, voltage starve, bitcrush, clock bend and stutter, 430-439, and control change 112-116 (100 is the places and 101 the joystick harp, on their own branches); 111: the bent board, harp plate 21, a harp of thirteen places on six of its lines and touch areas on the other six, the bend rail's five points, the palm pad and the thumb ribbon, each moving a setting of its own, by default the bends, 472-486 (103-110 are the arrival build's, on plates-arrival))
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -699,12 +702,15 @@ bool string_palmed[12] = {false, false, false, false, false, false, false, false
 // ring. The fretless wrap adds an island of the bottom zone above the top one:
 // twelve strings as the stock strip, and a thirteenth place for the ribbon. The
 // fretless plate is twelve zones in a line, so it is 0: it is made for the harp
-// ribbon, below, and plays twelve strings without it. 11 belongs to a plate on
-// another branch. Before firmware 93 zipper 24, the arcade wheel and the
-// fretless wrap were 1 to 3, and that plate 4: apply_preset_version moves them.
+// ribbon, below, and plays twelve strings without it. 11-20 belong to plates on
+// other branches. The bent board (21) is a full-face plate: a harp of thirteen
+// places on six of the twelve lines, and touch areas on the other six that move
+// settings, by default the bends (see BENT BOARD). Before firmware 93 zipper 24,
+// the arcade wheel and the fretless wrap were 1 to 3, and that plate 4:
+// apply_preset_version moves them.
 const int16_t harp_plate_adress = 243;
 const uint8_t plate_stock = 0, plate_keymaster = 1, plate_piano = 2, plate_twin_rows = 3, plate_framed_strings = 4;
-const uint8_t plate_zipper_24 = 8, plate_arcade_wheel = 9, plate_fretless_wrap = 10;
+const uint8_t plate_zipper_24 = 8, plate_arcade_wheel = 9, plate_fretless_wrap = 10, plate_bent_board = 21;
 uint8_t harp_plate = plate_stock;
 // The neighbour guard (address 416), for the piano plate (harp plate 2), see neighbour_guard_pass()
 uint8_t neighbour_guard = 5;          // tenths: a key landing under this share of a touching neighbour stays silent; 0 off
@@ -2389,8 +2395,10 @@ void update_formants() {
 // firmware can't tell them apart. Choosing another plate puts the trim back to 100, so a trim made for one
 // plate never carries to the next; a preset load leaves both as it brings them (locked, usually: see LOCKS).
 const int16_t harp_touch_scale_adress = 418;
-const uint8_t harp_plate_count = 12;
-const uint16_t harp_plate_strength[harp_plate_count] = {100, 100, 100, 240, 100, 100, 100, 100, 100, 100, 100, 100};
+// 11-20 are other branches' plates, at the stock strip's here; the bent board (21) too, until it is measured
+const uint8_t harp_plate_count = 22;
+const uint16_t harp_plate_strength[harp_plate_count] = {100, 100, 100, 240, 100, 100, 100, 100, 100, 100, 100,
+                                                       100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
 uint16_t harp_touch_scale = 100;   // 0, a preset saved before the setting, is taken as 100
 FLASHMEM void apply_harp_touch_scale() {
   static uint32_t applied = 0;
@@ -2438,6 +2446,7 @@ bool plate_id_check_wanted = false;              // a plate was just swapped in:
 uint8_t plate_swap_state = 0;                    // SWAP_NONE while no swap is being waited out (PLATE SWAP)
 bool plate_swap_bare = false;                    // the last swap settled with no plate on
 void choose_harp_plate(int value);
+void bent_board_reset();                         // the bent board's touch areas let go (see BENT BOARD)
 
 // Plate detect said on the LED for a second or so, over whatever it showed, which takes it back after
 // (step_led_animation): white three times, a plate learned; white twice, a plate found fitted and chosen; red
@@ -2642,6 +2651,7 @@ FLASHMEM void plate_id_update() {
 // harp plate (243): a plate chosen live, rather than loaded with a preset, brings its calibration untrimmed
 FLASHMEM void choose_harp_plate(int value) {
   bool swapped = value != harp_plate && !parameters_loading;
+  if (value != harp_plate) bent_board_reset();   // the bent board's areas let go (bent_areas_apply puts their settings back)
   if (value != harp_plate && !parameters_loading && plate_detect) plate_id_learn_wanted = true;
   harp_plate = value;
   if (swapped && current_sysex_parameters[harp_touch_scale_adress] != 100) {
@@ -2659,9 +2669,11 @@ FLASHMEM void choose_harp_plate(int value) {
 // 0 to 100. Four are bent_bus (lib/bent_bus) on the whole mix; clock bend multiplies the rhythm's
 // clock (acc_tick). A depth comes from its setting, which a preset keeps and the knobs, hover and the
 // double tap can move, or live from control change 112-116 (any channel, 0 to 127), which is never
-// kept; the deeper counts. At 0 the instrument is as it was: nothing stock changes.
+// kept, or from a touch area of the bent board (harp plate 21) pressed, never kept either; the deepest
+// counts. At 0 the instrument is as it was: nothing stock changes.
 uint8_t bend_setting[5] = {0, 0, 0, 0, 0};   // pitch drop, voltage starve, bitcrush, clock bend, stutter
 uint8_t bend_cc[5] = {0, 0, 0, 0, 0};        // the same from control change 112-116
+uint8_t bend_touch[5] = {0, 0, 0, 0, 0};     // the same from the bent board's touch areas (see BENT BOARD)
 uint8_t pitch_drop_range = 12;               // semitones at 100 (431)
 uint16_t pitch_drop_sag = 150;               // ms (432)
 uint8_t bitcrush_mode = 0;                   // 0 bits and rate, 1 bits, 2 rate (435)
@@ -2679,7 +2691,7 @@ float clock_bend_base = 1;                   // clock bend's own ratio, before t
 
 FLASHMEM void bend_apply() {
   float d[5];
-  for (uint8_t k = 0; k < 5; k++) d[k] = fmaxf(bend_setting[k] * spring_factor[k], bend_cc[k]) / 100.0f;
+  for (uint8_t k = 0; k < 5; k++) d[k] = fmaxf(fmaxf(bend_setting[k] * spring_factor[k], bend_cc[k]), bend_touch[k]) / 100.0f;
   clock_bend_base = powf(2.0f, (clock_bend_faster ? 2.0f : -2.0f) * d[3]);   // a quarter or four times the tempo at 100
   if (!bends_interact) clock_bend_ratio = clock_bend_base;   // else bend_watch moves it, with the others
   bent_bus.interact(bends_interact / 100.0f);
@@ -2721,8 +2733,8 @@ FLASHMEM void stutter_after_load() {
 // it caught, a dragged clock, a dropped pitch, and a bank load taking the mod knob's position): a bend
 // that springs back counts its setting fully while it moves and, a moment after it stops, eases back to
 // 0 over spring_ms (a stutter lets go at the end of it). Moving it again bends again. Only the setting
-// eases: the control changes 112-116 hold as long as the controller does, and hover and a plate's touch
-// come back with the hand.
+// eases: the control changes 112-116 hold as long as the controller does, and hover and the bent board's
+// touch areas (bend_touch) come back with the hand.
 FLASHMEM bool bend_springs() {
   static uint8_t seen[5] = {0, 0, 0, 0, 0};
   static uint32_t moved[5] = {0, 0, 0, 0, 0};
@@ -2770,6 +2782,11 @@ FLASHMEM bool bend_cc_message(uint8_t controller, uint8_t value) {
   bend_apply();
   return true;
 }
+
+// the bent board's touch areas' settings (472-486), see BENT BOARD
+void bent_area_target(uint8_t k, int value);
+void bent_area_value(uint8_t k, int value);
+void bent_ribbon_reads(int value);
 
 #include <sysex_handler.h>
 // A parameter write is F0 <adress lo> <adress hi> <value lo> <value hi> F7. Universal system
@@ -5758,6 +5775,14 @@ uint8_t calculate_chord_specific_note(uint8_t string, uint8_t root_note, int8_t 
   return root_note + sharp_offset + chord_scale_intervals[scale_index][scale_degree] + (octave * EDO);
 }
 
+// Chord mode past the twelfth string (the bent board's thirteenth place): the twelve strings' pattern goes on
+// from the bottom, as many octaves up as it spans, every row's twelve being whole turns of its pattern (three
+// notes an octave, four or six)
+FLASHMEM __attribute__((noinline)) static uint8_t shuffling_level_past(uint8_t string) {
+  const int8_t *row = harp_shuffling_array[harp_shuffling_selection];
+  return row[string % 12] + 10 * (string / 12) * (row[11] / 10 - row[0] / 10 + 1);
+}
+
 uint8_t calculate_note_harp(uint8_t string, bool slashed, bool sharp) {
   if (chromatic_harp_mode) {
     // Chromatic mode: from C two octaves up, whatever the division, one step a
@@ -5809,9 +5834,9 @@ uint8_t calculate_note_harp(uint8_t string, bool slashed, bool sharp) {
                                          scalar_harp_selection == 9);
   }
 
-  // Mode 0, the existing chord-following behaviour, unchanged
+  // Mode 0, the existing chord-following behaviour, unchanged (past the twelfth string, shuffling_level_past)
   uint8_t note = 0;
-  uint8_t level = harp_shuffling_array[harp_shuffling_selection][string];
+  uint8_t level = string < 12 ? harp_shuffling_array[harp_shuffling_selection][string] : shuffling_level_past(string);
   if (slashed && level % 10 == slash_slot_effective) {
     if (!flat_button_modifier) {
       note = (EDO * int(level / 10) + get_root_button(key_signature_selection, chord_frame_shift, slash_value) + sharp * modifier_step);
@@ -8091,6 +8116,190 @@ void palm_mute() {
   if (rythm_mode && rhythm_palm_break) acc_break_request();   // the band stops with the hand
 }
 
+//>>BENT BOARD<<
+// Harp plate 21, a full-face plate read by include/bent_board.h: a harp of thirteen places on six of the
+// twelve lines (T10 T9 T8 T7 T4 T2 bottom to top, T10's island above T2, as the split plate's strip), and on
+// the other six, touch areas: the bend rail's five points along the strip above the chord buttons (T1, T3,
+// T5, the points between two lines read as both), a palm pad on the nose left of them (T6) and a thumb ribbon
+// in the wedge below the seventh row (T11, T12, its place from their share).
+// Each area moves a setting of its own, as hover does: area k's target (472 + 2k: the rail's points 0-4 left
+// to right, the palm 5, the ribbon 6; any setting a knob may sweep) goes from as the preset has it to its
+// value (473 + 2k) as the area is pressed from nothing to firmly (touch_firmness's 40 to 250, each rail point
+// read as the middle one reads, T1's copper being a thin strip), and back as it lets go, as a bender's touch
+// point springs back. The ribbon goes by where the thumb is along it, from as the preset has it at its left
+// end to the value at its right, held there while the thumb rests and back when it lifts: a pot the thumb
+// holds, where the rail is buttons pressed. With ribbon reads (486) at 1 it goes by how firmly instead.
+// The defaults are the bends: the rail's points pitch drop, voltage starve, bitcrush, clock bend and stutter
+// left to right; the palm bends interact (442), so a palm pressed while the left hand plays drags the bends
+// pressed together, as a bent Omnichord's one clock and supply would, and does nothing alone; the ribbon
+// bitcrush, a crush pot the thumb holds steady. All at 100, full under a firm press.
+// A bend's depth is not moved as a setting is: a touch on it is a third source beside its setting and control
+// change 112-116 (bend_touch, see BENDS), and the deepest of the three counts, so a touch deepens a bend and
+// can't undo one a knob made; it comes back with the finger, never springs (443). Two areas on one setting:
+// the deepest moves it. Depths follow over bent_follow_ms, the chip's noise steadied. On any other plate the
+// areas don't exist and nothing changes.
+const uint8_t bent_area_count = 7;            // the rail's five points, the palm, the ribbon
+const int16_t bent_area_adress = 472;         // area k's target, its value at 473 + 2k
+const int16_t bent_ribbon_reads_adress = 486;
+const float bent_follow_ms = 8;
+const uint16_t bent_refresh_ms = 250;         // a load or an editor puts a stored value back: applied again this often
+struct bent_area {
+  int16_t target, value;
+  float raw;         // how deep it is pressed, as read (0 to 1)
+  float depth;       // as it moves the setting, following
+  int16_t applied;   // what was last applied to its target
+  bool live;         // moving its target (not a bend): the target has to be put back when it lets go
+  bool reapply;
+};
+bent_area bent_areas[bent_area_count] = {   // the parameters.json defaults, before the first load
+  {430, 100, 0, 0, 0, false, true}, {433, 100, 0, 0, 0, false, true}, {434, 100, 0, 0, 0, false, true},
+  {436, 100, 0, 0, 0, false, true}, {438, 100, 0, 0, 0, false, true}, {442, 100, 0, 0, 0, false, true},
+  {434, 100, 0, 0, 0, false, true}};
+bool bent_ribbon_by_pressure = false;
+bentboard::rail_state bent_rail;
+bentboard::ribbon_state bent_ribbon;
+// The zones the harp plays and their order up it, for the palm and the positions: all twelve in harp order, but
+// on the bent board its six harp lines bottom to top (bent_board_pass keeps them, bent_board_reset puts them back)
+uint8_t harp_line_order[12] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+uint8_t harp_line_count = 12;
+uint16_t harp_line_mask = 0xFFF;
+
+// the bend a setting is the depth of, -1 if none
+static int8_t bend_of(int16_t adress) {
+  switch (adress) {
+    case 430: return 0;
+    case 433: return 1;
+    case 434: return 2;
+    case 436: return 3;
+    case 438: return 4;
+    default: return -1;
+  }
+}
+
+FLASHMEM void bent_area_target(uint8_t k, int value) {
+  bent_area &a = bent_areas[k];
+  if (value == a.target) return;
+  // the old one back as the preset has it (a bend lets go by itself, bend_touch read afresh)
+  if (a.live && control_can_sweep(a.target)) apply_audio_parameter(a.target, current_sysex_parameters[a.target]);
+  a.target = value;
+  a.live = false;
+  a.reapply = true;
+}
+
+FLASHMEM void bent_area_value(uint8_t k, int value) {
+  bent_areas[k].value = value;
+  bent_areas[k].reapply = true;
+}
+
+FLASHMEM void bent_ribbon_reads(int value) {
+  bent_ribbon_by_pressure = value == 1;
+}
+
+// Every touch let go, for a plate swap or another plate chosen: the settings come back at the next apply
+FLASHMEM void bent_board_reset() {
+  bent_rail = bentboard::rail_state{};
+  bent_ribbon = bentboard::ribbon_state{};
+  for (uint8_t k = 0; k < bent_area_count; k++) bent_areas[k].raw = 0;
+  for (uint8_t z = 0; z < 12; z++) harp_line_order[z] = z;
+  harp_line_count = 12;
+  harp_line_mask = 0xFFF;
+}
+
+// From handle_harp on the bent board: each area's depth, from the zones touched (the border guarded) and
+// their strengths, both in harp order
+FLASHMEM __attribute__((noinline)) void bent_board_read(const bool *down, const int16_t *strength) {
+  float rail[bentboard::rail_points];
+  uint32_t now = millis();
+  bentboard::rail_update(bent_rail, down, strength, upside_down, now, rail);
+  bentboard::ribbon_update(bent_ribbon, down, strength, upside_down, now);
+  for (uint8_t k = 0; k < bentboard::rail_points; k++) bent_areas[k].raw = rail[k];
+  bent_areas[5].raw = bentboard::palm_depth(down, strength, upside_down);
+  bent_areas[6].raw = !bent_ribbon.active ? 0 : bent_ribbon_by_pressure ?
+    bentboard::depth_of(bent_ribbon.total, bentboard::ribbon_soft, bentboard::ribbon_firm) : bent_ribbon.place;
+}
+
+// From handle_harp on the bent board: the zones touched and their strengths, read once a pass for the harp and
+// the areas (in harp order), the ribbon and the harp's left edge guarded from each other; the areas' depths read
+FLASHMEM __attribute__((noinline)) void bent_board_pass(bool (&down)[12], int16_t (&strength)[12]) {
+  for (uint8_t k = 0; k < bentboard::line_lines; k++) harp_line_order[k] = bentboard::at(bentboard::line_zone[k], upside_down);
+  harp_line_count = bentboard::line_lines;
+  harp_line_mask = 0xFFF & ~bentboard::area_bits(upside_down);
+  bool any = bent_ribbon.active;
+  for (uint8_t z = 0; z < 12; z++) {
+    down[z] = harp_array[z].read_value();
+    any |= down[z];
+  }
+  for (uint8_t t = 0; t < harp_touch_max; t++) any |= harp_touches[t].active;
+  for (uint8_t i = 0; i < bentboard::rail_touch_max; i++) any |= bent_rail.t[i].active;
+  if (any) harp_sensor.read_strength(strength);   // nothing touched: nothing to read, spare the bus
+  else memset(strength, 0, sizeof strength);
+  bentboard::border_guard(down, strength, upside_down);
+  bent_board_read(down, strength);
+}
+
+// From handle_harp, whatever the plate: the areas' depths followed and their settings moved, every 5 ms. Off
+// the bent board each lets go once, then nothing is done.
+FLASHMEM __attribute__((noinline)) void bent_areas_apply() {
+  static elapsedMillis since, since_refresh;
+  static bool any_live = true;   // once at boot, to settle
+  bool here = harp_plate == plate_bent_board;
+  if (!here && !any_live) return;
+  if (since < 5) return;
+  float step = fminf(1.0f, since / bent_follow_ms);
+  since = 0;
+  bool refresh = since_refresh >= bent_refresh_ms;
+  if (refresh) since_refresh = 0;
+  any_live = false;
+  for (uint8_t k = 0; k < bent_area_count; k++) {
+    bent_area &a = bent_areas[k];
+    if (!here) a.raw = 0;
+    a.depth += (a.raw - a.depth) * step;
+    if (a.raw == 0 && a.depth < 0.002f) a.depth = 0;
+    any_live |= a.depth > 0 || a.live;
+  }
+  // the bends: a third depth beside the setting and the control change, the deepest area on each
+  uint8_t touch[5] = {0, 0, 0, 0, 0};
+  for (uint8_t k = 0; k < bent_area_count; k++) {
+    int8_t b = bend_of(bent_areas[k].target);
+    if (b < 0) continue;
+    uint8_t d = (uint8_t)lroundf(bent_areas[k].depth * constrain(bent_areas[k].value, 0, 100));
+    if (d > touch[b]) touch[b] = d;
+  }
+  if (memcmp(touch, bend_touch, sizeof touch)) {
+    memcpy(bend_touch, touch, sizeof touch);
+    bend_apply();
+  }
+  // any other setting: from as the preset has it to the deepest area's value; the first area on a target
+  // moves it for all of them
+  for (uint8_t k = 0; k < bent_area_count; k++) {
+    bent_area &a = bent_areas[k];
+    if (bend_of(a.target) >= 0 || !control_can_sweep(a.target)) { a.live = false; a.reapply = false; continue; }
+    bool first = true;
+    for (uint8_t j = 0; j < k && first; j++) first = bent_areas[j].target != a.target;
+    if (!first) continue;
+    float depth = a.depth;
+    int16_t to = a.value;
+    bool again = a.reapply || (refresh && a.live);
+    for (uint8_t j = k + 1; j < bent_area_count; j++) {
+      bent_area &b = bent_areas[j];
+      if (b.target != a.target) continue;
+      if (b.depth > depth) { depth = b.depth; to = b.value; }
+      again |= b.reapply;
+      b.reapply = false;
+    }
+    a.reapply = false;
+    if (depth <= 0 && !a.live) continue;
+    int16_t from = current_sysex_parameters[a.target], lo, hi;
+    if (parameter_range(a.target, lo, hi)) to = constrain(to, lo, hi);
+    int16_t value = (int16_t)lroundf(from + (to - from) * depth);
+    if (value != a.applied || again) {
+      apply_audio_parameter(a.target, value);
+      a.applied = value;
+    }
+    a.live = depth > 0;
+  }
+}
+
 // ---- the zipper plates: a finger between zones ----
 // A finger on a band touches both its zones, and the balance between their
 // readings says where it is, so a touch is found as the centre of the readings
@@ -8107,12 +8316,15 @@ const uint8_t harp_position_count = 24;
 
 // The ribbon reads any strip but the wheel, which is not a line. Harp drums (343) take the pads back
 // from the ribbon, the zipper plates, the hammer and the palm: each pad is a drum, whatever plays the strings.
+// The bent board's harp is thirteen places on six of the twelve lines, read as positions in any harp mode
+// (chord mode plays the chord's tones up its thirteen, as up twelve strings), never as the ribbon.
 bool harp_ribbon_active() {
-  return harp_ribbon && harp_plate != plate_arcade_wheel && !harp_drums;
+  return harp_ribbon && harp_plate != plate_arcade_wheel && harp_plate != plate_bent_board && !harp_drums;
 }
 
 bool harp_positions_active() {
-  return harp_plate == plate_zipper_24 && !harp_drums && !harp_ribbon_active() && (chromatic_harp_mode || scalar_harp_selection != 0);
+  return (harp_plate == plate_zipper_24 && !harp_drums && !harp_ribbon_active() && (chromatic_harp_mode || scalar_harp_selection != 0)) ||
+         harp_plate == plate_bent_board;
 }
 
 // Whether voice i has a finger on it: on a zipper plate or the ribbon a touch
@@ -8225,6 +8437,10 @@ uint8_t harp_position_voice(uint8_t p) {
 // plucking on lift, landing on one stops it and leaving it plucks it, whether
 // the finger leaves by lifting or by moving on to the next.
 void harp_position_land(uint8_t p) {
+  if (harp_drums) {   // the bent board's places as the kit's pads, 0 and 12 both the first
+    drum_pad(p % 12, pluck_strength);
+    return;
+  }
   uint8_t v = harp_position_voice(p);
   if (harp_pluck_on_lift) {
     damp_string(v);
@@ -8236,6 +8452,7 @@ void harp_position_land(uint8_t p) {
 }
 
 void harp_position_leave(uint8_t p) {
+  if (harp_drums) return;
   uint8_t v = harp_position_voice(p);
   if (harp_pluck_on_lift) {
     pluck_strum = strum_softness(p);
@@ -8308,16 +8525,39 @@ bool wrap_island(const bool *zone_down, const int16_t *strength) {
   return zone_down[0] && !zone_down[1] && (zone_down[11] || strength[11] > strength[1] + margin);
 }
 
-void handle_harp_positions() {
+// The bent board's harp line (bentboard::read_line and line_runs), for handle_harp_positions: its runs in
+// places as held, 0-12. T10 is the bottom core or the island: a touch held at an end place (0-1 or 11-12) says
+// which, and failing anything else, the end the last touch left (last_top, as held), however long ago.
+FLASHMEM __attribute__((noinline)) uint8_t bent_line_runs(const bool *zone_down, const int16_t *strength, bool last_top,
+                                                          harp_run *runs, uint8_t max_runs) {
+  int8_t held = -1;
+  for (uint8_t t = 0; t < harp_touch_max; t++) {
+    if (!harp_touches[t].active) continue;
+    float c = upside_down ? bentboard::places - 1 - harp_touches[t].centre : harp_touches[t].centre;   // as the plate lies
+    if (c <= 1.5f) held = 0;
+    else if (c >= bentboard::places - 2.5f) held = 1;
+  }
+  bentboard::line l;
+  bentboard::read_line(zone_down, strength, string_palmed, upside_down, held, last_top != upside_down, l);
+  bentboard::run r[7];
+  uint8_t n = bentboard::line_runs(l, upside_down, r, max_runs < 7 ? max_runs : 7);
+  for (uint8_t k = 0; k < n; k++) runs[k] = harp_run{r[k].place, r[k].total, r[k].palmed, false};
+  return n;
+}
+
+// given_down, given_strength: the zones touched and their strengths, read already (the bent board's, its
+// border guarded), or read here
+void handle_harp_positions(const bool *given_down = nullptr, const int16_t *given_strength = nullptr) {
   // Zone i of the line is zone i of the harp, and the line has a thirteenth,
   // the bottom zone's island above the top zone. The bottom zone is read as the
   // island when the top zone is touched with it and its own upper neighbour
-  // isn't.
+  // isn't. On the bent board the line is six of the zones (bent_line_runs).
+  bool bent = harp_plate == plate_bent_board;
   bool zone_down[12];
   bool any_down = false;
   for (uint8_t z = 0; z < 12; z++) {
-    zone_down[z] = harp_array[z].read_value();
-    any_down |= zone_down[z];
+    zone_down[z] = given_down ? given_down[z] : harp_array[z].read_value();
+    any_down |= zone_down[z] && (harp_line_mask >> z & 1);
     // the palm's zones are free once lifted, as on the stock plate
     if (harp_array[z].read_transition() == 1) string_palmed[z] = false;
   }
@@ -8325,12 +8565,9 @@ void handle_harp_positions() {
   for (uint8_t t = 0; t < harp_touch_max; t++) any_touch |= harp_touches[t].active;
   if (!any_down && !any_touch) return;   // nothing to read: spare the bus
 
-  const uint8_t line_length = 13;
-  bool line_down[13];
-  for (uint8_t k = 0; k < 12; k++) line_down[k] = zone_down[k];
-  line_down[12] = false;
   int16_t strength[12];
-  harp_sensor.read_strength(strength);
+  if (given_strength) memcpy(strength, given_strength, sizeof strength);
+  else harp_sensor.read_strength(strength);
   // The bottom zone touched without its upper neighbour is the island when the top zone reads clearly more. As a
   // finger lands on or lifts off the very top it reads lightly, and neither neighbour may: on the real plate
   // (plate_cal, 2026-10-17) 3 slides of 4 sounded the bottom string softly as they landed or lifted at the top. So
@@ -8338,31 +8575,38 @@ void handle_harp_positions() {
   // none, the end the last touch left within plate_end_memory_ms.
   static bool last_end_top = false;
   static uint32_t last_end_at = 0;
-  bool island = wrap_island(zone_down, strength);
-  if (zone_down[0] && !zone_down[1] && !zone_down[11] && abs(strength[11] - strength[1]) <= 10) {
-    float nearest = harp_position_count;
-    bool found_touch = false;
-    for (uint8_t t = 0; t < harp_touch_max; t++) {
-      if (!harp_touches[t].active) continue;
-      float c = harp_touches[t].centre, to_top = harp_position_count - 1 - c;
-      if (min(c, to_top) >= nearest) continue;
-      nearest = min(c, to_top);
-      island = to_top < c;
-      found_touch = true;
-    }
-    if (!found_touch && millis() - last_end_at < plate_end_memory_ms) island = last_end_top;
-  }
-  if (island) {
-    line_down[0] = false;
-    line_down[12] = true;
-  }
-
   harp_run runs[7];
-  uint8_t run_count = harp_find_runs(line_down, line_length, zone_down, strength, runs, 7);
-  for (uint8_t r = 0; r < run_count; r++) runs[r].centre *= 2;   // in positions, two a zone
+  uint8_t run_count;
+  if (bent) run_count = bent_line_runs(zone_down, strength, last_end_top, runs, 7);
+  else {
+    const uint8_t line_length = 13;
+    bool line_down[13];
+    for (uint8_t k = 0; k < 12; k++) line_down[k] = zone_down[k];
+    line_down[12] = false;
+    bool island = wrap_island(zone_down, strength);
+    if (zone_down[0] && !zone_down[1] && !zone_down[11] && abs(strength[11] - strength[1]) <= 10) {
+      float nearest = harp_position_count;
+      bool found_touch = false;
+      for (uint8_t t = 0; t < harp_touch_max; t++) {
+        if (!harp_touches[t].active) continue;
+        float c = harp_touches[t].centre, to_top = harp_position_count - 1 - c;
+        if (min(c, to_top) >= nearest) continue;
+        nearest = min(c, to_top);
+        island = to_top < c;
+        found_touch = true;
+      }
+      if (!found_touch && millis() - last_end_at < plate_end_memory_ms) island = last_end_top;
+    }
+    if (island) {
+      line_down[0] = false;
+      line_down[12] = true;
+    }
+    run_count = harp_find_runs(line_down, line_length, zone_down, strength, runs, 7);
+    for (uint8_t r = 0; r < run_count; r++) runs[r].centre *= 2;   // in positions, two a zone
+  }
 
   uint32_t now = millis();
-  const float last = harp_position_count - 1;
+  const float last = bent ? bentboard::places - 1 : harp_position_count - 1;
   auto settle = [last](float x) -> uint8_t {
     if (x < 0) x = 0;
     if (x > last) x = last;
@@ -8382,7 +8626,7 @@ void handle_harp_positions() {
     }
     if (best < 0) {
       touch.active = false;
-      last_end_top = touch.position > harp_position_count / 2;   // the end it left, for a touch landing there next
+      last_end_top = touch.position > (bent ? (bentboard::places - 1) / 2 : harp_position_count / 2);   // the end it left, for a touch landing there next
       last_end_at = now;
       if (touch.palmed) continue;
       // a tap too quick to settle still sounds, where it was read
@@ -8417,7 +8661,7 @@ void handle_harp_positions() {
     touch.peak = max(found.total, relaxed);
     touch.peak_at = now;
     pluck_strength = touch.peak;
-    if (!touch.palmed && !harp_pluck_on_lift) press_string(touch.position % 12, found.total);
+    if (!touch.palmed && !harp_pluck_on_lift && !harp_drums) press_string(touch.position % 12, found.total);
     // A finger rising off a band lets go of one zone before the other, which
     // looks like a move onto the one it still touches. Lifting, its readings
     // fall away; moving, they hold. So a touch only moves while it reads firm.
@@ -9116,6 +9360,7 @@ FLASHMEM static void harp_quiet() {
   }
   harp_positions_reset();
   harp_ribbon_reset();
+  bent_board_reset();
 }
 
 FLASHMEM static void plate_swap_begin(const char *why, const uint16_t (&f)[12], const uint16_t (&b)[12]) {
@@ -9283,6 +9528,13 @@ void handle_harp() {
     positions_were_active = positions;
   }
   plate_was = harp_plate;
+  // The bent board: its zones read once a pass for the harp and its touch areas (see BENT BOARD); only its six
+  // harp lines count for the palm, in their own order, bottom to top (harp_line_order)
+  bool bent = harp_plate == plate_bent_board;
+  bool bent_down[12];
+  int16_t bent_strength[12];
+  if (bent) bent_board_pass(bent_down, bent_strength);
+  bent_areas_apply();
   // A fingertip strum holds two or three pads at a time and moves on; a hand
   // laid flat holds many at once. The pads the hand landed on before the count
   // was reached have already sounded, and are stopped with the rest, which is
@@ -9332,8 +9584,9 @@ void handle_harp() {
     // of three or fewer is one finger, and only a wider run (a hand) counts zone by zone
     uint8_t held = 0, run = 0;
     bool line = ribbon || positions;
-    for (int i = 0; i <= 12; i++) {
-      bool counts = i < 12 && harp_array[i].read_value() && !pad_shadow[i] && (!harp_pluck_on_lift || now - pad_landed[i] <= palm_spread_ms);
+    for (int k = 0; k <= harp_line_count; k++) {
+      int i = k < harp_line_count ? harp_line_order[k] : -1;
+      bool counts = i >= 0 && harp_array[i].read_value() && !pad_shadow[i] && (!harp_pluck_on_lift || now - pad_landed[i] <= palm_spread_ms);
       if (counts) { run++; continue; }
       held += (line && run <= 3) ? (run > 0) : run;
       run = 0;
@@ -9346,7 +9599,7 @@ void handle_harp() {
     if (palm_down) {
       bool palm_held = false;
       for (int i = 0; i < 12; i++) {
-        if (!harp_array[i].read_value()) continue;
+        if (!harp_array[i].read_value() || !(harp_line_mask >> i & 1)) continue;
         bool landed_with_palm = !harp_pluck_on_lift || pad_landed[i] + palm_spread_ms >= palm_landed;
         uint8_t landing = harp_pluck_on_lift ? palm_landing_lift_ms : palm_landing_ms;
         if (now - palm_landed < landing && landed_with_palm) string_palmed[i] = true;
@@ -9356,7 +9609,7 @@ void handle_harp() {
     }
   }
   if (ribbon) handle_harp_ribbon();
-  if (positions) handle_harp_positions();
+  if (positions) handle_harp_positions(bent ? bent_down : nullptr, bent ? bent_strength : nullptr);
   if (harp_plate == plate_arcade_wheel) handle_wheel();
   // A press let go of by a change of mode: the string goes back to its pitch.
   for (int i = 0; i < 12; i++) {
@@ -10456,7 +10709,12 @@ static const HoverPlate hover_plates[harp_plate_count] = {
   // and 0.3 at 3. Rough: the passes disagreed at 2-3 cm.
   {2.9e-4f, 3.5f, 3.7f},    // 8 zipper 24
   {1.4e-5f, 7.0f, 7.0f},    // 9 the arcade wheel
-  HOVER_STOCK, HOVER_STOCK};
+  HOVER_STOCK,              // 10 the fretless wrap
+  HOVER_STOCK, HOVER_STOCK, HOVER_STOCK, HOVER_STOCK, HOVER_STOCK,   // 11-20, other branches' plates
+  HOVER_STOCK, HOVER_STOCK, HOVER_STOCK, HOVER_STOCK, HOVER_STOCK,
+  // 21 the bent board, not yet measured: its copper covers the face round the chord buttons, so the left
+  // hand playing them is over it too
+  HOVER_STOCK};
 static float hover_pull(float d, float idle) {
   const HoverPlate &p = hover_plates[harp_plate < harp_plate_count ? harp_plate : 0];
   return p.pull_5cm * idle * powf(5.0f / d, d <= 5 ? p.k_near : p.k_far);

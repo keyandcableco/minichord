@@ -216,6 +216,51 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 445:
         stutter_refresh_ms=value; bend_apply();
         break;
+      case 472:
+        bent_area_target(0, value);
+        break;
+      case 473:
+        bent_area_value(0, value);
+        break;
+      case 474:
+        bent_area_target(1, value);
+        break;
+      case 475:
+        bent_area_value(1, value);
+        break;
+      case 476:
+        bent_area_target(2, value);
+        break;
+      case 477:
+        bent_area_value(2, value);
+        break;
+      case 478:
+        bent_area_target(3, value);
+        break;
+      case 479:
+        bent_area_value(3, value);
+        break;
+      case 480:
+        bent_area_target(4, value);
+        break;
+      case 481:
+        bent_area_value(4, value);
+        break;
+      case 482:
+        bent_area_target(5, value);
+        break;
+      case 483:
+        bent_area_value(5, value);
+        break;
+      case 484:
+        bent_area_target(6, value);
+        break;
+      case 485:
+        bent_area_value(6, value);
+        break;
+      case 486:
+        bent_ribbon_reads(value);
+        break;
       case 303:
         phone_set_target(0,constrain(value,0,parameter_size-1));
         break;
@@ -1337,7 +1382,7 @@ FLASHMEM bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 32: lo=0; hi=100; return true;
       case 244: lo=0; hi=2; return true;
       case 384: lo=0; hi=1; return true;
-      case 243: lo=0; hi=10; return true;
+      case 243: lo=0; hi=21; return true;
       case 416: lo=0; hi=7; return true;
       case 417: lo=0; hi=9; return true;
       case 422: lo=0; hi=3; return true;
@@ -1405,6 +1450,21 @@ FLASHMEM bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 443: lo=0; hi=2; return true;
       case 444: lo=50; hi=5000; return true;
       case 445: lo=0; hi=10000; return true;
+      case 472: lo=0; hi=511; return true;
+      case 473: lo=0; hi=4095; return true;
+      case 474: lo=0; hi=511; return true;
+      case 475: lo=0; hi=4095; return true;
+      case 476: lo=0; hi=511; return true;
+      case 477: lo=0; hi=4095; return true;
+      case 478: lo=0; hi=511; return true;
+      case 479: lo=0; hi=4095; return true;
+      case 480: lo=0; hi=511; return true;
+      case 481: lo=0; hi=4095; return true;
+      case 482: lo=0; hi=511; return true;
+      case 483: lo=0; hi=4095; return true;
+      case 484: lo=0; hi=511; return true;
+      case 485: lo=0; hi=4095; return true;
+      case 486: lo=0; hi=1; return true;
       case 303: lo=0; hi=511; return true;
       case 304: lo=0; hi=4095; return true;
       case 305: lo=0; hi=2; return true;
