@@ -38,6 +38,7 @@ and the minichord-lab arcade's drawings agree. Talked through with Greg; nothing
 | 18 | split xy | pads + xy | feature-places |
 | 19 | celtic plait | corner chords at its 12 crossings | to build |
 | 20 | fretless (ribbon) | stock; the ribbon stays a setting to turn on | number only |
+| 21 | bent board (full face) | 13-place harp on six lines; rail, palm and ribbon areas (472-486) | feature-bentBoard, fw 111 |
 | - | LED zipperlin | needs its downlink firmware | parked |
 
 **Joystick harp = 11:** it is the only joystick board being made. apply_preset_version already
@@ -49,7 +50,7 @@ core/minichord.js). Its stick is wired differently from the plain joystick's (on
 axis, ends on the shared T9), and STANDARD STRIP doesn't fit its contacts, so the Lab reads it
 from the stick's own messages rather than the strings.
 
-**Plate detect:** prints at EEPROM 320 + 2 + 14 a plate; with 21 numbers (0-20) that ends at 616, under
+**Plate detect:** prints at EEPROM 320 + 2 + 14 a plate; with 22 numbers (0-21) that ends at 630, under
 the Teensy 4.0's 1080 bytes. Plates with the same copper are one plate to it (teach one).
 
 ## Firmware pieces, in order
