@@ -38,7 +38,8 @@ LOCKED = {0, 1, 2, 3, 4, 5, 6, 7, 241, 242, 243, 244, 256, 384}
 # Settings whose value is the address of another setting, and which kind of control each one is
 KNOB_TARGETS = {10: "chord knob, alternate", 12: "harp knob, alternate", 14: "mod knob, main",
                 16: "mod knob, alternate", 249: "hover", 303: "the phone's sound, 1", 307: "the phone's sound, 2",
-                325: "hover, alternate"}
+                325: "hover, alternate", 472: "bend rail point 1", 474: "bend rail point 2", 476: "bend rail point 3",
+                478: "bend rail point 4", 480: "bend rail point 5", 482: "the palm pad", 484: "the thumb ribbon"}
 TAP_TARGETS = {200: "double tap", 209: "double tap, 2nd", 211: "double tap, 3rd"}
 SECTIONS = {"global_parameter": "global", "harp_parameter": "harp", "chord_parameter": "chord"}
 

@@ -16,6 +16,12 @@ import preset_maker as pm
 import interpret
 
 SENTENCES = [
+    # the bent board's touch areas (harp plate 21, firmware 111) and the bends as what controls move
+    "the palm pad opens the filter", "the third rail point stutters", "bend rail 2 bitcrushes, the thumb ribbon sweeps the reverb",
+    "the thumb ribbon does nothing", "rail point 5 moves the delay, and the value is 0.4", "the body contact makes the bends interact",
+    "the first rail point drops the pitch and the last rail point drags the clock", "the mod knob controls the pitch drop",
+    "hover bitcrushes the chords", "the palm pad starves the chords", "the thumb strip moves the chord filter to 3000",
+    "rail point one does nothing, the middle rail point stutters", "the double tap stutters",
     # the bends (firmware 102)
     "bitcrushed chords with a dying battery", "circuit bent", "melting pitch, slow sag", "dragging tempo",
     "very bitcrushed, grainy bits", "rushing tempo, crackly", "no bitcrush",
