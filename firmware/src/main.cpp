@@ -7635,10 +7635,9 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   // the touch threshold to the pluck took 17 ms (median, measured), and with 4 ms it takes 11.
   // 4 ms rather than none gives a landing finger's reading time to rise, for a pluck's velocity.
   for (int i = 0; i < 12; i++) harp_array[i].set_debounce(harp_debounce_us);
-  // The chord buttons take a press after 1 ms closed, not 10: measured, presses hardly bounce and
-  // releases do (up to 30 ms), so the 10 ms was all latency. Within 50 ms of a release a press still
-  // waits 10, where a release's chatter could pass for one; releases keep their 10 ms throughout.
-  for (int i = 0; i < 22; i++) chord_matrix_array[i].set_press(1000, 50000);
+  // The chord buttons keep the debouncer's 10 ms for a press as well as a release. Taking a press
+  // after 1 ms (cd9ba4eb, measured on firm presses only) let a brush of a cap play a chord and the
+  // flicker of a light press play it twice: the 10 ms is what filters both, not only the bounce.
   pinMode(BATT_LBO_PIN, INPUT);
   pinMode(DOWN_PGM_PIN, INPUT);
   pinMode(UP_PGM_PIN, INPUT);
