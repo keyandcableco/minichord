@@ -785,7 +785,7 @@ add("tape piano, lofi piano, lo fi piano, lo-fi piano, cassette piano, piano on 
                                EXACT("tempo", 80), EXACT("swing", 1.12), EXACT("drums", 1), EXACT("drum_groove", 24),
                                EXACT("drum_kit", 6), EXACT("drum_level", 35)),
            "harp": piano_right(3000, 0.6, 500, 1500, 60) + DELAY_READY + (SET("delay_mix", 0.15),)},
-    note=f"tape piano: the piano on a worn cassette, its wow the ensemble (a sampled voice takes no vibrato), a "
+    note=f"tape piano: the piano on a worn cassette, its wow the ensemble, a "
          f"little saturated, over a lazy lo-fi beat; say hover adds chorus for the wow; {PIANO_SET} 12")
 RHYTHM_NOTE ="rhythm patterns play in rhythm mode, which is turned on at the instrument"
 # Written accompaniment parts that follow the held chord (firmware 42, rhythm style 274); 0 is the 16-step
@@ -3026,7 +3026,6 @@ def export_data(params, version):
 # {"at": k} the address setting k holds (a knob's or hover's target; false when unassigned); B a value,
 # a list, {"value": a} the value at a, or {"values": [a, ...]} theirs. Values as the description reads
 # them (floats as 0-1). "{target}" in a note is the {"at"} target's name.
-SAMPLE_VOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]   # 10 and 13, the reed piano and the organ, are models but take a sample's place
 KNOBS = [(10, 11, "the chord knob's alternate"), (12, 13, "the harp knob's alternate"),
          (14, 15, "the mod knob"), (16, 17, "the mod knob's alternate")]
 CONFLICTS = [
@@ -3092,16 +3091,6 @@ CONFLICTS = [
      "note": "chord vibrato frequency is 0, so the vibrato holds still"},
     {"about": [163, 167], "when": [[163, ">", 0], [175, ">", 0], [167, "==", 0]],
      "note": "chord vibrato sustain is 0, so the vibrato dies away after its attack, hold and decay"},
-    {"about": [265, 199], "when": [[265, "in", SAMPLE_VOICES], [199, ">", 0]],
-     "note": "glide doesn't reach a sampled chord voice: a sample jumps to each pitch"},
-    {"about": [265, 320], "when": [[265, "in", SAMPLE_VOICES], [320, "==", 1]],
-     "note": "fingered glide doesn't reach a sampled chord voice: a sample jumps to each pitch"},
-    {"about": [265, 163, 170, 175], "when": [[265, "in", SAMPLE_VOICES], [175, ">", 0]],
-     "note": "vibrato and pitch bend don't reach a sampled chord voice, only the synth's oscillators"},
-    {"about": [264, 64, 71], "when": [[264, "in", SAMPLE_VOICES], [64, ">", 0]],
-     "note": "the harp's vibrato doesn't reach a sampled harp voice, only its own synth"},
-    {"about": [264, 71], "when": [[264, "in", SAMPLE_VOICES], [71, ">", 0]],
-     "note": "the harp's pitch bend doesn't reach a sampled harp voice, only its own synth"},
     {"about": [38, 111], "when": [[38, ">", 0], [111, ">", 0]],
      "note": "voice leading replaces chord spacing: the spacing isn't heard while voice leading is on"},
     {"about": [38, 120], "when": [[38, ">", 0], [111, "==", 0], [120, "==", 0]],
