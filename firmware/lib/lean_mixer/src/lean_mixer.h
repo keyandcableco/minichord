@@ -26,6 +26,7 @@ public:
     multiplier[channel] = gain * 65536.0f;   // as AudioMixer4 rounds it
   }
   void silent_when_muted(bool on) { quiet_when_muted = on; }
+  int32_t gain_fixed(unsigned int channel) const { return channel < 4 ? multiplier[channel] : 0; }   // gain x 65536
 
 private:
   static const int32_t unity = 65536;

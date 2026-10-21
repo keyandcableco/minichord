@@ -373,6 +373,10 @@ G('idm', 'cliqhop', fill='stutter',
   U='.....o.....o....|...o.......o..o.', B='..o.......o.....|......o.......o.', Z='o.......o.......|o.......o.......')
 G('microsound', 'cliqhop', fill='stutter', K='x...........o...', R='......x.....x..x', H='.x.x.x...x.x.x..', L='x.......x.....o.',
   M='....o.......o...', Z='...o.......o....', Y='x...............')
+# Indonesia: the kendang, a gamelan's drummer, who leads its tempo, on the hand drums: the low head's dhang (L,
+# the loud one the phrase ends on), the high head's tung (M), the slapped tak (R) and a deep dhe on the bar line (K)
+G('kendang', 'world percussion', fill='congas', K='x...............|x...............', L='.......x.......X|.......x...x.x.X',
+  M='...o.......o....|...o.......o....', R='..x...x...x...x.|..x...x...x..x..')
 
 # Each accompaniment style's own drum part (rhythm style 274, its 0 to 14), a groove above by name
 STYLE_PARTS = ['rock', 'pop eighths', 'waltz', 'country two-beat', 'jazz swing', 'shuffle', 'folk', 'pop eighths',

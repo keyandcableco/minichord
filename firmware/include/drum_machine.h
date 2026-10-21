@@ -134,6 +134,7 @@ public:
       s.click_gain = p.filter == 1 ? 1.0f / fmaxf(g * s.k, 1e-4f) : p.filter == 0 ? 1.0f / fmaxf(g, 1e-4f) : 1.0f;
       s.decimate = p.decimate > 1 ? p.decimate : 1;
       s.stutter_left = 0;
+      s.tune = 1.0f;
       s.active = false;
     }
     choke_damp = expf(-1.0f / (0.004f * fs));   // a choked stroke: a 4 ms fall, -60 dB in about 28 ms
@@ -142,15 +143,45 @@ public:
   }
   const drum_kit_t *currentKit() { return kit; }
 
-  // A hit on voice v, as hard as velocity (0-1), the body at pitch_hz if the voice follows, after delay samples
-  void hit(uint8_t v, float velocity, float pitch_hz = 0, uint32_t delay = 0) {
+  // A hit on voice v, as hard as velocity (0-1), the body at pitch_hz if the voice follows, after delay
+  // samples; tune, other than 1, moves the whole voice by that ratio, body, burst and stroke, for the drum
+  // pads' seams (a mid tom between the toms, a bongo above the congas)
+  void hit(uint8_t v, float velocity, float pitch_hz = 0, uint32_t delay = 0, float tune = 1.0f) {
     if (v >= DRUM_VOICES || !kit) return;
     uint32_t primask = drum_primask();   // from the rhythm's timer or the loop: as it was after
     __disable_irq();
     uint8_t next = (head + 1) % QUEUE;
     if (next != tail) {
-      queue[head] = {v, velocity, pitch_hz, delay};
+      queue[head] = {v, velocity, pitch_hz, delay, tune};
       head = next;
+    }
+    if (!primask) __enable_irq();
+  }
+  // A finger pressing the drum it struck (DRUM PRESS in main.cpp): the ringing voice bent by a ratio,
+  // body, stroke and all, from the pitch its hit gave it; 1 puts it back. A later hit lands unbent.
+  DRUM_COLD void bend(uint8_t v, float ratio) {
+    if (v >= DRUM_VOICES) return;
+    uint32_t primask = drum_primask();
+    __disable_irq();
+    voice_t &s = voice[v];
+    if (s.active) {
+      s.tone_hz = s.hit_hz * ratio;
+      s.sample_inc = s.hit_inc * ratio;
+    }
+    if (!primask) __enable_irq();
+  }
+  // A hand laid on a ringing voice: it dies as a stroke choked by its group does
+  DRUM_COLD void choke(uint8_t v) {
+    if (v >= DRUM_VOICES) return;
+    uint32_t primask = drum_primask();
+    __disable_irq();
+    voice_t &s = voice[v];
+    if (s.active) {
+      s.noise_amp *= 0.05f;
+      s.tone_amp *= 0.05f;
+      s.sample_choked = true;
+      s.stutter_left = 0;
+      s.retrigs = 0;
     }
     if (!primask) __enable_irq();
   }
@@ -348,7 +379,7 @@ public:
 private:
   static const uint8_t QUEUE = 32, PENDING = 32;
   static constexpr float SILENT = 0.001f;   // -60 dB: a voice under it is done
-  struct hit_t { uint8_t voice; float velocity, pitch; uint32_t delay; };
+  struct hit_t { uint8_t voice; float velocity, pitch; uint32_t delay; float tune; };
   struct voice_t {
     bool active;
     float tone_hz, tone_amp, tone_decay, bend, bend_decay, phase;
@@ -367,6 +398,8 @@ private:
     bool click;
     float fm_phase, fm_ratio, fm_depth, fm_decay, fm_now, ring_phase, ring_inc, click_gain, held, stutter_hz, stutter_vel;
     uint32_t dust_threshold;
+    float tune;   // the ratio the burst's filter and metal are tuned to, 1 as the kit has them
+    float hit_hz, hit_inc;   // the pitch and stroke rate the hit gave, for a press bending from them
   };
   static float sine(float phase) {   // phase 0 to 1, from the table, between its points
     float idx = phase * 256.0f;
@@ -398,6 +431,9 @@ private:
       noise ^= noise << 13; noise ^= noise >> 17; noise ^= noise << 5;
       hz *= SCATTER[noise % (p.scatter < 8 ? p.scatter : 8)];
     }
+    float tune = h.tune > 0 ? h.tune : 1.0f;
+    hz *= tune;
+    if (tune != s.tune) retune(s, p, tune);
     // a stroke that follows, at the pitch the hit gives, in whichever octave is nearest its own
     float ratio = 1.0f;
     if (s.sample && p.follow && h.pitch > 0 && s.sample->pitch_hz > 0) {
@@ -405,12 +441,26 @@ private:
       while (ratio > 1.4142f) ratio *= 0.5f;
       while (ratio < 0.7071f) ratio *= 2.0f;
     }
-    s.sample_inc = s.sample_base_inc * ratio;
+    s.sample_inc = s.sample_base_inc * ratio * tune;
+    s.hit_inc = s.sample_inc;
     s.stutter_left = p.stutter;
     s.stutter_count = 0;
     s.stutter_hz = hz;
     s.stutter_vel = vel;
     strike(h.voice, vel, hz);
+  }
+
+  // The burst moved by a ratio: its filter, and the squares of its metal (a hit's own tune; 1 puts back the kit's)
+  DRUM_COLD static void retune(voice_t &s, const drum_voice_t &p, float tune) {
+    const float fs = AUDIO_SAMPLE_RATE_EXACT;
+    static const float cluster[4] = {1.0f, 1.4829f, 1.8003f, 2.5461f};
+    s.tune = tune;
+    tune_filter(s, p.filter_hz * tune);
+    s.click_gain = p.filter == 1 ? 1.0f / fmaxf(s.a2 / s.a1 * s.k, 1e-4f) : p.filter == 0 ? 1.0f / fmaxf(s.a2 / s.a1, 1e-4f) : 1.0f;
+    float metal = p.metal_hz * tune;
+    s.metal_inc[0] = metal / fs;
+    for (uint8_t m = 1; m < 4; m++) s.metal_inc[m] = metal * (p.metal_count == 4 ? cluster[m] : m == 1 ? p.metal_ratio : 0) / fs;
+    s.ring_inc = metal / fs;
   }
 
   DRUM_COLD static void tune_filter(voice_t &s, float hz) {
@@ -427,6 +477,7 @@ private:
     const drum_voice_t &p = kit->v[v];
     voice_t &s = voice[v];
     s.tone_hz = hz;
+    s.hit_hz = hz;
     s.tone_amp = p.tone_hz > 0 ? p.tone_level * vel : 0;
     s.bend = 1.0f;
     s.phase = 0;   // from the sine's zero crossing: no click

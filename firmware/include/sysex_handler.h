@@ -24,6 +24,18 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
       case 422:
         plate_detect_set(value);
         break;
+      case 419:
+        drum_seams=value;
+        break;
+      case 426:
+        drum_press_semis=value;
+        break;
+      case 427:
+        pads_mute_groove=value;
+        break;
+      case 446:
+        melodic_pads=value;
+        break;
       case 418:
         harp_touch_scale=value; apply_harp_touch_scale();
         break;
@@ -544,10 +556,10 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         strum_velocity=value;
         break;
       case 49:
-        string_filter_base_freq=value;
+        string_filter_base_freq=value; refresh_string_filters();
         break;
       case 50:
-        string_filter_keytrack=value/100.0;
+        string_filter_keytrack=value/100.0; refresh_string_filters();
         break;
       case 51:
         for (int i=0;i<12;i++){
@@ -668,7 +680,7 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         break;
       case 76:
         for (int i=0;i<12;i++){
-          string_waveform_array[i]->frequencyModulation(value/100.0); string_pluck_array[i]->frequencyModulation(value/100.0);
+          string_waveform_array[i]->frequencyModulation(value/100.0); string_pluck_array[i]->frequencyModulation(value/100.0); harp_vibrato_tap.octaves(value/100.0);
         }
         break;
       case 77:
@@ -1283,16 +1295,20 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
 }
 
 // the range parameters.json declares for each parameter, as stored (floats in hundredths)
-bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
+FLASHMEM bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
     switch(adress){
       case 20: lo=0; hi=360; return true;
       case 32: lo=0; hi=100; return true;
       case 244: lo=0; hi=2; return true;
       case 384: lo=0; hi=1; return true;
-      case 243: lo=0; hi=10; return true;
+      case 243: lo=0; hi=13; return true;
       case 416: lo=0; hi=7; return true;
       case 417: lo=0; hi=9; return true;
       case 422: lo=0; hi=3; return true;
+      case 419: lo=0; hi=1; return true;
+      case 426: lo=0; hi=12; return true;
+      case 427: lo=0; hi=1; return true;
+      case 446: lo=0; hi=1; return true;
       case 418: lo=25; hi=400; return true;
       case 241: lo=0; hi=120; return true;
       case 242: lo=0; hi=119; return true;
@@ -1566,8 +1582,8 @@ bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 318: lo=0; hi=1; return true;
       case 319: lo=0; hi=1; return true;
       case 334: lo=0; hi=1; return true;
-      case 335: lo=0; hi=47; return true;
-      case 336: lo=0; hi=47; return true;
+      case 335: lo=0; hi=48; return true;
+      case 336: lo=0; hi=48; return true;
       case 337: lo=0; hi=12; return true;
       case 338: lo=0; hi=100; return true;
       case 339: lo=0; hi=100; return true;

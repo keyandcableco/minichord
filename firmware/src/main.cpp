@@ -17,7 +17,7 @@
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
 void apply_harp_thresholds();
-int version_ID=100; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated; 99: the arcade wheel's bearing from the centre of its readings, corrected, quiet while A or B is pressed, and the neighbour guard on it; zipper 24's wrap island read by a margin, and where that can't tell the ends apart, by the end a touch is at or last left; hover measured on both; 100: a chord change strikes once, a press under a sounding line no longer asking for the chord again, and a slash waits 250 ms)
+int version_ID=101; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated; 99: the arcade wheel's bearing from the centre of its readings, corrected, quiet while A or B is pressed, and the neighbour guard on it; zipper 24's wrap island read by a margin, and where that can't tell the ends apart, by the end a touch is at or last left; hover measured on both; 100: a chord change strikes once, a press under a sounding line no longer asking for the chord again, and a slash waits 250 ms; 101: the drum pads, harp plate 13, read as 28 places, twelve pads and the sixteen seams between them, each seam a sound of its own with harp drums, drum seams, 419; drum press, 426, a struck pad pressed chokes a cymbal or bends a skin, the bayan's meend, and pads mute the groove, 427, a resting finger holds its voice out of the groove, both on any plate with harp drums; melodic pads, 446, the 28 places as 28 notes, a key pressed into damped; drum groove 48, kendang; plate detect's window widens for a plate resting low, and a print keeps a zone far from the plate's mean; a hand slapped across the strings plays, and a flat hand lifted isn't taken for no plate on; the harp's filter corner and keytrack act on the strings already sounding; the vibrato and pitch envelope reach the sample voices)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -702,9 +702,13 @@ bool string_palmed[12] = {false, false, false, false, false, false, false, false
 // ribbon, below, and plays twelve strings without it. 11 belongs to a plate on
 // another branch. Before firmware 93 zipper 24, the arcade wheel and the
 // fretless wrap were 1 to 3, and that plate 4: apply_preset_version moves them.
+// The drum pads (13) lay the zones out as a grid of two columns and six rows and
+// are read as places on it (plate_places.h): twelve pads and the sixteen seams
+// between them. See DRUM PLACES, below.
 const int16_t harp_plate_adress = 243;
 const uint8_t plate_stock = 0, plate_keymaster = 1, plate_piano = 2, plate_twin_rows = 3, plate_framed_strings = 4;
 const uint8_t plate_zipper_24 = 8, plate_arcade_wheel = 9, plate_fretless_wrap = 10;
+const uint8_t plate_drum_pads = 13;
 uint8_t harp_plate = plate_stock;
 // The neighbour guard (address 416), for the piano plate (harp plate 2), see neighbour_guard_pass()
 uint8_t neighbour_guard = 5;          // tenths: a key landing under this share of a touching neighbour stays silent; 0 off
@@ -924,6 +928,7 @@ AudioMixer4Lean *transient_mixer_array[3] = {&transient_mix_1, &transient_mix_2,
 AudioEffectEnvelopeRetrigger *chord_vibrato_envelope_array[4] = {&voice1_vibrato_envelope, &voice2_vibrato_envelope, &voice3_vibrato_envelope, &voice4_vibrato_envelope};
 AudioEffectEnvelopeRetrigger *chord_vibrato_dc_envelope_array[4] = {&voice1_vibrato_dc_envelope, &voice2_vibrato_dc_envelope, &voice3_vibrato_dc_envelope, &voice4_vibrato_dc_envelope};
 AudioMixer4Lean *chord_vibrato_mixer_array[4] = {&voice1_vibrato_mixer, &voice2_vibrato_mixer, &voice3_vibrato_mixer, &voice4_vibrato_mixer};
+AudioChordVibratoTap *chord_vibrato_tap_array[4] = {&chord_vibrato_tap_1, &chord_vibrato_tap_2, &chord_vibrato_tap_3, &chord_vibrato_tap_4};
 AudioSynthWaveformModulated *chord_osc_1_array[4] = {&voice1_osc1, &voice2_osc1, &voice3_osc1, &voice4_osc1};
 AudioSynthWaveformModulated *chord_osc_2_array[4] = {&voice1_osc2, &voice2_osc2, &voice3_osc2, &voice4_osc2};
 AudioSynthWaveformModulated *chord_osc_3_array[4] = {&voice1_osc3, &voice2_osc3, &voice3_osc3, &voice4_osc3};
@@ -1128,10 +1133,17 @@ uint8_t drum_midi = 0;            // 340: each hit out on channel 10: 0 off, 1 p
 bool count_in = false;            // 341: a bar of sticks before rhythm mode begins
 bool drums_only = false;          // 342: the accompaniment rests, the drums play
 bool harp_drums = false;          // 343: the harp's strings play the kit
+bool drum_seams = true;           // 419: on the drum pads plate a seam plays its own sound, not its two pads (see DRUM PLACES)
+bool melodic_pads = false;        // 446: the drum pads' 28 places play notes, the seams the notes between (MELODIC PADS)
+uint8_t drum_press_semis = 3;     // 426: a struck pad pressed chokes a cymbal or bends a skin this many semitones (see DRUM PRESS)
+bool pads_mute_groove = true;     // 427: a finger resting on a pad holds its voice out of the groove
+uint16_t drums_held = 0;          // the kit's voices under resting fingers now, a bit a voice (DRUM PRESS keeps it)
 uint8_t tabla_laya = 0;           // 377: a theka's bols 0 as written, 1 one a beat, 2 two, 3 four
 volatile double drum_landed = -1; // a stretched theka's sam: the bar line its last fill landed on (-1 none)
-void drum_pad(uint8_t string, int16_t strength);
-void drum_strike(uint8_t v, uint8_t velocity, bool written = true, bool loose = true);
+void drum_pad(uint8_t place, int16_t strength);
+void drum_place(uint8_t place, uint8_t velocity, bool loose = true);
+uint8_t drum_place_voices(uint8_t place, uint8_t *v);
+void drum_strike(uint8_t v, uint8_t velocity, bool written = true, bool loose = true, float tune = 1.0f, uint8_t after_ms = 0, uint8_t gm = 0);
 float touch_firmness(float strength);
 void drums_set();
 void rhythm_fill_action(int16_t action);
@@ -1837,6 +1849,7 @@ void refresh_chord_voicing();
 void set_chord_voice_frequency(uint8_t i, int16_t current_note);
 void retune_active_voices();
 void refresh_chord_filter();
+void refresh_string_filters();
 // the note frequency each chord voice is currently sounding, kept so the filter
 // corner can be recomputed for a voice without touching anything else about it
 float chord_voice_note_freq[4] = {0, 0, 0, 0};
@@ -2388,8 +2401,10 @@ void update_formants() {
 // firmware can't tell them apart. Choosing another plate puts the trim back to 100, so a trim made for one
 // plate never carries to the next; a preset load leaves both as it brings them (locked, usually: see LOCKS).
 const int16_t harp_touch_scale_adress = 418;
-const uint8_t harp_plate_count = 12;
-const uint16_t harp_plate_strength[harp_plate_count] = {100, 100, 100, 240, 100, 100, 100, 100, 100, 100, 100, 100};
+const uint8_t harp_plate_count = 14;
+// The drum pads (13), measured on the first board 2026-10-19 (~/minichord-bench plate_cal.py), read as the
+// stock strip does: 100.
+const uint16_t harp_plate_strength[harp_plate_count] = {100, 100, 100, 240, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
 uint16_t harp_touch_scale = 100;   // 0, a preset saved before the setting, is taken as 100
 FLASHMEM void apply_harp_touch_scale() {
   static uint32_t applied = 0;
@@ -2426,11 +2441,13 @@ const int plate_id_eeprom = 320;                 // after the locks (16 to 291):
 const uint8_t plate_id_layout = 1;
 const uint8_t plate_id_bytes = 14;               // the mean reading (two bytes), each zone's difference from it (one each)
 const float plate_id_k = 1024 * 63 * 0.5f / 3.3f;   // pF x counts at the touch charge (63 uA, 0.5 us), for C = k / reading
-const float plate_id_near = 0.035f;              // pF (rms over the zones): a print this close is the plate
+const float plate_id_near = 0.035f;              // pF (rms over the zones): a print this close is the plate, at a
+                                                 // plate resting near 730 or higher (see plate_id_near_for)
 const uint16_t plate_id_learn_ms = 2000;
 const uint16_t plate_id_check_ms = 3000;
 const uint8_t plate_id_samples = 32;
-struct plate_print { bool known; float pf[12]; };   // each zone's capacitance less the plate's mean, pF
+struct plate_print { bool known; float pf[12]; float near; };   // each zone's capacitance less the plate's mean, pF;
+                                                               // how close a reading must be to be this plate
 plate_print plate_prints[harp_plate_count];
 bool plate_id_learn_wanted = false;              // a plate was chosen live: learn it once it rests
 bool plate_id_check_wanted = false;              // a plate was just swapped in: look at once (PLATE SWAP)
@@ -2478,13 +2495,39 @@ FLASHMEM static void plate_print_of(const uint16_t (&rest)[12], uint16_t &mean, 
   for (uint8_t z = 0; z < 12; z++) pf[z] = c[z] - sum / 12;
 }
 
+// A zone's difference from the plate's mean, in a byte. To 96 counts either way exactly, as every print was
+// stored before (the widest of the plates measured is 91), and beyond that in steps of two, to 158: a plate
+// whose zones rest far apart, some 140 counts or more above its mean, was cut short by a byte that stopped
+// at 127, so its print never matched its own readings and nothing refused another plate's teach while it was
+// fitted (found 2026-10-19). Wider still is held at 158.
+FLASHMEM static int8_t plate_id_code(int d) {
+  int a = abs(d);
+  int c = a <= 96 ? a : min(127, 96 + (a - 96 + 1) / 2);
+  return (int8_t)(d < 0 ? -c : c);
+}
+FLASHMEM static int plate_id_uncode(int8_t c) {
+  int a = abs((int)c);
+  int d = a <= 96 ? a : 96 + 2 * (a - 96);
+  return c < 0 ? -d : d;
+}
+
+// How close a reading must come to a print to be that plate. The chip's noise and a plate's settling on its
+// pins are a count or two in the reading wherever it rests, and a count is more capacitance the lower a zone
+// rests (C = k / reading): at 730 a count is 0.018 pF, at 350 0.08 pF. So the window widens as the square of
+// how much lower than 730 the plate rests, and never narrows: the drum pads' (mean 629) is 0.047 pF; the stock
+// plates' stay 0.035. Every pair of plates measured is ten times that apart.
+FLASHMEM static float plate_id_near_for(uint16_t mean) {
+  float r = 730.0f / max(mean, (uint16_t)1);
+  return plate_id_near * max(1.0f, r * r);
+}
+
 FLASHMEM static void plate_id_store(uint8_t plate, const uint16_t (&rest)[12]) {
   int at = plate_id_eeprom + 2 + plate * plate_id_bytes;
   uint32_t total = 0;
   for (uint8_t z = 0; z < 12; z++) total += rest[z];
   uint16_t mean = total / 12;
   uint8_t bytes[plate_id_bytes] = {(uint8_t)(mean & 0xFF), (uint8_t)(mean >> 8)};
-  for (uint8_t z = 0; z < 12; z++) bytes[2 + z] = (uint8_t)(int8_t)constrain((int)rest[z] - mean, -127, 127);
+  for (uint8_t z = 0; z < 12; z++) bytes[2 + z] = (uint8_t)plate_id_code((int)rest[z] - mean);
   if (eeprom_read_byte((const uint8_t *)plate_id_eeprom) != 'P' || eeprom_read_byte((const uint8_t *)(plate_id_eeprom + 1)) != plate_id_layout) {
     for (uint8_t p = 0; p < harp_plate_count; p++) {   // every slot unlearned: its mean, both bytes, 0
       eeprom_write_byte((uint8_t *)(plate_id_eeprom + 2 + p * plate_id_bytes), 0);
@@ -2497,9 +2540,10 @@ FLASHMEM static void plate_id_store(uint8_t plate, const uint16_t (&rest)[12]) {
     if (eeprom_read_byte((const uint8_t *)(at + k)) != bytes[k]) eeprom_write_byte((uint8_t *)(at + k), bytes[k]);
   }
   uint16_t back[12];
-  for (uint8_t z = 0; z < 12; z++) back[z] = mean + (int8_t)bytes[2 + z];
+  for (uint8_t z = 0; z < 12; z++) back[z] = mean + plate_id_uncode((int8_t)bytes[2 + z]);
   uint16_t m;
   plate_print_of(back, m, plate_prints[plate].pf);
+  plate_prints[plate].near = plate_id_near_for(mean);
   plate_prints[plate].known = true;
 }
 
@@ -2511,9 +2555,10 @@ FLASHMEM void plate_id_load() {
     uint16_t mean = eeprom_read_byte((const uint8_t *)at) | (eeprom_read_byte((const uint8_t *)(at + 1)) << 8);
     if (mean == 0 || mean > 1023) continue;   // unlearned (or, before this was fixed, half wiped: 0xFF00)
     uint16_t rest[12];
-    for (uint8_t z = 0; z < 12; z++) rest[z] = mean + (int8_t)eeprom_read_byte((const uint8_t *)(at + 2 + z));
+    for (uint8_t z = 0; z < 12; z++) rest[z] = mean + plate_id_uncode((int8_t)eeprom_read_byte((const uint8_t *)(at + 2 + z)));
     uint16_t m;
     plate_print_of(rest, m, plate_prints[p].pf);
+    plate_prints[p].near = plate_id_near_for(mean);
     plate_prints[p].known = true;
   }
 }
@@ -2587,17 +2632,32 @@ FLASHMEM void plate_id_update() {
   plate_print_of(rest, mean, pf);
   if (plate_id_learn_wanted) {
     plate_id_learn_wanted = false;
-    // a plate chosen without being fitted (an editor setting up presets) reads as the plate that is: not
-    // learned, if another plate's print is that close
+    // a plate chosen without being fitted (an editor setting up presets, a teach pressed while harp plate
+    // shows another) reads as the plate that is: not learned, if another plate's print is within its window,
+    // or within two windows and clearly the nearest print of all, the one being taught's own included (a plate
+    // a little off its pins reads up to two windows from its print). Not two and a half: two of the plates
+    // measured read 2.5 windows apart, and the second's first teach would be refused once the first is known.
+    int8_t other = -1;
+    float other_d = 1e9, rest_d = 1e9;   // the nearest other plate, and the nearest print after it
     for (uint8_t p = 0; p < harp_plate_count; p++) {
-      if (p == harp_plate || !plate_prints[p].known) continue;
+      if (!plate_prints[p].known) continue;
       float d = 0;
       for (uint8_t z = 0; z < 12; z++) d += (pf[z] - plate_prints[p].pf[z]) * (pf[z] - plate_prints[p].pf[z]);
-      if (sqrtf(d / 12) <= plate_id_near) {
-        Serial.printf("Plate detect: plate %d not learned, it reads as plate %d\n", harp_plate, p);
-        plate_led_show(PLATE_LED_REFUSED);
-        return;
+      d = sqrtf(d / 12);
+      if (p != harp_plate && d < other_d) {
+        if (other >= 0) rest_d = min(rest_d, other_d);
+        other_d = d;
+        other = p;
+      } else {
+        rest_d = min(rest_d, d);
       }
+    }
+    if (other >= 0 && (other_d <= plate_prints[other].near ||
+                       (other_d <= 2.0f * plate_prints[other].near && other_d * 2 < rest_d))) {
+      Serial.printf("Plate detect: plate %d not learned, it reads as plate %d (%.3f pF from its print)\n", harp_plate,
+                    other, other_d);
+      plate_led_show(PLATE_LED_REFUSED);
+      return;
     }
     plate_id_store(harp_plate, rest);
     Serial.printf("Plate detect: learned plate %d (mean %d)\n", harp_plate, mean);
@@ -2616,7 +2676,7 @@ FLASHMEM void plate_id_update() {
     if (d < best_d) { next_d = best_d; best_d = d; best = p; }
     else if (d < next_d) next_d = d;
   }
-  if (best < 0 || best_d > plate_id_near || best_d * 2 > next_d) return;   // not clear: leave it be
+  if (best < 0 || best_d > plate_prints[best].near || best_d * 2 > next_d) return;   // not clear: leave it be
   // the print follows the plate slowly: a quarter of the way, written only when that moves a count
   uint16_t was[12], blended[12];
   int at = plate_id_eeprom + 2 + best * plate_id_bytes;
@@ -3144,6 +3204,18 @@ float string_filter_freq(uint8_t i) {
   return (string_filter_base_freq + string_note_freq[i] * string_filter_keytrack) * darker;
 }
 
+// The harp's filter corner (49) and its keytrack (50) were read only as a string was plucked, so turning them
+// (a knob, hover) left the strings already sounding as they were: on the ribbon, one long note, turning them
+// moved nothing. Each sounding string takes the new corner at once,
+// as the chords' filter does (refresh_chord_filter).
+void refresh_string_filters() {
+  AudioNoInterrupts();
+  for (uint8_t i = 0; i < 12; i++) {
+    if (string_enveloppe_array[i]->isActive()) string_filter_array[i]->frequency(string_filter_freq(i));
+  }
+  AudioInterrupts();
+}
+
 // and quieter, by up to 24 dB
 // A string whose envelopes are done rests: its oscillator and transient oscillator go to amplitude 0
 // (keeping their phase, sending nothing), so the chain after them goes idle; they ran on every
@@ -3170,7 +3242,7 @@ void set_harp_voice_frequency(uint8_t i, uint16_t current_note) {
   AudioNoInterrupts();
   string_waveform_array[i]->frequency(note_freq);
   string_pluck_array[i]->frequency(note_freq);
-  if (harp_voice_source && harp_sample_array[i]->isPlaying()) harp_sample_array[i]->setFrequency(note_freq);
+  if (harp_voice_source && harp_sample_array[i]->isPlaying()) harp_sample_array[i]->setFrequency(note_freq * harp_vibrato_tap.ratio());
   string_transient_waveform_array[i]->frequency(transient_freq);
   string_filter_array[i]->frequency(string_filter_freq(i));
   // string_vibrato_1.offset(0);
@@ -3337,7 +3409,19 @@ FLASHMEM void set_chord_note_source(uint8_t i, uint8_t value) {
 void harp_sample_start(uint8_t i) {
   if (!harp_voice_source) return;
   int strength = harp_voice_source == 10 ? (int)lroundf(127 * harp_reed_bark * powf(10.0f, -1.2f * string_softness(i))) : 127;
-  harp_sample_array[i]->playFrequency(string_note_freq[i], strength);
+  harp_sample_array[i]->playFrequency(string_note_freq[i] * harp_vibrato_tap.ratio(), strength);
+}
+
+// The harp's vibrato and pitch bend on its sample players. The oscillators take them at their frequency
+// input, from string_vibrato_mixer; a sample player has none, so harp_vibrato_tap reads the same signal
+// and, from the audio interrupt once a block while it moves the pitch, this retunes each sounding
+// sample by the ratio the oscillators are moved by. Where the loop retunes one (set_harp_voice_frequency,
+// midi_in_tune_harp, harp_sample_start) it takes the ratio too, so it doesn't sit on the bare note for a block.
+void harp_sample_vibrato(float ratio) {
+  if (!harp_voice_source) return;
+  for (uint8_t i = 0; i < 12; i++) {
+    if (harp_sample_array[i]->isPlaying()) harp_sample_array[i]->setFrequency(string_note_freq[i] * ratio);
+  }
 }
 
 // Glide on a sampled chord voice. The oscillators glide by their DC offset's ramp
@@ -3346,6 +3430,21 @@ void harp_sample_start(uint8_t i) {
 // from wherever the last note left it, as the oscillators do: a barbershop swipe on the choir.
 struct chord_sample_glide_t { float from, to; uint32_t at; uint16_t ms; bool known; };   // in octaves (log2 Hz)
 chord_sample_glide_t chord_sample_glides[4] = {};
+
+// The chords' vibrato (160-169, 175) and pitch envelope (170-174) on the sample players. The oscillators
+// take them at their frequency input, through voiceN_vibrato_mixer with the glide's offset; a sample
+// player has none, so chord_vibrato_tap_N reads the vibrato's two inputs to that mixer (not the offset:
+// the sample glides from the loop) and, from the audio interrupt once a block while they move the pitch,
+// this retunes the voice's sample from where the loop last put it (chord_sample_hz) by that ratio.
+// chord_sample_tune is the loop's way to put it somewhere, the ratio taken as it goes.
+float chord_sample_hz[4] = {};
+void chord_sample_vibrato(uint8_t i, float ratio) {
+  if (chord_source_of[i] && chord_sample_hz[i] > 0 && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(chord_sample_hz[i] * ratio);
+}
+static void chord_sample_tune(uint8_t i, float hz) {
+  chord_sample_hz[i] = hz;
+  chord_sample_array[i]->setFrequency(hz * chord_vibrato_tap_array[i]->ratio());
+}
 
 static float chord_sample_octaves(uint8_t i) {
   const chord_sample_glide_t &g = chord_sample_glides[i];
@@ -3364,7 +3463,7 @@ void chord_sample_glide(uint8_t i, float hz, uint16_t ms) {
   g.at = millis();
   g.ms = g.known ? ms : 0;
   g.known = true;
-  if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(exp2f(g.ms ? g.from : to));
+  if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_tune(i, exp2f(g.ms ? g.from : to));
 }
 
 // From loop(): a gliding sample on its way
@@ -3375,7 +3474,7 @@ FLASHMEM void chord_samples_glide() {
     if (g.ms) {
       float octaves = chord_sample_octaves(i);
       if (millis() - g.at >= g.ms) g.ms = 0;
-      if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_array[i]->setFrequency(exp2f(octaves));
+      if (chord_source_of[i] && chord_sample_array[i]->isPlaying()) chord_sample_tune(i, exp2f(octaves));
     }
     interrupts();
   }
@@ -3384,7 +3483,8 @@ FLASHMEM void chord_samples_glide() {
 void chord_sample_start(uint8_t i) {
   if (!chord_source_of[i]) return;
   float hz = chord_sample_glides[i].known ? exp2f(chord_sample_octaves(i)) : chord_voice_note_freq[i];   // mid-glide: from where it is
-  chord_sample_array[i]->playFrequency(hz, chord_source_of[i] == 10 ? (int)lroundf(127 * chord_reed_bark) : 127);   // the reed piano struck as hard as 387 says
+  chord_sample_hz[i] = hz;
+  chord_sample_array[i]->playFrequency(hz * chord_vibrato_tap_array[i]->ratio(), chord_source_of[i] == 10 ? (int)lroundf(127 * chord_reed_bark) : 127);   // the reed piano struck as hard as 387 says
   chord_sample_array[i]->amplitude(fminf(1, chord_voice_level[i] * chord_sample_level));
 }
 
@@ -3406,7 +3506,7 @@ void midi_in_tune_harp(uint8_t i) {
   AudioNoInterrupts();
   string_waveform_array[i]->frequency(f);
   string_pluck_array[i]->frequency(f);
-  if (harp_voice_source && harp_sample_array[i]->isPlaying()) harp_sample_array[i]->setFrequency(f);
+  if (harp_voice_source && harp_sample_array[i]->isPlaying()) harp_sample_array[i]->setFrequency(f * harp_vibrato_tap.ratio());
   string_transient_waveform_array[i]->frequency(transient_freq);
   string_filter_array[i]->frequency(string_filter_freq(i));
   AudioInterrupts();
@@ -3818,7 +3918,7 @@ static void loop_voice_release(bool harp, uint8_t v) {
 
 static void loop_play_event(const loop_event &e) {
   if (e.kind == LOOP_DRUM) {                           // the kit, as hard as it was struck, where it was (no humanize again)
-    drum_strike(e.voice, e.midi_velocity, false, false);
+    drum_place(e.voice, e.midi_velocity, false);
     return;
   }
   bool harp = e.voice < 12;
@@ -5749,6 +5849,7 @@ uint8_t harp_string_note(uint8_t i, bool slashed, bool sharp) {
  */
 #include "accompaniment_styles.h"
 #include "drum_patterns.h"
+#include "plate_places.h"
 
 #define ACC_NO_NOTE -32768
 
@@ -6172,12 +6273,16 @@ void drone_watch() {
 }
 
 // A hit, from the rhythm's timer or the loop: velocity 1-127 as written (or played); loose, it takes
-// the humanize (a looped hit was already played by a human)
-void drum_strike(uint8_t v, uint8_t velocity, bool written, bool loose) {
+// the humanize (a looped hit was already played by a human). A seam of the drum pads plate can tune the
+// voice by a ratio, strike it after_ms late, and send its own General MIDI note (gm; 0 the voice's, 255
+// none).
+void drum_strike(uint8_t v, uint8_t velocity, bool written, bool loose, float tune, uint8_t after_ms, uint8_t gm) {
+  // a finger resting on the voice's pad holds the groove's hits back (427); played and looped hits still land
+  if (written && pads_mute_groove && (drums_held >> v & 1)) return;
   float vel = written ? (127 - (127 - velocity) * acc_accents / 100.0f) / 127.0f : velocity / 127.0f;
-  uint32_t delay = 0;
+  uint32_t delay = (uint32_t)(after_ms * AUDIO_SAMPLE_RATE_EXACT / 1000.0f);
   if (drum_humanize && loose) {
-    delay = drum_rand() % (uint32_t)(drum_humanize * 0.15f * AUDIO_SAMPLE_RATE_EXACT / 1000.0f + 1);
+    delay += drum_rand() % (uint32_t)(drum_humanize * 0.15f * AUDIO_SAMPLE_RATE_EXACT / 1000.0f + 1);
     vel *= 1.0f - (drum_rand() % 1000) / 1000.0f * drum_humanize * 0.002f;
   }
   float pitch = 0;
@@ -6188,10 +6293,10 @@ void drum_strike(uint8_t v, uint8_t velocity, bool written, bool loose) {
     int16_t pc = ((acc_now.root + transpose_steps) % EDO + EDO) % EDO;
     pitch = c_frequency / 4 * temper_ratio(pc);   // C1 to B1: an 808's bass
   }
-  drum_machine.hit(v, vel, pitch, delay);
-  if (drum_midi) {
+  drum_machine.hit(v, vel, pitch, delay, tune);
+  if (drum_midi && gm != 255) {
     uint8_t port = drum_midi == 2 ? 1 : 0;
-    uint8_t note = drum_gm_note[v];
+    uint8_t note = gm ? gm : drum_gm_note[v];
     queue_midi(true, note, (uint8_t)constrain(lroundf(vel * 127), 1, 127), 10, port);
     uint32_t primask = drum_primask();
     __disable_irq();
@@ -6295,11 +6400,124 @@ static void drum_section_window(double t0, double t1) {
 
 // The harp's strings as the kit's first twelve voices, low string the kick, as firmly as touched;
 // the looper records the hit
-void drum_pad(uint8_t string, int16_t strength) {
+void drum_pad(uint8_t place, int16_t strength) {
   float firm = strength > 0 ? touch_firmness(strength) : 1.0f;
   uint8_t velocity = (uint8_t)lroundf(127 * (0.35f + 0.65f * firm));
-  drum_strike(string, velocity, false);
-  looper_capture(LOOP_DRUM, string, 0, 0, 0, velocity);
+  drum_place(place, velocity);
+  looper_capture(LOOP_DRUM, place, 0, 0, 0, velocity);
+}
+
+//>>DRUM PLACES<<
+// With harp drums on, the drum pads plate (harp plate 13) plays its twelve pads as any plate's strings
+// do, each the kit's voice of its string (T12 the kick), and each of the sixteen seams between two pads
+// one of its own: something between its pads, or beside them, as its targets were drawn
+// (~/minichord-harp-plates drum_targets.py). Bottom to top, left and right, as the plate lies the right
+// way up:
+//   kick | snare             KICK+SNARE across, KICK+HAT up the left, SNARE+CLAP up the right
+//   hat | clap               HAT+CLAP across, HALF OPEN up the left, SNAP up the right
+//   open | rim               SHAKER across, RIDE up the left, TIMBALE up the right
+//   crash | low tom          FLOOR TOM across, RIDE BELL up the left, MID TOM up the right
+//   bell | high tom          CLAVES across, LOW BELL up the left, BONGO up the right
+//   high conga | low conga   SLAP across
+// The kit's own voices, tuned by a ratio (a floor tom below the low tom, a bongo above the congas, a mid
+// tom between the toms, whatever the kit's toms are), and a few layered: a half open hat is the open one
+// closed by a faint hat 90 ms on, as a foot would; a ride bell the bell over a little of the cymbal.
+// With drum seams (419) off a seam plays its two pads together, as on any other plate. Every kit has
+// the thirteen voices, so every kit plays all 28 places, though on the tabla a "mid tom" is a drum
+// between two bols. Upside down the places are found where they are on the plate and turned round with it
+// (places::place_turned), so the kick is still at the bottom left as the player holds it.
+// A place is 0-11 a pad (the kit's voice), 12-27 a seam (12 + its number in places::seam_zones); the
+// looper keeps the place, and plays a looped seam as the seams are set when it comes round.
+struct seam_hit {
+  uint8_t voice;     // the kit's voice, 255 for none
+  float tune;        // the ratio it is tuned by; 0 between the seam's two pads' pitches
+  uint8_t share;     // percent of the hit's velocity
+  uint8_t after_ms;  // how late it is struck
+  uint8_t gm;        // the General MIDI note it sends (drum midi, 340): 0 the voice's own, 255 none
+};
+#define SEAM_NONE {255, 1.0f, 0, 0, 255}
+#define SEAM_PADS(a, b) {{a, 1.0f, 100, 0, 0}, {b, 1.0f, 100, 0, 0}}
+static const seam_hit seam_sounds[places::seam_count][2] = {
+  SEAM_PADS(DRUM_KICK, DRUM_SNARE),                                        // kick | snare
+  SEAM_PADS(DRUM_HAT, DRUM_CLAP),                                          // hat | clap
+  {{DRUM_SHAKER, 1.0f, 100, 0, 0}, SEAM_NONE},                             // open | rim: shaker
+  {{DRUM_TOM_LO, 0.7f, 100, 0, 41}, SEAM_NONE},                            // crash | low tom: floor tom
+  {{DRUM_RIM, 1.8f, 90, 0, 75}, SEAM_NONE},                                // bell | high tom: claves
+  {{DRUM_CONGA_HI, 1.25f, 100, 0, 62}, SEAM_NONE},                         // the congas: a slap
+  SEAM_PADS(DRUM_KICK, DRUM_HAT),                                          // kick, hat
+  {{DRUM_OPEN, 1.0f, 100, 0, 46}, {DRUM_HAT, 1.0f, 12, 90, 255}},          // hat, open: half open
+  {{DRUM_CYMBAL, 1.3f, 80, 0, 51}, SEAM_NONE},                             // open, crash: ride
+  {{DRUM_BELL, 1.5f, 90, 0, 53}, {DRUM_CYMBAL, 1.3f, 35, 0, 255}},         // crash, bell: ride bell
+  {{DRUM_BELL, 0.75f, 100, 0, 0}, SEAM_NONE},                              // bell, high conga: low bell
+  SEAM_PADS(DRUM_SNARE, DRUM_CLAP),                                        // snare, clap
+  {{DRUM_CLAP, 1.6f, 70, 0, 0}, SEAM_NONE},                                // clap, rim: snap
+  {{DRUM_TOM_HI, 1.6f, 100, 0, 65}, {DRUM_RIM, 1.0f, 40, 0, 255}},         // rim, low tom: timbale
+  {{DRUM_TOM_LO, 0.0f, 100, 0, 47}, SEAM_NONE},                            // the toms: mid tom
+  {{DRUM_CONGA_HI, 1.45f, 100, 0, 60}, SEAM_NONE},                         // high tom, low conga: bongo
+};
+
+// The kit's voices a place strikes: its pad's own, or its seam's (both pads with drum seams off)
+FLASHMEM uint8_t drum_place_voices(uint8_t place, uint8_t *v) {
+  if (place < 12) {
+    v[0] = place;
+    return 1;
+  }
+  if (place >= 12 + places::seam_count) return 0;
+  const uint8_t *pads = places::seam_zones[place - 12];
+  if (!drum_seams) {
+    v[0] = pads[0];
+    v[1] = pads[1];
+    return 2;
+  }
+  uint8_t n = 0;
+  for (const seam_hit &h : seam_sounds[place - 12]) {
+    if (h.voice < DRUM_VOICES) v[n++] = h.voice;
+  }
+  return n;
+}
+
+// Metal rings and is choked by a hand laid on it; a skin is pressed and rises (DRUM PRESS). The metal
+// slots go by the kit: one playing an untuned recorded stroke holds the tabla's bayan (ge bent in the
+// bell), pressed by the wrist into its meend. The dayan's strokes in those slots (te, tin, na open) are
+// damped, a hand laid on the ringing dayan.
+FLASHMEM __attribute__((noinline)) static bool drum_voice_metal(uint8_t v) {
+  if (v != DRUM_HAT && v != DRUM_OPEN && v != DRUM_CYMBAL && v != DRUM_BELL && v != DRUM_SHAKER) return false;
+  const drum_kit_t *kit = drum_machine.currentKit();
+  if (!kit || kit->v[v].sample < 0) return true;
+  return drum_samples[kit->v[v].sample].pitch_hz > 0;
+}
+
+// The pitch a voice is struck at, for tuning one between two: its body's, or its stroke's
+FLASHMEM static float drum_voice_hz(uint8_t v) {
+  const drum_kit_t *kit = drum_machine.currentKit();
+  if (!kit) return 0;
+  if (kit->v[v].sample >= 0) return drum_samples[kit->v[v].sample].pitch_hz;
+  return kit->v[v].tone_hz;
+}
+
+FLASHMEM void drum_place(uint8_t place, uint8_t velocity, bool loose) {
+  if (place < 12 || place >= 12 + places::seam_count) {
+    if (place < 12) drum_strike(place, velocity, false, loose);
+    return;
+  }
+  const uint8_t *pads = places::seam_zones[place - 12];   // the zone of a pad is the kit's voice it plays
+  if (!drum_seams) {
+    drum_strike(pads[0], velocity, false, loose);
+    drum_strike(pads[1], velocity, false, loose);
+    return;
+  }
+  for (const seam_hit &h : seam_sounds[place - 12]) {
+    if (h.voice >= DRUM_VOICES) continue;
+    float tune = h.tune;
+    if (tune <= 0) {   // halfway, in pitch, from its own pad to the other
+      uint8_t other = pads[0] == h.voice ? pads[1] : pads[0];
+      float own = drum_voice_hz(h.voice), far = drum_voice_hz(other);
+      tune = own > 0 && far > 0 ? sqrtf(far / own) : 1.122f;   // a whole tone, for a voice with no pitch
+      if (fabsf(tune - 1) < 0.03f) tune = 1.122f;   // or for two at one pitch (the tabla's): not a pad again
+    }
+    uint8_t v = (uint8_t)max(1L, lroundf(velocity * h.share / 100.0f));
+    drum_strike(h.voice, v, false, loose, tune, h.after_ms, h.gm);
+  }
 }
 
 // From the loop: the kit the groove (or the setting) wants, and the MIDI notes to end
@@ -7572,6 +7790,7 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   // simple mixers
   string_vibrato_mixer.gain(0,0.5);
   string_vibrato_mixer.gain(1,0.5);
+  harp_vibrato_tap.on_ratio(harp_sample_vibrato);
   envelope_string_vibrato_dc.sustain(0);
   for (int i = 0; i < 3; i++) {
     string_mixer_array[i]->gain(0, 1);
@@ -7596,6 +7815,9 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
     chord_vibrato_mixer_array[i]->gain(1,0.5); 
 
     chord_vibrato_dc_envelope_array[i]->sustain(0); //for the pitch bend no need for sustain
+    chord_vibrato_tap_array[i]->octaves(2);   // the oscillators' frequencyModulation, above
+    chord_vibrato_tap_array[i]->gains_of(chord_vibrato_mixer_array[i]);
+    chord_vibrato_tap_array[i]->on_ratio(chord_sample_vibrato, i);
     transient_full_mix.gain(i, 1);
     all_string_mix.gain(i, 1);
     all_string_mix_r.gain(i, 1);
@@ -7992,8 +8214,16 @@ bool harp_ribbon_active() {
   return harp_ribbon && harp_plate != plate_arcade_wheel && !harp_drums;
 }
 
+// MELODIC PADS (446): the drum pads' 28 places play notes, as positions, outside chord mode (whose
+// shuffling knows only twelve strings) and with harp drums off, which take the pads first
+bool melodic_places_active() {
+  return harp_plate == plate_drum_pads && melodic_pads && !harp_drums && (chromatic_harp_mode || scalar_harp_selection != 0);
+}
+
+// Melodic pads count as positions too, though their places come from the drum pads' decoder, not a strip.
 bool harp_positions_active() {
-  return harp_plate == plate_zipper_24 && !harp_drums && !harp_ribbon_active() && (chromatic_harp_mode || scalar_harp_selection != 0);
+  return (harp_plate == plate_zipper_24 && !harp_drums && !harp_ribbon_active() && (chromatic_harp_mode || scalar_harp_selection != 0)) ||
+         melodic_places_active();
 }
 
 // Whether voice i has a finger on it: on a zipper plate or the ribbon a touch
@@ -8948,6 +9178,281 @@ FLASHMEM void neighbour_guard_settle(bool stock) {
   for (uint8_t i = 0; i < 12; i++) if (!stock || !harp_array[i].read_value()) pad_shadow[i] = false;
 }
 
+// ---- the drum pads' places, played ----
+// With harp drums on, the drum pads plate is read as places (DRUM PLACES), not strings.
+FLASHMEM bool drum_places_active() {
+  return harp_drums && harp_plate == plate_drum_pads;
+}
+
+// A finger on a place. It lands for harp_landing_ms, while a finger pressing down reads weak and uneven
+// and the second zone of a seam may not yet have caught up with the first, and is struck as it settles,
+// as firmly as it read at its firmest: the place it is on then is the one it plays.
+struct place_hit {
+  bool active, landing;
+  uint8_t place;       // as found on the plate, the right way up
+  uint16_t zones;      // the zones it is on, by where they are on the plate
+  float peak;
+  uint32_t landed_at;
+  float rest;          // the lightest it has read since it settled, -1 until it has
+  float bend;          // the ratio its press has bent its voices by, 1 unbent
+  bool choked;         // this press has laid its hand on the metal already
+};
+static place_hit place_hits[harp_touch_max];
+
+FLASHMEM static void place_strike(place_hit &h) {
+  uint8_t place = upside_down ? places::place_turned(h.place) : h.place;
+  if (melodic_places_active()) {   // MELODIC PADS: the place is a position, landed as the zipper's are
+    pluck_strength = h.peak;
+    harp_position_land(places::melodic_step[place]);
+    return;
+  }
+  drum_pad(place, (int16_t)lroundf(h.peak));
+}
+
+// A melodic finger leaving its place: the bend eases back and the position is left (which plucks it,
+// with harp pluck on lift)
+FLASHMEM static void place_leave(place_hit &h) {
+  if (!melodic_places_active()) return;
+  uint8_t place = upside_down ? places::place_turned(h.place) : h.place;
+  uint8_t p = places::melodic_step[place];
+  koto_bend(p % 12, 0);
+  pluck_strength = h.peak;
+  harp_position_leave(p);
+}
+
+// A pressed finger leaving its place: the bend eases back, so the voice (and the groove's next hit on
+// it) is in tune again
+FLASHMEM static void place_press_end(place_hit &h) {
+  if (h.bend == 1) return;
+  uint8_t v[2];
+  uint8_t n = drum_place_voices(upside_down ? places::place_turned(h.place) : h.place, v);
+  for (uint8_t k = 0; k < n; k++) drum_machine.bend(v[k], 1.0f);
+  h.bend = 1;
+}
+
+// MELODIC PADS with drum press (426) on and koto press (289) off: a key struck and then pressed into is
+// damped, as a gamelan player stops the bronze key just played with the hand while striking the next
+// (tutup). Once a press, like a cymbal's choke: easing right off lets the next press damp it again,
+// after a new strike. The key's voice is step % 12, and only while it still plays this key: one twelve
+// places away may have taken it since.
+FLASHMEM __attribute__((noinline)) static void melodic_press_damp(float amount, bool &damped, uint8_t step) {
+  if (amount >= 0.25f) {
+    uint8_t v = step % 12;
+    if (!damped && harp_voice_position[v] == step) damp_string(v);
+    damped = true;
+  } else if (amount < 0.1f) {
+    damped = false;
+  }
+}
+
+FLASHMEM void drum_places_reset() {
+  for (uint8_t t = 0; t < harp_touch_max; t++) {
+    if (place_hits[t].active) place_press_end(place_hits[t]);
+    place_hits[t].active = false;
+  }
+  drums_held = 0;
+}
+
+// How far a settled finger is pressing, 0 slack to 1 a full press, measured from the lightest it has
+// read since it settled (its rest, kept by the caller), with the strip's koto constants: interim on
+// the plates, to be measured on the boards.
+FLASHMEM __attribute__((noinline)) static float press_amount(float pressing, float &rest) {
+  if (rest < 0 || pressing < rest) rest = pressing;
+  int16_t span = max(koto_full - (int16_t)rest - koto_dead, koto_span_min);
+  return constrain((pressing - rest - koto_dead) / (float)span, 0.0f, 1.0f);
+}
+
+// The working half of DRUM PRESS (426), shared by the drum pads' places and any plate's strings:
+// metal pressed has a hand laid on it and is choked, a skin is bent by how far the press goes. The
+// caller keeps bend and choked between passes and eases the bend back as the finger leaves.
+FLASHMEM __attribute__((noinline)) static void drum_press_apply(float amount, float &bend, bool &choked, const uint8_t *v, uint8_t n) {
+  bool pressed = amount >= 0.25f;
+  float next = exp2f(drum_press_semis * amount / 12.0f);
+  bool moved = fabsf(next - bend) > 0.002f;
+  for (uint8_t k = 0; k < n; k++) {
+    if (drum_voice_metal(v[k])) {
+      if (pressed && !choked) drum_machine.choke(v[k]);
+    } else if (moved) {
+      drum_machine.bend(v[k], next);
+    }
+  }
+  if (moved) bend = next;
+  if (pressed) choked = true;
+  else if (amount < 0.1f) choked = false;   // eased right off: the next press lays the hand again
+}
+
+FLASHMEM static void handle_drum_places(uint32_t now) {
+  // the zones by where they are on the plate: upside down the harp reads them from the other end
+  bool down[12];
+  bool any = false;
+  for (uint8_t p = 0; p < 12; p++) {
+    down[p] = harp_array[upside_down ? 11 - p : p].read_value();
+    any |= down[p];
+  }
+  bool held = false;
+  for (uint8_t t = 0; t < harp_touch_max; t++) held |= place_hits[t].active;
+  if (!any && !held) return;   // nothing to read: spare the bus
+  int16_t raw[12];
+  harp_sensor.read_strength(raw);
+  float s[12];
+  uint16_t down_mask = 0;
+  for (uint8_t p = 0; p < 12; p++) {
+    s[p] = raw[upside_down ? 11 - p : p];
+    if (down[p]) down_mask |= 1u << p;
+  }
+  // A finger struck holds its zones until it lifts off them all, and what lands beside it is measured
+  // against it: its own edge, or a finger of its own (places::find_places).
+  uint16_t taken = 0;
+  for (uint8_t t = 0; t < harp_touch_max; t++) {
+    place_hit &h = place_hits[t];
+    if (!h.active || h.landing) continue;
+    if (h.zones & down_mask) {
+      taken |= h.zones;
+    } else {
+      place_press_end(h);
+      place_leave(h);
+      h.active = false;
+    }
+  }
+  struct found_place { uint8_t place; float strength; uint16_t zones; bool matched; };
+  found_place found[harp_touch_max];
+  uint8_t count = 0;
+  places::find finds[harp_touch_max];
+  uint8_t finds_n = places::find_places(s, down, taken, finds, harp_touch_max);
+  for (uint8_t k = 0; k < finds_n; k++) {
+    found_place &f = found[count++];
+    f.place = places::place_of(finds[k].a, finds[k].b);
+    f.strength = finds[k].strength;
+    f.zones = (1u << finds[k].a) | (1u << finds[k].b);
+    f.matched = false;
+  }
+  for (uint8_t t = 0; t < harp_touch_max; t++) {
+    place_hit &h = place_hits[t];
+    if (!h.active || !h.landing) continue;
+    // a finger landing is the one on a zone it was on: a pad's edge growing into its seam moves the place
+    // further than any finger moves in a millisecond
+    int8_t best = -1;
+    for (uint8_t k = 0; k < count && best < 0; k++) {
+      if (!found[k].matched && (found[k].zones & h.zones)) best = k;
+    }
+    if (best < 0) {   // lifted; a tap too quick to settle is struck where it was read
+      place_strike(h);
+      place_leave(h);
+      h.active = false;
+      continue;
+    }
+    found_place &f = found[best];
+    f.matched = true;
+    h.place = f.place;
+    h.zones = f.zones;
+    h.peak = max(h.peak, f.strength);
+    if (now - h.landed_at >= harp_landing_ms) {
+      h.landing = false;
+      place_strike(h);
+    }
+  }
+  for (uint8_t k = 0; k < count; k++) {
+    if (found[k].matched) continue;
+    for (uint8_t t = 0; t < harp_touch_max; t++) {
+      if (place_hits[t].active) continue;
+      place_hits[t] = place_hit{true, true, found[k].place, found[k].zones, found[k].strength, now, -1, 1, false};
+      break;
+    }
+  }
+  // What the resting fingers do: the groove held back (427) and the drum under the finger worked
+  // (DRUM PRESS, 426), or on MELODIC PADS the held place bent as a ringing string is (koto press,
+  // 289), or with koto press off and drum press on, the key pressed damped, a gamelan player's hand
+  // on the ringing bronze (melodic_press_damp). Pressing is measured as koto press is, from the
+  // lightest the finger has read since it settled, with the strip's constants: interim on these plates, to be measured on the boards (a
+  // seam sums its two zones, so it reads a press firmer than a pad does).
+  bool melodic = melodic_places_active();
+  if (melodic) {
+    for (uint8_t i = 0; i < 12; i++) harp_voice_held[i] = false;
+  }
+  uint16_t held_voices = 0;
+  for (uint8_t t = 0; t < harp_touch_max; t++) {
+    place_hit &h = place_hits[t];
+    if (!h.active || h.landing) continue;
+    uint8_t place = upside_down ? places::place_turned(h.place) : h.place;
+    uint8_t v[2];
+    uint8_t n = 0;
+    if (melodic) {
+      harp_voice_held[places::melodic_step[place] % 12] = true;
+      if (!koto_press && !drum_press_semis) continue;
+    } else {
+      n = drum_place_voices(place, v);
+      for (uint8_t k = 0; k < n; k++) held_voices |= 1u << v[k];
+      if (!drum_press_semis) continue;
+    }
+    // a finger still pressing down reads rising for tens of milliseconds past the strike: as koto
+    // press does, the press is only measured once the finger has settled, so a firm hit bends nothing
+    if (now - h.landed_at < harp_landing_ms + koto_settle_ms) continue;
+    float pressing = 0;   // settled fingers are not found again: read their zones directly
+    for (uint8_t p = 0; p < 12; p++) {
+      if ((h.zones >> p & 1) && down[p]) pressing += fmaxf(s[p], 0.0f);
+    }
+    float amount = press_amount(pressing, h.rest);
+    if (melodic && !koto_press) {
+      melodic_press_damp(amount, h.choked, places::melodic_step[place]);
+      continue;
+    }
+    if (melodic) {
+      float bend = koto_press * amount;   // in semitones, or in steps of the division
+      bend = snap_to_whole(bend, koto_press_snap / 100.0f);
+      if (koto_press_steps) bend *= 12.0f / EDO;
+      koto_bend(places::melodic_step[place] % 12, bend);
+      continue;
+    }
+    drum_press_apply(amount, h.bend, h.choked, v, n);
+  }
+  drums_held = held_voices;
+}
+
+// HARP DRUMS on any other plate: the strings are the kit's pads there too, so the resting hand works
+// them as it does the drum pads' places. A finger resting on a string holds its voice out of the groove
+// (pads mute the groove, 427, through drums_held), and pressing a struck pad chokes metal or bends a
+// skin (DRUM PRESS, 426), measured as the places measure it. A string is one pad, so its voice is its
+// own number and its press its own strength; a key the neighbour guard holds silent holds nothing.
+struct drum_string_press {
+  bool down;
+  float rest;    // the lightest it has read since it settled, -1 until it has
+  float bend;    // the ratio its press has bent its voice by, 1 unbent
+  bool choked;   // this press has laid its hand on the metal already
+};
+static drum_string_press drum_string_presses[12];
+
+FLASHMEM __attribute__((noinline)) static void drum_strings_reset() {
+  for (uint8_t i = 0; i < 12; i++) {
+    if (drum_string_presses[i].down && drum_string_presses[i].bend != 1) drum_machine.bend(i, 1.0f);
+    drum_string_presses[i] = drum_string_press{};
+  }
+  drums_held = 0;
+}
+
+FLASHMEM __attribute__((noinline)) static void handle_drum_strings(uint32_t now, const uint32_t *pad_landed, const int16_t *pad_strength) {
+  uint16_t held_voices = 0;
+  for (uint8_t i = 0; i < 12; i++) {
+    drum_string_press &p = drum_string_presses[i];
+    bool down = harp_array[i].read_value() && !pad_shadow[i];
+    if (!down) {
+      if (p.down) {   // lifted: the bend eases back, so the groove's next hit on it is in tune
+        if (p.bend != 1) drum_machine.bend(i, 1.0f);
+        p = drum_string_press{};
+      }
+      continue;
+    }
+    if (!p.down) p = drum_string_press{true, -1, 1, false};
+    held_voices |= 1u << i;
+    if (!drum_press_semis) continue;
+    // a finger still pressing down reads rising for tens of milliseconds past the strike: as on the
+    // places, the press is only measured once the finger has settled, so a firm hit bends nothing
+    if (now - pad_landed[i] < harp_landing_ms + koto_settle_ms) continue;
+    float amount = press_amount(fmaxf(pad_strength[i], 0.0f), p.rest);
+    drum_press_apply(amount, p.bend, p.choked, &i, 1);
+  }
+  drums_held = held_voices;
+}
+
 //>>PLATE SWAP<<
 // A plate taken off or put on with the power on. The touch chip reads each zone against a resting level (its
 // baseline) that follows a change only a count at a time, and hardly at all while the zone reads as touched.
@@ -8960,15 +9465,16 @@ FLASHMEM void neighbour_guard_settle(bool stock) {
 //  - coming off: plate_swap_zones zones or more read over plate_swap_lift above their rest. A touch only ever
 //    brings a reading down, so nothing else does that, but a hand lifted after a recalibration made under it,
 //    which wants recalibrating too.
-//  - going on: plate_swap_zones zones or more land within plate_swap_land_ms of each other. A hand rolls on
-//    over tens of milliseconds and seldom covers ten zones; a plate's copper lands on all twelve at once.
-//    Those landings are swallowed, so the twelve strings don't all sound as it goes on. But a plate pressed
-//    onto its pins can land slower than that: on the first real swap (2026-10-17, the piano plate onto bare
-//    pins) it did, and the harp sat silent 28 s, all twelve held, until the stuck rule below caught it. So
-//    once a swap settles with the plate off (its readings over plate_swap_bare_counts above where they were before),
-//    the harp is bare, and plate_swap_zones zones or more falling plate_swap_drop under their rest is a plate
-//    going on, however slowly it lands. Measured on that swap: off, 61-126 counts up; on, 134-186 down.
-//  - left stuck: all twelve zones touched and still to within plate_swap_steady_counts for plate_swap_stuck_ms.
+//  - going on: once a swap settles with the plate off (its readings over plate_swap_bare_counts above where they
+//    were before), the harp is bare, and plate_swap_zones zones or more falling plate_swap_drop under their rest
+//    is a plate going on, however slowly it lands. On the first real swap (2026-10-17, the piano plate pressed
+//    onto bare pins) the plate went unseen and the harp sat silent 28 s, all twelve held, until the stuck rule
+//    below caught it. Measured on that swap: off, 61-126 counts up; on, 134-186 down.
+//    Landings aren't timed. Ten zones landing within 30 ms was a rule here (firmware 98-99), but it caught none
+//    of the 49 swaps logged on 2026-10-17, and a hand slapped flat across the strings lands that fast too: it
+//    was taken for a plate, and its notes swallowed.
+//  - left stuck: all twelve zones touched and still to within plate_swap_steady_counts for plate_swap_stuck_ms:
+//    a plate put on with the harp not known to be bare (switched on without one). Its strings sound until then.
 //  - the over current flag.
 // Then the strings are let go and the harp waits, playing nothing, until every zone holds still to within
 // plate_swap_steady_counts for plate_swap_settle_ms, recalibrates the chip there, swallows what the zones do as
@@ -8981,7 +9487,6 @@ const int16_t plate_swap_bare_counts = 20;   // counts, on average, a settled sw
 const uint8_t plate_swap_left_zones = 3;     // zones left above their rest, untouched ...
 const uint16_t plate_swap_left_ms = 300;     // ... this long: recalibrated too
 const uint8_t plate_swap_zones = 10;
-const uint8_t plate_swap_land_ms = 30;
 const uint8_t plate_swap_steady_counts = 4;
 const uint16_t plate_swap_settle_ms = 300;
 const uint16_t plate_swap_stuck_ms = 3000;
@@ -8997,6 +9502,7 @@ FLASHMEM static void harp_quiet() {
   }
   harp_positions_reset();
   harp_ribbon_reset();
+  drum_places_reset();
 }
 
 FLASHMEM static void plate_swap_begin(const char *why, const uint16_t (&f)[12], const uint16_t (&b)[12]) {
@@ -9013,38 +9519,24 @@ FLASHMEM static void plate_swap_begin(const char *why, const uint16_t (&f)[12], 
 FLASHMEM bool plate_swap_watch() {
   static elapsedMillis since_poll, steady_for, since_after;
   static uint16_t lo[12], hi[12];
-  static bool was_down[12] = {false};
-  static uint32_t landed_at[12] = {0};
   static elapsedMillis all_still;
   static uint16_t still_lo[12], still_hi[12];
   static bool coming_off = false;            // this swap began as a plate coming off
   static bool going_on = false;              // this swap began as a plate going on
+  static bool stuck = false;                 // this swap began as all twelve held still ...
+  static bool after_stuck = false;           // ... and the last one did
   static elapsedMillis left_for;             // how long plate_swap_left_zones or more have been left above rest
   static int32_t before = 0;                 // the readings' sum before it (the plate's rest)
   static int32_t bare_sum = 0;               // the readings' sum on the bare pins, once a swap has settled there
   if (plate_swap_state == SWAP_AFTER) {
-    for (uint8_t i = 0; i < 12; i++) {
-      harp_array[i].read_transition();
-      was_down[i] = harp_array[i].read_value();
-    }
+    for (uint8_t i = 0; i < 12; i++) harp_array[i].read_transition();
     if (since_after < plate_swap_after_ms) return true;
     plate_swap_state = SWAP_NONE;
     plate_id_check_wanted = true;
     Serial.println("Plate swap: playing again");
     return false;
   }
-  // going on: the landings this pass, and how many landed within plate_swap_land_ms
-  uint32_t now = millis();
-  uint8_t landing = 0;
-  bool all_down = true;
-  for (uint8_t i = 0; i < 12; i++) {
-    bool down = harp_array[i].read_value();
-    if (down && !was_down[i]) landed_at[i] = now;
-    was_down[i] = down;
-    all_down &= down;
-    if (down && now - landed_at[i] <= plate_swap_land_ms) landing++;
-  }
-  bool poll = since_poll >= plate_swap_poll_ms || plate_swap_state != SWAP_NONE || harp_sensor.over_current || landing >= plate_swap_zones;
+  bool poll = since_poll >= plate_swap_poll_ms || plate_swap_state != SWAP_NONE || harp_sensor.over_current;
   if (!poll) return false;
   since_poll = 0;
   uint16_t f[12], b[12];
@@ -9052,6 +9544,7 @@ FLASHMEM bool plate_swap_watch() {
     harp_sensor.over_current = false;
     uint16_t zero[12] = {0};
     plate_swap_begin("the touch chip flagged over current", zero, zero);
+    coming_off = going_on = stuck = false;
     harp_sensor.recalibrate();   // it stopped: start it again before there is anything to read
     steady_for = 0;
     for (uint8_t z = 0; z < 12; z++) lo[z] = 0xFFFF, hi[z] = 0;
@@ -9065,6 +9558,8 @@ FLASHMEM bool plate_swap_watch() {
       dropped += f[z] + plate_swap_drop < b[z];
     }
     // all twelve held, and still: kept against the readings since all twelve went down
+    bool all_down = true;
+    for (uint8_t i = 0; i < 12; i++) all_down &= harp_array[i].read_value();
     if (!all_down) all_still = 0;
     bool still = all_down;
     for (uint8_t z = 0; z < 12 && all_down; z++) {
@@ -9076,7 +9571,7 @@ FLASHMEM bool plate_swap_watch() {
     bool any_down = false;
     for (uint8_t i = 0; i < 12; i++) any_down |= harp_array[i].read_value();
     if (lifted < plate_swap_left_zones || any_down) left_for = 0;
-    coming_off = going_on = false;
+    coming_off = going_on = stuck = false;
     if (lifted >= plate_swap_zones || left_for >= plate_swap_left_ms) {
       // a plate coming off; or some zones left above their rest, untouched: the rest of a plate pulled off one
       // header at a time, or a hand lifted after a recalibration made under it
@@ -9089,11 +9584,10 @@ FLASHMEM bool plate_swap_watch() {
       plate_swap_begin("a plate going on, onto the bare pins", f, b);
       going_on = true;
     }
-    else if (landing >= plate_swap_zones) {
-      plate_swap_begin("a plate going on", f, b);
-      going_on = true;
+    else if (still && all_still >= plate_swap_stuck_ms) {
+      plate_swap_begin("all twelve zones held still", f, b);
+      stuck = true;
     }
-    else if (still && all_still >= plate_swap_stuck_ms) plate_swap_begin("all twelve zones held still", f, b);
     else return false;
     left_for = 0;
     steady_for = 0;
@@ -9123,8 +9617,12 @@ FLASHMEM bool plate_swap_watch() {
   // Or near where the bare pins read before: a plate touched to the pins and lifted off again before it
   // settled (logged 2026-10-17 08:12:45) began as one going on and settled bare, and plate detect, told a plate
   // was on, matched the bare pins to a print learned from them
+  // But what comes off right after all twelve were held still may be the hand that held them, lifted from a
+  // recalibration made under it: taken for no plate on, every flat hand after it was swallowed as a plate going
+  // on, and plate detect stopped looking, until the next real swap
   bool off_again = bare_sum && sum + 12 * plate_swap_bare_counts / 2 > bare_sum;
-  plate_swap_bare = (coming_off && sum > before + 12 * plate_swap_bare_counts) || off_again;
+  plate_swap_bare = (coming_off && !after_stuck && sum > before + 12 * plate_swap_bare_counts) || off_again;
+  after_stuck = stuck;
   if (plate_swap_bare) bare_sum = max(bare_sum, sum);   // the highest: a plate pulled off in halves settles half bare first
   Serial.printf("Plate swap: settled%s; recalibrating at", plate_swap_bare ? ", no plate on" : "");
   for (uint8_t z = 0; z < 12; z++) Serial.printf(" %d", f[z]);
@@ -9163,6 +9661,12 @@ void handle_harp() {
     harp_positions_reset();
     positions_were_active = positions;
   }
+  static bool places_were_active = false;
+  bool places = drum_places_active() || melodic_places_active();
+  if (places != places_were_active || (places && harp_plate != plate_was)) {
+    drum_places_reset();
+    places_were_active = places;
+  }
   plate_was = harp_plate;
   // A fingertip strum holds two or three pads at a time and moves on; a hand
   // laid flat holds many at once. The pads the hand landed on before the count
@@ -9186,7 +9690,7 @@ void handle_harp() {
   // on lift, a string sounds as firmly as it was held at its firmest.
   static int16_t pad_strength[12] = {0};
   static int16_t pad_firmest[12] = {0};
-  bool stock = !positions && !ribbon;
+  bool stock = !positions && !ribbon && !places;
   bool guard = stock && neighbour_guard_active();
   if (!guard) neighbour_guard_settle(stock);
   if (stock && (touch_velocity || touch_pressure || (koto_press && harp_pluck_on_lift) || harp_drums || guard)) {
@@ -9237,8 +9741,17 @@ void handle_harp() {
     }
   }
   if (ribbon) handle_harp_ribbon();
-  if (positions) handle_harp_positions();
+  if (positions && !melodic_places_active()) handle_harp_positions();   // the drum pads' places are no strip
   if (harp_plate == plate_arcade_wheel) handle_wheel();
+  if (places) handle_drum_places(now);
+  // On every other plate the strings are the kit's pads, so the resting hand works there too
+  static bool drum_strings_were = false;
+  bool drum_strings = stock && harp_drums;
+  if (drum_strings != drum_strings_were) {
+    drum_strings_reset();
+    drum_strings_were = drum_strings;
+  }
+  if (drum_strings) handle_drum_strings(now, pad_landed, pad_strength);
   // A press let go of by a change of mode: the string goes back to its pitch.
   for (int i = 0; i < 12; i++) {
     if (string_pressing[i] && (!stock || !harp_pluck_on_lift || !koto_press)) {
@@ -10349,7 +10862,8 @@ static const HoverPlate hover_plates[harp_plate_count] = {
   // and 0.3 at 3. Rough: the passes disagreed at 2-3 cm.
   {2.9e-4f, 3.5f, 3.7f},    // 8 zipper 24
   {1.4e-5f, 7.0f, 7.0f},    // 9 the arcade wheel
-  HOVER_STOCK, HOVER_STOCK};
+  HOVER_STOCK, HOVER_STOCK, HOVER_STOCK,
+  HOVER_STOCK};             // 13 the drum pads, not yet measured
 static float hover_pull(float d, float idle) {
   const HoverPlate &p = hover_plates[harp_plate < harp_plate_count ? harp_plate : 0];
   return p.pull_5cm * idle * powf(5.0f / d, d <= 5 ? p.k_near : p.k_far);

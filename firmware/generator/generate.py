@@ -422,7 +422,7 @@ with open('parameters.json') as f:
         # Each parameter's range as parameters.json declares it, as stored (floats in hundredths),
         # for code that sets a value it didn't get from an editor, such as the double tap.
         cpp_output.write("\r\n\r\n// the range parameters.json declares for each parameter, as stored (floats in hundredths)\r\n")
-        cpp_output.write("bool parameter_range(int adress, int16_t &lo, int16_t &hi) {\r\n    switch(adress){\r\n")
+        cpp_output.write("FLASHMEM bool parameter_range(int adress, int16_t &lo, int16_t &hi) {\r\n    switch(adress){\r\n")
         for section in ("global_parameter", "harp_parameter", "chord_parameter"):
             for parameter in d.get(section, []):
                 scale = 100 if parameter["data_type"] == "float" else 1

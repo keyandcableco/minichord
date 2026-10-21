@@ -25,6 +25,7 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'include', 
 # was tuned to C#4 and a few cents: its syahi makes its partials whole multiples of one pitch, 278 Hz
 # (Na and Tin ring at 557 and 838, its 2nd and 3rd); Tun's 315 Hz is the drum's lowest mode, below
 # them all and not one of them. The bayan isn't tuned to the key, and Ge bends anyway.
+# Drum press (426) reads the 0 too: an untuned stroke is the bayan's, bent by a press, never choked.
 STROKES = [
     ('na', 'tabla_na', 0.45, 278),         # dayan, Na (Ta): the rim, the ring stopped at the syahi
     ('na open', 'tabla_na_o', 0.9, 278),   # ... left to ring

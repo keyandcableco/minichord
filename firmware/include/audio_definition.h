@@ -6,6 +6,7 @@
 #include "metronome_click.h"   // the looper's click, silent between ticks (metronome_click.h)
 #include "wavetable_mulaw.h"   // AudioSynthWavetable, its samples as mu-law too (wavetable_mulaw.h)
 #include "envelope_retrigger.h"   // AudioEffectEnvelope, keeping a noteOff that comes during the retrigger fade (envelope_retrigger.h)
+#include "vibrato_tap.h"   // the harp's vibrato as a frequency ratio, for its sample players (vibrato_tap.h)
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
@@ -19,6 +20,7 @@ AudioEffectEnvelopeRetrigger      envelope_string_vibrato_lfo; //xy=419.10000610
 AudioSynthWaveformDc     chords_vibrato_dc; //xy=470.1000061035156,1584.9999923706055
 AudioSynthWaveform       chords_vibrato_lfo; //xy=473.1000061035156,1498.9999923706055
 AudioMixer4Lean              string_vibrato_mixer; //xy=594.1000061035156,947.9999923706055
+AudioVibratoTap          harp_vibrato_tap;   // after the mixer, so it reads the block the strings get
 AudioEffectEnvelopeRetrigger      voice4_vibrato_dc_envelope; //xy=679.1000061035156,2398.9999923706055
 AudioEffectEnvelopeRetrigger      voice3_vibrato_envelope; //xy=683.1000061035156,2068.9999923706055
 AudioEffectEnvelopeRetrigger      voice3_vibrato_dc_envelope; //xy=686.1000061035156,2153.9999923706055
@@ -103,6 +105,10 @@ AudioMixer4Lean              voice3_vibrato_mixer; //xy=908.1000061035156,2098.9
 AudioMixer4Lean              voice4_vibrato_mixer; //xy=914.1000061035156,2341.9999923706055
 AudioMixer4Lean              voice2_vibrato_mixer; //xy=939.1000061035156,1807.9999923706055
 AudioMixer4Lean              voice1_vibrato_mixer; //xy=947.1000061035156,1518.9999923706055
+AudioChordVibratoTap     chord_vibrato_tap_1;   // after the vibrato envelopes, as each voice's mixer is
+AudioChordVibratoTap     chord_vibrato_tap_2;
+AudioChordVibratoTap     chord_vibrato_tap_3;
+AudioChordVibratoTap     chord_vibrato_tap_4;
 AudioEffectEnvelopeRetrigger      envelope_filter_2; //xy=998.1000061035156,598.9999923706055
 AudioEffectEnvelopeRetrigger      envelope_filter_3; //xy=998.1000061035156,628.9999923706055
 AudioEffectEnvelopeRetrigger      envelope_filter_5; //xy=998.1000061035156,690.9999923706055
@@ -275,6 +281,15 @@ AudioConnection          patchCord21(string_vibrato_mixer, 0, waveform_string_9,
 AudioConnection          patchCord22(string_vibrato_mixer, 0, waveform_string_10, 0);
 AudioConnection          patchCord23(string_vibrato_mixer, 0, waveform_string_11, 0);
 AudioConnection          patchCord24(string_vibrato_mixer, 0, waveform_string_12, 0);
+AudioConnection          vibratoTapCord(string_vibrato_mixer, 0, harp_vibrato_tap, 0);
+AudioConnection          chordTapCord1a(voice1_vibrato_envelope, 0, chord_vibrato_tap_1, 0);
+AudioConnection          chordTapCord1b(voice1_vibrato_dc_envelope, 0, chord_vibrato_tap_1, 1);
+AudioConnection          chordTapCord2a(voice2_vibrato_envelope, 0, chord_vibrato_tap_2, 0);
+AudioConnection          chordTapCord2b(voice2_vibrato_dc_envelope, 0, chord_vibrato_tap_2, 1);
+AudioConnection          chordTapCord3a(voice3_vibrato_envelope, 0, chord_vibrato_tap_3, 0);
+AudioConnection          chordTapCord3b(voice3_vibrato_dc_envelope, 0, chord_vibrato_tap_3, 1);
+AudioConnection          chordTapCord4a(voice4_vibrato_envelope, 0, chord_vibrato_tap_4, 0);
+AudioConnection          chordTapCord4b(voice4_vibrato_dc_envelope, 0, chord_vibrato_tap_4, 1);
 AudioConnection          patchCord25(voice4_vibrato_dc_envelope, 0, voice4_vibrato_mixer, 1);
 AudioConnection          patchCord26(voice3_vibrato_envelope, 0, voice3_vibrato_mixer, 0);
 AudioConnection          patchCord27(voice3_vibrato_dc_envelope, 0, voice3_vibrato_mixer, 1);
