@@ -6,6 +6,11 @@
 # leaves, warns when it's less than the full 256 kB, and fails the build when it's under 64 kB (the
 # minichord would have no kit slot at all) or the image reaches the header.
 #
+# It also checks the heap: what RAM2 (OCRAM) has left after its variables, from _heap_start to _heap_end. The
+# C library grows the heap 4 kB at a time, so with under 4 kB there the first allocation of all fails: the
+# audio library's AudioEffectWaveshaper::shape, called from setup, doesn't check, and the minichord crashes
+# at every boot (the first flash of firmware 113, with 3,616 bytes left). Under HEAP_MINIMUM fails the build.
+#
 # The image's length is the linker's _flashimagelen (the Teensy core's linker script: everything up to the
 # end of the code signing data), read from the ELF's symbols with the toolchain's nm. Any failure, a check
 # or not being able to read the symbol at all, deletes the ELF, so the next build links again and checks
@@ -20,6 +25,7 @@ KIT_TOP = 0x601E0000
 KIT_FLOOR = 0x601A0000
 FULL = KIT_TOP - KIT_FLOOR      # 262,144
 MINIMUM = 65536
+HEAP_MINIMUM = 4608             # the C library's 4 kB step, and 512 bytes to spare
 
 
 # nm beside the compiler: only the program's name changes (arm-none-eabi-gcc to arm-none-eabi-nm), never a
@@ -32,13 +38,17 @@ def nm_path(env):
     return os.path.join(folder, name[:-3] + "nm")
 
 
-def image_length(elf, env):
+def symbols(elf, env, names):
     out = subprocess.run([nm_path(env), elf], capture_output=True, text=True, env=env["ENV"], check=True).stdout
+    found = {}
     for line in out.splitlines():
         parts = line.split()
-        if len(parts) == 3 and parts[2] == "_flashimagelen":
-            return int(parts[0], 16)
-    raise RuntimeError("no _flashimagelen in %s" % elf)
+        if len(parts) == 3 and parts[2] in names:
+            found[parts[2]] = int(parts[0], 16)
+    missing = [n for n in names if n not in found]
+    if missing:
+        raise RuntimeError("no %s in %s" % (", ".join(missing), elf))
+    return found
 
 
 def failed(elf, problem):
@@ -51,12 +61,19 @@ def failed(elf, problem):
 def flash_room(target, source, env):
     elf = str(target[0])
     try:
-        end = FLASH + image_length(elf, env)
-    except Exception as e:   # nm missing or failing, the symbol not there: all of them a failed check
-        return failed(elf, "can't read the image's length (%s)" % e)
+        found = symbols(elf, env, ("_flashimagelen", "_heap_start", "_heap_end"))
+    except Exception as e:   # nm missing or failing, a symbol not there: all of them a failed check
+        return failed(elf, "can't read the image's length and the heap (%s)" % e)
+    end = FLASH + found["_flashimagelen"]
+    heap = found["_heap_end"] - found["_heap_start"]
     data_base = max(KIT_FLOOR, (end + 65535) & ~65535)
     capacity = max(0, KIT_TOP - data_base)
     print("flash_room: image ends at 0x%08X, user kit from 0x%08X, %d bytes (%d kB) of room" % (end, data_base, capacity, capacity // 1024))
+    print("flash_room: %d bytes of RAM2 left for the heap" % heap)
+    if heap < HEAP_MINIMUM:
+        return failed(elf, "only %d bytes of RAM2 for the heap, under %d: the C library grows it 4 kB at a time, "
+                           "so the first allocation (the waveshaper's, in setup) would fail and the minichord "
+                           "crash at boot" % (heap, HEAP_MINIMUM))
     if end > KIT_HEADER:
         return failed(elf, "the firmware image reaches the user kit's header at 0x%08X" % KIT_HEADER)
     if capacity < MINIMUM:

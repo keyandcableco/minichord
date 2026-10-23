@@ -58,9 +58,13 @@ static_assert(user_kit::SECTOR == flash_sector, "the user kit's sector is the fl
 static_assert(sizeof(drum_kits) / sizeof(drum_kit_t) >= 12, "a stored kit's base_kit can be any of 1 to 12");
 static_assert(user_kit::STAND_IN_KIT >= 1 && user_kit::STAND_IN_KIT <= sizeof(drum_kits) / sizeof(drum_kit_t), "kit 13's stand-in isn't a kit");
 
-// What lasts between uploads; the upload's own buffers (user_kit::work_t) are user_kit_upload's, on the stack
-DMAMEM static user_kit::slot_t user_kit_slot;   // 104 bytes, in RAM2 (set up by user_kit_boot)
-DMAMEM static drum_kit_t user_kit_drums;        // the kit the drum machine plays, 1,416 bytes
+// What lasts between uploads; the upload's own buffers (user_kit::work_t) are user_kit_upload's, on the stack.
+// Both in RAM1, not RAM2 (DMAMEM): what RAM2 has left over is the heap, and the C library grows the heap 4 kB
+// at a time, so with under 4 kB free the first new of all, the audio library's waveshaper table in setup,
+// gets nothing and writes through a null pointer. In RAM2 these 1.5 kB left 3,616 bytes, and the first
+// flash of 113 crashed in AudioEffectWaveshaper::shape at every boot. scripts/flash_room.py checks the heap.
+static user_kit::slot_t user_kit_slot;   // 104 bytes (set up by user_kit_boot)
+static drum_kit_t user_kit_drums;        // the kit the drum machine plays, 1,416 bytes
 static bool user_kit_ready = false;             // user_kit_boot has run
 static bool user_kit_valid = false;             // user_kit_drums is built from a stored kit
 static uint32_t user_kit_built = 0;             // one more each time it's built or given up, for drums_update
