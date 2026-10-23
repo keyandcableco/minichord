@@ -4,7 +4,6 @@
 #include <AT42QT2120.h>
 #include <Arduino.h>
 #include <Audio.h>
-#include <LittleFS.h>
 #include <SPI.h>
 #include <Wire.h>
 #include <button_matrix.h>
@@ -17,7 +16,7 @@
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
 void apply_harp_thresholds();
-int version_ID=102; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated; 99: the arcade wheel's bearing from the centre of its readings, corrected, quiet while A or B is pressed, and the neighbour guard on it; zipper 24's wrap island read by a margin, and where that can't tell the ends apart, by the end a touch is at or last left; hover measured on both; 100: a chord change strikes once, a press under a sounding line no longer asking for the chord again, and a slash waits 250 ms; 101: the drum pads, harp plate 13, read as 28 places, twelve pads and the sixteen seams between them, each seam a sound of its own with harp drums, drum seams, 419; drum press, 426, a struck pad pressed chokes a cymbal or bends a skin, the bayan's meend, and pads mute the groove, 427, a resting finger holds its voice out of the groove, both on any plate with harp drums; melodic pads, 446, the 28 places as 28 notes, a key pressed into damped; drum groove 48, kendang; plate detect's window widens for a plate resting low, and a print keeps a zone far from the plate's mean; a hand slapped across the strings plays, and a flat hand lifted isn't taken for no plate on; the harp's filter corner and keytrack act on the strings already sounding; the vibrato and pitch envelope reach the sample voices; 102: the harp volume knob is harp drums' level, half way as before)
+int version_ID=112; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated; 99: the arcade wheel's bearing from the centre of its readings, corrected, quiet while A or B is pressed, and the neighbour guard on it; zipper 24's wrap island read by a margin, and where that can't tell the ends apart, by the end a touch is at or last left; hover measured on both; 100: a chord change strikes once, a press under a sounding line no longer asking for the chord again, and a slash waits 250 ms; 101: the drum pads, harp plate 13, read as 28 places, twelve pads and the sixteen seams between them, each seam a sound of its own with harp drums, drum seams, 419; drum press, 426, a struck pad pressed chokes a cymbal or bends a skin, the bayan's meend, and pads mute the groove, 427, a resting finger holds its voice out of the groove, both on any plate with harp drums; melodic pads, 446, the 28 places as 28 notes, a key pressed into damped; drum groove 48, kendang; plate detect's window widens for a plate resting low, and a print keeps a zone far from the plate's mean; a hand slapped across the strings plays, and a flat hand lifted isn't taken for no plate on; the harp's filter corner and keytrack act on the strings already sounding; the vibrato and pitch envelope reach the sample voices; 102: the harp volume knob is harp drums' level, half way as before; 112: the old filesystem's presets.bin, from firmware 72 to 76, no longer moved into the preset store, and LittleFS gone with it, 24 kB of fast code RAM and 29 kB of flash back (103 to 111 are on their own branches))
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -7422,20 +7421,18 @@ FLASHMEM void acc_update() {
  * interrupts off, so the DAC is muted around a save, as it was. The 224 kB the filesystem held
  * above this go to the samples.
  *
- * The first boot of 77 on a minichord with presets.bin reads it out of the old filesystem and
- * writes the store from it; LittleFS stays in this firmware for that alone. Which is there is read
- * off the flash itself (the "littlefs" a filesystem writes at the start of its first two blocks)
- * before anything is mounted, since LittleFS_Program::begin formats whatever it can't mount. A
- * firmware without LittleFS, flashed straight over 76 or older, finds no store and starts from the
- * factory presets: back up first (minictl backup), restore after.
+ * From 77 to 102 the first boot on a minichord with presets.bin read it out of the old filesystem
+ * and wrote the store from it. Firmware 112 drops that, and LittleFS with it: it held 24 kB of the
+ * fast code RAM and 29 kB of flash, and LittleFS_Program::begin formats whatever it can't mount,
+ * so it was the one code that could write over the flash below the store. A minichord still on 76
+ * or older finds no store and starts from the factory presets: back up first (minictl backup) and
+ * restore after, or step through 102 or older.
  */
 const uint32_t program_flash_size = 0x1F0000;          // the Teensy 4.0's (the EEPROM emulation sits above it)
 const uint32_t preset_store_size = 32 * 1024;
 const uint32_t preset_store_base = 0x60000000 + program_flash_size - preset_store_size;
 const uint32_t preset_half_size = preset_store_size / 2;
 const uint32_t flash_sector = 4096;
-const uint32_t preset_storage_old_size = 256 * 1024;   // firmware 72 to 76: presets.bin in a LittleFS
-const uint32_t preset_fs_block = 32768;                // its block (SECTOR_SIZE)
 struct preset_store_header {
   char magic[4];        // "MCP2"
   uint16_t format;      // 1
@@ -7447,14 +7444,6 @@ struct preset_store_header {
 };
 static_assert(sizeof(preset_store_header) == 20, "the preset store's header is 20 bytes");
 static_assert(sizeof(preset_store_header) + preset_number * parameter_size * 2 <= preset_half_size, "the presets don't fit a half of the store");
-struct preset_file_header {   // presets.bin's, firmware 72 to 76
-  char magic[4];        // "MCPS"
-  uint16_t format;
-  uint16_t parameters;
-  uint16_t saved;
-  uint16_t spare;
-  uint32_t spare2;
-};
 static const uint8_t *preset_live = nullptr;   // the live half, or null when there is none
 
 static uint32_t crc32_update(uint32_t crc, const uint8_t *p, uint32_t n) {
@@ -7556,7 +7545,7 @@ FLASHMEM bool preset_write(int bank, const int16_t *values) {
   preset_write_context c = {bank, values};
   return preset_store_commit(preset_write_fill, &c);
 }
-// every preset at once, from a table in memory (the relayout, and the move out of the old filesystem)
+// every preset at once, from a table in memory (the relayout)
 struct preset_table_context { int16_t (*banks)[parameter_size]; uint16_t saved; };
 static bool preset_table_fill(int b, int16_t *slot, void *context) {
   preset_table_context *c = (preset_table_context *)context;
@@ -7582,39 +7571,6 @@ FLASHMEM void preset_store_relayout() {
   }
   preset_table_context c = {banks, h.saved};
   preset_store_commit(preset_table_fill, &c);
-}
-// Whether a LittleFS of this size starts at the top of flash: its first or second block holds "littlefs".
-FLASHMEM static bool preset_fs_present(uint32_t size) {
-  const uint8_t *base = (const uint8_t *)(0x60000000 + program_flash_size - size);
-  for (uint32_t block = 0; block < 2; block++) {
-    for (uint32_t i = 0; i < 64; i++) {
-      if (memcmp(base + block * preset_fs_block + i, "littlefs", 8) == 0) return true;
-    }
-  }
-  return false;
-}
-// Firmware 72-76's presets.bin, out of its 256 kB LittleFS, into the store (see PRESET STORAGE).
-FLASHMEM static void presets_migrate_file() {
-  if (!preset_fs_present(preset_storage_old_size)) return;
-  static LittleFS_Program oldfs;
-  if (!oldfs.begin(preset_storage_old_size)) return;
-  File f = oldfs.open("presets.bin", FILE_READ);
-  if (!f) return;
-  preset_file_header h;
-  f.seek(0);
-  bool valid = f.read((uint8_t *)&h, sizeof h) == sizeof h && memcmp(h.magic, "MCPS", 4) == 0 && h.parameters > 0;
-  int16_t banks[preset_number][parameter_size];   // 12 kB of stack, for this boot only
-  for (int b = 0; b < preset_number; b++) {
-    for (uint16_t i = 0; i < parameter_size; i++) banks[b][i] = parameter_default(b, i);
-    if (!valid || !(h.saved & (1 << b))) continue;
-    f.seek(sizeof h + (uint32_t)b * h.parameters * 2);
-    f.read((uint8_t *)banks[b], min(h.parameters, parameter_size) * 2);
-  }
-  f.close();
-  if (!valid) return;
-  Serial.printf("Moving %d presets out of the old filesystem into the preset store\n", __builtin_popcount(h.saved));
-  preset_table_context c = {banks, h.saved};
-  if (!preset_store_commit(preset_table_fill, &c)) Serial.println("The preset store couldn't be written");
 }
 
 /* ---- preset versioning ------------------------------------------------------
@@ -7888,10 +7844,8 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   }
   // loading the preset
   Serial.println("Initialising preset storage");
-  // the top 32 kB of flash, two halves (see PRESET STORAGE); the first boot of 77 moves presets.bin's
-  // presets out of the old filesystem
+  // the top 32 kB of flash, two halves (see PRESET STORAGE)
   preset_store_find();
-  if (!preset_live) presets_migrate_file();
   preset_store_relayout();
   lock_load();                 // the instrument's own settings, before the first preset loads (see LOCKS)
   Serial.println("Loading the preset");
