@@ -143,7 +143,7 @@ public:
   }
   const drum_kit_t *currentKit() { return kit; }
 
-  // A hit on voice v, as hard as velocity (0-1; a harp's hit to 2, the harp volume past half way), the body
+  // A hit on voice v, as hard as velocity (0-1; a harp's hit to 4, the harp volume past half way), the body
   // at pitch_hz if the voice follows, after delay samples; tune, other than 1, moves the whole voice by that
   // ratio, body, burst and stroke, for the drum pads' seams (a mid tom between the toms, a bongo above the
   // congas)
@@ -186,7 +186,10 @@ public:
     }
     if (!primask) __enable_irq();
   }
-  void level(float g) { gain = g; }
+  // The soft clip's ceiling is 1.6 times the level of full scale: past 0.79 a pile of hits (or the harp's
+  // hits at four times, harp drums with the harp volume up) would reach it and crack. There it bends
+  // over sooner instead, to full scale; quiet hits are as loud as before, and below 0.79 it's as it was.
+  void level(float g) { gain = g; knee = fmaxf(1.0f, 1.6f * g * 26000.0f / 32767.0f); }
   // The reverb's share of each, out of output 2 (mono) into the reverb's free input: they come out
   // after the reverb, so without it the drums and the drone stay dry beside whatever it fills
   void drumReverb(float s) { send_drums = s; }
@@ -362,8 +365,8 @@ public:
         hold_count = (hold_count + 1) % hold;
       }
       if (crush_step > 0) { a = roundf(a / crush_step) * crush_step; b = roundf(b / crush_step) * crush_step; }
-      a = a / (1.0f + fabsf(a)) * 1.6f * gain;
-      b = b / (1.0f + fabsf(b)) * 1.6f * gain;
+      a = a / (1.0f + fabsf(a) * knee) * 1.6f * gain;
+      b = b / (1.0f + fabsf(b) * knee) * 1.6f * gain;
       if (v) v->data[n] = (int16_t)constrain(((a + b) * sd + (drone_l[n] + drone_r[n]) * st) * g, -32767.0f, 32767.0f);
       a += drone_l[n];
       b += drone_r[n];
@@ -421,7 +424,7 @@ private:
         if (i != h.voice && kit->v[i].choke == p.choke && voice[i].active) { voice[i].noise_amp *= 0.05f; voice[i].tone_amp *= 0.05f; voice[i].sample_choked = true; voice[i].stutter_left = 0; }
       }
     }
-    float vel = constrain(h.velocity, 0.0f, 2.0f);
+    float vel = constrain(h.velocity, 0.0f, 4.0f);
     float hz = (p.follow == 1 && h.pitch > 0) ? h.pitch : p.tone_hz;
     if (p.follow == 2 && h.pitch > 0 && hz > 0) {   // the hit's pitch in the octave nearest the voice's own
       hz = h.pitch;
@@ -505,7 +508,7 @@ private:
   hit_t pending[PENDING];
   uint8_t waiting = 0;
   uint32_t noise = 22222;
-  float gain = 0.7f, choke_damp = 1.0f, crush_step = 0, held_l = 0, held_r = 0;
+  float gain = 0.7f, knee = 1.0f, choke_damp = 1.0f, crush_step = 0, held_l = 0, held_r = 0;
   float send_drums = 0, send_drone = 0;   // drum reverb (378), drone reverb (379)
   uint8_t hold_count = 0;
 };

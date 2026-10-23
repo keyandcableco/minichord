@@ -1134,6 +1134,7 @@ bool count_in = false;            // 341: a bar of sticks before rhythm mode beg
 bool drums_only = false;          // 342: the accompaniment rests, the drums play
 bool harp_drums = false;          // 343: the harp's strings play the kit
 float harp_drum_gain = 1.0f;      // 2, the harp volume: how hard harp drums strike, 1 at half way (see drum_place)
+float harp_drum_taper(float x);
 bool drum_seams = true;           // 419: on the drum pads plate a seam plays its own sound, not its two pads (see DRUM PLACES)
 bool melodic_pads = false;        // 446: the drum pads' 28 places play notes, the seams the notes between (MELODIC PADS)
 uint8_t drum_press_semis = 3;     // 426: a struck pad pressed chokes a cymbal or bends a skin this many semitones (see DRUM PRESS)
@@ -1144,7 +1145,7 @@ volatile double drum_landed = -1; // a stretched theka's sam: the bar line its l
 void drum_pad(uint8_t place, int16_t strength);
 void drum_place(uint8_t place, uint8_t velocity, bool loose = true);
 uint8_t drum_place_voices(uint8_t place, uint8_t *v);
-void drum_strike(uint8_t v, uint8_t velocity, bool written = true, bool loose = true, float tune = 1.0f, uint8_t after_ms = 0, uint8_t gm = 0);
+void drum_strike(uint8_t v, uint16_t velocity, bool written = true, bool loose = true, float tune = 1.0f, uint8_t after_ms = 0, uint8_t gm = 0);
 float touch_firmness(float strength);
 void drums_set();
 void rhythm_fill_action(int16_t action);
@@ -6273,12 +6274,12 @@ void drone_watch() {
   AudioInterrupts();
 }
 
-// A hit, from the rhythm's timer or the loop: velocity 1-127 as written (or played; a harp's hit to 254,
+// A hit, from the rhythm's timer or the loop: velocity 1-127 as written (or played; a harp's hit to 508,
 // the harp volume past half way, see drum_place); loose, it takes
 // the humanize (a looped hit was already played by a human). A seam of the drum pads plate can tune the
 // voice by a ratio, strike it after_ms late, and send its own General MIDI note (gm; 0 the voice's, 255
 // none).
-void drum_strike(uint8_t v, uint8_t velocity, bool written, bool loose, float tune, uint8_t after_ms, uint8_t gm) {
+void drum_strike(uint8_t v, uint16_t velocity, bool written, bool loose, float tune, uint8_t after_ms, uint8_t gm) {
   // a finger resting on the voice's pad holds the groove's hits back (427); played and looped hits still land
   if (written && pads_mute_groove && (drums_held >> v & 1)) return;
   float vel = written ? (127 - (127 - velocity) * acc_accents / 100.0f) / 127.0f : velocity / 127.0f;
@@ -6497,20 +6498,31 @@ FLASHMEM static float drum_voice_hz(uint8_t v) {
   return kit->v[v].tone_hz;
 }
 
-// The harp volume (2) is the harp's hits' level, as it is the strings': half way they strike as touched,
-// all the way down not at all, all the way up twice as hard. A looped hit comes round at the harp volume
-// of the moment, as a looped string does.
+// The harp volume knob (2, 0-1 here) as harp drums' level: half way they strike as touched; above that
+// evenly louder, 12 dB a half turn, four times as hard at the top (about 9 dB louder out of the kit's soft
+// clip, which squashes much more past it); below, leaving half way at that slope and falling away faster,
+// to nothing at the bottom. Heard through the kits, 0.8-1 dB each twentieth of the knob above half way,
+// 8.8 dB at the top, -7 at a quarter, -28 at a twentieth; a straight line (twice as hard at the top) gave
+// 1.9 dB over the top quarter and went from -18 dB to nothing over the last twentieth.
+FLASHMEM float harp_drum_taper(float x) {
+  x = constrain(x, 0.0f, 1.0f);
+  if (x >= 0.5f) return powf(4.0f, 2 * x - 1);
+  return powf(2 * x, 1.386f);   // ln 4: the slope it leaves half way with is the one above
+}
+
+// The harp's hits at the harp volume, as the strings are (harp_drum_taper). A looped hit comes round at
+// the harp volume of the moment, as a looped string does.
 FLASHMEM void drum_place(uint8_t place, uint8_t velocity, bool loose) {
-  velocity = (uint8_t)min(254L, lroundf(velocity * harp_drum_gain));
-  if (!velocity) return;
+  uint16_t hard = (uint16_t)lroundf(velocity * harp_drum_gain);
+  if (!hard) return;
   if (place < 12 || place >= 12 + places::seam_count) {
-    if (place < 12) drum_strike(place, velocity, false, loose);
+    if (place < 12) drum_strike(place, hard, false, loose);
     return;
   }
   const uint8_t *pads = places::seam_zones[place - 12];   // the zone of a pad is the kit's voice it plays
   if (!drum_seams) {
-    drum_strike(pads[0], velocity, false, loose);
-    drum_strike(pads[1], velocity, false, loose);
+    drum_strike(pads[0], hard, false, loose);
+    drum_strike(pads[1], hard, false, loose);
     return;
   }
   for (const seam_hit &h : seam_sounds[place - 12]) {
@@ -6522,7 +6534,7 @@ FLASHMEM void drum_place(uint8_t place, uint8_t velocity, bool loose) {
       tune = own > 0 && far > 0 ? sqrtf(far / own) : 1.122f;   // a whole tone, for a voice with no pitch
       if (fabsf(tune - 1) < 0.03f) tune = 1.122f;   // or for two at one pitch (the tabla's): not a pad again
     }
-    uint8_t v = (uint8_t)max(1L, lroundf(velocity * h.share / 100.0f));
+    uint16_t v = (uint16_t)max(1L, lroundf(hard * h.share / 100.0f));
     drum_strike(h.voice, v, false, loose, tune, h.after_ms, h.gm);
   }
 }
