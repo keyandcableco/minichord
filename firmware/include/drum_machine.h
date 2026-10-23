@@ -143,9 +143,10 @@ public:
   }
   const drum_kit_t *currentKit() { return kit; }
 
-  // A hit on voice v, as hard as velocity (0-1), the body at pitch_hz if the voice follows, after delay
-  // samples; tune, other than 1, moves the whole voice by that ratio, body, burst and stroke, for the drum
-  // pads' seams (a mid tom between the toms, a bongo above the congas)
+  // A hit on voice v, as hard as velocity (0-1; a harp's hit to 2, the harp volume past half way), the body
+  // at pitch_hz if the voice follows, after delay samples; tune, other than 1, moves the whole voice by that
+  // ratio, body, burst and stroke, for the drum pads' seams (a mid tom between the toms, a bongo above the
+  // congas)
   void hit(uint8_t v, float velocity, float pitch_hz = 0, uint32_t delay = 0, float tune = 1.0f) {
     if (v >= DRUM_VOICES || !kit) return;
     uint32_t primask = drum_primask();   // from the rhythm's timer or the loop: as it was after
@@ -420,7 +421,7 @@ private:
         if (i != h.voice && kit->v[i].choke == p.choke && voice[i].active) { voice[i].noise_amp *= 0.05f; voice[i].tone_amp *= 0.05f; voice[i].sample_choked = true; voice[i].stutter_left = 0; }
       }
     }
-    float vel = constrain(h.velocity, 0.0f, 1.0f);
+    float vel = constrain(h.velocity, 0.0f, 2.0f);
     float hz = (p.follow == 1 && h.pitch > 0) ? h.pitch : p.tone_hz;
     if (p.follow == 2 && h.pitch > 0 && hz > 0) {   // the hit's pitch in the octave nearest the voice's own
       hz = h.pitch;

@@ -388,7 +388,7 @@ FLASHMEM void apply_audio_parameter(int adress, int value) {
         ToneOrgan::percussion(value);
         break;
       case 2:
-        string_gain.amplitude(value/100.0,100);  harp_attack_velocity=value/100.0*127;
+        string_gain.amplitude(value/100.0,100);  harp_attack_velocity=value/100.0*127; harp_drum_gain=value/100.0*2;
         break;
       case 36:
         scalar_harp_selection=value; for (int i=0;i<12;i++){ current_harp_notes[i]=calculate_note_harp(i,slash_chord,sharp_active); }
