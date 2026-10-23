@@ -16,7 +16,7 @@
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
 void apply_harp_thresholds();
-int version_ID=112; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated; 99: the arcade wheel's bearing from the centre of its readings, corrected, quiet while A or B is pressed, and the neighbour guard on it; zipper 24's wrap island read by a margin, and where that can't tell the ends apart, by the end a touch is at or last left; hover measured on both; 100: a chord change strikes once, a press under a sounding line no longer asking for the chord again, and a slash waits 250 ms; 101: the drum pads, harp plate 13, read as 28 places, twelve pads and the sixteen seams between them, each seam a sound of its own with harp drums, drum seams, 419; drum press, 426, a struck pad pressed chokes a cymbal or bends a skin, the bayan's meend, and pads mute the groove, 427, a resting finger holds its voice out of the groove, both on any plate with harp drums; melodic pads, 446, the 28 places as 28 notes, a key pressed into damped; drum groove 48, kendang; plate detect's window widens for a plate resting low, and a print keeps a zone far from the plate's mean; a hand slapped across the strings plays, and a flat hand lifted isn't taken for no plate on; the harp's filter corner and keytrack act on the strings already sounding; the vibrato and pitch envelope reach the sample voices; 102: the harp volume knob is harp drums' level, half way as before; 112: the old filesystem's presets.bin, from firmware 72 to 76, no longer moved into the preset store, and LittleFS gone with it, 24 kB of fast code RAM and 29 kB of flash back (103 to 111 are on their own branches))
+int version_ID=113; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated; 99: the arcade wheel's bearing from the centre of its readings, corrected, quiet while A or B is pressed, and the neighbour guard on it; zipper 24's wrap island read by a margin, and where that can't tell the ends apart, by the end a touch is at or last left; hover measured on both; 100: a chord change strikes once, a press under a sounding line no longer asking for the chord again, and a slash waits 250 ms; 101: the drum pads, harp plate 13, read as 28 places, twelve pads and the sixteen seams between them, each seam a sound of its own with harp drums, drum seams, 419; drum press, 426, a struck pad pressed chokes a cymbal or bends a skin, the bayan's meend, and pads mute the groove, 427, a resting finger holds its voice out of the groove, both on any plate with harp drums; melodic pads, 446, the 28 places as 28 notes, a key pressed into damped; drum groove 48, kendang; plate detect's window widens for a plate resting low, and a print keeps a zone far from the plate's mean; a hand slapped across the strings plays, and a flat hand lifted isn't taken for no plate on; the harp's filter corner and keytrack act on the strings already sounding; the vibrato and pitch envelope reach the sample voices; 102: the harp volume knob is harp drums' level, half way as before; 112: the old filesystem's presets.bin, from firmware 72 to 76, no longer moved into the preset store, and LittleFS gone with it, 24 kB of fast code RAM and 29 kB of flash back (103 to 111 are on their own branches); 113: your own drum kit, drum kit 13, up to thirteen one-shots of the player's sent from minicontrol over SysEx (F0 7D 6B) into the flash between the firmware and the presets, 256 kB at most, checked at boot and played from there, the studio kit in its place while none is sent (include/user_kit.h))
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1217,6 +1217,7 @@ struct midi_in_voice {
 midi_in_voice midi_in_harp[12] = {};
 midi_in_voice midi_in_chord[4] = {};
 void midi_in_release(midi_in_voice *voices, uint8_t i, bool harp);
+void midi_in_release_all();
 float chord_voice_level[4] = {1, 1, 1, 1};   // each chord voice's loudness, from an incoming note's velocity
 // Chords follow the harp's touch (395): the chords take their dynamic from the harp hand. Each new
 // harp gesture sets it from its first string's softness (touch velocity and strum velocity's say,
@@ -1283,6 +1284,14 @@ void vocoder_setup();
 void phone_setup();
 void phone_dj_setup();
 void drums_update();
+// the user drum kit, drum kit 13 (include/user_kit.h, after the preset store's flash routines);
+// user_kit_playing is kit 13's kit: the player's own, or the studio kit while none is stored
+void user_kit_boot();
+bool user_kit_message(const byte *data, uint32_t length);
+void user_kit_update();
+const drum_kit_t *user_kit_playing();
+uint32_t user_kit_generation();
+bool user_kit_bends(uint8_t v);
 void phone_update();
 // Strum velocity (address 263), see strum_softness
 uint8_t strum_velocity = 0;      // 0-100: how much softer a slow strum plays than a fast one, 0 off
@@ -2735,6 +2744,7 @@ FLASHMEM void choose_harp_plate(int value) {
 // pattern of every octave. Twelve-note tunings only: the divided octaves stay
 // with the temperament setting. Whether the message was one.
 FLASHMEM bool mts_receive(const byte *data, uint32_t length) {
+  if (user_kit_message(data, length)) return true;   // the user drum kit's messages (F0 7D 6B), see USER KIT
   if (length < 6 || data[0] != 0xF0 || (data[1] != 0x7E && data[1] != 0x7F) || data[3] != 0x08) return false;
   float cents[12];
   if (data[4] == 0x08 && length >= 21) {
@@ -2819,8 +2829,7 @@ void processMIDI(void) {
   // All Sound Off and All Notes Off (120, 123), as a computer sends them when its transport stops:
   // the notes it sent in end; the minichord's own playing goes on
   if (midi_in_plays && type == usbMIDI.ControlChange && (usbMIDI.getData1() == 120 || usbMIDI.getData1() == 123)) {
-    for (uint8_t i = 0; i < 12; i++) if (midi_in_harp[i].owned && !midi_in_harp[i].looped) midi_in_release(midi_in_harp, i, true);
-    for (uint8_t i = 0; i < 4; i++) if (midi_in_chord[i].owned && !midi_in_chord[i].looped) midi_in_release(midi_in_chord, i, false);
+    midi_in_release_all();
     return;
   }
   if (midi_in_plays && (type == usbMIDI.NoteOn || type == usbMIDI.NoteOff || type == usbMIDI.ControlChange)) {
@@ -3684,6 +3693,13 @@ void harp_strings_settle() {
       string_transient_waveform_array[i]->amplitude(0);
     }
   }
+}
+
+// Every incoming note let go of, the looper's left playing: All Sound Off and All Notes Off (120, 123),
+// and a user kit's upload ending (USER KIT), which dropped whatever note-offs came meanwhile
+FLASHMEM void midi_in_release_all() {
+  for (uint8_t i = 0; i < 12; i++) if (midi_in_harp[i].owned && !midi_in_harp[i].looped) midi_in_release(midi_in_harp, i, true);
+  for (uint8_t i = 0; i < 4; i++) if (midi_in_chord[i].owned && !midi_in_chord[i].looped) midi_in_release(midi_in_chord, i, false);
 }
 
 // Switched off, whatever incoming notes are sounding ring out
@@ -6206,6 +6222,7 @@ static const drum_groove_t *drum_groove_playing() {
 }
 
 static const drum_kit_t *drum_kit_wanted() {
+  if (drum_kit == 13) return user_kit_playing();   // your own (USER KIT), or the studio kit while none is stored
   uint8_t k = drum_kit ? drum_kit - 1 : drum_groove_playing()->kit;
   return &drum_kits[min(k, (uint8_t)(drum_kit_count - 1))];
 }
@@ -6481,10 +6498,12 @@ FLASHMEM uint8_t drum_place_voices(uint8_t place, uint8_t *v) {
 // Metal rings and is choked by a hand laid on it; a skin is pressed and rises (DRUM PRESS). The metal
 // slots go by the kit: one playing an untuned recorded stroke holds the tabla's bayan (ge bent in the
 // bell), pressed by the wrist into its meend. The dayan's strokes in those slots (te, tin, na open) are
-// damped, a hand laid on the ringing dayan.
+// damped, a hand laid on the ringing dayan. A voice of the user kit's own (USER KIT) in any slot is what
+// its press bends flag says: bent, or choked as metal.
 FLASHMEM __attribute__((noinline)) static bool drum_voice_metal(uint8_t v) {
-  if (v != DRUM_HAT && v != DRUM_OPEN && v != DRUM_CYMBAL && v != DRUM_BELL && v != DRUM_SHAKER) return false;
   const drum_kit_t *kit = drum_machine.currentKit();
+  if (kit && v < DRUM_VOICES && kit->v[v].sample >= drum_sample_builtin) return !user_kit_bends(kit->v[v].sample - drum_sample_builtin);
+  if (v != DRUM_HAT && v != DRUM_OPEN && v != DRUM_CYMBAL && v != DRUM_BELL && v != DRUM_SHAKER) return false;
   if (!kit || kit->v[v].sample < 0) return true;
   return drum_samples[kit->v[v].sample].pitch_hz > 0;
 }
@@ -6538,10 +6557,16 @@ FLASHMEM void drum_place(uint8_t place, uint8_t velocity, bool loose) {
   }
 }
 
-// From the loop: the kit the groove (or the setting) wants, and the MIDI notes to end
+// From the loop: a user kit coming in (its upload runs here, a loop of its own, see USER KIT), the kit the
+// groove (or the setting) wants, and the MIDI notes to end. The user kit is set again when it's built
+// again: the same kit in memory, with other voices.
 FLASHMEM void drums_update() {
+  user_kit_update();
   const drum_kit_t *want = drum_kit_wanted();
-  if (want != drum_machine.currentKit()) drum_machine.setKit(want);
+  static uint32_t kit_built = 0;
+  const bool rebuilt = user_kit_generation() != kit_built;
+  kit_built = user_kit_generation();
+  if (want != drum_machine.currentKit() || (rebuilt && drum_kit == 13)) drum_machine.setKit(want);
   uint32_t now = millis();
   while (drum_off_tail != drum_off_head && (int32_t)(now - drum_offs[drum_off_tail].at) >= 0) {
     queue_midi(false, drum_offs[drum_off_tail].note, 0, 10, drum_offs[drum_off_tail].port);
@@ -7446,7 +7471,9 @@ static_assert(sizeof(preset_store_header) == 20, "the preset store's header is 2
 static_assert(sizeof(preset_store_header) + preset_number * parameter_size * 2 <= preset_half_size, "the presets don't fit a half of the store");
 static const uint8_t *preset_live = nullptr;   // the live half, or null when there is none
 
-static uint32_t crc32_update(uint32_t crc, const uint8_t *p, uint32_t n) {
+// The three are FLASHMEM: inlined into their callers as they were, a new caller in RAM1 could otherwise
+// have a copy of one put there
+FLASHMEM static uint32_t crc32_update(uint32_t crc, const uint8_t *p, uint32_t n) {
   crc = ~crc;
   while (n--) {
     crc ^= *p++;
@@ -7456,7 +7483,7 @@ static uint32_t crc32_update(uint32_t crc, const uint8_t *p, uint32_t n) {
 }
 // The core's flash write is one page-program command, so at most 256 bytes and within a page (LittleFS
 // wrote 128 at a time); the cache is purged where the flash changed, as the core does for a write.
-static void flash_program(void *addr, const void *data, uint32_t len) {
+FLASHMEM static void flash_program(void *addr, const void *data, uint32_t len) {
   uint8_t *a = (uint8_t *)addr;
   const uint8_t *d = (const uint8_t *)data;
   while (len) {
@@ -7466,10 +7493,11 @@ static void flash_program(void *addr, const void *data, uint32_t len) {
     a += n; d += n; len -= n;
   }
 }
-static void flash_erase(void *addr, uint32_t len) {
+FLASHMEM static void flash_erase(void *addr, uint32_t len) {
   for (uint32_t at = 0; at < len; at += flash_sector) eepromemu_flash_erase_sector((uint8_t *)addr + at);
   arm_dcache_delete(addr, len);
 }
+#include "user_kit.h"   // USER KIT: drum kit 13, the player's own, in the flash below the presets
 static inline const uint8_t *preset_half(int h) { return (const uint8_t *)(preset_store_base + h * preset_half_size); }
 static inline const uint8_t *preset_slot(const uint8_t *half, int bank, uint16_t parameters) {
   return half + sizeof(preset_store_header) + (uint32_t)bank * parameters * 2;
@@ -7850,6 +7878,7 @@ FLASHMEM void setup() {   // once, at power on: run from flash to leave RAM1 to 
   lock_load();                 // the instrument's own settings, before the first preset loads (see LOCKS)
   Serial.println("Loading the preset");
   load_config(current_bank_number);
+  user_kit_boot();             // the user drum kit, checked in full (see USER KIT)
   // initializing the strings
   for (int i = 0; i < 12; i++) {
     current_harp_notes[i] = harp_string_note(i, slash_chord, sharp_active);

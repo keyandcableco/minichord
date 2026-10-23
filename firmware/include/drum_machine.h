@@ -65,7 +65,7 @@ struct drum_sample_t {
   uint32_t rate;     // Hz
   float pitch_hz;    // what it was tuned to, for a voice that follows; 0 untuned
 };
-extern const drum_sample_t drum_samples[];
+extern drum_sample_t drum_samples[];   // not const: the user kit's entries (include/user_kit.h) follow the strokes
 
 struct drum_kit_t {
   const char *name;
@@ -184,6 +184,15 @@ public:
       s.stutter_left = 0;
       s.retrigs = 0;
     }
+    if (!primask) __enable_irq();
+  }
+  // Every hit queued or waiting out its delay dropped, none started: a user kit's upload (include/user_kit.h)
+  // holds the drums for seconds, and a hit struck just before it would sound once it was over
+  DRUM_COLD void clearHits() {
+    uint32_t primask = drum_primask();
+    __disable_irq();
+    tail = head;
+    waiting = 0;
     if (!primask) __enable_irq();
   }
   // The soft clip's ceiling is 1.6 times the level of full scale: past 0.79 a pile of hits (or the harp's

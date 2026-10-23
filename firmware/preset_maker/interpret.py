@@ -1062,7 +1062,7 @@ GROOVE_NAMES = ["rock", "pop eighths", "pop sixteenths", "ballad", "funk", "disc
                 "afrobeat", "12/8 bell", "highlife", "maqsum", "baladi", "saidi", "kehrwa", "dadra", "teental",
                 "cliqhop", "clicks and cuts", "idm", "microsound"]
 KIT_NAMES = ["808", "909", "CR-78", "studio", "brushes", "boom bap", "world percussion", "tabla and doumbek", "trap", "house",
-             "glitch", "cliqhop"]
+             "glitch", "cliqhop", "uploaded"]
 for words, n in GROOVE_WORDS:
     add(words, "setting", f"drums: the {GROOVE_NAMES[n - 1]} groove", home="global", moves=(EXACT("drums", 1), EXACT("drum_groove", n)),
         off=(EXACT("drum_groove", 0),), note=DRUM_NOTE)
@@ -1074,7 +1074,11 @@ KIT_WORDS = [("808 kit, 808 drums, on the 808, tr 808, eight oh eight", 1), ("90
              ("tabla, tablas, doumbek, darbuka, tabla and doumbek", 8), ("trap kit, 808 bass kick, trap drums kit", 9),
              ("house kit, house drums kit, club drums", 10), ("glitch drums, bitcrushed drums, broken drums, glitchy drums, glitch kit", 11),
              ("cliqhop kit, cliqhop drums, blips and bleeps, bleeps and blips, blippy drums, clicky drums, supercollider drums, "
-              "pure data drums, computer music drums", 12)]
+              "pure data drums, computer music drums", 12),
+             # Kit 13 (firmware 113) is the player's own: one-shots sent from minicontrol or minictl into the
+             # minichord's flash (generator/user_kit.md). "My drum kit" stays the studio kit, as "drum kit" is
+             ("my own kit, own kit, your own kit, my kit, custom kit, user kit, uploaded kit, my samples, my own samples, "
+              "my own drums", 13)]
 for words, n in KIT_WORDS:
     add(words, "setting", f"drums: the {KIT_NAMES[n - 1]} kit", home="global", moves=(EXACT("drums", 1), EXACT("drum_kit", n)),
         off=(EXACT("drum_kit", 0),), note=DRUM_NOTE)
@@ -3053,6 +3057,13 @@ CONFLICTS = [
      "note": "time signature leaves the tabla's theka alone: stretched by tabla laya it keeps its own cycle"},
     {"about": [378], "when": [[378, ">", 0], [334, "==", 0], [343, "==", 0]],
      "note": "drum reverb with no drums: neither drums nor harp drums is on"},
+    # The uploaded kit only half works until a kit is sent, which no setting shows: said here rather than as the
+    # kit words' note, so the drums' own note isn't said twice and a direct change (commands.js) hears it too
+    {"about": [337], "when": [[337, "==", 13]],
+     "note": "the uploaded kit (drum kit 13) plays the one-shots sent from minicontrol or minictl, and needs firmware 113: "
+             "with no kit sent it plays the studio kit, and older firmware the cliqhop kit"},
+    {"about": [337], "when": [[337, "==", 13], [334, "==", 0], [343, "==", 0]],
+     "note": "the uploaded kit (drum kit 13) plays only for the drums or harp drums, and neither is on"},
     {"about": [379], "when": [[379, ">", 0], [372, "==", 0]],
      "note": "drone reverb with the drone off (0)"},
     {"about": [381], "when": [[381, "!=", 60], [372, "==", 0]],

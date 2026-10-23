@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """parity_test: minicontrol's describe.js against interpret.py, description by description,
-and every song in songs.json found by its name with its recipe understood.
+every song in songs.json found by its name with its recipe understood, and the descriptions in
+MEANS still meaning what they should.
 
     parity_test.py ~/minicontrol
 
@@ -89,6 +90,9 @@ SENTENCES = [
     "strum along with my phone", "harp drums, drums to midi", "boogie with the funky drummer and glitch drums",
     "teental, louder drums", "dembow on the trap kit", "house beat with tight drums", "muffle the song, echo on the song",
     "song sample on the harp", "no drums", "samba drums, count the band in",
+    # the uploaded kit (drum kit 13, firmware 113), and the kits whose words it sits next to
+    "a bossa nova on my own kit", "harp drums on my own kit", "boom bap on the uploaded kit, loose drums",
+    "on the studio kit", "drum kit", "my drum kit",
     "the kick ducks the chords", "the hats open the chord filter", "the phone's sound moves the reverb",
     "the hi-hats open the harp filter and the kick pumps the chords", "the music swells the delay",
     "hammer-ons on the harp", "no hammer ons", "alternate hover makes the chords sing",
@@ -138,6 +142,12 @@ SENTENCES += [
 ]
 # every song in the list, by its first name, as a preset and a profile
 SENTENCES += [e.words[0] for e in interpret.V if e.kind == "song"]
+# What a few descriptions must go on meaning, on this side (the comparison then holds describe.js to it): the
+# setting each one leaves at which value, from a plain start. "My kit" and "own kit" are the uploaded kit's
+# now, and "drum kit" and "my drum kit" are still the studio kit (4), as they were before it
+MEANS = [("a bossa nova on my own kit", 337, 13), ("harp drums on my own kit", 337, 13),
+         ("boom bap on the uploaded kit, loose drums", 337, 13), ("on the studio kit", 337, 4), ("drum kit", 337, 4),
+         ("my drum kit", 337, 4), ("a bossa nova with drums on the 808", 337, 1)]
 
 
 def python_side(params, version, presets):
@@ -213,12 +223,26 @@ def check_songs(params, version):
     return bad
 
 
+def check_means(params, version):
+    """Each of MEANS understood in full, leaving its setting at its value"""
+    base = pm.default_values(params, version)
+    bad = 0
+    for text, a, want in MEANS:
+        r = interpret.interpret(text, base, params)
+        after, _, _ = pm.apply_changes(base, r.changes, params)
+        if after[a] != want or r.unknown:
+            print(f"MEANS SOMETHING ELSE: {text!r} leaves {a} at {after[a]}, not {want}: {r.understood} {r.unknown}"); bad += 1
+    print(f"{len(MEANS)} descriptions that must keep their meaning: " + ("all do" if not bad else f"{bad} don't"))
+    return bad
+
+
 def main():
     page = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/minicontrol")
     params = pm.load_parameters()
     version = pm.firmware_version(params)
     presets = pm.load_shared_presets()
     song_problems = check_songs(params, version)
+    meaning_problems = check_means(params, version)
     py, plain, shared, sampled = python_side(params, version, presets)
     with tempfile.TemporaryDirectory() as tmp:
         data = os.path.join(tmp, "describe_data.json")
@@ -253,7 +277,7 @@ def main():
                     print(f"DIFFERENT [{mode}/{key}] {text[:60]!r}\n  python: {json.dumps(a)[:400]}\n  js:     {json.dumps(b)[:400]}")
     total = len(SENTENCES) * 4
     print(f"{len(SENTENCES)} descriptions, {total} runs: " + ("the same in both" if not bad else f"{bad} differences"))
-    sys.exit(1 if bad or song_problems or decoded_bad else 0)
+    sys.exit(1 if bad or song_problems or meaning_problems or decoded_bad else 0)
 
 
 if __name__ == "__main__":

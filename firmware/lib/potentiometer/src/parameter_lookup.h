@@ -300,7 +300,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 334, 1, 0, 1 }, // drums
     { 335, 0, 0, 48 }, // drum groove
     { 336, 0, 0, 48 }, // drum groove B
-    { 337, 1, 0, 12 }, // drum kit
+    { 337, 1, 0, 13 }, // drum kit
     { 338, 0, 0, 100 }, // drum level
     { 339, 0, 0, 100 }, // drum humanize
     { 340, 1, 0, 2 }, // drum MIDI out

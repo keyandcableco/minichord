@@ -203,6 +203,9 @@ const drum_kit_t drum_kits[] PROGMEM = {
 };
 const uint8_t drum_kit_count = sizeof(drum_kits) / sizeof(drum_kit_t);
 
+// a voice that plays only a recorded stroke, for the user kit (include/user_kit.h) to fill in
+const drum_voice_t drum_stroke_voice PROGMEM = {0.0f, 1.0f, 10.0f, 100.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.4815f, 2, 1, 2000.0f, 0.7f, 50.0f, 0, 10.0f, 0.8f, 0.0f, 0, 0, -1, 0, 1.0f, 0.0f, 50.0f, 0, 0.0f, 0, 0, 0, 4, 1.0f, 1.0f, 1};
+
 static const drum_event_t drum_groove_0[] PROGMEM = {{0, 0, 96}, {0, 4, 96}, {12, 4, 96}, {24, 1, 96}, {24, 4, 96}, {36, 4, 96}, {48, 0, 96}, {48, 4, 96}, {60, 0, 96}, {60, 4, 96}, {72, 1, 96}, {72, 4, 96}, {84, 4, 96}};   // rock
 static const drum_event_t drum_fill_0[] PROGMEM = {{0, 0, 96}, {0, 4, 96}, {12, 4, 96}, {24, 1, 96}, {24, 4, 96}, {36, 4, 96}, {48, 1, 60}, {54, 1, 69}, {60, 8, 77}, {66, 8, 86}, {72, 7, 94}, {78, 7, 103}, {84, 7, 111}, {90, 0, 110}, {90, 7, 120}};
 static const drum_event_t drum_groove_1[] PROGMEM = {{0, 0, 96}, {0, 4, 96}, {12, 4, 56}, {24, 1, 96}, {24, 4, 96}, {36, 0, 96}, {36, 4, 56}, {48, 0, 96}, {48, 4, 96}, {60, 4, 56}, {72, 1, 96}, {72, 4, 96}, {84, 4, 56}};   // pop eighths

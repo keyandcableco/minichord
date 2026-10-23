@@ -4640,7 +4640,9 @@ static const int16_t drum_sample_9[958] PROGMEM __attribute__((aligned(4))) = { 
 7,7,7,7,7,6,5,3,3,2,3,3,4,4,4,5,6,6,6,6,7,6,6,6,
 5,4,3,3,3,3,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0};
 
-const drum_sample_t drum_samples[] = {
+// the strokes above, then the user kit's 13 (empty until one is stored: include/user_kit.h)
+const uint8_t drum_sample_builtin = 10;
+drum_sample_t drum_samples[23] = {
   {drum_sample_0, 9922, 22050, 278.0f},   // na
   {drum_sample_1, 19845, 22050, 278.0f},   // na open
   {drum_sample_2, 15434, 22050, 278.0f},   // tin
@@ -4651,6 +4653,19 @@ const drum_sample_t drum_samples[] = {
   {drum_sample_7, 19845, 22050, 0.0f},   // ge
   {drum_sample_8, 12127, 22050, 0.0f},   // ge bent
   {drum_sample_9, 958, 22050, 0.0f},   // ke
+  {nullptr, 0, 0, 0.0f},   // user kit, voice 0
+  {nullptr, 0, 0, 0.0f},   // user kit, voice 1
+  {nullptr, 0, 0, 0.0f},   // user kit, voice 2
+  {nullptr, 0, 0, 0.0f},   // user kit, voice 3
+  {nullptr, 0, 0, 0.0f},   // user kit, voice 4
+  {nullptr, 0, 0, 0.0f},   // user kit, voice 5
+  {nullptr, 0, 0, 0.0f},   // user kit, voice 6
+  {nullptr, 0, 0, 0.0f},   // user kit, voice 7
+  {nullptr, 0, 0, 0.0f},   // user kit, voice 8
+  {nullptr, 0, 0, 0.0f},   // user kit, voice 9
+  {nullptr, 0, 0, 0.0f},   // user kit, voice 10
+  {nullptr, 0, 0, 0.0f},   // user kit, voice 11
+  {nullptr, 0, 0, 0.0f},   // user kit, voice 12
 };
 
 #endif

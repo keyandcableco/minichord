@@ -76,7 +76,13 @@ def main():
                      % (i, len(s), name, file, body))
         table.append('  {drum_sample_%d, %d, %d, %.1ff},   // %s' % (i, len(s), RATE, pitch, name))
         print(f'{name:8s} {file:12s} {len(s) / RATE:.2f} s  {s.nbytes / 1024:5.1f} kB')
-    lines += ['', 'const drum_sample_t drum_samples[] = {'] + table + ['};', '', '#endif', '']
+    # The user kit's (include/user_kit.h): one entry for each of the drum machine's voices after the strokes,
+    # empty until a kit is stored, then pointing at its hits in flash. So the table is not const, and the
+    # kit's entries start at drum_sample_builtin.
+    table += ['  {nullptr, 0, 0, 0.0f},   // user kit, voice %d' % v for v in range(13)]
+    lines += ['', '// the strokes above, then the user kit\'s 13 (empty until one is stored: include/user_kit.h)',
+              'const uint8_t drum_sample_builtin = %d;' % len(STROKES),
+              'drum_sample_t drum_samples[%d] = {' % (len(STROKES) + 13)] + table + ['};', '', '#endif', '']
     with open(OUT, 'w') as f:
         f.write('\n'.join(lines))
     print(f'{len(STROKES)} strokes, {total / 1024:.1f} kB, written to {os.path.relpath(OUT)}')
