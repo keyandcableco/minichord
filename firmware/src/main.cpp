@@ -16,7 +16,7 @@
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
 void apply_harp_thresholds();
-int version_ID=113; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated; 99: the arcade wheel's bearing from the centre of its readings, corrected, quiet while A or B is pressed, and the neighbour guard on it; zipper 24's wrap island read by a margin, and where that can't tell the ends apart, by the end a touch is at or last left; hover measured on both; 100: a chord change strikes once, a press under a sounding line no longer asking for the chord again, and a slash waits 250 ms; 101: the drum pads, harp plate 13, read as 28 places, twelve pads and the sixteen seams between them, each seam a sound of its own with harp drums, drum seams, 419; drum press, 426, a struck pad pressed chokes a cymbal or bends a skin, the bayan's meend, and pads mute the groove, 427, a resting finger holds its voice out of the groove, both on any plate with harp drums; melodic pads, 446, the 28 places as 28 notes, a key pressed into damped; drum groove 48, kendang; plate detect's window widens for a plate resting low, and a print keeps a zone far from the plate's mean; a hand slapped across the strings plays, and a flat hand lifted isn't taken for no plate on; the harp's filter corner and keytrack act on the strings already sounding; the vibrato and pitch envelope reach the sample voices; 102: the harp volume knob is harp drums' level, half way as before; 112: the old filesystem's presets.bin, from firmware 72 to 76, no longer moved into the preset store, and LittleFS gone with it, 24 kB of fast code RAM and 29 kB of flash back (103 to 111 are on their own branches); 113: your own drum kit, drum kit 13, up to thirteen one-shots of the player's sent from minicontrol over SysEx (F0 7D 6B) into the flash between the firmware and the presets, 256 kB at most, checked at boot and played from there, the studio kit in its place while none is sent (include/user_kit.h))
+int version_ID=114; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated; 99: the arcade wheel's bearing from the centre of its readings, corrected, quiet while A or B is pressed, and the neighbour guard on it; zipper 24's wrap island read by a margin, and where that can't tell the ends apart, by the end a touch is at or last left; hover measured on both; 100: a chord change strikes once, a press under a sounding line no longer asking for the chord again, and a slash waits 250 ms; 101: the drum pads, harp plate 13, read as 28 places, twelve pads and the sixteen seams between them, each seam a sound of its own with harp drums, drum seams, 419; drum press, 426, a struck pad pressed chokes a cymbal or bends a skin, the bayan's meend, and pads mute the groove, 427, a resting finger holds its voice out of the groove, both on any plate with harp drums; melodic pads, 446, the 28 places as 28 notes, a key pressed into damped; drum groove 48, kendang; plate detect's window widens for a plate resting low, and a print keeps a zone far from the plate's mean; a hand slapped across the strings plays, and a flat hand lifted isn't taken for no plate on; the harp's filter corner and keytrack act on the strings already sounding; the vibrato and pitch envelope reach the sample voices; 102: the harp volume knob is harp drums' level, half way as before; 112: the old filesystem's presets.bin, from firmware 72 to 76, no longer moved into the preset store, and LittleFS gone with it, 24 kB of fast code RAM and 29 kB of flash back (103 to 111 are on their own branches); 113: your own drum kit, drum kit 13, up to thirteen one-shots of the player's sent from minicontrol over SysEx (F0 7D 6B) into the flash between the firmware and the presets, 256 kB at most, checked at boot and played from there, the studio kit in its place while none is sent (include/user_kit.h); 114: piano glide, harp plate 12, guarded as the piano plate with a strum along its strip let through, and with harp ribbon its keys landing on their notes, in tune, and its strip sliding)
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -701,13 +701,18 @@ bool string_palmed[12] = {false, false, false, false, false, false, false, false
 // ribbon, below, and plays twelve strings without it. 11 belongs to a plate on
 // another branch. Before firmware 93 zipper 24, the arcade wheel and the
 // fretless wrap were 1 to 3, and that plate 4: apply_preset_version moves them.
+// Piano glide (12) is the piano's keys, without its combs, and a fretless strip
+// down the left edge sharing the twelve zones, each key's copper running on into
+// the strip at its height: it plays as the piano plate (the neighbour guard), with
+// the stock strip's way of letting a strum along the strip through, and with harp
+// ribbon a key lands on its note and the strip slides (see the ribbon's keys).
 // The drum pads (13) lay the zones out as a grid of two columns and six rows and
 // are read as places on it (plate_places.h): twelve pads and the sixteen seams
 // between them. See DRUM PLACES, below.
 const int16_t harp_plate_adress = 243;
 const uint8_t plate_stock = 0, plate_keymaster = 1, plate_piano = 2, plate_twin_rows = 3, plate_framed_strings = 4;
 const uint8_t plate_zipper_24 = 8, plate_arcade_wheel = 9, plate_fretless_wrap = 10;
-const uint8_t plate_drum_pads = 13;
+const uint8_t plate_piano_glide = 12, plate_drum_pads = 13;
 uint8_t harp_plate = plate_stock;
 // The neighbour guard (address 416), for the piano plate (harp plate 2), see neighbour_guard_pass()
 uint8_t neighbour_guard = 5;          // tenths: a key landing under this share of a touching neighbour stays silent; 0 off
@@ -779,6 +784,9 @@ struct ribbon_touch {
   uint32_t moved_at; // micros, when the place last followed the centre
   float centre_sum;
   float weight_sum;
+  float key;         // on piano glide, the key it landed on, in zones, held until it slides
+  float landed_centre;
+  bool sliding;
 };
 ribbon_touch ribbon_touches[harp_touch_max];
 //>>SYSEX PARAMETERS<<
@@ -8379,7 +8387,7 @@ void harp_positions_reset() {
 // along the line, takes in one zone more either side, which reads a little
 // before it counts as touched, so a finger nearing a band starts to move
 // before the far zone crosses its threshold. Line place m is harp zone m % 12.
-struct harp_run { float centre; float total; bool palmed; bool matched; };
+struct harp_run { float centre; float total; bool palmed; bool matched; float key; };   // key: the strongest zone's place
 uint8_t harp_find_runs(const bool *line_down, uint8_t line_length, const bool *zone_down,
                        const int16_t *strength, harp_run *runs, uint8_t max_runs) {
   uint8_t run_count = 0;
@@ -8388,7 +8396,7 @@ uint8_t harp_find_runs(const bool *line_down, uint8_t line_length, const bool *z
     uint8_t lo = k;
     while (k + 1 < line_length && line_down[k + 1]) k++;
     uint8_t hi = k;
-    float total = 0, moment = 0;
+    float total = 0, moment = 0, key = lo;
     bool palmed = false;
     for (int8_t m = (int8_t)lo - 1; m <= (int8_t)hi + 1; m++) {
       if (m < 0 || m >= line_length) continue;
@@ -8396,11 +8404,12 @@ uint8_t harp_find_runs(const bool *line_down, uint8_t line_length, const bool *z
       bool inside = m >= lo && m <= hi;
       if (!inside && zone_down[zone]) continue;   // a neighbour another finger is on
       if (inside) palmed |= string_palmed[zone];
+      if (inside && strength[zone] > strength[(uint8_t)key % 12]) key = m;
       total += strength[zone];
       moment += strength[zone] * m;
     }
     float centre = total > 0 ? moment / total : (lo + hi) / 2.0;
-    runs[run_count++] = harp_run{centre, total, palmed, false};
+    runs[run_count++] = harp_run{centre, total, palmed, false, key};
   }
   return run_count;
 }
@@ -8725,6 +8734,32 @@ void harp_ribbon_reset() {
   }
 }
 
+// ---- the ribbon's keys: piano glide ----
+// Piano glide (harp plate 12) with harp ribbon: its keys and its strip share the zones, and a finger on a
+// key reads as one on the strip at the key's height does, so the firmware can't tell them apart. But the
+// two are played differently: a key is pressed and stays, the strip is slid along. So a touch lands on
+// the key of its strongest zone, exactly in tune, and holds it until it has moved keys_slide_start strings
+// from where it landed; from there it slides as the ribbon does. Modelled (glide_model.py), the centre of
+// a finger on a key's band reads 0.12 of a string from the key on average and up to half a string (12 to
+// 50 cents), on a white key's front up to two (a finger's edge on the next white key's front, two zones
+// on); on the strip it follows the finger within 0.1. A touch landing beside a stronger one on a key whose
+// copper meets its own (the piano plate's neighbours), at under half its reading, is that finger's edge
+// and sounds nothing.
+const float keys_slide_start = 0.6;   // strings a key's touch moves before it slides
+uint16_t piano_glide_neighbours(uint8_t i);
+FLASHMEM bool ribbon_keys() {
+  return harp_plate == plate_piano_glide;
+}
+FLASHMEM bool ribbon_key_spill(const harp_run *runs, uint8_t run_count, uint8_t r) {
+  uint8_t kr = (uint8_t)runs[r].key % 12;
+  for (uint8_t q = 0; q < run_count; q++) {
+    if (q == r) continue;
+    uint8_t kq = (uint8_t)runs[q].key % 12;
+    if ((piano_glide_neighbours(kr) >> kq & 1) && runs[r].total * 2 < runs[q].total) return true;
+  }
+  return false;
+}
+
 void handle_harp_ribbon() {
   bool zone_down[12];
   bool any_down = false;
@@ -8786,7 +8821,7 @@ void handle_harp_ribbon() {
       if (touch.palmed) continue;   // the palm already stopped it
       // a tap too quick to settle still sounds, where it was read
       if (touch.landing) {
-        touch.place = touch.weight_sum > 0 ? touch.centre_sum / touch.weight_sum : touch.centre;
+        touch.place = ribbon_keys() ? touch.key : touch.weight_sum > 0 ? touch.centre_sum / touch.weight_sum : touch.centre;
         pluck_strength = touch.peak;
         ribbon_land(touch);
       }
@@ -8802,9 +8837,12 @@ void handle_harp_ribbon() {
       touch.weight_sum += found.total;
       touch.peak = max(touch.peak, found.total);
       touch.peak_at = now;
+      touch.key = found.key;
       if (now - touch.landed_at < harp_landing_ms) continue;
       touch.landing = false;
       touch.place = touch.weight_sum > 0 ? touch.centre_sum / touch.weight_sum : found.centre;
+      touch.landed_centre = touch.place;
+      if (ribbon_keys()) touch.place = touch.key;
       touch.moved_at = now_us;
       pluck_strength = touch.peak;
       if (!touch.palmed) ribbon_land(touch);
@@ -8818,7 +8856,8 @@ void handle_harp_ribbon() {
     // slide onto the one it still touches, so the pitch holds while it lifts.
     float dt = (now_us - touch.moved_at) / 1000.0f;
     touch.moved_at = now_us;
-    if (found.total >= harp_lift_ratio * touch.peak) {
+    if (ribbon_keys() && !touch.sliding && fabsf(found.centre - touch.landed_centre) >= keys_slide_start) touch.sliding = true;
+    if (found.total >= harp_lift_ratio * touch.peak && (!ribbon_keys() || touch.sliding)) {
       float glide = ribbon_glide_ms ? ribbon_glide_ms : 10;
       touch.place += (found.centre - touch.place) * dt / (glide + dt);
     }
@@ -8827,11 +8866,13 @@ void handle_harp_ribbon() {
   }
   for (uint8_t r = 0; r < run_count; r++) {
     if (runs[r].matched) continue;
+    if (ribbon_keys() && ribbon_key_spill(runs, run_count, r)) continue;
     for (uint8_t t = 0; t < harp_touch_max; t++) {
       ribbon_touch &touch = ribbon_touches[t];
       if (touch.active) continue;
       touch = ribbon_touch{true, runs[r].palmed, true, false, 0, 0, runs[r].centre, runs[r].centre, runs[r].total,
-                           now, now, now_us, runs[r].centre * runs[r].total, runs[r].total};
+                           now, now, now_us, runs[r].centre * runs[r].total, runs[r].total,
+                           runs[r].key, runs[r].centre, false};
       break;
     }
   }
@@ -9013,7 +9054,7 @@ FLASHMEM bool strip_family() {
 
 // The guard's share in tenths for the plate fitted, 0 where it is off
 FLASHMEM uint8_t neighbour_guard_level() {
-  return harp_plate == plate_piano || harp_plate == plate_arcade_wheel ? neighbour_guard : strip_family() ? strip_guard : 0;
+  return harp_plate == plate_piano || harp_plate == plate_piano_glide || harp_plate == plate_arcade_wheel ? neighbour_guard : strip_family() ? strip_guard : 0;
 }
 
 // The touch and release thresholds (241, 242): those when set, otherwise the plate's own. The stock strip's
@@ -9039,6 +9080,12 @@ FLASHMEM void apply_harp_thresholds() {
 
 FLASHMEM bool neighbour_guard_active() {
   return neighbour_guard_level();
+}
+
+// Piano glide's keys meet as the piano plate's do, and its strip's zones each the next, which the keys' own
+// neighbours already hold
+FLASHMEM uint16_t piano_glide_neighbours(uint8_t i) {
+  return piano_neighbours[upside_down][i];
 }
 
 // The pads whose copper meets pad i's, as bits: on the stock strip the pad either side
@@ -9099,7 +9146,7 @@ FLASHMEM int neighbour_guard_land(uint8_t i, int value, const int16_t (&strength
     }
     pad_shadow[i] = strongest && strength[i] * 10 < strongest * neighbour_guard_level();
     int8_t beyond = 2 * k - i;
-    if (strip_family() && k >= 0 && (held_before >> k & 1) && beyond >= 0 && beyond < 12 && (came_from[k] >> beyond & 1)) {   // a run
+    if ((strip_family() || harp_plate == plate_piano_glide) && k >= 0 && (held_before >> k & 1) && beyond >= 0 && beyond < 12 && (came_from[k] >> beyond & 1)) {   // a run
       pad_shadow[i] = false;
       if (pad_shadow[k]) {
         pad_shadow[k] = false;
@@ -10864,7 +10911,8 @@ static const HoverPlate hover_plates[harp_plate_count] = {
   // and 0.3 at 3. Rough: the passes disagreed at 2-3 cm.
   {2.9e-4f, 3.5f, 3.7f},    // 8 zipper 24
   {1.4e-5f, 7.0f, 7.0f},    // 9 the arcade wheel
-  HOVER_STOCK, HOVER_STOCK, HOVER_STOCK,
+  HOVER_STOCK, HOVER_STOCK,
+  HOVER_STOCK,              // 12 piano glide, not yet measured
   HOVER_STOCK};             // 13 the drum pads, not yet measured
 static float hover_pull(float d, float idle) {
   const HoverPlate &p = hover_plates[harp_plate < harp_plate_count ? harp_plate : 0];
