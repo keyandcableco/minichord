@@ -49,7 +49,8 @@ FORMAT = 'mulaw'
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib', 'minichord_samples', 'src')
 
 # name, files (folder, notes), rate, kind, and for a sustained one where its loop starts, how long
-# it is and its crossfade (seconds from the note's start); for a plucked one how long it may be
+# it is and its crossfade (seconds from the note's start), and in loops a recording's own where one needs
+# it; for a plucked one how long it may be. In notches, a recording's stray tones taken out, (Hz, Q).
 INSTRUMENTS = [
     dict(name='piano', title='piano (FluidR3)', rate=22050, notes=[('piano', n) for n in (42, 54, 66, 78)],
          loop=(0.55, 0.25, 0.12)),
@@ -84,15 +85,27 @@ INSTRUMENTS = [
     # (VCSL, CC0; Minichord Lab tools/fetch-vcsl-kalimba.sh). Its middle tines only (C#3 to G4, and the
     # Kenyan mbira's D5 on top): striking one sets the others ringing, and above G4 that halo of other notes,
     # in the mbira's own tuning, is as loud as the note, which the minichord would carry to every pitch it
-    # plays the recording at. These are 96-100% the note itself. The pluck, then a loop of the ring.
+    # plays the recording at. Below it the halo is one tine at a time, and the C#3 (49) has the E-flat4 tine
+    # ringing as loud as itself, at 319.5-321.7 Hz, 2.31 times its pitch (an octave and a quarter-tone-flat
+    # third), which it carried into every chord note it played. That tine is notched out (Q 20, forward and
+    # back, so no phase shift), leaving it 20-33 dB down, the C#3's own harmonics (277 and 416 Hz) within
+    # 1 dB of where they were. The G#2 (44) has no such halo but its tine's own bending (6.4 times its
+    # pitch) rings within 1-6 dB of the note, where the C#3's is 30 dB down by 0.3 s.
+    # The pluck, then a loop of the ring. The E-flat4 (63) dies 30 dB in its first 0.45 s and its pitch
+    # jumps as it does, so its loop starts at 0.6 s: from 0.4 s the jump repeated with every wrap, the held
+    # note wavering 30 cents four times a second.
     dict(name='kalimba', title='kalimba (VCSL Tanzanian mbira, CC0)', rate=22050, aligned=True, level_from_start=True,
-         notes=[('kalimba/tanzania', n) for n in (49, 53, 58, 63, 67)] + [('kalimba/kenya', 78)], loop=(0.4, 0.25, 0.1)),
+         notes=[('kalimba/tanzania', n) for n in (49, 53, 58, 63, 67)] + [('kalimba/kenya', 78)], loop=(0.4, 0.25, 0.1),
+         loops={('kalimba/tanzania', 63): (0.6, 0.25, 0.1)}, notches={('kalimba/tanzania', 49): [(320.8, 20)]}),
     # Firmware 79, voice source 12: a marimba, VCSL's (CC0; tools/fetch-vcsl-marimba.sh), struck at medium
     # strength. VCSL names its notes an octave low (its "C4" sounds 523 Hz); they are named here by what they
     # sound, within 5 cents of equal temperament. Its top recording (C7) is left out: short and quiet, under
-    # the room's rumble. The strike, then a loop of the ring, as the kalimba.
+    # the room's rumble. The strike, then a loop of the ring, as the kalimba. The C3 (48) and G3 (55) are still
+    # settling at 0.3 s, their pitch swinging 5-9 cents, so their loops start at 0.5 s, where it has settled:
+    # from 0.3 s the swing went round with the loop, 5 times a second.
     dict(name='marimba', title='marimba (VCSL, CC0)', rate=22050, aligned=True, level_from_start=True,
-         notes=[('marimba/med', n) for n in (41, 48, 55, 65, 72, 79, 89)], loop=(0.3, 0.2, 0.08)),
+         notes=[('marimba/med', n) for n in (41, 48, 55, 65, 72, 79, 89)], loop=(0.3, 0.2, 0.08),
+         loops={('marimba/med', 48): (0.5, 0.2, 0.08), ('marimba/med', 55): (0.5, 0.2, 0.08)}),
     # Firmware 80, voice source 14: an upright bass, VSCO 2 Community Edition's double bass plucked (CC0;
     # Minichord Lab tools/fetch-vsco-strings.sh, the softer layer: the louder has only E1-E2). VSCO names it an
     # octave low too. G1 and A2 are left out: noise near a semitone off at -3 and -6 dB. The pluck, then the ring.
@@ -166,6 +179,21 @@ def decode(path, rate):
     return np.frombuffer(raw, dtype=np.float32).astype(np.float64)
 
 
+def notch(x, rate, hz, q):
+    """a second-order notch at hz, run forward and then back, so it shifts no phase and cuts twice as deep"""
+    w0 = 2 * math.pi * hz / rate
+    g = 1 / (1 + math.tan(w0 / q / 2))
+    b0, b1, b2, a1, a2 = g, -2 * g * math.cos(w0), g, -2 * g * math.cos(w0), 2 * g - 1
+    for _ in range(2):
+        y = np.zeros_like(x)
+        x1 = x2 = y1 = y2 = 0.0
+        for i, v in enumerate(x):
+            y[i] = out = b0 * v + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2
+            x2, x1, y2, y1 = x1, v, y1, out
+        x = y[::-1]
+    return x
+
+
 def find_file(root, folder, note):
     for ext in ('mp3', 'ogg', 'wav'):
         path = os.path.join(root, folder, '%d.%s' % (note, ext))
@@ -177,10 +205,12 @@ def find_file(root, folder, note):
 def build_note(root, inst, folder, note, root_hz):
     rate = inst['rate']
     x = decode(find_file(root, folder, note), rate)
+    for hz, q in inst.get('notches', {}).get((folder, note), []):
+        x = notch(x, rate, hz, q)
     onset = np.argmax(np.abs(x) > 0.01 * np.max(np.abs(x)))
     x = x[onset:]
     if 'loop' in inst:
-        start_s, length_s, fade_s = inst['loop']
+        start_s, length_s, fade_s = inst.get('loops', {}).get((folder, note), inst['loop'])
         ls, le, xf = int(start_s * rate), int((start_s + length_s) * rate), int(fade_s * rate)
         if inst.get('aligned'):                        # a whole number of the note's periods
             period = rate / root_hz
