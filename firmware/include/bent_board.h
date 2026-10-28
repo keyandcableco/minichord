@@ -378,11 +378,12 @@ BENT_BOARD_CODE static inline void rail_update(rail_state &s, const bool *zone_d
 }
 
 // ---- the palm ----------------------------------------------------------------------------------------
-// One pad, under the left palm's edge while the chord buttons are played: how firmly it is pressed. A palm
-// is a wide contact, and its strength runs far past a fingertip's. On the real board (results/bentboard_rec_1803)
-// a resting palm reads about 460 and a firm press about 500 (the pad's baseline is 700), so the range is narrow:
-// a rest sits at the soft end, a press goes to full.
-const float palm_soft = 460, palm_firm = 505;
+// One pad, under the left palm's edge while the chord buttons are played: how much of the hand is on it. On
+// the real board (results/bentboard_rec_1803) a fingertip reads about 140, a resting palm about 460 and a firm
+// press only about 500 (the pad's baseline is 700), so it can't tell pressure: it goes by contact, from the
+// first touch to a resting palm at full. A resting palm turns its area fully on (Greg, 2026-10-28: the pad
+// at 460-505, a hard press only, felt dead).
+const float palm_soft = 40, palm_firm = 440;
 
 BENT_BOARD_CODE static inline float palm_depth(const bool *zone_down, const int16_t *strength, bool upside_down) {
   uint8_t z = at(palm_zone, upside_down);
