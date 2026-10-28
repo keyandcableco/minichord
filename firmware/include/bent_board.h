@@ -110,8 +110,10 @@ struct run { float place; float total; bool palmed; };
 // centre less than it moves: modelled, a finger at the edge between a core and a band reads 0.40 of a place
 // from the core's middle, not 0.5, and a band read by plain rounding is narrower than its 6 mm (a fifth of
 // the touches near its edges went to the core). So a centre within core_reads of a core is spread over the
-// core's own half place, and the rest of the way to the band's middle over the other half.
-const float core_reads = 0.40f;
+// core's own half place, and the rest of the way to the band's middle over the other half. The real board
+// (results/bentboard_rec_1803, 2026-10-28) reads 0.58: its slides' quarter points read 0.29 and 0.71, and
+// with 0.58 a slide spends about as long on each place and more core taps land on their core.
+const float core_reads = 0.58f;
 
 BENT_BOARD_CODE static inline float place_of(float centre_places) {
   float core = 2 * roundf(centre_places / 2);
@@ -190,10 +192,12 @@ BENT_BOARD_CODE static inline uint8_t line_runs(const line &l, bool upside_down,
 // is kept for the record: a real finger's share wanders from it (a core finger reads a tenth on the line
 // beside it), and fitted by the average one left the rest to land as a second finger. Three lines tell at most three fingers apart,
 // and two points pressed in the same instant read as one where they share a line: land one a moment first.
-const float rail_profile[rail_points][3] BENT_BOARD_DATA = {   // model: a 7 mm finger's share of T1, T3, T5 at each point
-  {0.971f, 0.029f, 0.000f}, {0.600f, 0.400f, 0.000f}, {0.014f, 0.965f, 0.021f}, {0.000f, 0.556f, 0.444f}, {0.000f, 0.024f, 0.976f}};
-const float rail_bound[rail_points - 1] BENT_BOARD_DATA = {0.42f, 1.71f, 2.51f, 3.69f};   // model: the centre where each point gives way to the next
-const float rail_gain[rail_points] BENT_BOARD_DATA = {1.626f, 1.601f, 1.000f, 1.265f, 0.931f};   // each point read as T3's core reads (T1's copper is a thin strip)
+// Fitted from the real board (results/bentboard_rec_1803, 2026-10-28; the model had {0.42, 1.71, 2.51, 3.69} and
+// gains {1.626, 1.601, 1, 1.265, 0.931}): the middle dot reads a third of itself on T1, so the edges sit lower.
+const float rail_profile[rail_points][3] BENT_BOARD_DATA = {   // a real finger's share of T1, T3, T5 at each point, at its firmest
+  {1.000f, 0.000f, 0.000f}, {0.726f, 0.274f, 0.000f}, {0.325f, 0.673f, 0.002f}, {0.074f, 0.661f, 0.264f}, {0.016f, 0.095f, 0.890f}};
+const float rail_bound[rail_points - 1] BENT_BOARD_DATA = {0.24f, 1.01f, 2.03f, 3.24f};   // the centre where each point gives way to the next
+const float rail_gain[rail_points] BENT_BOARD_DATA = {2.259f, 1.164f, 1.000f, 0.966f, 0.779f};   // each point read as T3's core reads (T1's copper is a thin strip)
 const float rail_soft = 40, rail_firm = 250;     // depth 0 to 1 over this much (after the gain), as touch_firmness maps a string
 const float rail_land = 30;                      // counts a touched line reads past what the fingers held explain: a finger landing
 const float rail_mismatch = 0.3f;                // ... and past this share of what they read on it (a finger's share drifts as it rolls)
@@ -374,9 +378,10 @@ BENT_BOARD_CODE static inline void rail_update(rail_state &s, const bool *zone_d
 
 // ---- the palm ----------------------------------------------------------------------------------------
 // One pad, under the left palm's edge while the chord buttons are played: how firmly it is pressed. A palm
-// is a wide contact, and its strength runs far past a fingertip's; the soft and firm here are guesses until
-// the board is measured.
-const float palm_soft = 40, palm_firm = 400;
+// is a wide contact, and its strength runs far past a fingertip's. On the real board (results/bentboard_rec_1803)
+// a resting palm reads about 460 and a firm press about 500 (the pad's baseline is 700), so the range is narrow:
+// a rest sits at the soft end, a press goes to full.
+const float palm_soft = 460, palm_firm = 505;
 
 BENT_BOARD_CODE static inline float palm_depth(const bool *zone_down, const int16_t *strength, bool upside_down) {
   uint8_t z = at(palm_zone, upside_down);
@@ -387,13 +392,15 @@ BENT_BOARD_CODE static inline float palm_depth(const bool *zone_down, const int1
 // Two lines' teeth along the wedge, tapering against each other: T11's widest at the left end, T12's at the
 // right, so T12's share of the two says where along the wedge a thumb is, whatever its pressure. The share
 // isn't even along it (T12's spine runs the wedge's whole length; the right end is T12 alone), so the table
-// turns it into the place, from the model at 10 mm (~/minichord-bench/bentboard/model.py). As a harp touch,
+// turns it into the place. On the real board (results/bentboard_rec_1803) T12's share never falls much under
+// 0.43 even at the left end, the middle reads 0.63 and the right end 0.95-1, so the table runs through those
+// three (the model had 0.24 to 0.99); the left half is cramped and noisier than the right. As a harp touch,
 // a thumb reading under ribbon_lift_ratio of its peak is lifting and keeps its place; the place follows
 // over ribbon_follow_ms, the chip's noise steadied.
-const float ribbon_share_lo = 0.241f, ribbon_share_hi = 0.988f;   // T12's share at the left end and at the right
+const float ribbon_share_lo = 0.430f, ribbon_share_hi = 0.970f;   // T12's share at the left end and at the right
 const float ribbon_table[21] BENT_BOARD_DATA = {   // the place, 0 left to 1 right, at the share from lo to hi in twentieths
-  0.000f, 0.034f, 0.120f, 0.154f, 0.239f, 0.259f, 0.327f, 0.350f, 0.370f, 0.449f, 0.463f,
-  0.479f, 0.556f, 0.576f, 0.648f, 0.669f, 0.694f, 0.748f, 0.779f, 0.857f, 1.000f};
+  0.000f, 0.068f, 0.135f, 0.203f, 0.270f, 0.337f, 0.405f, 0.473f, 0.524f, 0.563f, 0.603f,
+  0.643f, 0.682f, 0.722f, 0.762f, 0.801f, 0.841f, 0.881f, 0.921f, 0.960f, 1.000f};
 const float ribbon_lift_ratio = 0.7f;
 const float ribbon_peak_relax_ms = 80;
 const float ribbon_follow_ms = 15;
@@ -447,8 +454,13 @@ BENT_BOARD_CODE static inline void ribbon_update(ribbon_state &s, const bool *zo
 // firmly as the thumb to count. Elsewhere along the ribbon nothing is guarded (a light touch on T10's island,
 // at the far top, stays a touch). Not guarded: a thumb pressed into the ribbon's top right corner, on T11's
 // spine, which reaches T7's corner too and reads about as strongly on both (2 thumbs in 100 modelled there).
+// The real board (results/bentboard_rec_1803) bleeds far less than modelled: a thumb resting at the right end
+// read at most 20 on any harp line, under the chip's touch threshold, while a real finger beside it read
+// 0.5-0.7 of the thumb and was muted by 0.9. So a harp line now gives way only under border_thumb_share of the
+// ribbon; the ribbon still gives way under border_share of a harp finger (not yet measured on the board).
 const uint8_t border_zone[4] BENT_BOARD_DATA = {5, 4, 3, 2};    // T7 T8 T9 T10
 const float border_share = 0.9f;
+const float border_thumb_share = 0.15f;
 const float border_end_share = 0.75f;
 
 // zone_down in harp order, guarded in place
@@ -465,7 +477,7 @@ BENT_BOARD_CODE static inline void border_guard(bool *zone_down, const int16_t *
   if (harp <= 0) return;
   for (uint8_t k = 0; k < 4; k++) {
     uint8_t z = at(border_zone[k], upside_down);
-    if (zone_down[z] && strength[z] < border_share * ribbon) zone_down[z] = false;
+    if (zone_down[z] && strength[z] < border_thumb_share * ribbon) zone_down[z] = false;
   }
   if (ribbon < border_share * harp) zone_down[zl] = zone_down[zr] = false;
 }
