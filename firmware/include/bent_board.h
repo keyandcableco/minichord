@@ -10,9 +10,9 @@
 // the touch chip gives the zones in the other order (i becomes 11 - i), and at() reads them back; places,
 // rail points and the ribbon are then turned round, so each is numbered as the player holds it.
 //
-// The calibration (core_reads, the rail's edges and gains, the ribbon's table, the palm's soft and firm, the
-// border guard's harp side) is fitted from the real board's readings (results/bentboard_rec_1803, 2026-10-28;
-// bent-board.md); the rest (the rail's soft and firm, the end rule's margins) is still the model's.
+// The calibration (core_reads, the rail's edges and gains, the ribbon's table, the border guard's harp side)
+// is fitted from the real board's readings (results/bentboard_rec_1803, 2026-10-28; bent-board.md), and the
+// palm's range chosen from them; the rest (the rail's soft and firm, the end rule's margins) is the model's.
 #ifndef BENT_BOARD_H
 #define BENT_BOARD_H
 #include <stdint.h>
@@ -379,11 +379,11 @@ BENT_BOARD_CODE static inline void rail_update(rail_state &s, const bool *zone_d
 
 // ---- the palm ----------------------------------------------------------------------------------------
 // One pad, under the left palm's edge while the chord buttons are played: how much of the hand is on it. On
-// the real board (results/bentboard_rec_1803) a fingertip reads about 140, a resting palm about 460 and a firm
-// press only about 500 (the pad's baseline is 700), so it can't tell pressure: it goes by contact, from the
-// first touch to a resting palm at full. A resting palm turns its area fully on (Greg, 2026-10-28: the pad
-// at 460-505, a hard press only, felt dead).
-const float palm_soft = 40, palm_firm = 440;
+// the real board (results/bentboard_rec_1803) a resting palm reads about 455 and a firm press only about 485
+// (the pad's baseline is 700), so it can't tell pressure: it goes by contact, from a light touch to a resting
+// palm at full. A resting palm turns its area fully on (Greg, 2026-10-28: the pad at 460-505, a hard press
+// only, felt dead). The soft end sits over the # button's graze beside the pad (up to 51).
+const float palm_soft = 60, palm_firm = 440;
 
 BENT_BOARD_CODE static inline float palm_depth(const bool *zone_down, const int16_t *strength, bool upside_down) {
   uint8_t z = at(palm_zone, upside_down);
