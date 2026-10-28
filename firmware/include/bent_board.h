@@ -10,8 +10,9 @@
 // the touch chip gives the zones in the other order (i becomes 11 - i), and at() reads them back; places,
 // rail points and the ribbon are then turned round, so each is numbered as the player holds it.
 //
-// The calibration (rail profiles and gains, the ribbon's table, the depths' soft and firm) is the model's,
-// a fingertip's area over the copper: refit from the real board's readings when it arrives (bent-board.md).
+// The calibration (core_reads, the rail's edges and gains, the ribbon's table, the palm's soft and firm, the
+// border guard's harp side) is fitted from the real board's readings (results/bentboard_rec_1803, 2026-10-28;
+// bent-board.md); the rest (the rail's soft and firm, the end rule's margins) is still the model's.
 #ifndef BENT_BOARD_H
 #define BENT_BOARD_H
 #include <stdint.h>
@@ -180,17 +181,17 @@ BENT_BOARD_CODE static inline uint8_t line_runs(const line &l, bool upside_down,
 // ---- the bend rail -----------------------------------------------------------------------------------
 // Five points from three lines along the strip above the chord buttons, 8.7 mm apart: T1's core, a band of
 // T1 and T3 stripes, T3's core, a band of T3 and T5, T5's core. A finger's readings over the three, as a
-// centre (T1 at 0, T3 at 2, T5 at 4), say which point it is on, though not evenly: modelled, the edges
-// between points read at rail_bound (T1's core is a thin strip, and the bands' stripes run along the rail).
+// centre (T1 at 0, T3 at 2, T5 at 4), say which point it is on, though not evenly: the edges between points
+// read at rail_bound (T1's core is a thin strip, and the bands' stripes run along the rail).
 // Two fingers' readings add. A finger landing while others are held is what they leave: each settled finger
 // taken out as it read while nothing else was landing (its steady force, so one that soaked up a newcomer's
 // share of a line they share doesn't hide it), its point from the centre of what is left round its
 // strongest line, and its profile, its own share of each line there, is what it reads. Every pass, each
 // finger's force is fitted to the readings by its profile. A finger's point and profile are
 // settled once it has pressed down for rail_landing_ms (a band's two stripes don't reach the chip in the
-// same millisecond); until then each reading decides them again. rail_profile, a 7 mm finger's average,
-// is kept for the record: a real finger's share wanders from it (a core finger reads a tenth on the line
-// beside it), and fitted by the average one left the rest to land as a second finger. Three lines tell at most three fingers apart,
+// same millisecond); until then each reading decides them again. rail_profile, a finger's average share, is
+// kept for the record only (the decoder doesn't read it): a real finger's share wanders from it, and fitted
+// by the average one left the rest to land as a second finger. Three lines tell at most three fingers apart,
 // and two points pressed in the same instant read as one where they share a line: land one a moment first.
 // Fitted from the real board (results/bentboard_rec_1803, 2026-10-28; the model had {0.42, 1.71, 2.51, 3.69} and
 // gains {1.626, 1.601, 1, 1.265, 0.931}): the middle dot reads a third of itself on T1, so the edges sit lower.
@@ -392,8 +393,9 @@ BENT_BOARD_CODE static inline float palm_depth(const bool *zone_down, const int1
 // Two lines' teeth along the wedge, tapering against each other: T11's widest at the left end, T12's at the
 // right, so T12's share of the two says where along the wedge a thumb is, whatever its pressure. The share
 // isn't even along it (T12's spine runs the wedge's whole length; the right end is T12 alone), so the table
-// turns it into the place. On the real board (results/bentboard_rec_1803) T12's share never falls much under
-// 0.43 even at the left end, the middle reads 0.63 and the right end 0.95-1, so the table runs through those
+// turns it into the place. On the real board (results/bentboard_rec_1803) T12's share stays mostly above 0.43
+// even at the left end (a tenth of a slide's readings fall under it and read 0), the middle reads 0.63 and
+// the right end 0.95-1, so the table runs through those
 // three (the model had 0.24 to 0.99); the left half is cramped and noisier than the right. As a harp touch,
 // a thumb reading under ribbon_lift_ratio of its peak is lifting and keeps its place; the place follows
 // over ribbon_follow_ms, the chip's noise steadied.
@@ -448,16 +450,15 @@ BENT_BOARD_CODE static inline void ribbon_update(ribbon_state &s, const bool *zo
 // thumb at that end reads on the harp lines beside it, and a finger at the harp's left edge on T12. Modelled,
 // a thumb (10-11 mm) centred within 2 mm of the end reads up to 0.85 of itself on T9 or T10; a finger on the
 // harp's left edge up to 0.45 of itself on T12. So while a thumb reads as at the right end (T12's share past
-// border_end_share), a border line reading under border_share of the ribbon is the thumb's edge and isn't
-// touched, and the ribbon reading under border_share of the strongest border line is a harp finger's edge and
-// isn't either: at that moment a right-hand finger on the harp's leftmost few millimetres has to read about as
-// firmly as the thumb to count. Elsewhere along the ribbon nothing is guarded (a light touch on T10's island,
+// border_end_share), a border line reading under border_thumb_share of the ribbon is the thumb's edge and
+// isn't touched, and the ribbon reading under border_share of the strongest border line is a harp finger's
+// edge and isn't either. Elsewhere along the ribbon nothing is guarded (a light touch on T10's island,
 // at the far top, stays a touch). Not guarded: a thumb pressed into the ribbon's top right corner, on T11's
 // spine, which reaches T7's corner too and reads about as strongly on both (2 thumbs in 100 modelled there).
 // The real board (results/bentboard_rec_1803) bleeds far less than modelled: a thumb resting at the right end
-// read at most 20 on any harp line, under the chip's touch threshold, while a real finger beside it read
-// 0.5-0.7 of the thumb and was muted by 0.9. So a harp line now gives way only under border_thumb_share of the
-// ribbon; the ribbon still gives way under border_share of a harp finger (not yet measured on the board).
+// read at most 20 on any harp line (0.11 of itself), under the chip's touch threshold, while a real finger
+// beside it read 0.34-0.72 of the thumb and was muted by 0.9; hence 0.15 for the harp side. The ribbon side
+// keeps 0.9 (a harp finger's edge on T12 not yet measured on the board).
 const uint8_t border_zone[4] BENT_BOARD_DATA = {5, 4, 3, 2};    // T7 T8 T9 T10
 const float border_share = 0.9f;
 const float border_thumb_share = 0.15f;
