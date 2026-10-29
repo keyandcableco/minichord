@@ -11911,10 +11911,11 @@ void handle_hover(bool alternate) {
 // places in handle_harp_positions.
 //
 // The stick is read from the chip's filtered counts, not against its baseline, which would soak up
-// a bend held still. Each axis's centre is the reading at rest, learned as the plate is first read
-// and followed slowly whenever the stick sits still near it, and its ends spread to the furthest
-// readings seen. Upside down, the stick is turned round with everything else; joystick orientation
-// (397) is for a stick whose pots aren't the way the plate expects.
+// a bend held still. Each axis's centre is the reading at rest, learned as the plate is first read,
+// followed slowly whenever the stick sits still near it, and found again where it settles each time it
+// is let go (stick_far); its ends spread to the furthest readings held. Upside down, the stick is turned
+// round with everything else; joystick orientation (397) is for a stick whose pots aren't the way the
+// plate expects.
 //
 // What it does (joystick mode, 396):
 //   0 settings: each direction pushes its own setting (402-409) from as the preset has it, at
@@ -11930,6 +11931,8 @@ struct stick_axis {
   float centre, low, high;   // filtered counts: at rest, and the furthest seen either way
   float level;               // smoothed reading
   uint32_t still_since;
+  uint32_t far_at;           // when it was last pushed well out (stick_far), 0 once it has come back
+  uint32_t settled_at;       // the let-go it last took its centre from
   bool known;
 };
 stick_axis stick_axes[2] = {};   // 0 left and right (T3), 1 up and down (T1)
@@ -11948,6 +11951,16 @@ const float stick_ceiling_counts = 290;   // and the other end
 const float stick_end_follow = 0.05f;     // a read: an end follows a reading past it in about 80 ms, so a knock against
                                           // the stop, a few ms past where it holds, widens it hardly at all
 const float stick_full = 0.95f;           // full travel a little short of the ends, so a stick held at a stop is there
+// Let go, the stick springs back to the middle but not to one spot: it comes to rest a few degrees either way
+// (2026-10-29, with the collar: up and down settled anywhere from 207 to 231), more than the dead zone or the
+// slow following takes in, and up and down then read as pushed. So a snap back is taken as the stick let go: an
+// axis back from stick_far to under stick_near within stick_snap_ms, which a hand easing it back doesn't do
+// (springing back runs at 850 to 4,350 counts a second, easing at about 50). Both axes then take where they come
+// to rest as their centre, as letting go of one moves the other's rest too: once still for stick_still_ms, from
+// stick_still_ms to stick_settle_ms after the let-go, and short of stick_settle_most.
+const float stick_far = 0.6f, stick_near = 0.35f, stick_settle_most = 0.55f;
+const uint16_t stick_snap_ms = 150, stick_still_ms = 150, stick_settle_ms = 600;
+uint32_t stick_released_at = 0;           // the last let-go, 0 for none
 const uint8_t stick_read_ms = 4;
 const uint8_t joystick_cc = 112;
 
@@ -11990,6 +12003,19 @@ FLASHMEM static float stick_axis_read(stick_axis &a, float raw, uint32_t now) {
   if (a.level > a.high) a.high += (a.level - a.high) * stick_end_follow;
   float offset = a.level - a.centre;
   float v = offset < 0 ? offset / fmaxf((a.centre - a.low) * stick_full, 1) : offset / fmaxf((a.high - a.centre) * stick_full, 1);
+  // pushed well out and snapped back: let go
+  if (fabsf(v) >= stick_far) a.far_at = now;
+  else if (a.far_at && fabsf(v) < stick_near) {
+    if (now - a.far_at < stick_snap_ms) stick_released_at = now;
+    a.far_at = 0;
+  }
+  // come to rest after it: the centre is there
+  if (stick_released_at && a.settled_at != stick_released_at && now - stick_released_at >= stick_still_ms &&
+      now - stick_released_at < stick_settle_ms && now - a.still_since >= stick_still_ms && fabsf(v) < stick_settle_most) {
+    a.centre = a.level;
+    a.settled_at = stick_released_at;
+    v = 0;
+  }
   // sitting still near the middle is rest: the centre follows it, slowly
   if (fabsf(v) < 2 * stick_dead && now - a.still_since > 300) a.centre += (a.level - a.centre) * 0.02f;
   float size = fabsf(v);
@@ -12124,7 +12150,8 @@ FLASHMEM void handle_joystick() {
       joystick_push(rest);
       joystick_hold(up);
       joystick_bend_apply(0, 0);
-      stick_axes[0].known = stick_axes[1].known = false;
+      stick_axes[0] = stick_axes[1] = {};
+      stick_released_at = 0;
       was_on = false;
     }
     return;
