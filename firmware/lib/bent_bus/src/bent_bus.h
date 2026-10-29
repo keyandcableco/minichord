@@ -54,6 +54,17 @@ public:
   bool browned_out() { return dropout > 0; }
   float drop_semitones() { return drop_now; }    // the pitch drop as sagged so far
 
+  // a harp note on the bent board strikes the bends a touch holds again (bent_strike in main.cpp), taken at
+  // the next block: the drop starts again from in tune and sags, the stutter catches a new slice from the
+  // note (the one repeating faded back to the live sound over a block first), the starve's supply slumps
+  // under it and comes back as it does from a brown-out
+  void strike(bool drop, bool stutter, bool starve) {
+    if (drop) strike_drop = true;
+    if (stutter) strike_stutter = true;
+    if (starve) strike_starve = true;
+  }
+  static constexpr float STRIKE_SLUMP = 0.2f;   // the supply's slump under a struck note, at full starve
+
   // what it's doing, for the serial report
   bool resting() { return rest; }
   uint16_t held_blocks() { return held; }
@@ -79,6 +90,7 @@ private:
   volatile float interact_amount = 0;
   volatile uint32_t stutter_beat = 0, stutter_shortest = 1102, stutter_refresh = 0;   // 25 ms; never
   volatile bool stutter_drums_through = true;
+  volatile bool strike_drop = false, strike_stutter = false, strike_starve = false;   // set by the loop, taken here
 
   bool rest = true;
   uint16_t held = 0;   // up to 2 x (32 + 96)

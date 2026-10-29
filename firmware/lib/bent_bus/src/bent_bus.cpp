@@ -137,8 +137,17 @@ FLASHMEM void AudioEffectBend::update(void) {
   bool press = stuttering ? st > 0.01f : st > 0.03f;
   if (press && !stuttering) { release_slice(); stuttering = true; }
   if (!press && stuttering) { stuttering = false; if (looping) stutter_fade = 1; else release_slice(); }
+  // struck by a harp note (strike): a new slice from here; one repeating fades back to the live sound first,
+  // as a refresh does, and the slice is caught from the block after
+  if (strike_stutter) {
+    strike_stutter = false;
+    if (stuttering && !looping) release_slice();
+    else if (stuttering && !stutter_fade) stutter_fade = 1;
+  }
 
   // the starve: a supply that sags with the depth and wanders, gives way now and then, and comes back slowly
+  bool slump = strike_starve;   // struck by a harp note: the supply slumps under it
+  strike_starve = false;
   float sv = starve_target;
   starve_now += (sv - starve_now) * 0.15f;   // ~20 ms
   if (sv == 0 && starve_now < 1e-4f) starve_now = 0;
@@ -150,6 +159,7 @@ FLASHMEM void AudioEffectBend::update(void) {
     if ((random() & 15) == 0) supply_aim = 1 - starve_now * (0.25f + 0.25f * (noise() * 0.5f + 0.5f));
     if (dropout) dropout--;
     else if ((random() & 0xFFFF) < (uint32_t)(starve_now * starve_now * 0.02f * 65536)) dropout = 2 + random() % 23;   // 6 to 70 ms
+    if (slump) supply = supply - STRIKE_SLUMP * starve_now < 0.1f ? 0.1f : supply - STRIKE_SLUMP * starve_now;
     supply += ((dropout ? 0.1f : supply_aim) - supply) * (dropout ? 0.3f : 0.05f);   // gives way quickly, comes back slowly
     float s = (supply - 0.1f) / 0.9f;
     s = s < 0 ? 0 : s;
@@ -166,6 +176,7 @@ FLASHMEM void AudioEffectBend::update(void) {
 
   // the pitch: the drop sags toward its depth, and the starve's wobble rides on it
   float drop_t = drop_target;
+  if (strike_drop) { strike_drop = false; drop_now = 0; }   // struck by a harp note: in tune again, to sag anew
   drop_now += (drop_t - drop_now) * sag_coef;
   if (drop_t == 0 && drop_now < 0.05f) drop_now = 0;   // 5 cents, then the shifter fades out
   semis = drop_now + starve_semis;

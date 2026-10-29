@@ -2901,7 +2901,7 @@ FLASHMEM bool bend_cc_message(uint8_t controller, uint8_t value) {
 // the bent board's touch areas' settings (472-486), see BENT BOARD
 void bent_area_target(uint8_t k, int value);
 void bent_area_value(uint8_t k, int value);
-void bent_ribbon_reads(int value);
+void bent_options(int value);
 
 #include <sysex_handler.h>
 // A parameter write is F0 <adress lo> <adress hi> <value lo> <value hi> F7. Universal system
@@ -8450,7 +8450,7 @@ void palm_mute() {
 // read as the middle one reads, T1's copper being a thin strip), and back as it lets go, as a bender's touch
 // point springs back. The ribbon goes by where the thumb is along it, from as the preset has it at its left
 // end to the value at its right, held there while the thumb rests and back when it lifts: a pot the thumb
-// holds, where the rail is buttons pressed. With ribbon reads (486) at 1 it goes by how firmly instead.
+// holds, where the rail is buttons pressed. With bent board options (486) switch 1 it goes by how firmly instead.
 // The defaults are the bends: the rail's points pitch drop, voltage starve, bitcrush, clock bend and stutter
 // left to right; the palm bends interact (442), so a palm pressed while the left hand plays drags the bends
 // pressed together, as a bent Omnichord's one clock and supply would, and does nothing alone; the ribbon
@@ -8460,10 +8460,19 @@ void palm_mute() {
 // can't undo one a knob made; it comes back with the finger, never springs (443). Two areas on one setting:
 // the deepest moves it. Depths follow over bent_follow_ms, the chip's noise steadied. On any other plate the
 // areas don't exist and nothing changes.
+// Two areas played together, each a switch of bent board options (486), off unless a preset sets it:
+// - catch (2): a thumb landing on the ribbon while a finger holds a rail point takes the point over, and the
+//   finger can lift; the thumb moves it, full at the ribbon's right end and none at its left; a thumb tapped
+//   leaves it on until a finger lands on it and lifts (bentboard::catch_update). The ribbon's own area is let
+//   go while the thumb has a point. So two bends play at once with one finger on the rail.
+// - the harp strikes (4): each harp note on the bent board strikes the bends a touch holds (a rail point
+//   pressed, caught or left on, or the ribbon's own) again: the pitch drop starts again in tune and sags, the
+//   stutter catches a new slice from the note, the starve's supply slumps under it (bent_strike).
 const uint8_t bent_area_count = 7;            // the rail's five points, the palm, the ribbon
 const int16_t bent_area_adress = 472;         // area k's target, its value at 473 + 2k
-const int16_t bent_ribbon_reads_adress = 486;
+const int16_t bent_options_adress = 486;
 const float bent_follow_ms = 8;
+const uint8_t bent_strum_ms = 40;             // a harp note this soon after the last is the same strum: one strike
 const uint16_t bent_refresh_ms = 250;         // a load or an editor puts a stored value back: applied again this often
 struct bent_area {
   int16_t target, value;
@@ -8478,8 +8487,11 @@ bent_area bent_areas[bent_area_count] = {   // the parameters.json defaults, bef
   {436, 100, 0, 0, 0, false, true}, {438, 100, 0, 0, 0, false, true}, {442, 100, 0, 0, 0, false, true},
   {434, 100, 0, 0, 0, false, true}};
 bool bent_ribbon_by_pressure = false;
+bool bent_catch = false;
+bool bent_harp_strikes = false;
 bentboard::rail_state bent_rail;
 bentboard::ribbon_state bent_ribbon;
+bentboard::catch_state bent_catch_state;
 // The zones the harp plays and their order up it, for the palm and the positions: all twelve in harp order, but
 // on the bent board its six harp lines bottom to top (bent_board_pass keeps them, bent_board_reset puts them back)
 uint8_t harp_line_order[12] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
@@ -8513,14 +8525,20 @@ FLASHMEM void bent_area_value(uint8_t k, int value) {
   bent_areas[k].reapply = true;
 }
 
-FLASHMEM void bent_ribbon_reads(int value) {
-  bent_ribbon_by_pressure = value == 1;
+// Bent board options (486), its switches added up: 1 the ribbon by how firmly it is pressed, 2 catch, 4 the
+// harp strikes. A load lets go of every point caught or left on, and so does catch switched off.
+FLASHMEM void bent_options(int value) {
+  bent_ribbon_by_pressure = value & 1;
+  bent_catch = value & 2;
+  bent_harp_strikes = value & 4;
+  if (parameters_loading || !bent_catch) bent_catch_state = bentboard::catch_state{};
 }
 
 // Every touch let go, for a plate swap or another plate chosen: the settings come back at the next apply
 FLASHMEM void bent_board_reset() {
   bent_rail = bentboard::rail_state{};
   bent_ribbon = bentboard::ribbon_state{};
+  bent_catch_state = bentboard::catch_state{};
   for (uint8_t k = 0; k < bent_area_count; k++) bent_areas[k].raw = 0;
   for (uint8_t z = 0; z < 12; z++) harp_line_order[z] = z;
   harp_line_count = 12;
@@ -8534,9 +8552,15 @@ FLASHMEM __attribute__((noinline)) void bent_board_read(const bool *down, const 
   uint32_t now = millis();
   bentboard::rail_update(bent_rail, down, strength, upside_down, now, rail);
   bentboard::ribbon_update(bent_ribbon, down, strength, upside_down, now);
+  bool thumb_caught = false;   // the thumb has a rail point: the ribbon's own area let go
+  if (bent_catch) {
+    bentboard::rail_fingers fingers;
+    bentboard::rail_fingers_of(bent_rail, upside_down, fingers);
+    thumb_caught = bentboard::catch_update(bent_catch_state, fingers, bent_ribbon, now, rail);
+  }
   for (uint8_t k = 0; k < bentboard::rail_points; k++) bent_areas[k].raw = rail[k];
   bent_areas[5].raw = bentboard::palm_depth(down, strength, upside_down);
-  bent_areas[6].raw = !bent_ribbon.active ? 0 : bent_ribbon_by_pressure ?
+  bent_areas[6].raw = !bent_ribbon.active || thumb_caught ? 0 : bent_ribbon_by_pressure ?
     bentboard::depth_of(bent_ribbon.total, bentboard::ribbon_soft, bentboard::ribbon_firm) : bent_ribbon.place;
 }
 
@@ -8620,6 +8644,21 @@ FLASHMEM __attribute__((noinline)) void bent_areas_apply() {
     }
     a.live = depth > 0;
   }
+}
+
+// From the bent board's harp, as a note sounds (harp_position_land and _leave, a drum struck too): with the harp
+// strikes on (486), the bends a touch holds struck again, the pitch drop, the stutter and the starve (bitcrush
+// and clock bend have nothing to strike). A bend only a knob or a control change holds is left alone. Notes
+// within bent_strum_ms of each other are one strum, struck once, at its first: thirteen slumps of the supply
+// would brown it out under a single strum.
+FLASHMEM void bent_strike() {
+  static uint32_t last_note = 0;
+  if (!bent_harp_strikes || harp_plate != plate_bent_board) return;
+  uint32_t now = millis();
+  bool strum = now - last_note < bent_strum_ms;
+  last_note = now;
+  if (strum) return;
+  bent_bus.strike(bend_touch[0] > 0, bend_touch[4] > 0, bend_touch[1] > 0);
 }
 
 // ---- the zipper plates: a finger between zones ----
@@ -8805,6 +8844,7 @@ uint8_t harp_position_voice(uint8_t p) {
 void harp_position_land(uint8_t p) {
   if (strip_drums() || bent_drums()) {   // the bent board's places as the kit's pads, 0 and 12 both the first
     drum_pad(p % 12, pluck_strength < 0 ? 0 : (int16_t)lroundf(fminf(pluck_strength, 32767)));
+    bent_strike();
     return;
   }
   uint8_t v = harp_position_voice(p);
@@ -8814,6 +8854,7 @@ void harp_position_land(uint8_t p) {
     string_plucked[v] = false;
     pluck_strum = strum_softness(p);
     pluck_string(v);
+    bent_strike();
   }
 }
 
@@ -8824,6 +8865,7 @@ void harp_position_leave(uint8_t p) {
     pluck_strum = strum_softness(p);
     pluck_string(v);
     string_plucked[v] = true;
+    bent_strike();
   } else {
     release_string(v);
   }
@@ -10900,8 +10942,10 @@ void stop_chord_notes() {
 // end, with All Notes Off on all sixteen channels of both ports. The looper and chord memory stop
 // playing, keeping what they hold, since they would only play again. Modes stay as they are:
 // rhythm mode goes on from its next note, hold waits for a chord. Modifier and up (322), the
-// double tap on 323 at 2, or 323 written 2.
+// double tap on 323 at 2, or 323 written 2. The bent board's points left on let go (catch, see BENT BOARD):
+// a stutter left on would go on playing its slice.
 FLASHMEM void panic() {
+  bent_catch_state = bentboard::catch_state{};
   if (looper_state == LOOPER_PLAYING || looper_state == LOOPER_RECORDING || looper_state == LOOPER_COUNTIN) looper_action(3);
   if (chord_memory_state == CHORD_MEMORY_PLAYING || chord_memory_state == CHORD_MEMORY_RECORDING) chord_memory_action(3);
   noInterrupts();

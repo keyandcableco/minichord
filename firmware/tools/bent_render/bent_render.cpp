@@ -317,6 +317,66 @@ int main(int argc, char **argv) {
     CHECK(f < -90 && r > live - 6, "a refreshing stutter doesn't leave the silence it caught (or one without refresh does)");
   }
 
+  printf("struck by the harp (strike): each held from 1 s, struck on every chord from 1.5 s, against the same unstruck\n");
+  {
+    // struck on the blocks where the groove strikes its chord (every half second), from 1.5 s; the stutter
+    // also 20 ms after its press, before its slice is caught
+    const float block = AUDIO_BLOCK_SAMPLES / FS;
+    auto struck_at = [block](float t) { return t >= 1.4f && t < 3.6f && fmodf(t, 0.5f) < block; };
+    auto just_after = [block](float t) { float u = fmodf(t, 0.5f); return t >= 1.5f && t < 3.6f && u >= block && u < 2 * block; };
+    std::vector<float> after, before;   // the drop as sagged, the block after each strike and just before the next
+    Run drop = render(4, [&](AudioEffectBend &b, float t) {
+      if (just_after(t)) after.push_back(b.drop_semitones());
+      if (t >= 1.5f && t < 3.5f && fmodf(t, 0.5f) > 0.5f - block) before.push_back(b.drop_semitones());
+      b.pitch_drop(t > 1.0f && t < 3.6f ? 0.5f : 0, 12, 300);
+      if (struck_at(t)) b.strike(true, false, false);
+    }, false);
+    write_wav(dir + "/7 pitch drop struck.wav", drop.out);
+    float most_after = 0, least_before = 12;
+    for (float x : after) most_after = std::max(most_after, x);
+    for (float x : before) least_before = std::min(least_before, x);
+    printf("    pitch drop of 6 st, sag 300 ms: %.2f st at most a block after a strike, %.2f st at least just before the next\n",
+           most_after, least_before);
+    CHECK(!after.empty() && most_after < 0.5f && least_before > 5.5f, "a struck drop doesn't start again in tune and sag back");
+
+    // the supply's fall over each strike's block, on average, struck and not (the starve wanders at random, and
+    // the crackle draws on the same random numbers, so after the first strike the two don't wander alike)
+    auto starve_scene = [&](bool strike, double &fall, int &n) {
+      return [&, strike, was = 1.0f](AudioEffectBend &b, float t) mutable {
+        if (t >= 1.4f && t < 3.6f && fmodf(t, 0.5f) > 0.5f - block) was = b.supply_level();
+        if (just_after(t)) { fall += was - b.supply_level(); n++; }
+        b.starve(t > 1.0f && t < 3.6f ? 0.8f : 0);
+        if (strike && struck_at(t)) b.strike(false, false, true);
+      };
+    };
+    double fall_plain = 0, fall_struck = 0;
+    int n_plain = 0, n_struck = 0;
+    Run plain = render(4, starve_scene(false, fall_plain, n_plain), false);
+    Run slumped = render(4, starve_scene(true, fall_struck, n_struck), false);
+    write_wav(dir + "/7b starve struck.wav", slumped.out);
+    fall_plain /= std::max(1, n_plain);
+    fall_struck /= std::max(1, n_struck);
+    printf("    starve 0.8: the supply falls %.2f over a strike's block on average, %.2f unstruck\n", fall_struck, fall_plain);
+    // 0.16 at 0.8, less where a strike lands in a brown-out, the supply already near its floor
+    CHECK(n_struck > 0 && fall_struck - fall_plain > 0.05f, "a struck starve's supply doesn't slump");
+
+    auto stutter_scene = [&](bool strike) {
+      return [&, strike](AudioEffectBend &b, float t) {
+        b.stutter(t > 1.0f && t < 3.6f ? 0.5f : 0, 0, 1102, true);
+        if (strike && (struck_at(t) || (t >= 1.02f && t < 1.02f + block))) b.strike(false, true, false);
+      };
+    };
+    Run held = render(4, stutter_scene(false), false), caught = render(4, stutter_scene(true), false);
+    write_wav(dir + "/7c stutter struck.wav", caught.out);
+    size_t one = (size_t)(1.5f * FS) * 2, end = (size_t)(3.6f * FS) * 2;
+    bool differs = !std::equal(held.out.begin() + one, held.out.begin() + end, caught.out.begin() + one);
+    double level = rms_db(caught.out, 1.5f, 3.5f), live = rms_db(caught.in, 1.5f, 3.5f);
+    printf("    stutter 0.5: struck %s the unstruck after 1.5 s, %.1f dB against the music's %.1f; most held %d, pool +%d\n",
+           differs ? "differs from" : "is the same as", level, live, caught.most_held, caught.most_pool);
+    CHECK(differs && level > live - 6, "a struck stutter doesn't catch a new slice (or falls silent)");
+    CHECK(caught.most_held <= 2 * (AudioEffectBend::HISTORY + AudioEffectBend::STUTTER_BLOCKS), "held more than it should");
+  }
+
   printf("rest again after all that: bit for bit\n");
   Run again = render(2, [](AudioEffectBend &b, float t) { if (t < 1) { b.crush(0.5f, 0); b.starve(0.5f); } else { b.crush(0, 0); b.starve(0); } });
   {

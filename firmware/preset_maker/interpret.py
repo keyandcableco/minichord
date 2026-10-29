@@ -3239,8 +3239,8 @@ CONFLICTS = [
      "note": "on knob layer 1 the harp knob plays its alternate only, and none is assigned: the knob does nothing"},
     {"about": [117, 16], "when": [[117, "==", 1], [16, "==", 0], [14, "!=", 0]],
      "note": "on knob layer 1 the mod knob plays its alternate only, and none is assigned: the knob does nothing"},
-    {"about": [486, 484], "when": [[486, "==", 1], [484, "==", 0]],
-     "note": "thumb ribbon reads how firmly it is pressed, and the thumb ribbon moves nothing (thumb ribbon control 0)"},
+    {"about": [486, 484], "when": [[486, "in", [1, 3, 5, 7]], [484, "==", 0]],
+     "note": "bent board options reads the thumb ribbon by how firmly it is pressed, and the thumb ribbon moves nothing (thumb ribbon control 0)"},
 ]
 for _k, _r, _name in KNOBS:
     CONFLICTS += [

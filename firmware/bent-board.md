@@ -24,7 +24,7 @@ Hammer-on, koto press and the harp ribbon don't (positions, as on zipper 24).
 | rail point 4 | T3 + T5 | 478 / 479 | clock bend, 100 | how firmly |
 | rail point 5 (rightmost) | T5 | 480 / 481 | stutter, 100 | how firmly |
 | palm pad | T6 | 482 / 483 | bends interact, 100 | how firmly |
-| thumb ribbon | T11, T12 | 484 / 485 | bitcrush, 100 | where the thumb is (486 at 1: how firmly) |
+| thumb ribbon | T11, T12 | 484 / 485 | bitcrush, 100 | where the thumb is (486 switch 1: how firmly) |
 
 A setting moves from the preset's own value toward the area's value as the area is pressed, and back as it lets go
 (the ribbon: its left end is the preset's own, its right end the value, held where the thumb rests). On a bend's
@@ -37,6 +37,29 @@ plays chords, so it shouldn't change the sound by itself: bends interact does no
 drags the others with it (the bent Omnichord's one clock and supply), so palm and rail are played together. The
 ribbon reads a place, a value the thumb can hold while the fingers play, not a press: a pot rather than a button,
 so it takes the one bend that is good held steady, bitcrush.
+
+**Two areas together** (bent board options, 486: switches added up, all off at 0; 1 is the ribbon by pressure, as
+486 at 1 was before). No new setting numbers: these only matter on this plate.
+
+- **Catch (2)**: press a rail point, then put the thumb on the ribbon. The thumb takes the point over as deep as the
+  finger had it, and the finger can lift. Slide the thumb right for deeper (full at the right end), left for
+  lighter (none at the left end), from wherever it landed. Lift it and the point lets go; tap it (under 250 ms)
+  and the point stays on until a finger lands on it again and lifts. The thumb landing first catches nothing, and
+  the ribbon does its own job; while it has a point, the ribbon's own area is let go. Why: rail pressure is shaky
+  and the ribbon steady, and two points held together where they share a line read badly, so a point caught or
+  left on frees the rail for the next finger. A thumb or finger reading off for under 40 ms hasn't lifted (the
+  chip at its threshold, or the border guard taking the ribbon's right end). A finger landing on a point left on
+  picks it up once settled; a thumb landing while it holds it takes it over. A load, a panic, another plate and
+  catch switched off let go of everything left on. `bentboard::catch_update`, tested in `tools/bent_board` (`./run.sh`, the catch checks).
+- **The harp strikes (4)**: each harp note on the board strikes again the bends a touch holds (a rail point
+  pressed, caught or left on, or the ribbon's own bend): the pitch drop starts in tune and sags, the stutter
+  catches a new slice from the note, the starve's supply slumps under it (0.2 of the supply at full starve, a
+  guess to tune by ear). Bitcrush and clock bend have nothing to strike; a bend only a knob or control change holds
+  is left alone. Notes within 40 ms of the last are one strum, struck once. The bends are on the whole mix, so the
+  chords and drums start again in tune too. `bent_strike` in main.cpp and `strike` in lib/bent_bus, rendered by
+  `tools/bent_render` (the strike checks).
+
+The two compose: catch a bend or leave it on, and both hands play while the harp strikes it.
 
 **Decoding** is `include/bent_board.h` (plain C++, its code and tables in flash): the harp's line with T10's two
 ends (a touch already at an end, else T9 against T2, else the end last left), runs split at the valley between two

@@ -398,6 +398,178 @@ static void test_keys() {
   check("no zone touched by a key or knob pressed (flat finger, pessimistic)", 1 - touched / (double)n, 0.95);
 }
 
+// Catch (bent board options, 486), played step by step: the rail's fingers and the ribbon as the decoder
+// leaves them, read every 5 ms as the firmware reads them
+struct catch_play {
+  catch_state c;
+  rail_fingers f{};
+  ribbon_state r{};
+  uint32_t now = 1000;
+  float held[rail_points] = {0, 0, 0, 0, 0};
+  float depth[rail_points] = {0, 0, 0, 0, 0};
+  bool thumb = false;
+  void finger(int k, float d) {   // a finger landing on point k (settled), pressed to d; 0 lifts it
+    if (d > 0 && !f.on[k]) f.landed_at[k] = now;
+    f.on[k] = f.settled[k] = d > 0;
+    held[k] = d;
+  }
+  void ribbon(bool on, float place = 0) { r.active = on; r.place = place; }
+  void run(uint32_t ms) {
+    for (uint32_t t = 0; t < ms; t += 5) {
+      now += 5;
+      for (int k = 0; k < rail_points; k++) depth[k] = f.on[k] ? held[k] : 0;
+      thumb = catch_update(c, f, r, now, depth);
+    }
+  }
+};
+
+static bool near(float a, float b) { return fabsf(a - b) < 0.01f; }
+
+static void test_catch() {
+  printf("catch: a rail point taken over by the thumb, played step by step\n");
+  {
+    catch_play p;
+    p.finger(1, 0.6f); p.run(50);
+    p.ribbon(true, 0.5f); p.run(50);
+    check("a thumb landing with a point held takes it, as deep", p.thumb && near(p.depth[1], 0.6f), 1);
+    p.finger(1, 0); p.run(50);
+    check("the finger lifts: the point stays as the thumb has it", near(p.depth[1], 0.6f), 1);
+    p.ribbon(true, 1.0f); p.run(30);
+    bool right = near(p.depth[1], 1.0f);
+    p.ribbon(true, 0.75f); p.run(30);
+    right &= near(p.depth[1], 0.8f);
+    check("the thumb toward the right end: deeper, full there", right, 1);
+    p.ribbon(true, 0.25f); p.run(30);
+    bool left = near(p.depth[1], 0.3f);
+    p.ribbon(true, 0.0f); p.run(30);
+    left &= near(p.depth[1], 0.0f);
+    check("toward the left end: lighter, none there", left, 1);
+    check("no other point moved", p.depth[0] == 0 && p.depth[2] == 0 && p.depth[3] == 0 && p.depth[4] == 0, 1);
+    p.ribbon(true, 0.5f); p.run(100);
+    p.ribbon(false); p.run(50);
+    check("the thumb lifted after a while: the point lets go, the ribbon its own again", !p.thumb && p.depth[1] == 0, 1);
+  }
+  {
+    catch_play p;
+    p.finger(4, 0.5f); p.run(50);
+    p.ribbon(true, 0.6f); p.run(100);
+    p.ribbon(false); p.run(50);
+    check("a thumb tapped: the ribbon its own again once it has lifted", !p.thumb, 1);
+    p.finger(4, 0); p.run(1000);
+    check("and the point left on after the finger lifts, as deep", near(p.depth[4], 0.5f), 1);
+    p.finger(4, 0.2f); p.run(50);
+    check("a finger landing on it again picks it up, as deep", near(p.depth[4], 0.5f), 1);
+    p.finger(4, 0); p.run(50);
+    check("and its lift lets it go", p.depth[4] == 0, 1);
+  }
+  {
+    catch_play p;
+    p.ribbon(true, 0.5f); p.run(50);
+    p.finger(2, 0.7f); p.run(50);
+    check("a thumb already on the ribbon when a finger lands catches nothing", !p.thumb && near(p.depth[2], 0.7f), 1);
+    p.finger(2, 0); p.run(50);
+    check("and the point lets go with the finger", p.depth[2] == 0, 1);
+  }
+  {
+    catch_play p;
+    p.ribbon(true, 0.5f); p.run(50);
+    check("a thumb with no point held catches nothing", !p.thumb, 1);
+  }
+  {
+    catch_play p;
+    p.finger(0, 0.5f); p.run(20);
+    p.finger(4, 0.4f); p.run(20);
+    p.ribbon(true, 0.5f); p.run(50);
+    p.finger(0, 0); p.finger(4, 0); p.run(30);
+    check("two points held: the thumb takes the one landed last", p.thumb && p.depth[0] == 0 && near(p.depth[4], 0.4f), 1);
+  }
+  {
+    catch_play p;
+    p.finger(3, 0.03f); p.run(50);
+    p.ribbon(true, 0.5f); p.run(50);
+    check("a point barely touched isn't caught", !p.thumb, 1);
+  }
+  {
+    catch_play p;
+    p.finger(3, 0.5f); p.f.settled[3] = false; p.run(5);
+    p.ribbon(true, 0.5f); p.run(5);
+    check("a finger still landing as the thumb lands isn't caught (both at once)", !p.thumb, 1);
+  }
+  {
+    // the ribbon reading off for a pass or two: the chip at its threshold, or the border guard at the right end
+    catch_play p;
+    p.finger(2, 0.6f); p.run(50);
+    p.ribbon(true, 0.5f); p.run(400);
+    p.finger(2, 0); p.run(50);
+    p.ribbon(false); p.run(10);
+    p.ribbon(true, 0.5f); p.run(50);
+    check("a thumb reading off for 10 ms keeps its point", p.thumb && near(p.depth[2], 0.6f), 1);
+  }
+  {
+    catch_play p;
+    p.finger(2, 0.6f); p.run(50);
+    p.ribbon(true, 0.5f); p.run(100);
+    p.ribbon(false); p.run(10);
+    p.ribbon(true, 0.5f); p.run(300);
+    p.finger(2, 0); p.run(50);
+    p.ribbon(true, 0.0f); p.run(30);
+    p.ribbon(false); p.run(50);
+    check("a thumb reading off for 10 ms early on isn't a tap: nothing left on", !p.thumb && p.depth[2] == 0, 1);
+  }
+  {
+    catch_play p;
+    p.finger(1, 0.8f); p.run(50);
+    p.ribbon(true, 0.6f); p.run(100);
+    p.ribbon(false); p.run(50);
+    p.finger(1, 0); p.run(100);
+    p.finger(1, 0.3f); p.run(50);
+    p.ribbon(true, 0.5f); p.run(300);   // held past a tap
+    p.ribbon(true, 0.1f); p.run(30);
+    bool moved = near(p.depth[1], 0.3f);   // the finger still pressing counts too, the deeper
+    p.finger(1, 0); p.run(50);
+    moved &= near(p.depth[1], 0.16f);
+    p.ribbon(false); p.run(50);
+    check("a point left on and picked up, then caught: the thumb has it, from as deep as it was left", moved && p.depth[1] == 0, 1);
+  }
+  {
+    catch_play p;
+    p.finger(3, 0.5f); p.run(50);
+    p.ribbon(true, 0.5f); p.run(100);
+    p.ribbon(false); p.run(50);
+    p.finger(3, 0); p.run(100);
+    p.finger(3, 0.4f); p.f.settled[3] = false; p.run(10);
+    p.finger(3, 0); p.run(100);
+    check("a finger read on a point left on only while landing doesn't pick it up", near(p.depth[3], 0.5f), 1);
+  }
+  {
+    catch_play p;
+    p.finger(0, 0.5f); p.run(50);
+    p.ribbon(true, 0.5f); p.run(100);
+    p.ribbon(false); p.run(50);
+    p.f.on[0] = false; p.run(10);
+    p.f.on[0] = true; p.f.landed_at[0] = p.now; p.run(50);
+    p.finger(0, 0); p.run(100);
+    check("the finger held through a tap, reading off for 10 ms then lifting: still left on", near(p.depth[0], 0.5f), 1);
+  }
+  {
+    catch_play p;
+    p.finger(2, 0.5f); p.ribbon(true, 0.5f);
+    p.c = catch_state{};   // a load or a panic with the thumb resting and a finger held
+    p.run(100);
+    check("a thumb already resting when the state starts afresh catches nothing", !p.thumb, 1);
+  }
+  {
+    rail_state s{};
+    s.t[0] = rail_touch{true, false, 0, 100, 100, {1, 0, 0}, 1234, 100};
+    rail_fingers f;
+    rail_fingers_of(s, false, f);
+    bool ok = f.on[0] && f.settled[0] && f.landed_at[0] == 1234 && !f.on[4];
+    rail_fingers_of(s, true, f);
+    ok &= f.on[4] && !f.on[0];
+    check("the fingers numbered as the player holds the board, upside down too", ok, 1);
+  }
+}
+
 int main(int argc, char **argv) {
   load(argc > 1 ? argv[1] : "vectors.txt");
   printf("%zu modelled touches\n", V.size());
@@ -406,6 +578,7 @@ int main(int argc, char **argv) {
   test_palm();
   test_ribbon();
   test_keys();
+  test_catch();
   printf(failures ? "%d checks FAILED\n" : "all checks pass\n", failures);
   return failures ? 1 : 0;
 }

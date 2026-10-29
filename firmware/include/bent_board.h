@@ -484,5 +484,133 @@ BENT_BOARD_CODE static inline void border_guard(bool *zone_down, const int16_t *
   if (ribbon < border_share * harp) zone_down[zl] = zone_down[zr] = false;
 }
 
+// ---- catch: a rail point taken over by the thumb -----------------------------------------------------
+// With catch on (bent board options, 486), a thumb landing on the ribbon while a finger holds a rail point
+// takes that point over: the point stays as deep as the finger had it, the finger can lift, and the thumb
+// moves it from there, deeper toward the ribbon's right end (full there) and lighter toward its left (none
+// there), wherever along it the thumb landed. Lifted, the point lets go. A thumb lifted again within
+// catch_tap_ms (a tap) leaves the point on instead, at the depth it had, until a finger lands on it again
+// and lifts: the finger picks it up, the lift lets it go; a thumb landing while that finger holds it takes it
+// over instead. Order matters: a thumb already on the ribbon when a finger lands on a point catches nothing,
+// and the ribbon goes on doing its own job. While it has a point, the ribbon's own area is let go. A thumb or
+// finger that reads off for under catch_gone_ms hasn't lifted. Two points held together where they share a line read badly; one caught
+// or left on leaves the rail to the next finger.
+// The rail's fingers as the player numbers the points (upside down turned round), for catch_update.
+struct rail_fingers { bool on[rail_points]; bool settled[rail_points]; uint32_t landed_at[rail_points]; };
+
+BENT_BOARD_CODE static inline void rail_fingers_of(const rail_state &s, bool upside_down, rail_fingers &f) {
+  for (uint8_t k = 0; k < rail_points; k++) { f.on[k] = f.settled[k] = false; f.landed_at[k] = 0; }
+  for (uint8_t i = 0; i < rail_touch_max; i++) {
+    const rail_touch &t = s.t[i];
+    if (!t.active) continue;
+    uint8_t k = upside_down ? rail_points - 1 - t.point : t.point;
+    f.on[k] = true;
+    f.settled[k] = !t.landing;
+    f.landed_at[k] = t.landed_at;
+  }
+}
+
+const uint16_t catch_tap_ms = 250;    // a thumb on the ribbon shorter than this leaves the point on
+const uint8_t catch_settle_ms = 20;   // the thumb's place taken this long after it lands (the ribbon follows over 15)
+const uint8_t catch_gone_ms = 40;     // a thumb or finger reading off for less than this is still there: a dropout
+                                      // (a light touch at the chip's threshold, or the border guard taking the ribbon)
+const float catch_least = 0.05f;      // a point held shallower than this isn't caught
+
+struct catch_state {
+  bool started = false;     // the first reading taken: a thumb or finger already there then has not just landed
+  bool thumb = false;       // a thumb on the ribbon, its dropouts bridged
+  uint32_t thumb_seen = 0;  // when it last read on
+  uint32_t thumb_at = 0;    // when it landed
+  int8_t point = -1;        // the point the thumb has, -1 none
+  bool anchored = false;    // its place along the ribbon taken
+  float caught = 0;         // the point's depth as the thumb took it
+  float anchor = 0;         // the thumb's place then
+  float depth = 0;          // the point's depth as the thumb has it now
+  bool finger[rail_points] = {};          // a finger on each point, its dropouts bridged
+  uint32_t finger_seen[rail_points] = {};
+  uint32_t finger_at[rail_points] = {};   // when it landed
+  float left_on[rail_points] = {};        // each point left on, its depth
+  uint32_t left_at[rail_points] = {};
+  bool picked[rail_points] = {};          // a finger landed on it since, and settled: its lift lets go
+};
+
+// A thumb or finger reading on or off, a dropout shorter than catch_gone_ms bridged: whether it is there, and
+// whether it just landed or lifted (lifted catch_gone_ms after it was last seen, at seen)
+BENT_BOARD_CODE static inline void catch_bridge(bool reads_on, uint32_t now, bool &on, uint32_t &seen, bool &landed, bool &lifted) {
+  landed = lifted = false;
+  if (reads_on) {
+    seen = now;
+    if (!on) on = landed = true;
+  } else if (on && now - seen >= catch_gone_ms) {
+    on = false;
+    lifted = true;
+  }
+}
+
+// One reading: depth[k] is point k's depth as the rail reads it, and comes back with the thumb's point and the
+// points left on, the deepest of each. Whether the thumb has a point (the ribbon's own area let go).
+BENT_BOARD_CODE static inline bool catch_update(catch_state &c, const rail_fingers &f, const ribbon_state &r, uint32_t now,
+                         float depth[rail_points]) {
+  if (!c.started) {
+    c.started = true;
+    c.thumb = r.active;
+    c.thumb_seen = now;
+    for (uint8_t k = 0; k < rail_points; k++) { c.finger[k] = f.on[k]; c.finger_seen[k] = c.finger_at[k] = now; }
+  }
+  bool landed, lifted;
+  catch_bridge(r.active, now, c.thumb, c.thumb_seen, landed, lifted);
+  for (uint8_t k = 0; k < rail_points; k++) {
+    bool finger_landed, finger_lifted;
+    catch_bridge(f.on[k], now, c.finger[k], c.finger_seen[k], finger_landed, finger_lifted);
+    if (finger_landed) c.finger_at[k] = now;
+    if (c.left_on[k] <= 0) continue;
+    // picked up by a finger landed since it was left on, once settled (a finger landing may be read on the
+    // next point for a moment); let go as that finger lifts
+    if (f.on[k] && f.settled[k] && (int32_t)(c.finger_at[k] - c.left_at[k]) > 0) c.picked[k] = true;
+    else if (!c.finger[k] && c.picked[k]) { c.left_on[k] = 0; c.picked[k] = false; }
+  }
+  if (landed) {
+    c.point = -1;
+    float deepest = 0;
+    for (uint8_t k = 0; k < rail_points; k++) {
+      float d = depth[k] > c.left_on[k] ? depth[k] : c.left_on[k];
+      if (!f.on[k] || !f.settled[k] || d < catch_least) continue;
+      if (c.point < 0 || (int32_t)(c.finger_at[k] - c.finger_at[c.point]) > 0) { c.point = k; deepest = d; }   // the last landed
+    }
+    if (c.point >= 0) {   // the thumb has it now, left on or not
+      c.anchored = false;
+      c.caught = c.depth = deepest;
+      c.thumb_at = now;
+      c.left_on[c.point] = 0;
+      c.picked[c.point] = false;
+    }
+  }
+  if (c.point >= 0 && r.active) {
+    if (!c.anchored) {   // the finger may still be pressing in while the thumb settles
+      if (depth[c.point] > c.caught) c.caught = depth[c.point];
+      c.depth = c.caught;
+      if (now - c.thumb_at >= catch_settle_ms) { c.anchored = true; c.anchor = r.place; }
+    } else if (r.place >= c.anchor) {
+      c.depth = c.anchor < 1 ? c.caught + (1 - c.caught) * (r.place - c.anchor) / (1 - c.anchor) : c.caught;
+    } else {
+      c.depth = c.caught * r.place / c.anchor;
+    }
+  }
+  if (lifted && c.point >= 0) {
+    uint8_t k = c.point;
+    if (c.thumb_seen - c.thumb_at < catch_tap_ms) {   // on the ribbon for that long, to when it was last seen
+      if (c.depth > c.left_on[k]) c.left_on[k] = c.depth;
+      c.left_at[k] = now;
+      c.picked[k] = false;
+    }
+    c.point = -1;
+  }
+  for (uint8_t k = 0; k < rail_points; k++) {
+    if (c.left_on[k] > depth[k]) depth[k] = c.left_on[k];
+    if (c.point == (int8_t)k && c.depth > depth[k]) depth[k] = c.depth;
+  }
+  return c.point >= 0;
+}
+
 }  // namespace bentboard
 #endif
