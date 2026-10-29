@@ -59,6 +59,36 @@ so it takes the one bend that is good held steady, bitcrush.
   chords and drums start again in tune too. `bent_strike` in main.cpp and `strike` in lib/bent_bus, rendered by
   `tools/bent_render` (the strike checks).
 
+- **The second knob (8)**: press a rail point, then put the thumb on the ribbon: while both stay, the thumb sets how
+  that bend goes, the finger how deep. Pitch drop: its range, the preset's at the left end to two octaves at the
+  right. Starve: how far its brown-out drags the other bends (bends interact), the preset's to fully. Crush: bits
+  in the left half, rate in the right. Clock bend: both ways from where the thumb landed, dragging to the left and
+  rushing to the right, four times either way at the ends. Stutter: the slice, longest at the left end, shortest at
+  the right. For the clock bend and the stutter the finger only holds it on. The same gesture as catch: with both
+  on, catch has it. `bentboard::shape_update`, the overrides in BENDS (`range_touch`, `interact_touch`,
+  `crush_mode_touch`, `clock_touch`).
+- **Rolls (16)**: with the stutter on (by any touch), a finger landing on the clock bend's point rolls it: the slice
+  halves every few repeats (every 4 at a touch, every one pressed fully) down to 2.9 ms, a buzz, and stays when the
+  finger lifts. On the pitch drop's point it falls: each repeat a step lower (0.1 to 1 semitone, as pressed) down to
+  the drop's range, staying when the finger lifts. The point's own bend is left out meanwhile; the stutter letting
+  go starts both again. The other order (the point first) plays the two bends together, as ever. Without a rhythm
+  the roll still works on the free slice, so the clock bend's point does something in the banks without one.
+  `bentboard::pairs_update`, `AudioEffectBend::roll`.
+- **The plug (32)**: the rail's two ends pressed together (landing within 60 ms; the one pair the rail reads pressed at
+  once) pull the plug: the pitch drop, the starve and the clock bend all at the shallower finger's depth, the bends
+  interacting fully, the ends' own bends left out. Let go and the power comes back; a finger left behind does
+  nothing until it lifts too. Landed further apart, the ends are their own bends (or a roll). It gives the three
+  bends together, which the rail can't read pressed as three fingers (they share lines).
+- **The palm hold (64)**: a rail point pressed with the palm on its pad, then the palm lifted, then the finger: the
+  bend stays as deep as it was until the palm lands again. Pressed with the palm already off, it springs back as
+  ever. Untried by hand: if reaching the rail lifts the palm anyway, every bend would stay, so it's off by default.
+  `bentboard::palm_hold_update`; a panic lets go too.
+- **The chain (128)**: the bends a touch holds run in the order they were pressed, ahead of the rest in their own
+  order (stutter, pitch drop, starve, crush). A crush pressed before a pitch drop has its grit pitched down with
+  it; a starve before a stutter has its crackle repeated in the slice. `AudioEffectBend::chain` runs the stages
+  (`stage_stutter`, `stage_pitch`, `stage_starve_crush`) in that order; in their own order the output is the same,
+  bit for bit, as before the stages were split (`tools/bent_render`'s renders compared).
+
 The two compose: catch a bend or leave it on, and both hands play while the harp strikes it.
 
 **Decoding** is `include/bent_board.h` (plain C++, its code and tables in flash): the harp's line with T10's two

@@ -50,19 +50,25 @@ FLASHMEM void AudioEffectBend::release_slice() {
 
 // the slice's length for the stutter's depth now: from the longest at a touch to the shortest at full,
 // evenly in octaves; in sync, half a beat halving down to a 32nd as it deepens, none shorter than the
-// shortest (doubled up to it) nor longer than the longest
+// shortest (doubled up to it) nor longer than the longest. A roll halves it further, to ROLL_SHORTEST.
 FLASHMEM uint32_t AudioEffectBend::loop_wanted() {
   float x = (stutter_target - 0.03f) / 0.97f;
   x = x < 0 ? 0 : x > 1 ? 1 : x;
   const uint32_t longest = STUTTER_BLOCKS * AUDIO_BLOCK_SAMPLES;
-  uint32_t beat = stutter_beat;
+  uint32_t beat = stutter_beat, len;
   if (beat) {
-    uint32_t len = beat >> (1 + (uint8_t)(x * 4.0f + 0.5f));
+    len = beat >> (1 + (uint8_t)(x * 4.0f + 0.5f));
     while (len > longest) len >>= 1;
     while (len < stutter_shortest && len * 2 <= longest) len <<= 1;
-    return len < 64 ? 64 : len;
+    if (len < 64) len = 64;
+  } else {
+    len = (uint32_t)(longest * powf((float)stutter_shortest / longest, x));
   }
-  return (uint32_t)(longest * powf((float)stutter_shortest / longest, x));
+  if (halvings) {
+    uint32_t rolled = len >> halvings;
+    len = rolled >= ROLL_SHORTEST ? rolled : len < ROLL_SHORTEST ? len : ROLL_SHORTEST;
+  }
+  return len;
 }
 
 // a head's jump (0 A, 1 B), at sample t: it would land WINDOW from where it was; it lands instead up to
@@ -126,7 +132,6 @@ FLASHMEM void AudioEffectBend::splice(uint32_t t, uint8_t head) {
 }
 
 FLASHMEM void AudioEffectBend::update(void) {
-  const uint32_t N = AUDIO_BLOCK_SAMPLES;
   audio_block_t *cur[2] = {receiveReadOnly(0), receiveReadOnly(1)};   // each holds one reference
   audio_block_t *drums[2] = {receiveReadOnly(2), receiveReadOnly(3)};
   bool own[2] = {false, false};   // a block of this update's own, which nothing else holds: written in place
@@ -135,8 +140,8 @@ FLASHMEM void AudioEffectBend::update(void) {
   // the stutter pressed past 3%, let go under 1%
   float st = stutter_target;
   bool press = stuttering ? st > 0.01f : st > 0.03f;
-  if (press && !stuttering) { release_slice(); stuttering = true; }
-  if (!press && stuttering) { stuttering = false; if (looping) stutter_fade = 1; else release_slice(); }
+  if (press && !stuttering) { release_slice(); roll_reset(); stuttering = true; }
+  if (!press && stuttering) { stuttering = false; if (looping) stutter_fade = 1; else { release_slice(); roll_reset(); } }
   // struck by a harp note (strike): a new slice from here; one repeating fades back to the live sound first,
   // as a refresh does, and the slice is caught from the block after
   if (strike_stutter) {
@@ -179,8 +184,8 @@ FLASHMEM void AudioEffectBend::update(void) {
   if (strike_drop) { strike_drop = false; drop_now = 0; }   // struck by a harp note: in tune again, to sag anew
   drop_now += (drop_t - drop_now) * sag_coef;
   if (drop_t == 0 && drop_now < 0.05f) drop_now = 0;   // 5 cents, then the shifter fades out
-  semis = drop_now + starve_semis;
-  bool shifting = drop_t > 0 || starve_now > 0 || drop_now > 0;
+  semis = drop_now + starve_semis + fall_semis;   // a roll's fall too (see stage_stutter)
+  bool shifting = drop_t > 0 || starve_now > 0 || drop_now > 0 || fall_semis > 0;
   float wet_aim = shifting ? 1 : 0;
   float ratio_new = shifting ? exp2f(-semis / 12.0f) : 1;
   if (wet == 0 && shifting) { phase = 0.5f; ratio = 1; head_off[0] = head_off[1] = 0; rho = 0; splice_due = 2; splice_rest[0] = splice_rest[1] = 0; }   // in at the window's middle: the live sound 25 ms late, and B (silent) matched to it at once
@@ -200,11 +205,45 @@ FLASHMEM void AudioEffectBend::update(void) {
 
   rest = !stuttering && !looping && wet == 0 && !shifting && starve_now == 0 && gain == 1 && crackle == 0 && !crushing;
 
-  // ---- the drums: into the mix now, unless a stutter is on and they're to keep playing through it
+  // ---- the drums: into the mix first, unless a stutter is on and they're to keep playing through it: then
+  // straight after the stutter
   bool drums_after = stutter_drums_through && (stuttering || looping);
   if (!drums_after) add_drums(cur, own, drums);
 
-  // ---- the stutter: from the press on, the blocks kept; once there's a slice's worth, it plays over and over
+  // ---- the stages, in the chain's order (by default the stutter, the pitch, the starve and the crush; see
+  // chain); a starve straight before a crush runs with it, a sample at a time, as by default
+  uint32_t order = chain_packed;
+  uint8_t done = 0;
+  for (uint8_t i = 0; i < STAGES; i++) {
+    uint8_t stage = (order >> (8 * i)) & 0xFF, next = i + 1 < STAGES ? (order >> (8 * (i + 1))) & 0xFF : (uint8_t)STAGES;
+    if (stage >= STAGES || (done & (1 << stage))) continue;
+    done |= 1 << stage;
+    if (stage == STAGE_STUTTER) {
+      stage_stutter(cur, own);
+      if (drums_after) add_drums(cur, own, drums);
+    } else if (stage == STAGE_PITCH) {
+      stage_pitch(cur, own, ratio_new, wet_aim);
+    } else if (stage == STAGE_STARVE) {
+      bool with_crush = next == STAGE_CRUSH && !(done & (1 << STAGE_CRUSH));
+      if (with_crush) { done |= 1 << STAGE_CRUSH; i++; }
+      stage_starve_crush(cur, own, true, with_crush && crushing, gain_aim, rail, crackle_odds, bits_bent, rate_bent);
+    } else {
+      stage_starve_crush(cur, own, false, crushing, gain_aim, rail, crackle_odds, bits_bent, rate_bent);
+    }
+  }
+
+  uint16_t count = 0;
+  for (uint8_t c = 0; c < 2; c++) {
+    for (uint8_t k = 0; k < HISTORY; k++) count += history[c][k] != nullptr;
+    count += slice_blocks;
+    if (cur[c]) { transmit(cur[c], c); release(cur[c]); }
+  }
+  held = count;
+}
+
+// ---- the stutter: from the press on, the blocks kept; once there's a slice's worth, it plays over and over
+FLASHMEM void AudioEffectBend::stage_stutter(audio_block_t **cur, bool *own) {
+  const uint32_t N = AUDIO_BLOCK_SAMPLES;
   if (stuttering && slice_blocks < STUTTER_BLOCKS) {
     for (uint8_t c = 0; c < 2; c++) { hold(cur[c]); slice[c][slice_blocks] = cur[c]; own[c] = false; }
     slice_blocks++;
@@ -219,6 +258,7 @@ FLASHMEM void AudioEffectBend::update(void) {
     if (out[0] && out[1]) {
       uint32_t at = 0, length = 0;
       uint16_t fade = 0;
+      uint8_t wraps = 0;
       uint32_t next_length = loop_wanted();
       if (next_length > captured) next_length = captured;
       for (uint8_t c = 0; c < 2; c++) {
@@ -237,10 +277,23 @@ FLASHMEM void AudioEffectBend::update(void) {
             if (fade < 128) fade++;
           }
           out[c]->data[n] = clip16(y);
-          if (++at >= length) { at = 0; length = next_length; }   // a new depth takes the slice from its next repeat
+          if (++at >= length) {   // a new depth takes the slice from its next repeat
+            at = 0;
+            length = next_length;
+            if (c == 0) wraps++;
+          }
         }
       }
       loop_at = at; loop_length = length; stutter_fade = fade;
+      // a roll: the slice halves every few repeats, and the sound falls a step each repeat (see roll)
+      float rate = roll_rate, step = fall_step_semis, most = fall_most_semis;
+      for (; wraps; wraps--) {
+        if (rate > 0 && ++repeats >= 1 + (uint8_t)(3 * (1 - rate) + 0.5f)) {
+          repeats = 0;
+          if (halvings < 12 && (loop_length >> 1) >= ROLL_SHORTEST) halvings++;
+        }
+        if (step > 0 && fall_semis < most) fall_semis = fall_semis + step < most ? fall_semis + step : most;
+      }
       for (uint8_t c = 0; c < 2; c++) {
         if (cur[c]) release(cur[c]);
         cur[c] = out[c];
@@ -250,15 +303,22 @@ FLASHMEM void AudioEffectBend::update(void) {
       looped += N;
       uint32_t refresh = stutter_refresh;
       if (stuttering && refresh && looped >= refresh && !stutter_fade) stutter_fade = 1;
-      if (stutter_fade >= 128) release_slice();
+      if (stutter_fade >= 128) {
+        release_slice();
+        if (!stuttering) roll_reset();   // let go: the next stutter rolls afresh (a refresh, still held, rolls on)
+      }
     } else {
       if (out[0]) release(out[0]);
       if (out[1]) release(out[1]);
     }
   }
 
-  if (drums_after) add_drums(cur, own, drums);
+}
 
+// ---- the pitch: the shifter's history, what came before it, kept (so it is no longer this update's own); then
+// two heads reading the history a little slower (or quicker) than it's written
+FLASHMEM void AudioEffectBend::stage_pitch(audio_block_t **cur, bool *own, float ratio_new, float wet_aim) {
+  const uint32_t N = AUDIO_BLOCK_SAMPLES;
   // ---- the pitch shifter's history: what the stutter left, kept (so it is no longer this update's own)
   uint8_t slot = block_number & (HISTORY - 1);
   for (uint8_t c = 0; c < 2; c++) {
@@ -326,8 +386,14 @@ FLASHMEM void AudioEffectBend::update(void) {
     ratio = 1;
   }
 
-  // ---- the starve's rails, level and crackle, then the crush: a sample at a time, both sides together
-  bool starving = starve_now > 0 || gain != 1 || crackle != 0;
+}
+
+// ---- the starve's rails, level and crackle, then the crush: a sample at a time, both sides together; either
+// alone where the chain's order puts something between them, or the crush first
+FLASHMEM void AudioEffectBend::stage_starve_crush(audio_block_t **cur, bool *own, bool starve_on, bool crush_on, float gain_aim,
+                                                  float rail, float crackle_odds, float bits_bent, float rate_bent) {
+  const uint32_t N = AUDIO_BLOCK_SAMPLES;
+  bool starving = starve_on && (starve_now > 0 || gain != 1 || crackle != 0), crushing = crush_on;
   if (starving || crushing) {
     for (uint8_t c = 0; c < 2; c++) {
       if (own[c]) continue;
@@ -383,11 +449,4 @@ FLASHMEM void AudioEffectBend::update(void) {
     }
   }
 
-  uint16_t count = 0;
-  for (uint8_t c = 0; c < 2; c++) {
-    for (uint8_t k = 0; k < HISTORY; k++) count += history[c][k] != nullptr;
-    count += slice_blocks;
-    if (cur[c]) { transmit(cur[c], c); release(cur[c]); }
-  }
-  held = count;
 }

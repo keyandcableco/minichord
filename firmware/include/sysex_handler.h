@@ -1540,7 +1540,7 @@ FLASHMEM bool parameter_range(int adress, int16_t &lo, int16_t &hi) {
       case 483: lo=0; hi=4095; return true;
       case 484: lo=0; hi=511; return true;
       case 485: lo=0; hi=4095; return true;
-      case 486: lo=0; hi=7; return true;
+      case 486: lo=0; hi=255; return true;
       case 303: lo=0; hi=511; return true;
       case 304: lo=0; hi=4095; return true;
       case 305: lo=0; hi=2; return true;

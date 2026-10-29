@@ -377,6 +377,63 @@ int main(int argc, char **argv) {
     CHECK(caught.most_held <= 2 * (AudioEffectBend::HISTORY + AudioEffectBend::STUTTER_BLOCKS), "held more than it should");
   }
 
+  printf("rolls: a stutter of 0.5 held from 1 s, rolled at 1 from 1.5 to 1.8 s; then a fall of a semitone a repeat, to 5\n");
+  {
+    uint32_t base = 0, rolled = 0, kept = 0, again = 0;
+    Run roll = render(5, [&](AudioEffectBend &b, float t) {
+      b.stutter((t > 1.0f && t < 3.6f) || t > 4.0f ? 0.5f : 0, 0, 1102, true);
+      b.roll(t > 1.5f && t < 1.8f ? 1.0f : 0, 0, 12);
+      if (t < 1.49f) base = b.slice_length();
+      if (t < 1.85f) rolled = b.slice_length();
+      if (t < 3.5f) kept = b.slice_length();
+      if (t < 4.9f) again = b.slice_length();
+    }, false);
+    write_wav(dir + "/8 roll.wav", roll.out);
+    printf("    slice %u samples, rolled to %u, still %u after letting go of the roll; the next stutter %u\n", base, rolled, kept, again);
+    CHECK(base > 0 && rolled <= base / 4 && rolled >= AudioEffectBend::ROLL_SHORTEST && kept == rolled && again == base,
+          "the roll doesn't halve the slice, keep it, or start again with the next stutter");
+    float fallen = 0, stayed = 0, after = 1;
+    Run fall = render(5, [&](AudioEffectBend &b, float t) {
+      b.stutter(t > 1.0f && t < 3.6f ? 0.5f : 0, 0, 1102, true);
+      b.roll(0, t > 1.5f && t < 2.5f ? 1.0f : 0, 5);
+      if (t < 2.5f) fallen = b.fall_semitones();
+      if (t < 3.5f) stayed = b.fall_semitones();
+      after = b.fall_semitones();
+    }, false);
+    write_wav(dir + "/8b fall.wav", fall.out);
+    printf("    fallen %.1f st by 2.5 s, %.1f st at 3.5 s, %.1f after the stutter lets go\n", fallen, stayed, after);
+    CHECK(fabsf(fallen - 5) < 0.01f && fabsf(stayed - 5) < 0.01f && after == 0, "the fall doesn't step down to its most, stay, or come back");
+  }
+
+  printf("the chain's order: a drop of 6 st and a crush of 0.6 held, by default and the crush first; a stutter last\n");
+  {
+    auto scene = [](uint8_t a, uint8_t b2, uint8_t c, uint8_t d, bool stutter) {
+      return [=](AudioEffectBend &b, float t) {
+        uint8_t order[AudioEffectBend::STAGES] = {a, b2, c, d};
+        b.chain(order);
+        float on = t > 0.5f && t < 3.0f ? 1.0f : 0;
+        b.pitch_drop(0.5f * on, 12, 150);
+        b.crush(0.6f * on, 0);
+        b.stutter(stutter && t > 1.0f && t < 2.5f ? 0.4f : 0, 0, 1102, true);
+      };
+    };
+    using B = AudioEffectBend;
+    Run plain = render(4, scene(B::STAGE_STUTTER, B::STAGE_PITCH, B::STAGE_STARVE, B::STAGE_CRUSH, false));
+    Run crush_first = render(4, scene(B::STAGE_CRUSH, B::STAGE_STUTTER, B::STAGE_PITCH, B::STAGE_STARVE, false));
+    Run stutter_last = render(4, scene(B::STAGE_PITCH, B::STAGE_STARVE, B::STAGE_CRUSH, B::STAGE_STUTTER, true));
+    write_wav(dir + "/9 crush then drop.wav", crush_first.out);
+    write_wav(dir + "/9b drop then crush.wav", plain.out);
+    size_t from = (size_t)(1.0f * FS) * 2, to = (size_t)(2.5f * FS) * 2;
+    bool differs = !std::equal(plain.out.begin() + from, plain.out.begin() + to, crush_first.out.begin() + from);
+    printf("    the crush first %s the default; level %+.1f dB against it; the stutter last holds %d blocks at most\n",
+           differs ? "differs from" : "is the same as", rms_db(crush_first.out, 1, 2.5f) - rms_db(plain.out, 1, 2.5f), stutter_last.most_held);
+    CHECK(differs, "the chain's order changes nothing");
+    CHECK(stutter_last.most_held <= 2 * (AudioEffectBend::HISTORY + AudioEffectBend::STUTTER_BLOCKS), "held more than it should");
+    size_t rest_from = (size_t)(3.7f * FS) * 2;
+    CHECK(std::equal(crush_first.in.begin() + rest_from, crush_first.in.end(), crush_first.out.begin() + rest_from),
+          "not bit for bit after letting go, the crush first");
+  }
+
   printf("rest again after all that: bit for bit\n");
   Run again = render(2, [](AudioEffectBend &b, float t) { if (t < 1) { b.crush(0.5f, 0); b.starve(0.5f); } else { b.crush(0, 0); b.starve(0); } });
   {

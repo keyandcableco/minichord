@@ -612,5 +612,188 @@ BENT_BOARD_CODE static inline bool catch_update(catch_state &c, const rail_finge
   return c.point >= 0;
 }
 
+// ---- the second knob: the ribbon as a held rail point's second knob ------------------------------------
+// With the second knob on (bent board options, 486; with catch on too, catch takes the gesture), a thumb landing
+// on the ribbon while a finger holds a rail point makes the ribbon that point's second knob while both stay:
+// the finger sets how deep, the thumb how it bends (main.cpp's bent_areas_apply says what each bend's second
+// knob is). Where the thumb landed is kept, for a second knob that goes both ways from it. The finger lifting
+// ends it; the ribbon's own area stays let go until the thumb lifts too, so it doesn't jump in under a resting
+// thumb. As with catch, a thumb already on the ribbon when the finger lands is the ribbon's own.
+struct shape_state {
+  bool started = false;
+  bool thumb = false;       // dropouts bridged, as catch's
+  uint32_t thumb_seen = 0;
+  uint32_t thumb_at = 0;
+  bool owned = false;       // the thumb landed on a point held: the ribbon not its own until it lifts
+  int8_t point = -1;        // the point shaped, -1 none
+  bool finger = false;      // its finger, dropouts bridged
+  uint32_t finger_seen = 0;
+  bool anchored = false;    // where the thumb landed taken
+  float anchor = 0;
+};
+
+// One reading: whether the ribbon is the thumb's (its own area let go). s.point is the point shaped (-1 none);
+// the thumb is at r.place along the ribbon, and landed at s.anchor once s.anchored.
+BENT_BOARD_CODE static inline bool shape_update(shape_state &s, const rail_fingers &f, const ribbon_state &r, uint32_t now,
+                         const float depth[rail_points]) {
+  if (!s.started) {
+    s.started = true;
+    s.thumb = r.active;
+    s.thumb_seen = now;
+  }
+  bool landed, lifted;
+  catch_bridge(r.active, now, s.thumb, s.thumb_seen, landed, lifted);
+  if (landed) {
+    s.point = -1;
+    for (uint8_t k = 0; k < rail_points; k++) {
+      if (!f.on[k] || !f.settled[k] || depth[k] < catch_least) continue;
+      if (s.point < 0 || (int32_t)(f.landed_at[k] - f.landed_at[s.point]) > 0) s.point = k;   // the last landed
+    }
+    s.owned = s.point >= 0;
+    if (s.point >= 0) {
+      s.finger = true;
+      s.finger_seen = s.thumb_at = now;
+      s.anchored = false;
+    }
+  }
+  if (s.point >= 0) {
+    bool finger_landed, finger_lifted;
+    catch_bridge(f.on[s.point], now, s.finger, s.finger_seen, finger_landed, finger_lifted);
+    if (!s.finger || !s.thumb) s.point = -1;
+    else if (!s.anchored && r.active && now - s.thumb_at >= catch_settle_ms) { s.anchored = true; s.anchor = r.place; }
+  }
+  if (lifted) {
+    s.owned = false;
+    s.point = -1;
+  }
+  return s.owned;
+}
+
+// ---- the palm lifted holds a bend ---------------------------------------------------------------------
+// With the palm hold on (486): a rail point pressed while the palm rests on its pad, the palm then lifted and
+// then the finger, stays as deep as the finger had it until the palm lands again. A bent machine left alone
+// stays bent, and the hand coming back to it puts it right. A point pressed with the palm already off, or
+// lifted after the palm is back, springs back as ever. The palm and the fingers are bridged as catch's are.
+const float palm_hold_fall = 1.0f;   // a finger's depth remembered falls this much a second, so a lift easing
+                                     // off isn't what is held, nor a press long eased
+struct palm_hold_state {
+  bool started = false;
+  bool palm = false;
+  uint32_t palm_seen = 0;
+  uint32_t at = 0;
+  bool finger[rail_points] = {};
+  uint32_t finger_seen[rail_points] = {};
+  bool armed[rail_points] = {};    // pressed with the palm on
+  bool sticky[rail_points] = {};   // and the palm lifted since: its lift holds it
+  float recent[rail_points] = {};  // the finger's depth, let down slowly
+  float held[rail_points] = {};
+};
+
+// One reading, palm_on the palm pad touched: depth[k] comes back with each point held, the deeper
+BENT_BOARD_CODE static inline void palm_hold_update(palm_hold_state &p, const rail_fingers &f, bool palm_on, uint32_t now,
+                             float depth[rail_points]) {
+  if (!p.started) {
+    p.started = true;
+    p.palm = palm_on;
+    p.palm_seen = p.at = now;
+    for (uint8_t k = 0; k < rail_points; k++) { p.finger[k] = f.on[k]; p.finger_seen[k] = now; }
+  }
+  float fall = (now - p.at) * 0.001f * palm_hold_fall;
+  p.at = now;
+  bool palm_landed, palm_lifted;
+  catch_bridge(palm_on, now, p.palm, p.palm_seen, palm_landed, palm_lifted);
+  for (uint8_t k = 0; k < rail_points; k++) {
+    bool landed, lifted;
+    catch_bridge(f.on[k], now, p.finger[k], p.finger_seen[k], landed, lifted);
+    if (landed) { p.armed[k] = p.palm; p.sticky[k] = false; p.recent[k] = 0; }
+    if (p.finger[k]) {
+      float let_down = p.recent[k] - fall;
+      p.recent[k] = depth[k] > let_down ? depth[k] : let_down;
+      if (palm_lifted && p.armed[k]) p.sticky[k] = true;
+      if (palm_landed) p.sticky[k] = false;
+    }
+    if (lifted) {
+      if (p.sticky[k] && !p.palm && p.recent[k] > p.held[k]) p.held[k] = p.recent[k];
+      p.armed[k] = p.sticky[k] = false;
+    }
+    if (palm_landed) p.held[k] = 0;
+    if (p.held[k] > depth[k]) depth[k] = p.held[k];
+  }
+}
+
+// ---- two rail points as a pair: rolls and the plug -----------------------------------------------------
+// Rolls (486): a finger landing on the clock bend's point while the stutter is on (by any touch) rolls it: the
+// stutter's slice halves every few repeats, sooner the deeper the finger presses, and stays at the slice it
+// reached when the finger lifts. On the pitch drop's point it falls: each repeat a step lower, a bigger step the
+// deeper pressed, and it stays fallen when the finger lifts. The point's own bend is left out while it rolls.
+// The other order (the point first, then the stutter) is the two bends together, as ever.
+// The plug (486): the rail's two ends (points 0 and 4, which share no line: the one pair the rail reads pressed
+// together) landing within plug_window_ms of each other pull the plug: their own bends left out, and the pitch
+// drop, the starve and the clock bend all at the shallower one's depth, the bends interacting fully (main.cpp).
+// It lasts while both are held; a finger left behind does nothing until it lifts too. Landed further apart, the
+// two are their own bends (or a roll, as above).
+const uint8_t plug_window_ms = 60;
+
+struct pairs_out {
+  float roll = 0;    // how fast the slice halves, 0 none
+  float fall = 0;    // how big a step each repeat falls, 0 none
+  float plug = 0;    // the plug's depth, 0 none
+  bool left_out[rail_points] = {};   // points whose own bend is left out
+};
+
+struct pairs_state {
+  bool started = false;
+  bool finger[rail_points] = {};
+  uint32_t finger_seen[rail_points] = {};
+  bool rolling = false;    // the clock's finger landed with the stutter on
+  bool falling = false;    // the drop's
+  bool plug = false;       // both ends landed together, and not yet both lifted
+  bool plug_live = false;  // and neither lifted yet: an end landing again later is its own bend, not the plug
+  float plug_depth = 0;
+};
+
+// One reading: clock and drop the points whose bends are the clock bend and the pitch drop (-1 none),
+// stutter_on whether the stutter is on by a touch
+BENT_BOARD_CODE static inline void pairs_update(pairs_state &p, const rail_fingers &f, const float depth[rail_points], int8_t clock,
+                         int8_t drop, bool stutter_on, bool rolls, bool plugs, uint32_t now, pairs_out &out) {
+  if (!p.started) {
+    p.started = true;
+    for (uint8_t k = 0; k < rail_points; k++) { p.finger[k] = f.on[k]; p.finger_seen[k] = now; }
+  }
+  out = pairs_out{};
+  bool landed[rail_points], lifted[rail_points];
+  for (uint8_t k = 0; k < rail_points; k++) catch_bridge(f.on[k], now, p.finger[k], p.finger_seen[k], landed[k], lifted[k]);
+  const uint8_t end_a = 0, end_b = rail_points - 1;
+  if (plugs && !p.plug) {
+    for (uint8_t e = 0; e < 2; e++) {
+      uint8_t end = e ? end_b : end_a, other = e ? end_a : end_b;
+      int32_t apart = (int32_t)(f.landed_at[end] - f.landed_at[other]);
+      if (landed[end] && f.on[other] && (apart < 0 ? -apart : apart) <= plug_window_ms) p.plug = p.plug_live = true;
+    }
+  }
+  if (!plugs || (p.plug && !p.finger[end_a] && !p.finger[end_b])) p.plug = p.plug_live = false;
+  if (p.plug) {
+    if (!p.finger[end_a] || !p.finger[end_b]) p.plug_live = false;   // one lifted: the power back, for good
+    if (!p.plug_live) p.plug_depth = 0;
+    else if (f.on[end_a] && f.on[end_b]) p.plug_depth = depth[end_a] < depth[end_b] ? depth[end_a] : depth[end_b];
+    out.plug = p.plug_depth;
+    out.left_out[end_a] = out.left_out[end_b] = true;
+  }
+  int8_t which[2] = {clock, drop};
+  bool *state[2] = {&p.rolling, &p.falling};
+  for (uint8_t w = 0; w < 2; w++) {
+    int8_t k = which[w];
+    if (k < 0) continue;
+    bool plugged = p.plug && (k == end_a || k == end_b);
+    if (landed[k] && stutter_on && rolls && !plugged) *state[w] = true;
+    if (!p.finger[k] || !stutter_on || !rolls || plugged) *state[w] = false;
+    if (!*state[w]) continue;
+    float amount = 0.1f + 0.9f * depth[k];   // a light touch still rolls, slowly
+    if (w == 0) out.roll = amount;
+    else out.fall = amount;
+    out.left_out[k] = true;
+  }
+}
+
 }  // namespace bentboard
 #endif

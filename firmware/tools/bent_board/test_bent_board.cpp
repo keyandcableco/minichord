@@ -570,6 +570,153 @@ static void test_catch() {
   }
 }
 
+// The other pairings (bent board options, 486), step by step as catch is: the rail's fingers, the ribbon and the
+// palm as the decoder leaves them, every 5 ms
+struct combo_play {
+  rail_fingers f{};
+  ribbon_state r{};
+  bool palm = false;
+  uint32_t now = 1000;
+  float held[rail_points] = {0, 0, 0, 0, 0};
+  float depth[rail_points] = {0, 0, 0, 0, 0};
+  void finger(int k, float d) {
+    if (d > 0 && !f.on[k]) f.landed_at[k] = now;
+    f.on[k] = f.settled[k] = d > 0;
+    held[k] = d;
+  }
+  template <class F> void run(uint32_t ms, F step) {
+    for (uint32_t t = 0; t < ms; t += 5) {
+      now += 5;
+      for (int k = 0; k < rail_points; k++) depth[k] = f.on[k] ? held[k] : 0;
+      step();
+    }
+  }
+};
+
+static void test_pairings() {
+  printf("the second knob, the palm hold, rolls and the plug, played step by step\n");
+  {
+    combo_play p;
+    shape_state s;
+    bool owned = false;
+    auto step = [&] { owned = shape_update(s, p.f, p.r, p.now, p.depth); };
+    p.finger(3, 0.5f); p.run(50, step);
+    p.r.active = true; p.r.place = 0.3f; p.run(50, step);
+    bool ok = owned && s.point == 3 && s.anchored && near(s.anchor, 0.3f);
+    p.r.place = 0.8f; p.run(30, step);
+    ok &= s.point == 3 && near(s.anchor, 0.3f);
+    check("second knob: a thumb landing with a point held shapes it, from where it landed", ok, 1);
+    p.finger(3, 0); p.run(50, step);
+    check("the finger lifts: no point, and the ribbon not its own while the thumb rests", s.point < 0 && owned, 1);
+    p.r.active = false; p.run(50, step);
+    check("the thumb lifts: the ribbon its own again", !owned, 1);
+  }
+  {
+    combo_play p;
+    shape_state s;
+    bool owned = false;
+    auto step = [&] { owned = shape_update(s, p.f, p.r, p.now, p.depth); };
+    p.r.active = true; p.r.place = 0.5f; p.run(50, step);
+    p.finger(1, 0.6f); p.run(50, step);
+    check("second knob: a thumb already resting when the finger lands shapes nothing", !owned && s.point < 0, 1);
+  }
+  {
+    combo_play p;
+    palm_hold_state h;
+    auto step = [&] { palm_hold_update(h, p.f, p.palm, p.now, p.depth); };
+    p.palm = true; p.run(50, step);
+    p.finger(2, 0.6f); p.run(100, step);
+    p.palm = false; p.run(100, step);
+    p.finger(2, 0); p.run(100, step);
+    bool held = p.depth[2] > 0.5f && p.depth[2] <= 0.6f;
+    p.run(1000, step);
+    held &= p.depth[2] > 0.5f;
+    check("palm hold: pressed with the palm on, palm lifted, finger lifted: the point stays", held, 1);
+    p.palm = true; p.run(100, step);
+    check("and the palm landing again lets it go", p.depth[2] == 0, 1);
+  }
+  {
+    combo_play p;
+    palm_hold_state h;
+    auto step = [&] { palm_hold_update(h, p.f, p.palm, p.now, p.depth); };
+    p.run(50, step);
+    p.finger(2, 0.6f); p.run(100, step);
+    p.finger(2, 0); p.run(100, step);
+    bool ok = p.depth[2] == 0;
+    p.palm = true; p.run(50, step);
+    p.finger(1, 0.6f); p.run(100, step);
+    p.palm = false; p.run(100, step);
+    p.palm = true; p.run(100, step);
+    p.finger(1, 0); p.run(100, step);
+    ok &= p.depth[1] == 0;
+    check("palm hold: pressed with the palm off, or the palm back before the lift: springs back", ok, 1);
+  }
+  {
+    combo_play p;
+    pairs_state s;
+    pairs_out o;
+    bool stutter_on = true;
+    auto step = [&] { pairs_update(s, p.f, p.depth, 3, 0, stutter_on, true, true, p.now, o); };
+    p.run(50, step);
+    p.finger(3, 0.5f); p.run(50, step);
+    bool ok = near(o.roll, 0.55f) && o.left_out[3] && o.fall == 0;
+    p.finger(3, 0); p.run(50, step);
+    ok &= o.roll == 0 && !o.left_out[3];
+    check("rolls: the clock's point landing with the stutter on rolls it, its own bend left out", ok, 1);
+    p.finger(0, 1.0f); p.run(50, step);
+    ok = near(o.fall, 1.0f) && o.left_out[0];
+    stutter_on = false; p.run(10, step);
+    ok &= o.fall == 0 && !o.left_out[0];
+    check("the drop's point: it falls, until the stutter lets go", ok, 1);
+    p.finger(0, 0); p.run(50, step);
+    p.finger(3, 0.5f); p.run(50, step);
+    stutter_on = true; p.run(50, step);
+    check("the clock's point first, then the stutter: no roll", o.roll == 0 && !o.left_out[3], 1);
+  }
+  {
+    combo_play p;
+    pairs_state s;
+    pairs_out o;
+    bool stutter_on = false;
+    auto step = [&] { pairs_update(s, p.f, p.depth, 3, 0, stutter_on, true, true, p.now, o); };
+    p.run(50, step);
+    p.finger(4, 0.7f); p.run(20, step);
+    stutter_on = true;   // the stutter's point pressing in
+    p.finger(0, 0.5f); p.run(50, step);
+    bool ok = near(o.plug, 0.5f) && o.left_out[0] && o.left_out[4] && o.fall == 0;
+    check("plug: both ends landing 20 ms apart pull the plug, at the shallower's depth (not a fall)", ok, 1);
+    p.finger(0, 0); p.run(50, step);
+    ok = o.plug == 0 && o.left_out[4];
+    p.finger(4, 0); p.run(50, step);
+    ok &= !o.left_out[4] && !o.left_out[0];
+    check("one lifted: the power back, the other doing nothing until it lifts too", ok, 1);
+    stutter_on = false;
+    p.finger(4, 0.7f); p.run(100, step);
+    p.finger(0, 0.5f); p.run(50, step);
+    check("both ends 100 ms apart: no plug", o.plug == 0 && !o.left_out[4], 1);
+  }
+  {
+    combo_play p;
+    pairs_state s;
+    pairs_out o;
+    bool plugs = true;
+    auto step = [&] { pairs_update(s, p.f, p.depth, 3, 0, false, true, plugs, p.now, o); };
+    p.run(50, step);
+    p.finger(4, 0.7f); p.run(20, step);
+    p.finger(0, 0.5f); p.run(50, step);
+    p.finger(0, 0); p.run(50, step);
+    p.run(3000, step);
+    p.finger(0, 0.6f); p.run(50, step);
+    check("plug: an end lifted and landing again 3 s later doesn't pull it again", o.plug == 0 && o.left_out[4], 1);
+    p.finger(0, 0); p.finger(4, 0); p.run(50, step);
+    p.finger(4, 0.7f); p.run(20, step);
+    p.finger(0, 0.5f); p.run(50, step);
+    bool on = o.plug > 0;
+    plugs = false; p.run(10, step);
+    check("the plug's switch turned off while it is held: let go at once", on && o.plug == 0 && !o.left_out[0] && !o.left_out[4], 1);
+  }
+}
+
 int main(int argc, char **argv) {
   load(argc > 1 ? argv[1] : "vectors.txt");
   printf("%zu modelled touches\n", V.size());
@@ -579,6 +726,7 @@ int main(int argc, char **argv) {
   test_ribbon();
   test_keys();
   test_catch();
+  test_pairings();
   printf(failures ? "%d checks FAILED\n" : "all checks pass\n", failures);
   return failures ? 1 : 0;
 }

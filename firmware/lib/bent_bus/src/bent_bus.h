@@ -1,7 +1,7 @@
 // The bends (BENDS in main.cpp): what a circuit bender wires into an Omnichord's body-contact
 // points, on the whole instrument at once. One stereo object between the last mix (stereo_l_mixer,
 // stereo_r_mixer) and the outputs, so the speaker, the headphones and the USB recording all hear
-// it, and the host's song and the looper's click don't. In signal order:
+// it, and the host's song and the looper's click don't. In signal order (unless chain() reorders it):
 //
 //   stutter   a slice of the sound from the press on, played over and over while held: shorter the
 //             deeper (280 ms at a touch, down to its shortest, 25 ms, at full), or a beat's fraction in
@@ -65,9 +65,28 @@ public:
   }
   static constexpr float STRIKE_SLUMP = 0.2f;   // the supply's slump under a struck note, at full starve
 
+  // rolls (bent board options in main.cpp): with rate over 0 the stutter's slice halves every few repeats (4 at a
+  // touch, every one at 1), down to ROLL_SHORTEST, and stays at the slice it reached as rate goes back to 0;
+  // with fall_step over 0 each repeat takes the whole sound fall_step semitones lower, down to fall_most, and it
+  // stays there. Both start again with the next stutter.
+  void roll(float rate, float fall_step, float fall_most) { roll_rate = rate; fall_step_semis = fall_step; fall_most_semis = fall_most; }
+  static const uint16_t ROLL_SHORTEST = 128;   // samples (2.9 ms): a roll ends in a buzz
+
+  // the chain's order (bent board options): the stages in the order they run, by default as listed at the top
+  // (the stutter, the pitch, the starve, the crush); the drums go in before the first, or with drums_through
+  // after the stutter, wherever it is. Packed in one word, so the audio interrupt never reads half an order.
+  enum { STAGE_STUTTER, STAGE_PITCH, STAGE_STARVE, STAGE_CRUSH, STAGES };
+  void chain(const uint8_t order[STAGES]) {
+    uint32_t packed = 0;
+    for (uint8_t k = 0; k < STAGES; k++) packed |= (uint32_t)order[k] << (8 * k);
+    chain_packed = packed;
+  }
+
   // what it's doing, for the serial report
   bool resting() { return rest; }
   uint16_t held_blocks() { return held; }
+  uint32_t slice_length() { return looping ? loop_length : 0; }   // samples, 0 none playing
+  float fall_semitones() { return fall_semis; }
 
   virtual void update(void);
 
@@ -91,6 +110,8 @@ private:
   volatile uint32_t stutter_beat = 0, stutter_shortest = 1102, stutter_refresh = 0;   // 25 ms; never
   volatile bool stutter_drums_through = true;
   volatile bool strike_drop = false, strike_stutter = false, strike_starve = false;   // set by the loop, taken here
+  volatile float roll_rate = 0, fall_step_semis = 0, fall_most_semis = 12;
+  volatile uint32_t chain_packed = STAGE_STUTTER | STAGE_PITCH << 8 | STAGE_STARVE << 16 | (uint32_t)STAGE_CRUSH << 24;
 
   bool rest = true;
   uint16_t held = 0;   // up to 2 x (32 + 96)
@@ -131,11 +152,19 @@ private:
   uint32_t loop_length = 0, loop_at = 0;
   uint16_t stutter_fade = 0;     // samples into the way back to the live sound, after a release
   uint32_t looped = 0;           // samples the slice has been repeating, toward a refresh
+  uint8_t halvings = 0;          // a roll's: the slice halved this many times
+  uint8_t repeats = 0;           // repeats since the last halving
+  float fall_semis = 0;          // a roll's fall so far, semitones down
 
   uint32_t random() { seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5; return seed; }
   float noise() { return (int32_t)random() * (1.0f / 2147483648.0f); }   // -1..1
   uint32_t loop_wanted();
   void release_slice();
+  void roll_reset() { halvings = repeats = 0; fall_semis = 0; }
+  void stage_stutter(audio_block_t **cur, bool *own);
+  void stage_pitch(audio_block_t **cur, bool *own, float ratio_new, float wet_aim);
+  void stage_starve_crush(audio_block_t **cur, bool *own, bool starve_on, bool crush_on, float gain_aim, float rail,
+                          float crackle_odds, float bits_bent, float rate_bent);
   void splice(uint32_t t, uint8_t head);
   static void hold(audio_block_t *b);
   static inline int16_t sample(audio_block_t *b, uint32_t n) { return b ? b->data[n] : 0; }

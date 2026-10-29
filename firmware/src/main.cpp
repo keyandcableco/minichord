@@ -2803,18 +2803,30 @@ uint16_t spring_ms = 1000;                   // how long they take to come back 
 uint16_t stutter_refresh_ms = 2000;          // a held stutter catches a new slice this often (445), 0 never
 float spring_factor[5] = {1, 1, 1, 1, 1};    // how much of each bend's setting still counts, as it springs back
 float clock_bend_base = 1;                   // clock bend's own ratio, before the others act on the clock
+// The bent board's areas played together (bent board options, see BENT BOARD) bend how the bends go too, from the
+// touch and never kept: beside the setting, as bend_touch is beside a depth's
+uint8_t interact_touch = 0;                  // bends interact (442), the deeper of it and the setting counting
+uint8_t range_touch = 0;                     // pitch drop range (431), 0 the setting's
+int8_t crush_mode_touch = -1;                // bitcrush mode (435), -1 the setting's
+float clock_touch = 0;                       // clock bend both ways, -1 a quarter of the tempo to 1 four times it
+bool clock_touch_on = false;                 // held (at 0, the tempo as it is); it counts where it is the deeper
+
+static inline uint8_t bends_interact_now() { return max(bends_interact, interact_touch); }
 
 FLASHMEM void bend_apply() {
   float d[5];
   for (uint8_t k = 0; k < 5; k++) d[k] = fmaxf(fmaxf(bend_setting[k] * spring_factor[k], bend_cc[k]), bend_touch[k]) / 100.0f;
-  clock_bend_base = powf(2.0f, (clock_bend_faster ? 2.0f : -2.0f) * d[3]);   // a quarter or four times the tempo at 100
-  if (!bends_interact) clock_bend_ratio = clock_bend_base;   // else bend_watch moves it, with the others
-  bent_bus.interact(bends_interact / 100.0f);
+  float clock = (clock_bend_faster ? 1.0f : -1.0f) * d[3];
+  if (clock_touch_on && fabsf(clock_touch) >= d[3]) clock = clock_touch;
+  clock_bend_base = powf(2.0f, 2.0f * clock);   // a quarter or four times the tempo at 100
+  uint8_t interact = bends_interact_now();
+  if (!interact) clock_bend_ratio = clock_bend_base;   // else bend_watch moves it, with the others
+  bent_bus.interact(interact / 100.0f);
   bool in_time = stutter_sync && rythm_mode && rythm_timer_running && !rythm_clock_synced;
   uint32_t beat = in_time ? (uint32_t)(AUDIO_SAMPLE_RATE_EXACT * 60.0f / (rythm_bpm * clock_bend_ratio)) : 0;
-  bent_bus.pitch_drop(d[0], pitch_drop_range, pitch_drop_sag);
+  bent_bus.pitch_drop(d[0], range_touch ? range_touch : pitch_drop_range, pitch_drop_sag);
   bent_bus.starve(d[1]);
-  bent_bus.crush(d[2], bitcrush_mode);
+  bent_bus.crush(d[2], crush_mode_touch >= 0 ? crush_mode_touch : bitcrush_mode);
   bent_bus.stutter(d[4], beat, (uint32_t)(stutter_shortest_ms * AUDIO_SAMPLE_RATE_EXACT / 1000), !stutter_drums,
                    (uint32_t)(stutter_refresh_ms * AUDIO_SAMPLE_RATE_EXACT / 1000));
 }
@@ -2876,8 +2888,9 @@ FLASHMEM void bend_watch() {
   bool apply = bend_springs();
   if (stutter_sync && since_sync >= 50) { since_sync = 0; apply = true; }
   if (apply) bend_apply();
-  if (!bends_interact) return;
-  float k = bends_interact / 100.0f;
+  uint8_t interact = bends_interact_now();
+  if (!interact) return;
+  float k = interact / 100.0f;
   float r = clock_bend_base * exp2f(-k * bent_bus.drop_semitones() / 12.0f);
   r *= fmaxf(0.05f, 1 - k * (1 - bent_bus.supply_level()) * 1.2f);
   if (bent_bus.browned_out()) r *= 1 - 0.9f * k;
@@ -8468,6 +8481,25 @@ void palm_mute() {
 // - the harp strikes (4): each harp note on the bent board strikes the bends a touch holds (a rail point
 //   pressed, caught or left on, or the ribbon's own) again: the pitch drop starts again in tune and sags, the
 //   stutter catches a new slice from the note, the starve's supply slumps under it (bent_strike).
+// - the second knob (8; catch, on too, takes the gesture): a thumb landing on the ribbon while a finger holds a
+//   rail point makes the ribbon how that bend goes, while both stay (bentboard::shape_update): the pitch drop's
+//   range, from the preset's at the left end to two octaves at the right; how far the bends interact, the
+//   starve's brown-out dragging the rest, from the preset's to fully; the crush's bits (left half) or rate
+//   (right half); the clock bend both ways, dragging left of where the thumb landed and rushing right of it,
+//   four times either way at the ends; the stutter's slice, longest at the left end and shortest at the right.
+//   For the clock bend and the stutter the finger only holds it on, the thumb sets how far.
+// - rolls (16): a finger landing on the clock bend's point while the stutter is on (by any touch) rolls it, the
+//   slice halving every few repeats, sooner pressed harder, kept when the finger lifts; on the pitch drop's, it
+//   falls, a step down each repeat to the drop's range, kept when it lifts. The point's own bend is left out.
+//   The other order is the two together, as ever (bentboard::pairs_update, AudioEffectBend::roll).
+// - the plug (32): the rail's two ends pressed together (within 60 ms) pull the plug: the pitch drop, the starve
+//   and the clock bend at the shallower one's depth, interacting fully, their own bends left out; a finger left
+//   behind does nothing until it lifts too.
+// - the palm hold (64): a rail point pressed with the palm on its pad, the palm lifted and then the finger, stays
+//   as deep as it was until the palm lands again (bentboard::palm_hold_update).
+// - the chain (128): the bends a touch holds run in the order they were pressed, ahead of the rest in their
+//   own order (the stutter, the pitch drop, the starve, the crush): a crush pressed before a pitch drop has its
+//   grit taken down with the pitch (AudioEffectBend::chain).
 const uint8_t bent_area_count = 7;            // the rail's five points, the palm, the ribbon
 const int16_t bent_area_adress = 472;         // area k's target, its value at 473 + 2k
 const int16_t bent_options_adress = 486;
@@ -8489,9 +8521,18 @@ bent_area bent_areas[bent_area_count] = {   // the parameters.json defaults, bef
 bool bent_ribbon_by_pressure = false;
 bool bent_catch = false;
 bool bent_harp_strikes = false;
+bool bent_shape = false;
+bool bent_rolls = false;
+bool bent_plug = false;
+bool bent_palm_hold = false;
+bool bent_chain = false;
 bentboard::rail_state bent_rail;
 bentboard::ribbon_state bent_ribbon;
 bentboard::catch_state bent_catch_state;
+bentboard::shape_state bent_shape_state;
+bentboard::palm_hold_state bent_palm_state;
+bentboard::pairs_state bent_pairs_state;
+bentboard::pairs_out bent_pairs;                // as read, for bent_areas_apply
 // The zones the harp plays and their order up it, for the palm and the positions: all twelve in harp order, but
 // on the bent board its six harp lines bottom to top (bent_board_pass keeps them, bent_board_reset puts them back)
 uint8_t harp_line_order[12] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
@@ -8526,12 +8567,21 @@ FLASHMEM void bent_area_value(uint8_t k, int value) {
 }
 
 // Bent board options (486), its switches added up: 1 the ribbon by how firmly it is pressed, 2 catch, 4 the
-// harp strikes. A load lets go of every point caught or left on, and so does catch switched off.
+// harp strikes, 8 the second knob, 16 rolls, 32 the plug, 64 the palm hold, 128 the chain. A load lets go of
+// every point caught, left on or held, and so does a switch turned off.
 FLASHMEM void bent_options(int value) {
   bent_ribbon_by_pressure = value & 1;
   bent_catch = value & 2;
   bent_harp_strikes = value & 4;
+  bent_shape = value & 8;
+  bent_rolls = value & 16;
+  bent_plug = value & 32;
+  bent_palm_hold = value & 64;
+  bent_chain = value & 128;
   if (parameters_loading || !bent_catch) bent_catch_state = bentboard::catch_state{};
+  if (parameters_loading || !bent_shape) bent_shape_state = bentboard::shape_state{};
+  if (parameters_loading || !bent_palm_hold) bent_palm_state = bentboard::palm_hold_state{};
+  if (parameters_loading || (!bent_rolls && !bent_plug)) bent_pairs_state = bentboard::pairs_state{};
 }
 
 // Every touch let go, for a plate swap or another plate chosen: the settings come back at the next apply
@@ -8539,28 +8589,47 @@ FLASHMEM void bent_board_reset() {
   bent_rail = bentboard::rail_state{};
   bent_ribbon = bentboard::ribbon_state{};
   bent_catch_state = bentboard::catch_state{};
+  bent_shape_state = bentboard::shape_state{};
+  bent_palm_state = bentboard::palm_hold_state{};
+  bent_pairs_state = bentboard::pairs_state{};
+  bent_pairs = bentboard::pairs_out{};
   for (uint8_t k = 0; k < bent_area_count; k++) bent_areas[k].raw = 0;
   for (uint8_t z = 0; z < 12; z++) harp_line_order[z] = z;
   harp_line_count = 12;
   harp_line_mask = 0xFFF;
 }
 
+// the rail point (0-4, left to right as held) whose area moves a setting, the first; -1 if none
+FLASHMEM static int8_t bent_point_of(int16_t adress) {
+  for (uint8_t k = 0; k < bentboard::rail_points; k++) if (bent_areas[k].target == adress) return k;
+  return -1;
+}
+
 // From handle_harp on the bent board: each area's depth, from the zones touched (the border guarded) and
-// their strengths, both in harp order
+// their strengths, both in harp order; and the areas played together (bent board options), whose bends
+// bent_areas_apply moves
 FLASHMEM __attribute__((noinline)) void bent_board_read(const bool *down, const int16_t *strength) {
   float rail[bentboard::rail_points];
   uint32_t now = millis();
   bentboard::rail_update(bent_rail, down, strength, upside_down, now, rail);
   bentboard::ribbon_update(bent_ribbon, down, strength, upside_down, now);
-  bool thumb_caught = false;   // the thumb has a rail point: the ribbon's own area let go
-  if (bent_catch) {
-    bentboard::rail_fingers fingers;
-    bentboard::rail_fingers_of(bent_rail, upside_down, fingers);
-    thumb_caught = bentboard::catch_update(bent_catch_state, fingers, bent_ribbon, now, rail);
+  bentboard::rail_fingers fingers;
+  bentboard::rail_fingers_of(bent_rail, upside_down, fingers);
+  bool thumb_owned = false;   // the thumb has a rail point, or shapes one: the ribbon's own area let go
+  if (bent_catch) thumb_owned = bentboard::catch_update(bent_catch_state, fingers, bent_ribbon, now, rail);
+  else if (bent_shape) thumb_owned = bentboard::shape_update(bent_shape_state, fingers, bent_ribbon, now, rail);
+  if (bent_palm_hold) bentboard::palm_hold_update(bent_palm_state, fingers, down[bentboard::at(bentboard::palm_zone, upside_down)], now, rail);
+  bent_pairs = bentboard::pairs_out{};
+  if (bent_rolls || bent_plug) {
+    bentboard::pairs_update(bent_pairs_state, fingers, rail, bent_point_of(436), bent_point_of(430), bend_touch[4] > 0, bent_rolls,
+                            bent_plug, now, bent_pairs);
   }
-  for (uint8_t k = 0; k < bentboard::rail_points; k++) bent_areas[k].raw = rail[k];
+  // shaped, the clock bend and the stutter go as far as the thumb says: the finger only holds them on
+  int8_t shaped = bent_shape && !bent_catch ? bent_shape_state.point : -1;
+  if (shaped >= 0 && (bent_areas[shaped].target == 436 || bent_areas[shaped].target == 438)) bent_pairs.left_out[shaped] = true;
+  for (uint8_t k = 0; k < bentboard::rail_points; k++) bent_areas[k].raw = bent_pairs.left_out[k] ? 0 : rail[k];
   bent_areas[5].raw = bentboard::palm_depth(down, strength, upside_down);
-  bent_areas[6].raw = !bent_ribbon.active || thumb_caught ? 0 : bent_ribbon_by_pressure ?
+  bent_areas[6].raw = !bent_ribbon.active || thumb_owned ? 0 : bent_ribbon_by_pressure ?
     bentboard::depth_of(bent_ribbon.total, bentboard::ribbon_soft, bentboard::ribbon_firm) : bent_ribbon.place;
 }
 
@@ -8611,10 +8680,100 @@ FLASHMEM __attribute__((noinline)) void bent_areas_apply() {
     uint8_t d = (uint8_t)lroundf(bent_areas[k].depth * constrain(bent_areas[k].value, 0, 100));
     if (d > touch[b]) touch[b] = d;
   }
-  if (memcmp(touch, bend_touch, sizeof touch)) {
+  // and the areas played together (bent board options): the plug, the second knob, rolls, the chain
+  uint8_t interact = 0, range = 0;
+  int8_t mode = -1;
+  float clock = 0;
+  bool clock_on = false;
+  if (here && bent_pairs.plug > 0) {   // the drop, the starve and the clock bend at the plug's depth, interacting fully
+    uint8_t d = (uint8_t)lroundf(bent_pairs.plug * 100);
+    for (uint8_t b : {0, 1, 3}) if (d > touch[b]) touch[b] = d;
+    interact = 100;
+  }
+  int8_t shaped = here && bent_shape && !bent_catch ? bent_shape_state.point : -1;
+  if (shaped >= 0) {
+    static int8_t crush_half = 1;
+    float place = bent_ribbon.place;
+    switch (bent_areas[shaped].target) {
+      case 430:   // the drop's range, the preset's at the left end, two octaves at the right
+        range = (uint8_t)lroundf(pitch_drop_range + (24 - pitch_drop_range) * place);
+        break;
+      case 433: {   // how far the starve's brown-out drags the rest, the preset's to fully
+        uint8_t i = (uint8_t)lroundf(bends_interact + (100 - bends_interact) * place);
+        if (i > interact) interact = i;
+        break;
+      }
+      case 434:   // the crush's bits in the left half, its rate in the right
+        if (place < 0.45f) crush_half = 1;
+        else if (place > 0.55f) crush_half = 2;
+        mode = crush_half;
+        break;
+      case 436: {   // the clock both ways from where the thumb landed: dragging left of it, rushing right
+        clock_on = true;
+        float a = bent_shape_state.anchor;
+        if (bent_shape_state.anchored) clock = place >= a ? (a < 1 ? (place - a) / (1 - a) : 0) : -(a - place) / a;
+        break;
+      }
+      case 438: {   // the stutter's slice, longest at the left end, shortest at the right
+        uint8_t d = (uint8_t)lroundf((0.05f + 0.95f * place) * 100);
+        if (d > touch[4]) touch[4] = d;
+        break;
+      }
+    }
+  }
+  if (memcmp(touch, bend_touch, sizeof touch) || interact != interact_touch || range != range_touch || mode != crush_mode_touch ||
+      clock != clock_touch || clock_on != clock_touch_on) {
     memcpy(bend_touch, touch, sizeof touch);
+    interact_touch = interact;
+    range_touch = range;
+    crush_mode_touch = mode;
+    clock_touch = clock;
+    clock_touch_on = clock_on;
     bend_apply();
   }
+  static float roll_was = 0, fall_was = 0;
+  static uint8_t floor_was = 0;
+  float roll = here ? bent_pairs.roll : 0, fall = here ? bent_pairs.fall : 0;
+  uint8_t floor = range ? range : pitch_drop_range;   // the fall's lowest, the drop's range as it is now
+  if (roll != roll_was || fall != fall_was || floor != floor_was) {   // a semitone a repeat at the most
+    roll_was = roll;
+    fall_was = fall;
+    floor_was = floor;
+    bent_bus.roll(roll, fall, floor);
+  }
+  // the chain: the bends a touch holds in the order they were pressed, then the rest in their own order
+  static uint32_t pressed_at[5] = {0, 0, 0, 0, 0};
+  uint32_t now = millis();
+  for (uint8_t b = 0; b < 5; b++) {
+    if (!touch[b]) pressed_at[b] = 0;
+    else if (!pressed_at[b]) pressed_at[b] = now | 1;
+  }
+  uint8_t order[AudioEffectBend::STAGES] = {AudioEffectBend::STAGE_STUTTER, AudioEffectBend::STAGE_PITCH,
+                                            AudioEffectBend::STAGE_STARVE, AudioEffectBend::STAGE_CRUSH};
+  if (here && bent_chain) {
+    const uint8_t bend_of_stage[AudioEffectBend::STAGES] = {4, 0, 1, 2};   // the stutter, the pitch drop, the starve, the crush
+    bool placed[AudioEffectBend::STAGES] = {false, false, false, false};
+    uint8_t n = 0;
+    for (uint8_t round = 0; round < AudioEffectBend::STAGES; round++) {
+      int8_t first = -1;   // the stage pressed soonest of those left; at the same moment, in its own order
+      for (uint8_t s = 0; s < AudioEffectBend::STAGES; s++) {
+        uint32_t at = pressed_at[bend_of_stage[s]];
+        if (placed[s] || !at) continue;
+        if (first < 0 || (int32_t)(at - pressed_at[bend_of_stage[first]]) < 0) first = s;
+      }
+      if (first < 0) break;
+      placed[first] = true;
+      order[n++] = first;
+    }
+    for (uint8_t s = 0; s < AudioEffectBend::STAGES; s++) if (!placed[s]) order[n++] = s;
+  }
+  static uint32_t chain_was = 0x03020100;   // the stages in their own order, packed as AudioEffectBend::chain packs them
+  uint32_t packed = order[0] | order[1] << 8 | order[2] << 16 | (uint32_t)order[3] << 24;
+  if (packed != chain_was) {
+    chain_was = packed;
+    bent_bus.chain(order);
+  }
+  any_live |= interact || range || mode >= 0 || clock_on || roll > 0 || fall > 0 || packed != 0x03020100;
   // any other setting: from as the preset has it to the deepest area's value; the first area on a target
   // moves it for all of them
   for (uint8_t k = 0; k < bent_area_count; k++) {
@@ -10942,10 +11101,11 @@ void stop_chord_notes() {
 // end, with All Notes Off on all sixteen channels of both ports. The looper and chord memory stop
 // playing, keeping what they hold, since they would only play again. Modes stay as they are:
 // rhythm mode goes on from its next note, hold waits for a chord. Modifier and up (322), the
-// double tap on 323 at 2, or 323 written 2. The bent board's points left on let go (catch, see BENT BOARD):
-// a stutter left on would go on playing its slice.
+// double tap on 323 at 2, or 323 written 2. The bent board's points left on or held let go (catch and the palm
+// hold, see BENT BOARD): a stutter left on would go on playing its slice.
 FLASHMEM void panic() {
   bent_catch_state = bentboard::catch_state{};
+  bent_palm_state = bentboard::palm_hold_state{};
   if (looper_state == LOOPER_PLAYING || looper_state == LOOPER_RECORDING || looper_state == LOOPER_COUNTIN) looper_action(3);
   if (chord_memory_state == CHORD_MEMORY_PLAYING || chord_memory_state == CHORD_MEMORY_RECORDING) chord_memory_action(3);
   noInterrupts();

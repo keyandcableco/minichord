@@ -103,7 +103,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 483, 0, 0, 4095 }, // palm pad value
     { 484, 0, 0, 511 }, // thumb ribbon control
     { 485, 0, 0, 4095 }, // thumb ribbon value
-    { 486, 1, 0, 7 }, // bent board options
+    { 486, 0, 0, 255 }, // bent board options
     { 303, 0, 0, 511 }, // phone follow 1 control
     { 304, 0, 0, 4095 }, // phone follow 1 value
     { 305, 1, 0, 2 }, // phone follow 1 band
