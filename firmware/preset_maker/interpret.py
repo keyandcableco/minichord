@@ -114,6 +114,7 @@ ROLES = {
     "pitch_drop": {"global": 430}, "pitch_drop_range": {"global": 431}, "pitch_drop_sag": {"global": 432},
     "starve": {"global": 433}, "bitcrush": {"global": 434}, "bitcrush_mode": {"global": 435},
     "clock_bend": {"global": 436}, "clock_bend_direction": {"global": 437}, "stutter_sync": {"global": 439},
+    "stutter": {"global": 438}, "bends_interact": {"global": 442},
     # the pitch bend envelope's start and decay, chord shuffling, the generator scale (firmware 38)
     "bend": {"chord": 170, "harp": 71}, "bend_decay": {"chord": 173, "harp": 74}, "chord_shuffle": {"chord": 120},
     "generator": {"harp": 267}, "generator_notes": {"harp": 268}, "generator_mode": {"harp": 269},
@@ -1559,6 +1560,10 @@ add("circuit bent, circuit-bent, circuit bending, circuit bend, bent omnichord, 
     moves=(SET("starve", 20), SET("bitcrush", 25)), off=(EXACT("starve", 0), EXACT("bitcrush", 0)),
     note="a little voltage starve and bitcrush kept in the preset; the bends play deeper live. " + BENDS_NOTE)
 
+BENT_NOTE = ("the bend rail's points, the palm pad and the thumb ribbon are the bent board's (harp plate 21): each "
+             "moves its setting from the preset's own toward its value as it is pressed (the ribbon by where the thumb is "
+             "along it), and back as it lets go; on any other plate they do nothing. Needs firmware 111")
+
 SPEED_RAMP_NOTE = ("the tremolo's and the vibrato's rates wind up to a new rate and coast down, as a rotating speaker's rotors "
                    "do; put the tremolo speed on the double tap or a knob to switch. " + FW69_NOTE)
 add("speed ramp, ramped tremolo, tremolo ramp, tremolo spins up, tremolo winds up, spin up and down, spins up and down, "
@@ -1595,6 +1600,12 @@ COLORS = {"red": 0, "orange": 30, "amber": 40, "gold": 50, "golden": 50, "yellow
 # ---- control phrases ----------------------------------------------------------------------------
 
 CONTROLS = (   # (pattern, control), tried in order; a match is taken out of the clause
+    # the bent board's touch areas (harp plate 21, firmware 111): the rail's five points, the palm pad, the thumb ribbon
+    (r"\b(?:the )?(?:bend )?rail (?:point|dot|spot|pad) (?:number )?(?:[1-5]|one|two|three|four|five)\b|"
+     r"\b(?:the )?(?:first|second|third|middle|fourth|fifth|last|leftmost|rightmost|1st|2nd|3rd|4th|5th) "
+     r"(?:bend )?rail (?:point|dot|spot|pad)\b|\bbend rail (?:[1-5]|one|two|three|four|five)\b", "rail_n"),
+    (r"\b(?:the )?(?:palm|body) (?:pad|contact|plate)s?\b", "palm_pad"),
+    (r"\b(?:the )?thumb (?:ribbon|strip|slider|pad)\b", "thumb_ribbon"),
     (r"\bdouble ?tap(?:s)?(?: control| slot| pair| setting)? (?:number )?(?:1|2|3|one|two|three)\b|"
      r"\b(?:first|second|third|1st|2nd|3rd) double ?tap(?: control| slot| pair| setting)?\b", "tap_n"),
     (r"\balternate hover\b|\bsecond hover\b|\bhover alternate\b|"
@@ -1626,7 +1637,17 @@ CONTROLS = (   # (pattern, control), tried in order; a match is taken out of the
 KNOB_ADDRESSES = {"mod": (14, 15), "mod_alt": (16, 17), "chord_knob": (10, 11), "harp_knob": (12, 13)}
 CONTROL_NAMES = {"mod": "mod knob", "mod_alt": "modifier + mod knob", "chord_knob": "modifier + chord knob",
                  "harp_knob": "modifier + harp knob", "hover": "hover", "tap": "double tap",
-                 "alt_hover": "alternate hover", "phone": "the phone's sound"}
+                 "alt_hover": "alternate hover", "phone": "the phone's sound",
+                 "palm_pad": "the palm pad", "thumb_ribbon": "the thumb ribbon"}
+# The bent board's touch areas: each one's control and value addresses ("rail:k" for the rail's points, k from 0)
+BENT_AREAS = {**{f"rail:{k}": (472 + 2 * k, 473 + 2 * k) for k in range(5)}, "palm_pad": (482, 483), "thumb_ribbon": (484, 485)}
+RAIL_WORDS = {"1": 1, "one": 1, "first": 1, "1st": 1, "leftmost": 1, "2": 2, "two": 2, "second": 2, "2nd": 2,
+              "3": 3, "three": 3, "third": 3, "3rd": 3, "middle": 3, "4": 4, "four": 4, "fourth": 4, "4th": 4,
+              "5": 5, "five": 5, "fifth": 5, "5th": 5, "last": 5, "rightmost": 5}
+
+
+def area_name(control):
+    return f"bend rail point {int(control[5:]) + 1}" if control.startswith("rail:") else CONTROL_NAMES[control]
 TAP_PAIRS = ((200, 201), (209, 210), (211, 212))
 PHONE_SLOTS = ((303, 304, 305, 306), (307, 308, 309, 310))   # control, value, band, release
 PHONE_BANDS = ({"kick", "kicks", "drum", "bass", "low", "bassline"}, {"hats", "hat", "hi", "cymbals", "treble", "high"})
@@ -1714,6 +1735,14 @@ TARGETS = {
     "reed_bark": "bark, reed bark, wurlitzer bark, the bark, growl, how hard it's struck",
     "organ_drawbars": "drawbars, organ drawbars, registration, the registration, organ registration",
     "organ_perc": "organ percussion",
+    # the bends (firmware 102), the bent board's defaults. Words the vocabulary knew already, so a word it didn't
+    # ("stutters", "drops") is still heard as its nearest ("stutter", "drop"), as before
+    "pitch_drop": "pitch drop, the pitch drop, pitch sag, drop the pitch",
+    "starve": "voltage starve, starve, starved, the starve, brownout, brown out",
+    "bitcrush": "bitcrush, bitcrusher, bit crush, the bitcrush",
+    "clock_bend": "clock bend, bent clock, bend the clock, the clock bend, the clock, clock",
+    "stutter": "stutter, stuttering, the stutter",
+    "bends_interact": "bends interact, the bends interact, interact",
 }
 # Where a knob sweeps each role, (low, high) in parameters.json units; its centre is stored in the preset
 SWEEP = {"trem_freq": (0.5, 8), "speed_ramp": (0, 40), "drum_reverb": (0, 100), "drone_reverb": (0, 100), "drone_jawari": (0, 100), "reed_bark": (0, 100), "hammer_time": (30, 300), "purity": (0, 100), "drone_level": (0, 100), "dj_filter": (0, 200), "phone_echo": (0, 100), "drum_level": (0, 100), "drum_kit": (0, 11),
@@ -1842,7 +1871,7 @@ ACTION_VERBS = {"works", "work", "runs", "run", "operates", "operate", "drives",
                 "sweep", "controls", "control", "changes", "change", "brings", "bring", "gives", "give", "does",
                 "do", "kicks", "switches", "switch", "toggles", "toggle", "sets", "set", "mutes", "mute",
                 "moves", "move", "closes", "close", "swells", "swell", "shapes", "shape", "brightens", "darkens",
-                "raises", "lowers", "pushes", "quiets"}
+                "raises", "lowers", "pushes", "quiets", "drags", "drag"}
 STOPWORDS = set("""a an the and or with of to in on for it its it's is are be been being am that this these those
 i i'd i'm id im me my we our us you your want wants wanted would like likes please make makes making sound sounds
 sounding preset patch some something kind sort so very really just also too as well should could can have has
@@ -2250,7 +2279,7 @@ class Interpreter:
         index = None
         if control.startswith("tap:"):
             index, control = int(control[4:]), "tap"
-        names = CONTROL_NAMES[control]
+        names = area_name(control) if control in BENT_AREAS else CONTROL_NAMES[control]
         where = ROLES[role]
         if "global" in where:
             section = "global"
@@ -2274,7 +2303,8 @@ class Interpreter:
             self._put(ca, a, f"{names} → {label}")
             if a in self.selectors or role not in SWEEP:
                 self._put(ra, 100, names)
-                choices = "on and off" if p["max_value"] - p["min_value"] == 1 else "through all its choices"
+                choices = "on and off" if p["max_value"] - p["min_value"] == 1 else \
+                    "across its whole depth" if p.get("sweep") == "whole" else "through all its choices"
                 self.result.understood.append(f"{names} → {label}, {choices}")
             elif self.profile:
                 self._put(ra, 100, names)
@@ -2288,6 +2318,19 @@ class Interpreter:
                 self.result.understood.append(f"{names} → {label}, about {lo:g} to {hi:g}")
             return
         value = self._tap_value(role, a, words)
+        if control in BENT_AREAS:
+            if role == "looper" or p["controls"] != "all":
+                self.result.notes.append(f"{names} can't move {label}; try the double tap")
+                return
+            ca, va = BENT_AREAS[control]
+            self._put(ca, a, f"{names} → {label}")
+            self._put_raw(va, value, f"{names} value")
+            self.last_value = (va, a)
+            how = "with the thumb at its right end" if control == "thumb_ribbon" else "pressed firmly"
+            self.result.understood.append(f"{names} → {label}, toward {value:g} {how}")
+            if BENT_NOTE not in self.result.notes:
+                self.result.notes.append(BENT_NOTE)
+            return
         if control in ("hover", "alt_hover"):
             if role == "looper" or p["controls"] != "all":
                 self.result.notes.append(f"hover can't move {label}; try the double tap")
@@ -2379,6 +2422,9 @@ class Interpreter:
             for slot in PHONE_SLOTS:
                 self._put(slot[0], 0, "phone follower cleared")
             self.result.understood.append("the phone's sound moves nothing")
+        elif control in BENT_AREAS:
+            self._put(BENT_AREAS[control][0], 0, f"{area_name(control)} cleared")
+            self.result.understood.append(f"{area_name(control)} does nothing")
         else:
             self._put(KNOB_ADDRESSES[control][0], 0, f"{CONTROL_NAMES[control]} cleared")
             self.result.understood.append(f"{CONTROL_NAMES[control]} does nothing")
@@ -2567,6 +2613,9 @@ class Interpreter:
                 take_span(m)
                 if control == "two_knobs":
                     found += [(idx[0], "chord_knob"), (idx[0] + 0.5, "harp_knob")]
+                elif control == "rail_n":
+                    n = next((RAIL_WORDS[w] for w in m.group(0).split() if w in RAIL_WORDS), 1)
+                    found.append((idx[0], f"rail:{n - 1}"))
                 elif control == "tap_n":
                     words = m.group(0).split()
                     n = next(({"1": 1, "one": 1, "first": 1, "1st": 1, "2": 2, "two": 2, "second": 2, "2nd": 2,
@@ -2781,7 +2830,8 @@ class Interpreter:
                 n /= 100
             n = max(t["min_value"], min(t["max_value"], n))
             self._put_raw(va, n, "value")
-            r.understood.append(f"{'hover' if va == 250 else 'double tap'} value {n:g} ({self.setting_name(ta)})")
+            who = "hover" if va == 250 else next((area_name(c) for c, (_, v) in BENT_AREAS.items() if v == va), "double tap")
+            r.understood.append(f"{who} value {n:g} ({self.setting_name(ta)})")
             take_span(m)
 
 
@@ -3033,7 +3083,7 @@ def export_data(params, version):
         "firmware_version": version,
         "params": {str(a): {k: p.get(k) for k in ("name", "group", "section", "data_type", "min_value", "max_value",
                                                  "default_value", "controls", "follows_target",
-                                                 "introduction_version")}
+                                                 "introduction_version", "sweep")}
                    for a, p in params.items()},
         "selectors": sorted(selectors()), "conflicts": CONFLICTS,
         "vocabulary": [{"words": list(e.words), "kind": e.kind, "label": e.label, "moves": moves(e.moves),
@@ -3044,6 +3094,7 @@ def export_data(params, version):
         "control_names": CONTROL_NAMES, "tap_pairs": [list(p) for p in TAP_PAIRS], "targets": TARGETS,
         "phone_slots": [list(p) for p in PHONE_SLOTS], "phone_bands": [sorted(b) for b in PHONE_BANDS],
         "phone_note": PHONE_NOTE, "tap_actions": sorted(TAP_ACTIONS),
+        "bent_areas": {k: list(v) for k, v in BENT_AREAS.items()}, "rail_words": RAIL_WORDS, "bent_note": BENT_NOTE,
         "multi_targets": {k: list(v) for k, v in MULTI_TARGETS.items()}, "on_off": ON_OFF,
         "on_value": {str(k): v for k, v in ON_VALUE.items()}, "sweep": SWEEP, "tap": TAP,
         "prepare": {k: [list(x) for x in v] for k, v in PREPARE.items()},
@@ -3188,6 +3239,8 @@ CONFLICTS = [
      "note": "on knob layer 1 the harp knob plays its alternate only, and none is assigned: the knob does nothing"},
     {"about": [117, 16], "when": [[117, "==", 1], [16, "==", 0], [14, "!=", 0]],
      "note": "on knob layer 1 the mod knob plays its alternate only, and none is assigned: the knob does nothing"},
+    {"about": [486, 484], "when": [[486, "==", 1], [484, "==", 0]],
+     "note": "thumb ribbon reads how firmly it is pressed, and the thumb ribbon moves nothing (thumb ribbon control 0)"},
 ]
 for _k, _r, _name in KNOBS:
     CONFLICTS += [
