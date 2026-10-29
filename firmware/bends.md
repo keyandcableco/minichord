@@ -1,17 +1,17 @@
-# The bends (firmware 102)
+# The bends (firmware 121; 102 on its own branch)
 
 What a circuit bender wires into an Omnichord's body-contact points, on the whole minichord. Each is a
 depth from 0 to 100: its setting (kept in the preset, movable by a knob, hover or the double tap) or
 live from a control change (never kept), the deeper of the two counting. At 0 the instrument is
 exactly as it was, bit for bit: no stock control does anything new.
 
-| bend | setting | CC (any channel, 0-127) | what it does |
+| bend | setting | CC (any channel, 0-127; 112-116 on firmware 102's branch) | what it does |
 |---|---|---|---|
-| pitch drop | 430, range 431 (semitones at 100, 12), sag 432 (ms to 95%, 150) | 112 | everything sags in pitch, drums too, and comes back |
-| voltage starve | 433 | 113 | pitch wobbles and sags, fuzz as the rails close in, brown-outs, crackle |
-| bitcrush | 434, mode 435 (0 both, 1 bits, 2 rate) | 114 | 16 to 4 bits (across the sound's own peak), 44.1 to 1.8 kHz |
-| clock bend | 436, direction 437 (0 slower, 1 faster) | 115 | rhythm mode, its drums and the MIDI clock out to 1/4 or 4x |
-| stutter | 438 (a preset always loads it at 0), sync 439, shortest 440 (25 ms), drums 441 | 116 | a slice from the press repeats: 280 ms at a touch down to the shortest at full; the drums play on through it (441 = 1 catches them too) |
+| pitch drop | 430, range 431 (semitones at 100, 12), sag 432 (ms to 95%, 150) | 75 | everything sags in pitch, drums too, and comes back |
+| voltage starve | 433 | 76 | pitch wobbles and sags, fuzz as the rails close in, brown-outs, crackle |
+| bitcrush | 434, mode 435 (0 both, 1 bits, 2 rate) | 77 | 16 to 4 bits (across the sound's own peak), 44.1 to 1.8 kHz |
+| clock bend | 436, direction 437 (0 slower, 1 faster) | 78 | rhythm mode, its drums and the MIDI clock out to 1/4 or 4x |
+| stutter | 438 (a preset always loads it at 0), sync 439, shortest 440 (25 ms), drums 441 | 79 | a slice from the press repeats: 280 ms at a touch down to the shortest at full; the drums play on through it (441 = 1 catches them too) |
 
 Bends interact (442, 0-100) makes them act on one another, as a bent Omnichord's one clock and one
 supply would: the pitch drop drags the rhythm's clock as it sags (at 100 exactly as far as the pitch)
@@ -60,21 +60,21 @@ nothing for a note they match, up to 3 dB at the crossing for sound they can't (
 
 ## Trying each one (once 102 is flashed)
 In minicontrol the Bends group has every setting; or from a DAW / `minictl`, send the CCs:
-1. Pitch drop: hold a chord, send CC 112 at 127 and back to 0: an octave sag over 150 ms and back.
+1. Pitch drop: hold a chord, send CC 75 at 127 and back to 0: an octave sag over 150 ms and back.
    Set 432 to 1000 for a slow battery droop; 431 to 2 for a gentle wow.
-2. Voltage starve: CC 113 at 50 for a sick supply, 127 for brown-outs and fuzz.
-3. Bitcrush: CC 114 swept 0 -> 127; 435 = 1 for bits only, 2 for rate only.
-4. Clock bend: rhythm mode on (long press on hold), CC 115 at 127 drags to a quarter; 437 = 1 rushes.
-5. Stutter: play anything, CC 116 at 30 for a long beat-repeat, 127 for a fast roll; 440 under 20 ms
+2. Voltage starve: CC 76 at 50 for a sick supply, 127 for brown-outs and fuzz.
+3. Bitcrush: CC 77 swept 0 -> 127; 435 = 1 for bits only, 2 for rate only.
+4. Clock bend: rhythm mode on (long press on hold), CC 78 at 127 drags to a quarter; 437 = 1 rushes.
+5. Stutter: play anything, CC 79 at 30 for a long beat-repeat, 127 for a fast roll; 440 under 20 ms
    for a buzz at the end; 439 = 1 with rhythm mode for slices of the beat (1/2 to 1/32); 441 = 1 to
    freeze the drums with it.
 From a Linux terminal, `amidi` sends the CCs (channel 1; `amidi -l` gives the port, hw:3,0,0 on 2026-10-18):
 
-    amidi -p hw:3,0,0 -S 'B0 70 7F'    # CC 112 (0x70) pitch drop at 127; 'B0 70 00' lets go
-    amidi -p hw:3,0,0 -S 'B0 71 50'    # CC 113 (0x71) voltage starve at 80
-    amidi -p hw:3,0,0 -S 'B0 72 7F'    # CC 114 (0x72) bitcrush
-    amidi -p hw:3,0,0 -S 'B0 73 7F'    # CC 115 (0x73) clock bend (rhythm mode on)
-    amidi -p hw:3,0,0 -S 'B0 74 40'    # CC 116 (0x74) stutter at 64
+    amidi -p hw:3,0,0 -S 'B0 4B 7F'    # CC 75 (0x4B) pitch drop at 127; 'B0 4B 00' lets go
+    amidi -p hw:3,0,0 -S 'B0 4C 50'    # CC 76 (0x4C) voltage starve at 80
+    amidi -p hw:3,0,0 -S 'B0 4D 7F'    # CC 77 (0x4D) bitcrush
+    amidi -p hw:3,0,0 -S 'B0 4E 7F'    # CC 78 (0x4E) clock bend (rhythm mode on)
+    amidi -p hw:3,0,0 -S 'B0 4F 40'    # CC 79 (0x4F) stutter at 64
     amidi -p hw:3,0,0 -S 'B0 79 00'    # CC 121: every CC depth let go
 
 A knob: `minictl set --raw 16 433` puts voltage starve on the mod knob's alternate (the modifier held);

@@ -32,7 +32,7 @@ Hammer-on, koto press and the harp ribbon don't (positions, as on zipper 24).
 
 A setting moves from the preset's own value toward the area's value as the area is pressed, and back as it lets go
 (the ribbon: its left end is the preset's own, its right end the value, held where the thumb rests). On a bend's
-depth a touch is a third source beside the setting and control change 112-116 (`bend_touch` in BENDS): the deepest
+depth a touch is a third source beside the setting and control change 75-79 (`bend_touch` in BENDS): the deepest
 counts, it never springs back (443), and it can't undo a bend a knob made. Two areas on one setting: the deepest
 moves it. On every other plate the areas don't exist and nothing changes.
 

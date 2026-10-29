@@ -1527,12 +1527,12 @@ add("closed jawari, less jawari, no jawari, smooth tanpura, plain tanpura, dull 
     "no buzz on the tanpura, tanpura not buzzing", "setting", "the jawari closed: a plain tanpura", home="global",
     moves=(SET("drone_jawari", 10), IFZERO("drone", 1)), off=(EXACT("drone_jawari", 60),), note=JAWARI_NOTE)
 # ---- firmware 102: the bends ----
-# What a circuit bender wires into an Omnichord, on the whole instrument. Best played live (control change 112-116,
+# What a circuit bender wires into an Omnichord, on the whole instrument. Best played live (control change 75-79,
 # a knob or hover); a preset can keep a little starve, crush, pitch drop or clock bend
 # as its sound. Stutter is never kept (a preset loads it at 0), so it has no words here: "stutter" stays glitchy.
 BENDS_NOTE = ("the bends act on everything that comes out; each is a depth from 0 to 100, kept in the preset or played "
-              "live with control change 112 (pitch drop), 113 (voltage starve), 114 (bitcrush), 115 (clock bend) and 116 "
-              "(stutter), the deeper counting. Needs firmware 102")
+              "live with control change 75 (pitch drop), 76 (voltage starve), 77 (bitcrush), 78 (clock bend) and 79 "
+              "(stutter), the deeper counting. Needs firmware 121")
 add("bitcrush, bitcrushed, bit crush, bit crushed, bitcrusher, bit crusher, crushed bits, low bit, low bits, "
     "decimated, decimator, sample rate reduction, downsampled, aliased, aliasing", "effect", "bitcrush", home="global",
     moves=(SET("bitcrush", 50),), off=(EXACT("bitcrush", 0),), note=BENDS_NOTE)
