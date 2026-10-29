@@ -161,7 +161,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 412, 0, 0, 511 }, // joystick B control
     { 413, 0, 0, 4095 }, // joystick B value
     { 414, 0, 0, 511 }, // joystick click control
-    { 415, 0, 0, 4095 }, // joystick click value
+    { 415, 0, 0, 5000 }, // joystick click value
     { 2, 0, 0, 100 }, // global gain
     { 36, 1, 0, 15 }, // scalar harp mode
     { 236, 0, 0, 4095 }, // custom scale
