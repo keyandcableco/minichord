@@ -422,6 +422,7 @@ with open('parameters.json') as f:
         # Each parameter's range as parameters.json declares it, as stored (floats in hundredths),
         # for code that sets a value it didn't get from an editor, such as the double tap.
         cpp_output.write("\r\n\r\n// the range parameters.json declares for each parameter, as stored (floats in hundredths)\r\n")
+        # in flash too: the double tap and the knobs' ramps ask it now and then, and in RAM1 it was 3 kB of code
         cpp_output.write("FLASHMEM bool parameter_range(int adress, int16_t &lo, int16_t &hi) {\r\n    switch(adress){\r\n")
         for section in ("global_parameter", "harp_parameter", "chord_parameter"):
             for parameter in d.get(section, []):
@@ -469,8 +470,11 @@ static const ParameterInfo parameter_lookup[] = {
                 scale = 100 if parameter["data_type"] == "float" else 1
                 min_value = int(round(parameter["min_value"] * scale))
                 max_value = int(round(parameter["max_value"] * scale))
-                is_selector = 1 if (parameter["data_type"] == "int"
-                                    and max_value - min_value <= SELECTOR_MAX_SPAN) else 0
+                # "sweep": "whole" for a setting a knob should take across all of its range whatever the
+                # preset holds, as a bend's depth (430...): around a value of 0 a knob would sweep 0 to 0
+                is_selector = 1 if ((parameter["data_type"] == "int"
+                                     and max_value - min_value <= SELECTOR_MAX_SPAN)
+                                    or parameter.get("sweep") == "whole") else 0
                 name = parameter.get("name", "unnamed")
                 lookup_file_content += "    { %d, %d, %d, %d }, // %s\n" % (
                     parameter["sysex_adress"], is_selector, min_value, max_value, name)

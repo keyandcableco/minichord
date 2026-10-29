@@ -7,6 +7,7 @@
 #include "wavetable_mulaw.h"   // AudioSynthWavetable, its samples as mu-law too (wavetable_mulaw.h)
 #include "envelope_retrigger.h"   // AudioEffectEnvelope, keeping a noteOff that comes during the retrigger fade (envelope_retrigger.h)
 #include "vibrato_tap.h"   // the harp's vibrato as a frequency ratio, for its sample players (vibrato_tap.h)
+#include "bent_bus.h"   // the bends: the whole mix pitch-dropped, starved, crushed and stuttered (bent_bus.h)
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
@@ -591,6 +592,10 @@ AudioMixer4Lean              reverb_mixer;
 AudioEffectPlateReverb   main_reverb;    
 AudioMixer4Lean              stereo_l_mixer;        
 AudioMixer4Lean              stereo_r_mixer;   
+// The bends (main.cpp, BENDS): pitch drop, voltage starve, bitcrush and stutter on the whole mix, for
+// the speaker and the recording alike; at rest the blocks go through untouched. Declared here, between
+// the last mix and the outputs, so it adds no block of delay.
+AudioEffectBend          bent_bus;
 AudioOutputI2S           DAC_out;
 // The looper's click (looper click, 285): into what goes to the speaker and headphones, after the
 // USB recording tap, so a recording never has it
@@ -659,23 +664,27 @@ AudioConnection          patchCord2020(reverb_mixer, 0, main_reverb, 0);
 AudioConnection          patchCord2021(main_reverb, 0, stereo_r_mixer, 2);
 AudioConnection          patchCord2022(main_reverb, 1, stereo_l_mixer, 2);
 
+AudioConnection          bendCord1(stereo_l_mixer, 0, bent_bus, 0);
+AudioConnection          bendCord2(stereo_r_mixer, 0, bent_bus, 1);
 #ifndef AUDIO_INTERFACE
-AudioConnection          patchCord2023(stereo_l_mixer, 0, DAC_out, 1);
-AudioConnection          patchCord2024(stereo_r_mixer, 0, DAC_out, 0);
+AudioConnection          patchCord2023(bent_bus, 0, DAC_out, 1);
+AudioConnection          patchCord2024(bent_bus, 1, DAC_out, 0);
 AudioConnection          clickCord1(looper_click_tick, 0, stereo_l_mixer, 3);
 AudioConnection          clickCord2(looper_click_tick, 0, stereo_r_mixer, 3);
 #endif
 
 // USB audio recording tap; absent when the USB type has no audio interfaces.
 #ifdef AUDIO_INTERFACE
-AudioConnection          drumCord1(drum_machine, 0, stereo_l_mixer, 3);   // input 3 is the click's without USB audio
-AudioConnection          drumCord2(drum_machine, 1, stereo_r_mixer, 3);
-AudioConnection          patchCord2025(stereo_l_mixer, 0, USB_out, 1);
-AudioConnection          patchCord2026(stereo_r_mixer, 0, USB_out, 0);
+// the drums into the bends rather than the last mix: added there as the mix's input 3 would have
+// added them, before a stutter or after it (stutter drums, 441), so the beat can carry on under one
+AudioConnection          drumCord1(drum_machine, 0, bent_bus, 2);
+AudioConnection          drumCord2(drum_machine, 1, bent_bus, 3);
+AudioConnection          patchCord2025(bent_bus, 0, USB_out, 1);
+AudioConnection          patchCord2026(bent_bus, 1, USB_out, 0);
 // the headphone/speaker path: the minichord, and the host's sound beside it, each USB channel to the
 // DAC channel its recording channel comes from (0 to 0, 1 to 1)
-AudioConnection          patchCord2023(stereo_l_mixer, 0, DAC_l_mixer, 0);
-AudioConnection          patchCord2024(stereo_r_mixer, 0, DAC_r_mixer, 0);
+AudioConnection          patchCord2023(bent_bus, 0, DAC_l_mixer, 0);
+AudioConnection          patchCord2024(bent_bus, 1, DAC_r_mixer, 0);
 AudioConnection          patchCord2027(phone_dj_out[1], 0, DAC_l_mixer, 1);   // the song, through the DJ box
 AudioConnection          patchCord2028(phone_dj_out[0], 0, DAC_r_mixer, 1);
 AudioConnection          djCord1(USB_in, 0, phone_deck, 0);
