@@ -1,4 +1,4 @@
-# Harp plate numbering: plan (2026-10-17)
+# Harp plate numbering: plan (2026-10-17; the bent board and the joystick harp numbered 5 and 11, 2026-10-29)
 
 Harp plate (243) numbers for every plate that will be made, so the firmware, plate detect (422)
 and the minichord-lab arcade's drawings agree. Talked through with Greg; nothing built yet.
@@ -24,11 +24,12 @@ and the minichord-lab arcade's drawings agree. Talked through with Greg; nothing
 | 2 | piano | neighbour guard 416 | released |
 | 3 | twin rows | stock, strength 240 | released |
 | 4 | framed strings | stock, strip guard | released |
-| 5-7 | free | | |
+| 5 | bent board (full face) | 13-place harp on six lines; rail, palm and ribbon areas (472-486) | feature-bentJoystick, fw 121 (was 21 on its own branch, fw 111) |
+| 6-7 | free | | |
 | 8 | zipper 24 | 24 places | advanced, fw 99 |
 | 9 | arcade wheel | ring bearing CC 23/24 | advanced, fw 99 |
 | 10 | fretless wrap (+ fretless 31) | wrap island, ribbon | advanced |
-| 11 | joystick harp (+ joystick piano) | 12 places from 6 pads + analog stick, A, B, click | to build; stick code from feature-joystick(Drums), fw 90/91 |
+| 11 | joystick harp (+ joystick piano) | 12 places from 6 pads + analog stick, A, B, click | feature-bentJoystick, fw 120 |
 | 12 | piano glide | piano guard + strip run rule | feature-places (local) |
 | 13 | drum pads | 28 places, harp drums | feature-places |
 | 14 | xy pad | always a ribbon, x sweep 420/421 | feature-places |
@@ -38,7 +39,7 @@ and the minichord-lab arcade's drawings agree. Talked through with Greg; nothing
 | 18 | split xy | pads + xy | feature-places |
 | 19 | celtic plait | corner chords at its 12 crossings | to build |
 | 20 | fretless (ribbon) | stock; the ribbon stays a setting to turn on | number only |
-| 21 | bent board (full face) | 13-place harp on six lines; rail, palm and ribbon areas (472-486) | feature-bentBoard, fw 111 |
+| 21 | (the bent board's working number on feature-bentBoard, fw 111; it is 5) | | |
 | - | LED zipperlin | needs its downlink firmware | parked |
 
 **Joystick harp = 11:** it is the only joystick board being made. apply_preset_version already

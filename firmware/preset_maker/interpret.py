@@ -1560,7 +1560,7 @@ add("circuit bent, circuit-bent, circuit bending, circuit bend, bent omnichord, 
     moves=(SET("starve", 20), SET("bitcrush", 25)), off=(EXACT("starve", 0), EXACT("bitcrush", 0)),
     note="a little voltage starve and bitcrush kept in the preset; the bends play deeper live. " + BENDS_NOTE)
 
-BENT_NOTE = ("the bend rail's points, the palm pad and the thumb ribbon are the bent board's (harp plate 21): each "
+BENT_NOTE = ("the bend rail's points, the palm pad and the thumb ribbon are the bent board's (harp plate 5): each "
              "moves its setting from the preset's own toward its value as it is pressed (the ribbon by where the thumb is "
              "along it), and back as it lets go; on any other plate they do nothing. Needs firmware 111")
 
@@ -1600,7 +1600,7 @@ COLORS = {"red": 0, "orange": 30, "amber": 40, "gold": 50, "golden": 50, "yellow
 # ---- control phrases ----------------------------------------------------------------------------
 
 CONTROLS = (   # (pattern, control), tried in order; a match is taken out of the clause
-    # the bent board's touch areas (harp plate 21, firmware 111): the rail's five points, the palm pad, the thumb ribbon
+    # the bent board's touch areas (harp plate 5, firmware 121): the rail's five points, the palm pad, the thumb ribbon
     (r"\b(?:the )?(?:bend )?rail (?:point|dot|spot|pad) (?:number )?(?:[1-5]|one|two|three|four|five)\b|"
      r"\b(?:the )?(?:first|second|third|middle|fourth|fifth|last|leftmost|rightmost|1st|2nd|3rd|4th|5th) "
      r"(?:bend )?rail (?:point|dot|spot|pad)\b|\bbend rail (?:[1-5]|one|two|three|four|five)\b", "rail_n"),

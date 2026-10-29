@@ -1,4 +1,4 @@
-// The bent board, harp plate 21: a full-face plate on the stock plate's twelve lines, round the
+// The bent board, harp plate 5: a full-face plate on the stock plate's twelve lines, round the
 // minichord's own keys and knobs. Its harp has thirteen places from six lines (the split plate's strip);
 // the rest of the board is touch areas: a bend rail of five points along the strip above the chord
 // buttons, a palm pad on the nose left of them and a thumb ribbon in the wedge below the seventh row.

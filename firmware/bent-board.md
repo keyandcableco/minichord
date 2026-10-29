@@ -1,4 +1,8 @@
-# The bent board (harp plate 21, firmware 111)
+# The bent board (harp plate 5, firmware 121)
+
+Developed as plate 21 on firmware 111 (its own branch, feature-bentBoard, and a local integration build), and
+brought onto firmware 120's joystick harp as plate 5, the number it is released with, with the bends (firmware
+102) under it. Where the steps below say 21, it is 5 now.
 
 A full-face plate on the stock plate's twelve lines (designs: the plates repo, `full face plate/make_bentboard.py`).
 Its harp is thirteen places on six lines; the other six lines are touch areas that move settings, the bends by
@@ -133,7 +137,7 @@ flash wipes them.
    the places, the joystick harp, the harp fader) isn't in it, so flashing it takes those off the minichord until
    the two are merged (plates-arrival sits within 500 bytes of an ITCM block: the merge has to move code to flash).
 1. **Teach it**: flash a TOUCHLOG build of it (`TOUCHLOG=1 TOUCHMS=10 ./build.sh bentboard111cal <commit>`), fit
-   the board, choose harp plate 21 with plate detect on, hands off for two seconds: three white flashes.
+   the board, choose harp plate 5 with plate detect on, hands off for two seconds: three white flashes.
 2. **Record**: `bentboard/record.py` (each step says what to touch). Then `bentboard/fit.py <rec.json>` prints
    the decoder's constants from the real board, and `tools/bent_board/replay <rec.txt>` shows what the decoder
    reads. Look for:
@@ -144,8 +148,8 @@ flash wipes them.
    - the ribbon's share range and table; where the thumb naturally rests (the top edge reads left)
    - `core_reads` from the harp slides; the cold end taps' lean (`island_margin`, `end_doubt`)
    - the border shares; the keys' strongest reading (under 40: none counts; else raise the thresholds or note it)
-   - the harp's touch strength against the stock strip (taps on cores): `harp_plate_strength[21]`
-3. **Hover**: `hover_cal.py` on the board for `hover_plates[21]`. Expect the left hand playing chords, and the palm
+   - the harp's touch strength against the stock strip (taps on cores): `harp_plate_strength[5]`
+3. **Hover**: `hover_cal.py` on the board for `hover_plates[5]`. Expect the left hand playing chords, and the palm
    resting on its pad, to read as a hand near the plate.
 4. Paste the fitted constants into `include/bent_board.h`, rebuild plain, `./run.sh` (the modelled checks may move:
    the recording is the judge), flash.
