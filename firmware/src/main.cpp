@@ -8515,17 +8515,20 @@ bool zone_is_strip(uint8_t i) {
 // along the line, takes in one zone more either side, which reads a little
 // before it counts as touched, so a finger nearing a band starts to move
 // before the far zone crosses its threshold. Line place m is harp zone m % 12, or line_zone[m] for a line
-// laid out otherwise (the joystick harp's strip).
+// laid out otherwise (the joystick harp's strip). line_gain[m], where given, weighs line place m's reading in
+// the centre (not in the run's total) of a run on it or beside it, not of one reaching past it: a small pad
+// reads less under the same finger, and a finger further on that only leaks onto it isn't pulled toward it.
 struct harp_run { float centre; float total; bool palmed; bool matched; float key; uint8_t lo, hi; };   // key: the strongest zone's place
 uint8_t harp_find_runs(const bool *line_down, uint8_t line_length, const bool *zone_down,
-                       const int16_t *strength, harp_run *runs, uint8_t max_runs, const uint8_t *line_zone = nullptr) {
+                       const int16_t *strength, harp_run *runs, uint8_t max_runs, const uint8_t *line_zone = nullptr,
+                       const float *line_gain = nullptr) {
   uint8_t run_count = 0;
   for (uint8_t k = 0; k < line_length && run_count < max_runs; k++) {
     if (!line_down[k]) continue;
     uint8_t lo = k;
     while (k + 1 < line_length && line_down[k + 1]) k++;
     uint8_t hi = k;
-    float total = 0, moment = 0, key = lo;
+    float total = 0, weight = 0, moment = 0, key = lo;
     bool palmed = false;
     for (int8_t m = (int8_t)lo - 1; m <= (int8_t)hi + 1; m++) {
       if (m < 0 || m >= line_length) continue;
@@ -8534,10 +8537,13 @@ uint8_t harp_find_runs(const bool *line_down, uint8_t line_length, const bool *z
       if (!inside && zone_down[zone]) continue;   // a neighbour another finger is on
       if (inside) palmed |= string_palmed[zone];
       if (inside && strength[zone] > strength[line_zone ? line_zone[(uint8_t)key] : (uint8_t)key % 12]) key = m;
+      bool gained = line_gain && hi <= m + 1 && lo + 1 >= m;
+      float w = strength[zone] * (gained ? line_gain[m] : 1.0f);
       total += strength[zone];
-      moment += strength[zone] * m;
+      weight += w;
+      moment += w * m;
     }
-    float centre = total > 0 ? moment / total : (lo + hi) / 2.0;
+    float centre = weight > 0 ? moment / weight : (lo + hi) / 2.0;
     runs[run_count++] = harp_run{centre, total, palmed, false, key, lo, hi};
   }
   return run_count;
@@ -8575,6 +8581,22 @@ static bool run_on_t8(const harp_run &run) {
   return run.lo == 0 || (run.lo <= 3 && run.hi >= 3);
 }
 
+// Whether T8, down on the joystick harp's strip (line places 1-6 read, the island's 0 not yet), is the
+// island below T12 rather than its core above T10. It is when T12 is touched with it and T10, between
+// them, isn't. T8 touched alone is the island too when T12 reads clearly more than either of the T8
+// core's own neighbours: a finger on the core leans on T10 or T6, one on the island's zipper on T12,
+// whose teeth there can stay under the touch threshold. Modelled (~/minichord-bench/places
+// joyharp_model.py, 6-9 mm fingertips), without this the bottom place read as T8's core on up to 67
+// touches of 1770; with a margin of 10, as zipper 24's, on none, and the core never as the island.
+static bool joystick_island(const bool *line_down, const int16_t *strength, const uint8_t *line) {
+  bool island = line_down[1] && line_down[3] && !line_down[2];
+  if (line_down[3] && !line_down[1] && !line_down[2] && !line_down[4]) {
+    int16_t lean = max(strength[line[2]], strength[line[4]]);
+    island = strength[line[1]] > lean + 10;
+  }
+  return island;
+}
+
 void handle_harp_positions() {
   // Zone i of the line is zone i of the harp, and the line has a thirteenth,
   // the bottom zone's island above the top zone. The bottom zone is read as the
@@ -8600,30 +8622,28 @@ void handle_harp_positions() {
   uint8_t line_length = 13;
   bool line_down[13];
   const uint8_t *line_zone = nullptr;
+  const float *line_gain = nullptr;
   uint8_t joystick_line[7];
   bool island_flipped = false;
   static bool last_end_top = false;   // zipper 24's ends, below
   static uint32_t last_end_at = 0;
   if (joystick) {
     // The joystick harp's strip, bottom to top: the island of T8 below T12, then T12, T10, T8,
-    // T6, T4 and T2, a zipper between each two. The island is read as T8 when T12 is touched
-    // with it and T10, between them, isn't.
+    // T6, T4 and T2, a zipper between each two. Whether T8 is read as the island is joystick_island's.
     static const uint8_t strip_contacts[7] = {8, 12, 10, 8, 6, 4, 2};
+    // The island is a small pad: on the real plate (2026-10-28, joystick_strip_2049) a finger on the
+    // bottom C read T8 37-61 against T12's 50-170, pulling its centre past the C into C# (one tap in
+    // eight, and a landing could sound C then C# as T12 rose faster); a finger on C# read T8 0-8. Its
+    // reading weighs 2.5 in the centre of a finger on the island or T12 (not one reaching T10, the D,
+    // which a leak onto T8 would pull toward C#): replayed, every C tap is C, and C#, D and F are unchanged.
+    static const float strip_gain[7] = {2.5f, 1, 1, 1, 1, 1, 1};
+    line_gain = strip_gain;
     line_length = 7;
     for (uint8_t k = 0; k < 7; k++) {
       joystick_line[k] = contact_zone(strip_contacts[k]);
       line_down[k] = zone_down[joystick_line[k]];
     }
-    bool island = line_down[1] && line_down[3] && !line_down[2];
-    // T8 touched alone is the island too when T12 reads clearly more than either of the T8 core's own
-    // neighbours: a finger on the core leans on T10 or T6, one on the island's zipper on T12, whose teeth
-    // there can stay under the touch threshold. Modelled (~/minichord-bench/places joyharp_model.py, 6-9 mm
-    // fingertips), without this the bottom place read as T8's core on up to 67 touches of 1770; with a
-    // margin of 10, as zipper 24's, on none, and the core never as the island.
-    if (line_down[3] && !line_down[1] && !line_down[2] && !line_down[4]) {
-      int16_t lean = max(strength[joystick_line[2]], strength[joystick_line[4]]);
-      island = strength[joystick_line[1]] > lean + 10;
-    }
+    bool island = joystick_island(line_down, strength, joystick_line);
     line_down[0] = island;
     if (island) line_down[3] = false;
     // the island read coming or going moves a finger's run by up to six places at once (T8 read
@@ -8661,7 +8681,7 @@ void handle_harp_positions() {
   }
 
   harp_run runs[7];
-  uint8_t run_count = harp_find_runs(line_down, line_length, zone_down, strength, runs, 7, line_zone);
+  uint8_t run_count = harp_find_runs(line_down, line_length, zone_down, strength, runs, 7, line_zone, line_gain);
   for (uint8_t r = 0; r < run_count; r++) {
     if (!joystick) { runs[r].centre *= 2; continue; }   // in positions, two a zone
     // two places a pad, the island's zipper the first; turned round, the top as the player holds
