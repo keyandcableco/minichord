@@ -1539,11 +1539,13 @@ uint8_t joystick_bend_voices = 0;        // 399: what bends: 0 the harp and the 
 float joystick_vibrato_depth = 0.3;      // 400: semitones either way at full up
 float joystick_vibrato_rate = 5.5;       // 401: Hz
 // up, down, left, right (402-409): the setting each direction pushes, and what it reaches at the
-// end of the stick's travel; A, B and the click (410-415): the setting each holds while pressed
-int16_t joystick_target[4] = {0, 0, 0, 0};
-int16_t joystick_to[4] = {0, 0, 0, 0};
-int16_t joystick_button_target[3] = {0, 0, 0};
-int16_t joystick_button_to[3] = {0, 0, 0};
+// end of the stick's travel; A, B and the click (410-415): the setting each holds while pressed. The
+// defaults (parameters.json, Greg 2026-10-28): down a wah (the harp's filter, 49, to 100), A the harp an
+// octave up (99 at 3), B the chords an octave down (198 at 1), the click a sustain pedal (47 at 5000)
+int16_t joystick_target[4] = {0, 49, 0, 0};
+int16_t joystick_to[4] = {0, 100, 0, 0};
+int16_t joystick_button_target[3] = {99, 198, 47};
+int16_t joystick_button_to[3] = {3, 1, 5000};
 bool joystick_reapply = true;
 void joystick_set_mode(uint8_t mode);
 void joystick_set_target(uint8_t direction, int16_t adress);
