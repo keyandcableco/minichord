@@ -58,6 +58,7 @@ harp::harp(){}
   uint16_t harp::read_proximity(){ return 0; }
   void harp::read_rest(uint16_t (&rest)[12], bool &touched){ for (uint8_t k = 0; k < 12; k++) rest[k] = 0; touched = true; }
   void harp::read_levels(uint16_t (&filtered)[12], uint16_t (&baseline)[12]){ for (uint8_t k = 0; k < 12; k++) filtered[k] = baseline[k] = 0; }
+  uint16_t harp::read_filtered(uint8_t zone){ return 0; }
 
   void harp::update(debouncer (&data_array)[12]){
       AT42QT2120::Status status = touch_sensor.getStatus();
@@ -273,6 +274,13 @@ harp::harp(){}
       int16_t delta = (int16_t)baseline[key] - (int16_t)filtered[key];
       strength[remap_array[key]] = delta > 0 ? (int32_t)delta * 100 / strength_scale : 0;
     }
+  }
+
+  uint16_t harp::read_filtered(uint8_t zone){
+    for (uint8_t key=0; key < 12; key++) {
+      if (remap_array[key] == zone) return touch_sensor.getDeviceChannelFilteredData(MPR121::ADDRESS_5A, key);
+    }
+    return 0;
   }
 
   FLASHMEM void harp::read_rest(uint16_t (&rest)[12], bool &touched){
