@@ -10432,9 +10432,14 @@ FLASHMEM bool plate_swap_watch() {
   }
   harp_sensor.read_levels(f, b);
   if (plate_swap_state == SWAP_NONE) {
-    uint8_t lifted = 0, dropped = 0;
+    uint8_t lifted = 0, dropped = 0, left = 0;
     for (uint8_t z = 0; z < 12; z++) {
-      lifted += f[z] > b[z] + plate_swap_lift;
+      bool up = f[z] > b[z] + plate_swap_lift;
+      lifted += up;
+      // the joystick harp's stick, its shared contact and its buttons read above rest as the stick is pushed and a
+      // button let go: zones left above rest are the strip's (2026-10-29, the stick held right and clicked was
+      // taken for no plate on)
+      left += up && zone_is_strip(z);
       dropped += f[z] + plate_swap_drop < b[z];
     }
     // all twelve held, and still: kept against the readings since all twelve went down
@@ -10450,7 +10455,7 @@ FLASHMEM bool plate_swap_watch() {
     }
     bool any_down = false;
     for (uint8_t i = 0; i < 12; i++) any_down |= harp_array[i].read_value();
-    if (lifted < plate_swap_left_zones || any_down) left_for = 0;
+    if (left < plate_swap_left_zones || any_down) left_for = 0;
     coming_off = going_on = stuck = false;
     if (lifted >= plate_swap_zones || left_for >= plate_swap_left_ms) {
       // a plate coming off; or some zones left above their rest, untouched: the rest of a plate pulled off one
@@ -11900,9 +11905,9 @@ void handle_hover(bool alternate) {
 // and right) and the end it is pushed towards on the shared contact (T9), reads as a resistance:
 // a B10K swept 9 to 219 on the bench, but on the real plate (2026-10-28) each axis rests at about 210
 // and runs from about 40 to 340 (pushing one axis moves the other's reading by up to 40, through the
-// shared contact). Its plastic detent insert holds the stick at an edge pushed past it; let go short
-// of it, the stick springs back to the middle. A, the click and B join T5, T7
-// and T11 to the shared contact, and read as touches. The strip, T2 to T12, is read as twelve
+// shared contact). Pushed past about 23 degrees it can stay there (Alps: past 23 degrees its parts interfere
+// and the lever may not come back), so a collar over it stops it at about 22; let go, it springs back to the
+// middle. A, the click and B join T5, T7 and T11 to the shared contact, and read as touches. The strip, T2 to T12, is read as twelve
 // places in handle_harp_positions.
 //
 // The stick is read from the chip's filtered counts, not against its baseline, which would soak up
@@ -11930,11 +11935,19 @@ struct stick_axis {
 stick_axis stick_axes[2] = {};   // 0 left and right (T3), 1 up and down (T1)
 float stick_x = 0, stick_y = 0;  // -1 to 1, left to right and down to up, as the player holds it
 const float stick_dead = 0.08f;           // the middle of the travel that is rest: a stick let go comes back near it, not to it
-const float stick_rest_counts = 210;      // the real stick at rest, for one held off centre (or at its detent) as it is first read
+const float stick_rest_counts = 210;      // the real stick at rest, for one held off centre (or at a stop) as it is first read
 const float stick_rest_window = 20;       // a first reading this near rest is the stick at rest, and its centre (the other
-                                          // axis pushed reads up to 40 off: a stick held at its detent isn't taken as rest)
-const float stick_floor_counts = 40;      // the end a pot is pushed to (the real plate's lowest)
-const float stick_ceiling_counts = 340;   // and the other end (its highest)
+                                          // axis pushed reads up to 40 off: a stick held at a stop isn't taken as rest)
+// Where the ends start, before the stick has been pushed to them: inside the stops. The 40 and 340 measured
+// first (2026-10-28) were a stick pushed past 23 degrees, where Alps says it may stick and not come back; the
+// collar (minichord-harp-plates, joystick collar) stops the cap's stem at about 22. Held against it
+// (2026-10-29, read from the control changes): left about 89, right 308, up 108, down 287 or more, at rest 215.
+// From here the ends follow the stick out to its stops.
+const float stick_floor_counts = 100;     // the end a pot falls towards
+const float stick_ceiling_counts = 290;   // and the other end
+const float stick_end_follow = 0.05f;     // a read: an end follows a reading past it in about 80 ms, so a knock against
+                                          // the stop, a few ms past where it holds, widens it hardly at all
+const float stick_full = 0.95f;           // full travel a little short of the ends, so a stick held at a stop is there
 const uint8_t stick_read_ms = 4;
 const uint8_t joystick_cc = 112;
 
@@ -11973,10 +11986,10 @@ FLASHMEM static float stick_axis_read(stick_axis &a, float raw, uint32_t now) {
   float moved = raw - a.level;
   a.level += moved * 0.35f;
   if (fabsf(moved) > 3) a.still_since = now;
-  if (a.level < a.low) a.low = a.level;
-  if (a.level > a.high) a.high = a.level;
+  if (a.level < a.low) a.low += (a.level - a.low) * stick_end_follow;
+  if (a.level > a.high) a.high += (a.level - a.high) * stick_end_follow;
   float offset = a.level - a.centre;
-  float v = offset < 0 ? offset / fmaxf(a.centre - a.low, 1) : offset / fmaxf(a.high - a.centre, 1);
+  float v = offset < 0 ? offset / fmaxf((a.centre - a.low) * stick_full, 1) : offset / fmaxf((a.high - a.centre) * stick_full, 1);
   // sitting still near the middle is rest: the centre follows it, slowly
   if (fabsf(v) < 2 * stick_dead && now - a.still_since > 300) a.centre += (a.level - a.centre) * 0.02f;
   float size = fabsf(v);
