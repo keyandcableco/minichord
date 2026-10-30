@@ -8334,16 +8334,22 @@ void apply_string_spreads() {
 // Chord ensemble: depth 0 only the dry; at 100 half dry and half the swept delay (the flange object
 // already gives half and half)
 FLASHMEM void set_chord_ensemble(uint8_t depth) {
+  static int8_t swept = -1;   // whether the delays sweep, -1 before the first call
   float d = depth / 100.0f;
   // At depth 0 the swept delays only pass the chords through to a mixer input at 0, so they're left
   // to pass them through (filling their lines, so turning the depth up starts from the sound so far)
-  // rather than sweep and interpolate for nothing
-  if (depth == 0) {
-    chord_ensemble_l.voices(FLANGE_DELAY_PASSTHRU, 0, 0);
-    chord_ensemble_r.voices(FLANGE_DELAY_PASSTHRU, 0, 0);
-  } else {
-    chord_ensemble_l.voices(441, 132, 0.53);   // as begin() in setup has them
-    chord_ensemble_r.voices(529, 150, 0.71);
+  // rather than sweep and interpolate for nothing. voices() starts the sweep and the lines' write point
+  // over, a jolt in the sound, so it's called only as the depth crosses 0: set again at a depth it has
+  // (a joystick button puts its value on every 250 ms) or swept by a knob or hover, the ensemble goes on
+  if ((depth > 0) != swept) {
+    swept = depth > 0;
+    if (!swept) {
+      chord_ensemble_l.voices(FLANGE_DELAY_PASSTHRU, 0, 0);
+      chord_ensemble_r.voices(FLANGE_DELAY_PASSTHRU, 0, 0);
+    } else {
+      chord_ensemble_l.voices(441, 132, 0.53);   // as begin() in setup has them
+      chord_ensemble_r.voices(529, 150, 0.71);
+    }
   }
   chord_ensemble_mix_l.gain(0, 1 - d);
   chord_ensemble_mix_l.gain(1, d);
