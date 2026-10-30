@@ -1543,8 +1543,10 @@ int16_t hover_alt_value = 0;
 void hover_set_target(int16_t adress);
 
 // The joystick harp (harp plate 11, see >>JOYSTICK<<): what the stick and its buttons do
-uint8_t joystick_mode = 1;               // 396: 0 settings, 1 bend and vibrato
-uint8_t joystick_orientation = 0;        // 397: how the stick sits: 1 swaps its axes, 2 turns left and right round, 4 up and down
+uint8_t joystick_mode = 1;               // 396: 0 settings, 1 bend and vibrato (its first switch)
+uint8_t joystick_options = 0;            // 396's other switches: what the modifier does with A, B and the click
+const uint8_t joystick_latch = 2, joystick_freeze = 4;
+uint8_t joystick_orientation = 0;       // 397: how the stick sits: 1 swaps its axes, 2 turns left and right round, 4 up and down
 uint8_t joystick_bend_range = 2;         // 398: semitones at full left or right
 uint8_t joystick_bend_voices = 0;        // 399: what bends: 0 the harp and the chords, 1 the harp, 2 the chords
 float joystick_vibrato_depth = 0.3;      // 400: semitones either way at full up
@@ -1558,7 +1560,11 @@ int16_t joystick_to[4] = {0, 100, 0, 0};
 int16_t joystick_button_target[3] = {99, 198, 47};
 int16_t joystick_button_to[3] = {3, 1, 5000};
 bool joystick_reapply = true;
-void joystick_set_mode(uint8_t mode);
+// The buttons latched (joystick_latch, as bits: A, B, the click) and the stick frozen (joystick_freeze); a
+// preset load, a panic and the plate coming off let go of both
+uint8_t joystick_latched = 0;
+bool stick_frozen = false;
+void joystick_set_mode(uint8_t value);
 void joystick_set_target(uint8_t direction, int16_t adress);
 void joystick_set_button_target(uint8_t button, int16_t adress);
 // The bend the stick puts on every voice it reaches, in semitones, vibrato and all (0 off the plate)
@@ -8053,6 +8059,10 @@ void load_config(int bank_number) {
     double_tap_engaged = false;
     if (!key_change_mode) set_led_color(bank_led_hue, bank_led_saturation(), 1 - led_attenuation);
   }
+  // So does a joystick harp button latched or its stick frozen (396's switches): the load has put their
+  // settings back
+  joystick_latched = 0;
+  stick_frozen = false;
   flag_save_needed=false;
   //digitalWrite(_MUTE_PIN, HIGH); // unmuting the DAC
 }
@@ -11145,6 +11155,8 @@ void stop_chord_notes() {
 FLASHMEM void panic() {
   bent_catch_state = bentboard::catch_state{};
   bent_palm_state = bentboard::palm_hold_state{};
+  joystick_latched = 0;   // handle_joystick puts their settings back
+  stick_frozen = false;
   if (looper_state == LOOPER_PLAYING || looper_state == LOOPER_RECORDING || looper_state == LOOPER_COUNTIN) looper_action(3);
   if (chord_memory_state == CHORD_MEMORY_PLAYING || chord_memory_state == CHORD_MEMORY_RECORDING) chord_memory_action(3);
   noInterrupts();
@@ -11929,10 +11941,21 @@ void handle_hover(bool alternate) {
 //   1 bend and vibrato: left and right bend (398, 399), up adds vibrato (400, 401), and down
 //     pushes the down direction's setting, as in 0.
 // A, B and the click hold their settings (410-415) at their values while pressed, in every mode.
+// Joystick mode's other switches, added to it, give the modifier something to do with them (before,
+// it only sharpened and turned the knobs to their alternates alongside, as it still does):
+//   2 latch: A, B or the click pressed with the modifier held keeps its setting at its value once it
+//     lifts, until it is pressed again and lifts. With harp drums the modifier makes each its accent:
+//     the crash (the kick's partner on the one), the clap and the open hat.
+//   4 freeze: the click pressed with the modifier held leaves the stick where it was, until the next;
+//     pushed further the same way, the stick takes over and comes back to it let go. That click holds
+//     nothing, and with harp drums strikes nothing.
+// As the modifier's other combos are: pressed with the modifier already down, not while the modifier
+// is a tap and hold's second press, and its let-go no tap of the double tap.
 // With knobs send MIDI on, the stick goes out as control changes 112 (left and right) and 113 (up
 // and down), 64 at rest, and A, B and the click as 114, 115 and 116, on the chord channel: past
 // the ones the minichord listens for (75-79 the bends, 85-90 the looper, 102-111 the rhythm and chord
-// memory), so a computer that sends them back changes nothing.
+// memory), so a computer that sends them back changes nothing. A latched button is sent as pressed, the
+// click that freezes or lets go of the stick as not, and a frozen stick where it is held.
 struct stick_axis {
   float centre, low, high;   // filtered counts: at rest, and the furthest seen either way
   float level;               // smoothed reading
@@ -11968,12 +11991,15 @@ const float stick_far = 0.6f, stick_near = 0.35f, stick_settle_most = 0.55f;
 const uint16_t stick_snap_ms = 150, stick_still_ms = 150, stick_settle_ms = 600;
 uint32_t stick_released_at = 0;           // the last let-go, 0 for none
 const uint8_t stick_read_ms = 4;
+const uint8_t stick_freeze_reads = 10;    // readings kept, stick_read_ms apart: where a click to freeze finds the stick
 const uint8_t joystick_cc = 112;
 
 // Joystick mode and targets, from their settings: a setting a direction or button leaves goes back
-// as the preset has it
-FLASHMEM void joystick_set_mode(uint8_t mode) {
-  joystick_mode = mode;
+// as the preset has it. Mode's first switch is the mode, its others the modifier's (joystick_latch,
+// joystick_freeze): one switched off lets go of what it held (joystick_hold, handle_joystick)
+FLASHMEM void joystick_set_mode(uint8_t value) {
+  joystick_mode = value & 1;
+  joystick_options = value & (joystick_latch | joystick_freeze);
   joystick_reapply = true;
 }
 
@@ -12090,16 +12116,26 @@ FLASHMEM static void joystick_push(const float *t) {
   }
 }
 
-// A, B and the click: each holds its setting at its value while pressed
-FLASHMEM static void joystick_hold(const bool *down) {
+// A, B and the click: each holds its setting at its value while pressed, and with joystick latch one
+// pressed with the modifier held until it is pressed again and lifts. lands: which went down since the
+// last read, with_modifier: which of them with the modifier down as they did. held: which are holding,
+// for their control changes
+FLASHMEM static void joystick_hold(const bool *down, const bool *lands, const bool *with_modifier, bool *held) {
   static bool was[3] = {false, false, false};
   static elapsedMillis since_refresh;
   bool refresh = since_refresh > 250;
   if (refresh) since_refresh = 0;
+  bool latching = joystick_options & joystick_latch;
+  if (!latching) joystick_latched = 0;   // switched off: what was latched goes back
   for (uint8_t b = 0; b < 3; b++) {
+    uint8_t bit = 1 << b;
+    held[b] = down[b];
     int16_t target = joystick_button_target[b];
-    if (!control_can_tap(target)) { was[b] = false; continue; }
-    if (down[b]) {
+    if (!control_can_tap(target)) { joystick_latched &= ~bit; was[b] = false; continue; }
+    if (lands[b] && (joystick_latched & bit)) joystick_latched &= ~bit;   // pressed again: it lets go as it lifts
+    else if (lands[b] && with_modifier[b] && latching) joystick_latched |= bit;
+    held[b] = down[b] || (joystick_latched & bit);
+    if (held[b]) {
       if (!was[b] || refresh || joystick_reapply) {
         int16_t to = joystick_button_to[b];
         int16_t lo, hi;
@@ -12109,18 +12145,18 @@ FLASHMEM static void joystick_hold(const bool *down) {
     } else if (was[b]) {
       apply_audio_parameter(target, current_sysex_parameters[target]);
     }
-    was[b] = down[b];
+    was[b] = held[b];
   }
 }
 
-FLASHMEM static void joystick_send_midi(const bool *down) {
+FLASHMEM static void joystick_send_midi(const bool *held) {
   static int16_t sent[5] = {-1, -1, -1, -1, -1};
   if (!knob_midi) {
     for (uint8_t k = 0; k < 5; k++) sent[k] = -1;   // sent again whenever it's switched back on
     return;
   }
   int16_t value[5] = {(int16_t)lroundf(64 + stick_x * (stick_x < 0 ? 64 : 63)), (int16_t)lroundf(64 + stick_y * (stick_y < 0 ? 64 : 63)),
-                      down[0] ? 127 : 0, down[1] ? 127 : 0, down[2] ? 127 : 0};
+                      held[0] ? 127 : 0, held[1] ? 127 : 0, held[2] ? 127 : 0};
   for (uint8_t k = 0; k < 5; k++) {
     if (value[k] != sent[k]) queue_midi_cc(joystick_cc + k, value[k], chord_channel, chord_port);
     sent[k] = value[k];
@@ -12130,31 +12166,50 @@ FLASHMEM static void joystick_send_midi(const bool *down) {
 // Harp drums (343): A, B and the click strike the kick, the snare and the closed hat as each is
 // pressed, and nothing as it is let go of. They're switches, with no firmness to read, so each hits
 // a little over a groove's plain hit (96) and under its accents and a firm pad (124-127), and the
-// strip can still play over them. Read every pass, not at the stick's 4 ms, so a hit isn't late; a
-// button already held as the plate comes on, or as harp drums do, waits to be pressed again. Their
-// settings (410-415) and control changes go on as ever.
+// strip can still play over them. Read every pass (handle_joystick), not at the stick's 4 ms, so a hit
+// isn't late; a button already held as the plate comes on, or as harp drums do, waits to be pressed
+// again. Their settings (410-415) and control changes go on as ever. With joystick latch, pressed with
+// the modifier held they strike their accents instead; a press that lets a latch go only lets it go (seen
+// here before joystick_hold takes the latch off), and with joystick freeze the click pressed with the
+// modifier only freezes the stick or lets it go.
 const uint8_t joystick_drum_velocity = 110;
-FLASHMEM static void joystick_drums(bool fresh) {
-  static const uint8_t contacts[3] = {5, 11, 7};   // A, B, the click
+FLASHMEM static void joystick_drums(const bool *lands, bool modifier) {
   static const uint8_t voices[3] = {DRUM_KICK, DRUM_SNARE, DRUM_HAT};
-  static bool was[3] = {false, false, false};   // followed whether or not the drums are on
+  static const uint8_t accents[3] = {DRUM_CYMBAL, DRUM_CLAP, DRUM_OPEN};
+  if (!harp_drums) return;
+  bool accent = modifier && (joystick_options & joystick_latch);
   for (uint8_t b = 0; b < 3; b++) {
-    bool down = harp_array[contact_zone(contacts[b])].read_value();
-    if (down && !was[b] && harp_drums && !fresh) drum_hit(voices[b], joystick_drum_velocity);
-    was[b] = down;
+    if (!lands[b] || (joystick_latched >> b & 1)) continue;
+    if (b == 2 && modifier && (joystick_options & joystick_freeze)) continue;
+    drum_hit(accent ? accents[b] : voices[b], joystick_drum_velocity);
   }
 }
 
 FLASHMEM void handle_joystick() {
   static bool was_on = false;
+  // A, B and the click are read every pass, so a drum isn't late; a press landing waits for the stick's
+  // next read as a bit of pressed, and of pressed_modifier too if the modifier was down as it landed
+  static bool down_was[3] = {false, false, false};
+  static uint8_t pressed = 0, pressed_modifier = 0;
+  // Joystick freeze: the click with the modifier leaves the stick where it was, read from before the click,
+  // which eases a held tilt by 10-30 counts as it goes in (2026-10-29, against the collar)
+  static float earlier_x[stick_freeze_reads] = {}, earlier_y[stick_freeze_reads] = {};
+  static uint8_t earlier = 0;   // the oldest of them, and the next to go
+  static float frozen_x = 0, frozen_y = 0;
+  static bool click_freezing = false;   // the click that froze the stick or let it go, until it lifts
   bool on = harp_plate == plate_joystick_harp;
   if (!on) {
     if (was_on) {   // the plate taken off, or set to another: everything back as the preset has it
       stick_x = stick_y = 0;
+      joystick_latched = 0;
+      stick_frozen = click_freezing = false;
+      pressed = pressed_modifier = 0;
+      for (uint8_t k = 0; k < stick_freeze_reads; k++) earlier_x[k] = earlier_y[k] = 0;
       const float rest[4] = {0, 0, 0, 0};
       const bool up[3] = {false, false, false};
+      bool held[3];
       joystick_push(rest);
-      joystick_hold(up);
+      joystick_hold(up, up, up, held);
       joystick_bend_apply(0, 0);
       stick_axes[0] = stick_axes[1] = {};
       stick_released_at = 0;
@@ -12162,13 +12217,32 @@ FLASHMEM void handle_joystick() {
     }
     return;
   }
-  joystick_drums(!was_on);
+  // the modifier, for its combos with the buttons: not while it is a tap and hold's second press
+  bool modifier = chord_matrix_array[0].read_value() && !modifier_holding;
+  bool down[3] = {harp_array[contact_zone(5)].read_value(), harp_array[contact_zone(11)].read_value(), harp_array[contact_zone(7)].read_value()};   // A, B, the click
+  bool lands[3];
+  for (uint8_t b = 0; b < 3; b++) {
+    lands[b] = down[b] && !down_was[b] && was_on;   // held as the plate comes on: no press
+    down_was[b] = down[b];
+    if (!lands[b]) continue;
+    pressed |= 1 << b;
+    if (!modifier) continue;
+    pressed_modifier |= 1 << b;
+    if (joystick_options) modifier_combo_used = true;   // a combo: its let-go no tap
+  }
+  joystick_drums(lands, modifier);
   was_on = true;
   static elapsedMillis since_read;
   if (since_read < stick_read_ms) return;
   float dt = since_read / 1000.0f;
   since_read = 0;
   uint32_t now = millis();
+  bool with_modifier[3];
+  for (uint8_t b = 0; b < 3; b++) {
+    lands[b] = pressed >> b & 1;
+    with_modifier[b] = pressed_modifier >> b & 1;
+  }
+  pressed = pressed_modifier = 0;
 
   // falling towards the shared contact is left and up, until joystick orientation says otherwise (on the
   // real plate T3 falls pushed left, T1 pushed up)
@@ -12178,9 +12252,27 @@ FLASHMEM void handle_joystick() {
   if (joystick_orientation & 2) x = -x;
   if (joystick_orientation & 4) y = -y;
   if (upside_down) { x = -x; y = -y; }
+
+  if (!(joystick_options & joystick_freeze)) stick_frozen = false;
+  else if (lands[2] && with_modifier[2]) {
+    stick_frozen = !stick_frozen;
+    frozen_x = earlier_x[earlier];
+    frozen_y = earlier_y[earlier];
+    click_freezing = true;
+  }
+  if (!down[2]) click_freezing = false;
+  if (click_freezing) down[2] = lands[2] = false;   // it holds nothing, nor latches
+  earlier_x[earlier] = x;
+  earlier_y[earlier] = y;
+  earlier = (earlier + 1) % stick_freeze_reads;
+  if (stick_frozen) {   // pushed further the same way than where it was left, the stick takes over
+    if (frozen_x > 0) x = fmaxf(x, frozen_x);
+    else if (frozen_x < 0) x = fminf(x, frozen_x);
+    if (frozen_y > 0) y = fmaxf(y, frozen_y);
+    else if (frozen_y < 0) y = fminf(y, frozen_y);
+  }
   stick_x = x;
   stick_y = y;
-  bool down[3] = {harp_array[contact_zone(5)].read_value(), harp_array[contact_zone(11)].read_value(), harp_array[contact_zone(7)].read_value()};   // A, B, the click
 
   // up, down, left, right
   float t[4] = {fmaxf(y, 0), fmaxf(-y, 0), fmaxf(-x, 0), fmaxf(x, 0)};
@@ -12194,9 +12286,10 @@ FLASHMEM void handle_joystick() {
   }
   joystick_bend_apply(joystick_bend_voices == 2 ? 0 : bend, joystick_bend_voices == 1 ? 0 : bend);
   joystick_push(t);
-  joystick_hold(down);
+  bool held[3];
+  joystick_hold(down, lands, with_modifier, held);
   joystick_reapply = false;
-  joystick_send_midi(down);
+  joystick_send_midi(held);
 }
 
 //>>VOCODER<<

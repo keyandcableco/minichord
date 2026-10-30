@@ -173,7 +173,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 385, 0, 0, 1535 }, // lock
     { 388, 1, 0, 7 }, // organ drawbars
     { 389, 1, 0, 3 }, // organ percussion
-    { 396, 1, 0, 1 }, // joystick mode
+    { 396, 1, 0, 7 }, // joystick mode
     { 397, 1, 0, 7 }, // joystick orientation
     { 398, 1, 0, 12 }, // joystick bend range
     { 399, 1, 0, 2 }, // joystick bend
