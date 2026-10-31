@@ -7,8 +7,9 @@
 // Plain C++ with no Arduino in it, so firmware/tools/bent_board tests it on a computer, against readings
 // modelled from the board's copper (~/minichord-bench/bentboard/model.py). Everything here is the plate as
 // it lies, the right way up: zone p is T(12 - p), the zone the harp reads as string p. Upside down (384)
-// the touch chip gives the zones in the other order (i becomes 11 - i), and at() reads them back; places,
-// rail points and the ribbon are then turned round, so each is numbered as the player holds it.
+// the touch chip gives the zones in the other order (i becomes 11 - i), and at() reads them back; the rail
+// points and the ribbon are then turned round, so each is numbered as the player holds it. The harp's places
+// can be too (line_runs), but the firmware keeps them as drawn (firmware 125: the board is drawn as a piano too).
 //
 // The calibration (core_reads, the rail's edges and gains, the ribbon's table, the border guard's harp side)
 // is fitted from the real board's readings (results/bentboard_rec_1803, 2026-10-28; bent-board.md), and the
@@ -133,7 +134,8 @@ BENT_BOARD_CODE static inline float place_of(float centre_places) {
 // touched, counts for neither). A finger on a band reads only half on each of its lines, so the valley next to
 // it is shallow: modelled, 0.5-0.6 of the band's stronger line. Two fingers on
 // neighbouring lines' cores still read as one, on the band between, as on the zipper plates. In places 0-12,
-// turned round upside down so the lowest note is at the bottom as the player holds it.
+// turned round when line_runs is asked to, so the lowest note is at the bottom as the player holds it (the
+// firmware keeps them as drawn, firmware 125).
 const float valley_share = 0.65f;
 
 BENT_BOARD_CODE static inline void line_centre(const line &l, int8_t lo, int8_t hi, bool upside_down, run &out) {

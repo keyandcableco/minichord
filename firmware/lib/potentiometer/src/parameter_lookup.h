@@ -17,7 +17,7 @@ static const ParameterInfo parameter_lookup[] = {
     { 32, 0, 0, 100 }, // led attenuation
     { 244, 1, 0, 2 }, // usb audio
     { 384, 1, 0, 1 }, // upside down
-    { 243, 1, 0, 13 }, // harp plate
+    { 243, 1, 0, 14 }, // harp plate
     { 416, 1, 0, 7 }, // neighbour guard
     { 417, 1, 0, 9 }, // strip guard
     { 422, 1, 0, 3 }, // plate detect
