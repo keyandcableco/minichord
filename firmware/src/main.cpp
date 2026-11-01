@@ -569,6 +569,7 @@ uint8_t walked_chord[7];
 uint8_t (*walk_held)[7] = &major;
 uint8_t walked_type = 0;                         // get_chord_type's answer for it, a ChordType
 inline uint8_t (*chord_unwalked())[7] { return current_chord == &walked_chord ? walk_held : current_chord; }
+bool chord_walk_select();
 uint8_t current_chord_notes[7];                  // the array for the note calculation within the chord, calculate 7 of them for the arpeggiator mode
 uint8_t current_applied_chord_notes[7];          // the array for the note calculation within the chord
 uint8_t current_harp_notes[12];                  // the array for the note calculation within the string
@@ -7424,6 +7425,7 @@ FLASHMEM static void chord_memory_apply(const chord_moment &m) {
   uint8_t slash = slash_value;
   fundamental = m.fundamental;
   current_chord = m.chord;
+  chord_walk_select();   // walked as the stick has it, before it is struck
   sharp_active = m.sharp;
   slash_chord = m.slashed;
   slash_value = m.slash;
@@ -7452,7 +7454,7 @@ FLASHMEM static void chord_memory_record() {
   chord_memory_start = chord_memory_bar_line();
   chord_memory_state = CHORD_MEMORY_RECORDING;
   if (acc_latest.valid) {   // the chord as it is begins it
-    chord_moment m = {0, fundamental, current_chord, chord_context_sharp, chord_context_slashed, slash_value};
+    chord_moment m = {0, fundamental, chord_unwalked(), chord_context_sharp, chord_context_slashed, slash_value};
     chord_memory[chord_memory_count++] = m;
   }
 }
@@ -12299,7 +12301,8 @@ FLASHMEM void handle_joystick() {
   stick_y = y;
 
   // the chord walk takes left and right, the lean up and down, from whatever the mode gives them
-  bool walking = joystick_options & joystick_walk, leaning = joystick_options & joystick_lean;
+  // (twelve steps an octave only, chord_walk_select: in another division the axes do as before)
+  bool walking = (joystick_options & joystick_walk) && EDO == 12, leaning = (joystick_options & joystick_lean) && EDO == 12;
   walk_x = walking ? chordwalk::walk_step(x, walk_x) : 0;
   walk_lean = leaning ? chordwalk::lean_step(y, walk_lean) : 0;
 
@@ -12352,12 +12355,19 @@ FLASHMEM bool chord_walk_select() {
 }
 
 // The walked chord built from the context it was played in, the sounding voices and held strings retuned
-// to it, nothing struck: the walk is one voice moving under the hand, not a new chord
+// to it, nothing struck: the walk is one voice moving under the hand, not a new chord. In rhythm mode
+// only the voices holding the chord move, as update_chord_notes moves them; the rhythm's own take the
+// new chord at their next note. A rhythm following MIDI chords (282) plays the keyboard's chord, not
+// the buttons', so the walk leaves it be until a button builds one.
 FLASHMEM void chord_walk_refresh() {
+  if (rythm_mode && midi_chords) return;
+  inversion_stepped = false;   // a step climbed from the voicing there was; the walk leads from where it is
   build_chord_notes();
+  if (purity > 0) rebuild_purity();   // the same root, but the chord's kind may have changed (C walked to C7)
   for (uint8_t i = 0; i < 7; i++) current_applied_chord_notes[i] = current_chord_notes[i];
+  uint8_t voices = rythm_mode ? acc_held_mask() : 0xF;
   for (uint8_t i = 0; i < 4; i++) {
-    if (chord_envelope_array[i]->isActive()) set_chord_voice_frequency(i, current_chord_notes[i]);
+    if ((voices & (1 << i)) && chord_envelope_array[i]->isActive()) set_chord_voice_frequency(i, current_chord_notes[i]);
   }
   for (uint8_t i = 0; i < 12; i++) {
     current_harp_notes[i] = harp_string_note(i, chord_context_slashed, chord_context_sharp);
