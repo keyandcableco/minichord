@@ -101,6 +101,37 @@ int main() {
   const int8_t lean_want[] = {0, 1, 1, 0, -1, -1, 0};
   expect_steps("lean: on at 0.5, off below 0.35", lean, 7, lean_want, true);
 
+  // the latch: flicks, each counted once out and armed again back near the middle
+  {
+    bool armed = true;
+    const float xs[] = {0.3f, 0.65f, 0.9f, 0.4f, 0.2f, 0.7f, 0.1f, -0.8f, -0.25f, -0.62f};
+    const int8_t want[] = {0, 1, 0, 0, 0, 1, 0, -1, 0, -1};
+    bool ok = true;
+    for (int i = 0; i < 10; i++) {
+      int8_t f = chordwalk::flick(xs[i], armed);
+      if (f != want[i]) { printf("FAIL flick at %.2f gave %d, wanted %d\n", xs[i], f, want[i]); failed++; ok = false; break; }
+    }
+    if (ok) printf("ok   flicks: out past 0.6, again once back inside 0.3\n");
+  }
+  struct { const char *what; uint8_t *held; int8_t from, flick, want; } latch[] = {
+    {"C right from rest: C+", major, 0, 1, 1},
+    {"C right at C7 stays", major, 3, 1, 3},
+    {"C left from C6 (right 2): C+", major, 2, -1, 1},
+    {"C left from rest: Cmaj7", major, 0, -1, -1},
+    {"C left at C6 (left 3) stays", major, -3, -1, -3},
+    {"C7 left from 3 (a triad's C7): C13 heard", seventh, 3, -1, 1},
+    {"Cdim7 left: nowhere to go", full_dim, 0, -1, 0},
+  };
+  for (auto &t : latch) {
+    int8_t got = chordwalk::step_latched(t.held, t.from, t.flick);
+    if (got != t.want) { printf("FAIL %s: %d, wanted %d\n", t.what, got, t.want); failed++; }
+    else printf("ok   latch %-38s %d\n", t.what, got);
+  }
+  if (chordwalk::reach(major, 1) != 3 || chordwalk::reach(seventh, 1) != 2 || chordwalk::reach(full_dim, -1) != 0) {
+    printf("FAIL reach: C right %d, C7 right %d, Cdim7 left %d\n", chordwalk::reach(major, 1), chordwalk::reach(seventh, 1), chordwalk::reach(full_dim, -1));
+    failed++;
+  } else printf("ok   reach: C right 3, C7 right 2, Cdim7 left 0\n");
+
   printf(failed ? "%d failed\n" : "all passed\n", failed);
   return failed ? 1 : 0;
 }

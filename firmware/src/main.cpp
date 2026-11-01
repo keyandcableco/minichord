@@ -1557,7 +1557,9 @@ uint8_t joystick_mode = 1;               // 396: 0 settings, 1 bend and vibrato 
 uint8_t joystick_options = 0;            // 396's other switches: what the modifier does with A, B and the click
 const uint8_t joystick_latch = 2, joystick_freeze = 4;
 const uint8_t joystick_walk = 8, joystick_lean = 16;   // 396's switches for the chord walk (chord_walk_select)
+const uint8_t joystick_walk_latch = 32;                // and the walk going a step a flick, staying there
 int8_t walk_x = 0, walk_lean = 0;                      // where the stick has the walk: -3 to 3, and -1 to 1
+int8_t walk_flicks = 0, walk_latched = 0;              // latched: flicks not yet taken, and the step it is on
 uint8_t joystick_orientation = 0;       // 397: how the stick sits: 1 swaps its axes, 2 turns left and right round, 4 up and down
 uint8_t joystick_bend_range = 2;         // 398: semitones at full left or right
 uint8_t joystick_bend_voices = 0;        // 399: what bends: 0 the harp and the chords, 1 the harp, 2 the chords
@@ -8074,9 +8076,10 @@ void load_config(int bank_number) {
     if (!key_change_mode) set_led_color(bank_led_hue, bank_led_saturation(), 1 - led_attenuation);
   }
   // So does a joystick harp button latched or its stick frozen (396's switches): the load has put their
-  // settings back
+  // settings back. And the chord walk latched goes back to the chord as the buttons have it
   joystick_latched = 0;
   stick_frozen = false;
+  walk_latched = walk_flicks = 0;
   flag_save_needed=false;
   //digitalWrite(_MUTE_PIN, HIGH); // unmuting the DAC
 }
@@ -11171,6 +11174,7 @@ FLASHMEM void panic() {
   bent_palm_state = bentboard::palm_hold_state{};
   joystick_latched = 0;   // handle_joystick puts their settings back
   stick_frozen = false;
+  walk_latched = walk_flicks = 0;   // and the chord walk latched goes back to the chord as pressed
   if (looper_state == LOOPER_PLAYING || looper_state == LOOPER_RECORDING || looper_state == LOOPER_COUNTIN) looper_action(3);
   if (chord_memory_state == CHORD_MEMORY_PLAYING || chord_memory_state == CHORD_MEMORY_RECORDING) chord_memory_action(3);
   noInterrupts();
@@ -11973,6 +11977,9 @@ void handle_hover(bool alternate) {
 //     triad's top root, sinks (C, Cmaj7, C7, C6; Cm, Cm(maj7), Cm7, Cm6). Three steps a triad, two a
 //     seventh chord.
 //   16 lean: up takes the third to the fourth (sus4), down to the second (sus2), past half way.
+//   32 latch the walk (with 8): each flick of the stick, out past 0.6 and back, walks one step and it
+//     stays: rights climb, lefts come back through the chord as pressed and on down the left side. A
+//     load, the panic, the plate off or the switch off bring it back to the chord as pressed.
 // The walk retunes the voices sounding and the strings held (change held strings), striking nothing;
 // a chord pressed with the stick out is struck walked. Twelve steps an octave only, and chord memory
 // keeps the chord as the buttons chose it.
@@ -12024,7 +12031,7 @@ const uint8_t joystick_cc = 112;
 // joystick_freeze): one switched off lets go of what it held (joystick_hold, handle_joystick)
 FLASHMEM void joystick_set_mode(uint8_t value) {
   joystick_mode = value & 1;
-  joystick_options = value & (joystick_latch | joystick_freeze | joystick_walk | joystick_lean);
+  joystick_options = value & (joystick_latch | joystick_freeze | joystick_walk | joystick_lean | joystick_walk_latch);
   joystick_reapply = true;
 }
 
@@ -12236,7 +12243,7 @@ FLASHMEM void handle_joystick() {
       joystick_push(rest);
       joystick_hold(up, up, up, held);
       joystick_bend_apply(0, 0);
-      walk_x = walk_lean = 0;
+      walk_x = walk_lean = walk_latched = walk_flicks = 0;
       stick_axes[0] = stick_axes[1] = {};
       stick_released_at = 0;
       was_on = false;
@@ -12303,7 +12310,15 @@ FLASHMEM void handle_joystick() {
   // the chord walk takes left and right, the lean up and down, from whatever the mode gives them
   // (twelve steps an octave only, chord_walk_select: in another division the axes do as before)
   bool walking = (joystick_options & joystick_walk) && EDO == 12, leaning = (joystick_options & joystick_lean) && EDO == 12;
-  walk_x = walking ? chordwalk::walk_step(x, walk_x) : 0;
+  // latched, each flick a step (taken by chord_walk_select, which knows the chord); else as far as it's pushed
+  bool latched_walk = walking && (joystick_options & joystick_walk_latch);
+  static bool flick_armed = true;
+  if (latched_walk) walk_flicks += chordwalk::flick(x, flick_armed);
+  else {
+    walk_latched = walk_flicks = 0;
+    flick_armed = true;
+  }
+  walk_x = walking && !latched_walk ? chordwalk::walk_step(x, walk_x) : 0;
   walk_lean = leaning ? chordwalk::lean_step(y, walk_lean) : 0;
 
   // up, down, left, right
@@ -12333,7 +12348,10 @@ FLASHMEM void handle_joystick() {
 FLASHMEM bool chord_walk_select() {
   uint8_t (*held)[7] = chord_unwalked();
   bool on = harp_plate == plate_joystick_harp && EDO == 12;
-  int8_t w = on ? walk_x : 0, l = on ? walk_lean : 0;
+  bool latched_walk = (joystick_options & joystick_walk) && (joystick_options & joystick_walk_latch);
+  for (; walk_flicks > 0; walk_flicks--) walk_latched = chordwalk::step_latched(*held, walk_latched, 1);
+  for (; walk_flicks < 0; walk_flicks++) walk_latched = chordwalk::step_latched(*held, walk_latched, -1);
+  int8_t w = on ? (latched_walk ? walk_latched : walk_x) : 0, l = on ? walk_lean : 0;
   uint8_t next[7];
   if (!(w || l) || !chordwalk::walk(*held, w, l, next)) {
     if (current_chord != &walked_chord) return false;

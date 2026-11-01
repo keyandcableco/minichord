@@ -13,6 +13,12 @@
 // note it left in its place (C6: the harp still has the G), and a leaned third landing on one takes the
 // first of the other sus note, the sixth and the seventh the chord hasn't got.
 //
+// Latched (joystick mode's 32 with the walk), the walk goes a step for each flick of the stick, out
+// past flick_at and back, and stays there: right after right climbs C, C+, C6, C7, and lefts come
+// back the same way, through the held chord and on down the left side (C, Cmaj7, C7, C6). A flick
+// always moves something it can: one beyond what the chord reaches that way counts from its end, so
+// coming back from C7 on a seventh chord, the first left is heard.
+//
 // Twelve steps an octave only: the chord arrays hold the division's steps, and a walk in 19 or 31 would
 // need its own idea of a half step. The firmware walks nothing there (chord_walk_select in main.cpp).
 //
@@ -34,6 +40,8 @@ namespace chordwalk {
 const float walk_at[3] = {0.3f, 0.6f, 0.9f};
 const float walk_back = 0.08f;
 const float lean_at = 0.5f, lean_off = 0.35f;
+// A flick: out past flick_at counts once, and the next counts once the stick is back inside flick_rearm
+const float flick_at = 0.6f, flick_rearm = 0.3f;
 
 // The walk's step, -3 (full left) to 3 (full right), from the stick's left and right and the step it
 // was on
@@ -127,6 +135,42 @@ CHORD_WALK_CODE static inline bool walk(const uint8_t *held, int8_t walk, int8_t
     }
   }
   return moved;
+}
+
+// A flick of the stick's left and right: 1 right, -1 left, 0 none; armed is the stick having come back
+CHORD_WALK_CODE static inline int8_t flick(float x, bool &armed) {
+  if (!armed) {
+    if (fabsf(x) < flick_rearm) armed = true;
+    return 0;
+  }
+  if (fabsf(x) < flick_at) return 0;
+  armed = false;
+  return x > 0 ? 1 : -1;
+}
+
+// How many steps the held chord walks one way (dir 1 right, -1 left) before it can't move further
+CHORD_WALK_CODE static inline int8_t reach(const uint8_t *held, int8_t dir) {
+  uint8_t was[7], now[7];
+  for (uint8_t s = 0; s < 7; s++) was[s] = held[s];
+  for (int8_t k = 1; k <= 3; k++) {
+    walk(held, dir * k, 0, now);
+    bool same = true;
+    for (uint8_t s = 0; s < 7; s++) same = same && now[s] == was[s];
+    if (same) return k - 1;
+    for (uint8_t s = 0; s < 7; s++) was[s] = now[s];
+  }
+  return 3;
+}
+
+// The latched walk after a flick (1 or -1), from where it was, kept within what the held chord reaches
+CHORD_WALK_CODE static inline int8_t step_latched(const uint8_t *held, int8_t latched, int8_t flicked) {
+  int8_t hi = reach(held, 1), lo = -reach(held, -1);
+  if (latched > hi) latched = hi;
+  if (latched < lo) latched = lo;
+  latched += flicked;
+  if (latched > hi) latched = hi;
+  if (latched < lo) latched = lo;
+  return latched;
 }
 
 // The four voices as a set of pitch classes, bit n for n steps above the root
