@@ -14,6 +14,8 @@
 #define BENT_BOARD_CODE FLASHMEM
 #define BENT_BOARD_DATA PROGMEM
 #include "bent_board.h"
+#define CHORD_WALK_CODE FLASHMEM
+#include "chord_walk.h"
 
 //>>SOFWTARE VERSION 
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
@@ -560,6 +562,13 @@ uint8_t chord_frame_shift=0;
 uint8_t transpose_semitones=0;                       // to use to transpose the instrument, number of semitones
 uint8_t transpose_steps=0;                           // the same transposition in steps of the live division; equal to transpose_semitones in 12
 uint8_t (*current_chord)[7] = &major;            // the array holding the current chord
+// The chord the joystick harp's stick has walked (chord_walk_select, include/chord_walk.h): current_chord
+// points here while it does, and walk_held at the chord the buttons chose, which is what a chord change,
+// a repress or chord memory goes by
+uint8_t walked_chord[7];
+uint8_t (*walk_held)[7] = &major;
+uint8_t walked_type = 0;                         // get_chord_type's answer for it, a ChordType
+inline uint8_t (*chord_unwalked())[7] { return current_chord == &walked_chord ? walk_held : current_chord; }
 uint8_t current_chord_notes[7];                  // the array for the note calculation within the chord, calculate 7 of them for the arpeggiator mode
 uint8_t current_applied_chord_notes[7];          // the array for the note calculation within the chord
 uint8_t current_harp_notes[12];                  // the array for the note calculation within the string
@@ -1546,6 +1555,8 @@ void hover_set_target(int16_t adress);
 uint8_t joystick_mode = 1;               // 396: 0 settings, 1 bend and vibrato (its first switch)
 uint8_t joystick_options = 0;            // 396's other switches: what the modifier does with A, B and the click
 const uint8_t joystick_latch = 2, joystick_freeze = 4;
+const uint8_t joystick_walk = 8, joystick_lean = 16;   // 396's switches for the chord walk (chord_walk_select)
+int8_t walk_x = 0, walk_lean = 0;                      // where the stick has the walk: -3 to 3, and -1 to 1
 uint8_t joystick_orientation = 0;       // 397: how the stick sits: 1 swaps its axes, 2 turns left and right round, 4 up and down
 uint8_t joystick_bend_range = 2;         // 398: semitones at full left or right
 uint8_t joystick_bend_voices = 0;        // 399: what bends: 0 the harp and the chords, 1 the harp, 2 the chords
@@ -5635,6 +5646,7 @@ FLASHMEM void purity_follow_chord(bool from_chord) {
 }
 
 ChordType get_chord_type(uint8_t (*chord)[7]) {
+  if (chord == &walked_chord) return (ChordType)walked_type;
   if (chord == &major)       return CHORD_MAJOR;
   if (chord == &minor)       return CHORD_MINOR;
   if (chord == &seventh)     return CHORD_SEVENTH;
@@ -7401,7 +7413,7 @@ FLASHMEM void chord_memory_record_chord() {
   if (chord_memory_state != CHORD_MEMORY_RECORDING || chord_memory_replaying) return;
   double at = round((chord_memory_pos() - chord_memory_start) / ACC_BEAT) * ACC_BEAT;
   if (at < 0) at = 0;   // before the first bar line: the chord it starts with
-  chord_moment m = {at, fundamental, current_chord, sharp_active, slash_chord, slash_value};
+  chord_moment m = {at, fundamental, chord_unwalked(), sharp_active, slash_chord, slash_value};   // as the buttons chose it: the stick isn't recorded
   while (chord_memory_count > 0 && chord_memory[chord_memory_count - 1].at >= at) chord_memory_count--;
   if (chord_memory_count < CHORD_MEMORY_MAX) chord_memory[chord_memory_count++] = m;
 }
@@ -10891,7 +10903,7 @@ void handle_chord_type(bool button_maj, bool button_min, bool button_seventh) {
   if (count != previous_button_count) believed_for = 0;
   previous_button_count = count;
 
-  uint8_t (*chosen)[7] = current_chord;
+  uint8_t (*chosen)[7] = chord_unwalked();
   if (alt_chord_layout) {
     if (button_maj && !button_min && !button_seventh)            chosen = alt_chord_for(0);
     else if (!button_maj && button_min && !button_seventh)       chosen = alt_chord_for(1);
@@ -10915,8 +10927,8 @@ void handle_chord_type(bool button_maj, bool button_min, bool button_seventh) {
   } else if (button_maj && button_min && button_seventh) {
     chosen = &aug;
   }
-  bool changed = chosen != current_chord;
-  current_chord = chosen;
+  bool changed = chosen != chord_unwalked();
+  if (changed) current_chord = chosen;   // the stick walks it again (chord_walk_select), before it is built
   if (changed || (resolved && press_held_back)) button_pushed = true;
   if (resolved || !growth_pending) press_held_back = false;
 }
@@ -11050,7 +11062,7 @@ void inversion_repress() {
   static uint8_t (*chord)[7] = nullptr;
   static bool sharp = false, slashed = false;
   static uint8_t slash = 0;
-  bool same = line == fundamental && chord == current_chord && sharp == chord_context_sharp
+  bool same = line == fundamental && chord == chord_unwalked() && sharp == chord_context_sharp
               && slashed == chord_context_slashed && (!slashed || slash == slash_value);
   inversion_stepped = false;
   if (!same) {
@@ -11071,7 +11083,7 @@ void inversion_repress() {
     inversion_stepped = true;
   }
   chord_repressed = false;
-  line = fundamental; chord = current_chord; sharp = chord_context_sharp; slashed = chord_context_slashed; slash = slash_value;
+  line = fundamental; chord = chord_unwalked(); sharp = chord_context_sharp; slashed = chord_context_slashed; slash = slash_value;
 }
 
 void update_chord_notes() {
@@ -11614,6 +11626,7 @@ FLASHMEM void apply_modifier_step() {
 FLASHMEM void apply_temperament(uint8_t t) {
   if (t > own_temperament) t = 0;
   uint8_t previous_edo = EDO;
+  if (current_chord == &walked_chord) current_chord = walk_held;   // the walk is in twelve steps (chord_walk_select)
   temperament_selection = t;
   edo_index = t == own_temperament ? 0 : temperament_profiles[t].edo_index;
   EDO = edo_steps[edo_index];
@@ -11951,6 +11964,16 @@ void handle_hover(bool alternate) {
 //     nothing, and with harp drums strikes nothing.
 // As the modifier's other combos are: pressed with the modifier already down, not while the modifier
 // is a tap and hold's second press, and its let-go no tap of the double tap.
+// And two for the chord being played (the chord walk, include/chord_walk.h), each taking its axis from
+// the mode, its bend or vibrato or its directions' settings:
+//   8 walk: left and right walk a voice of the chord by half steps as the stick goes out, a step at
+//     0.3, 0.6 and 0.9 of the travel: right the fifth climbs (C, C+, C6, C7), left the seventh, or a
+//     triad's top root, sinks (C, Cmaj7, C7, C6; Cm, Cm(maj7), Cm7, Cm6). Three steps a triad, two a
+//     seventh chord.
+//   16 lean: up takes the third to the fourth (sus4), down to the second (sus2), past half way.
+// The walk retunes the voices sounding and the strings held (change held strings), striking nothing;
+// a chord pressed with the stick out is struck walked. Twelve steps an octave only, and chord memory
+// keeps the chord as the buttons chose it.
 // With knobs send MIDI on, the stick goes out as control changes 112 (left and right) and 113 (up
 // and down), 64 at rest, and A, B and the click as 114, 115 and 116, on the chord channel: past
 // the ones the minichord listens for (75-79 the bends, 85-90 the looper, 102-111 the rhythm and chord
@@ -11999,7 +12022,7 @@ const uint8_t joystick_cc = 112;
 // joystick_freeze): one switched off lets go of what it held (joystick_hold, handle_joystick)
 FLASHMEM void joystick_set_mode(uint8_t value) {
   joystick_mode = value & 1;
-  joystick_options = value & (joystick_latch | joystick_freeze);
+  joystick_options = value & (joystick_latch | joystick_freeze | joystick_walk | joystick_lean);
   joystick_reapply = true;
 }
 
@@ -12211,6 +12234,7 @@ FLASHMEM void handle_joystick() {
       joystick_push(rest);
       joystick_hold(up, up, up, held);
       joystick_bend_apply(0, 0);
+      walk_x = walk_lean = 0;
       stick_axes[0] = stick_axes[1] = {};
       stick_released_at = 0;
       was_on = false;
@@ -12228,7 +12252,7 @@ FLASHMEM void handle_joystick() {
     pressed |= 1 << b;
     if (!modifier) continue;
     pressed_modifier |= 1 << b;
-    if (joystick_options) modifier_combo_used = true;   // a combo: its let-go no tap
+    if (joystick_options & (joystick_latch | joystick_freeze)) modifier_combo_used = true;   // a combo: its let-go no tap
   }
   joystick_drums(lands, modifier);
   was_on = true;
@@ -12274,14 +12298,21 @@ FLASHMEM void handle_joystick() {
   stick_x = x;
   stick_y = y;
 
+  // the chord walk takes left and right, the lean up and down, from whatever the mode gives them
+  bool walking = joystick_options & joystick_walk, leaning = joystick_options & joystick_lean;
+  walk_x = walking ? chordwalk::walk_step(x, walk_x) : 0;
+  walk_lean = leaning ? chordwalk::lean_step(y, walk_lean) : 0;
+
   // up, down, left, right
   float t[4] = {fmaxf(y, 0), fmaxf(-y, 0), fmaxf(-x, 0), fmaxf(x, 0)};
+  if (walking) t[2] = t[3] = 0;
+  if (leaning) t[0] = t[1] = 0;
   float bend = 0;
   if (joystick_mode == 1) {
     static float phase = 0;
     phase += 2 * PI * joystick_vibrato_rate * dt;
     if (phase > 2 * PI) phase -= 2 * PI;
-    bend = x * joystick_bend_range + t[0] * joystick_vibrato_depth * sinf(phase);
+    bend = (walking ? 0 : x * joystick_bend_range) + t[0] * joystick_vibrato_depth * sinf(phase);
     t[0] = t[2] = t[3] = 0;   // the stick's bend and vibrato, not settings
   }
   joystick_bend_apply(joystick_bend_voices == 2 ? 0 : bend, joystick_bend_voices == 1 ? 0 : bend);
@@ -12290,6 +12321,51 @@ FLASHMEM void handle_joystick() {
   joystick_hold(down, lands, with_modifier, held);
   joystick_reapply = false;
   joystick_send_midi(held);
+}
+
+// The chord walk (joystick mode's 8 and 16, include/chord_walk.h): the chord the buttons chose, walked
+// as the stick has it. Points current_chord at walked_chord, or back at the buttons' chord at rest; true
+// when what it points at changed, for the caller to build. Twelve steps an octave only, and only with
+// the joystick harp's plate on.
+FLASHMEM bool chord_walk_select() {
+  uint8_t (*held)[7] = chord_unwalked();
+  bool on = harp_plate == plate_joystick_harp && EDO == 12;
+  int8_t w = on ? walk_x : 0, l = on ? walk_lean : 0;
+  uint8_t next[7];
+  if (!(w || l) || !chordwalk::walk(*held, w, l, next)) {
+    if (current_chord != &walked_chord) return false;
+    current_chord = held;
+    return true;
+  }
+  if (current_chord == &walked_chord && walk_held == held && !memcmp(next, walked_chord, 7)) return false;
+  memcpy(walked_chord, next, 7);
+  walk_held = held;
+  // what it now is, for the harp's scale, purity and brothers: a chord the buttons can make with the same
+  // four notes (C walked to C7 is the seventh), else what the buttons chose (C walked to C6 is still major)
+  walked_type = get_chord_type(held);
+  uint16_t notes = chordwalk::voice_set(walked_chord);
+  for (uint8_t i = 0; i < 18; i++) {   // the twelve tone chords: the catalogue's first eighteen
+    if (chordwalk::voice_set(*chord_catalogue[i]) == notes) { walked_type = get_chord_type(chord_catalogue[i]); break; }
+  }
+  current_chord = &walked_chord;
+  return true;
+}
+
+// The walked chord built from the context it was played in, the sounding voices and held strings retuned
+// to it, nothing struck: the walk is one voice moving under the hand, not a new chord
+FLASHMEM void chord_walk_refresh() {
+  build_chord_notes();
+  for (uint8_t i = 0; i < 7; i++) current_applied_chord_notes[i] = current_chord_notes[i];
+  for (uint8_t i = 0; i < 4; i++) {
+    if (chord_envelope_array[i]->isActive()) set_chord_voice_frequency(i, current_chord_notes[i]);
+  }
+  for (uint8_t i = 0; i < 12; i++) {
+    current_harp_notes[i] = harp_string_note(i, chord_context_slashed, chord_context_sharp);
+    if (change_held_strings && harp_started_notes[i] != 0 && string_held(i)) {
+      harp_midi_on(i);
+      if (string_enveloppe_array[i]->isSustain()) set_harp_voice_frequency(i, current_harp_notes[i]);
+    }
+  }
 }
 
 //>>VOCODER<<
@@ -12933,9 +13009,13 @@ void loop() {
     bool button_min = chord_matrix_array[2 + current_line * 3].read_value();
     bool button_seventh = chord_matrix_array[3 + current_line * 3].read_value();
     handle_chord_type(button_maj, button_min, button_seventh);
+    // the stick's walk on the chord just chosen; moved by the stick alone, the chord is retuned, not struck
+    if (chord_walk_select() && !button_pushed) chord_walk_refresh();
     update_chord_notes(); // Replaced updateNotes() with update_chord_notes()
     update_harp_notes();  // Added call to update_harp_notes()
     trigger_chord_notes();
+  } else if (chord_walk_select()) {
+    chord_walk_refresh();   // a chord held with nothing pressed (hold, rhythm mode) walks too
   }
   if (rythm_mode) acc_update();   // after the chord is built, so a press is heard with its chord
   chord_memory_update();
