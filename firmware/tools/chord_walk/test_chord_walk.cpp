@@ -69,7 +69,7 @@ int main() {
   expect("Cm right 3: Cm6/9", minor, 3, 0, true, "C0 Eb0 A0 D1 | C#0 F0 Ab0");
   expect("C7 right 1: C9", seventh, 1, 0, true, "C0 E0 Bb0 D0 | G0 F0 A0");
   expect("C7 right 2: C13", seventh, 2, 0, true, "C0 E0 Bb0 A0 | D0 F0 G0");
-  expect("C7 right 3: C9sus4", seventh, 3, 0, true, "C0 D0 Bb0 F0 | E0 G0 A0");
+  expect("C7 right 3: C9sus4", seventh, 3, 0, true, "C0 D0 Bb0 F0 | G0 G0 A0");
   expect("Cmaj7 right 1: Cmaj9", maj_seventh, 1, 0, true, "C0 E0 B0 D0 | G0 F0 A0");
   expect("Cmaj7 right 2: Cmaj13", maj_seventh, 2, 0, true, "C0 E0 B0 A0 | D0 F0 G0");
   expect("Cmaj7 right 3 stops at maj13", maj_seventh, 3, 0, true, "C0 E0 B0 A0 | D0 F0 G0");

@@ -1,7 +1,7 @@
 // The chord walk: the joystick harp's stick colouring the chord the buttons chose, and walking a bass
 // under it. The buttons choose the chord (major, minor, 7, maj7, m7); the stick adds what they can't, so
-// it never lands on a chord a button already plays (Greg, 2026-11-01: C7 is a press away, and pressing
-// it is the fun). Right is sweeter, a colour for each step: the ninth, then the sixth or thirteenth, then
+// it never lands on a chord the stock layout's buttons play (Greg, 2026-11-01: C7 is a press away, and
+// pressing it is the fun; the alternate layout's add9 or m9 can be a colour, since they take none). Right is sweeter, a colour for each step: the ninth, then the sixth or thirteenth, then
 // both or the eleventh. Left is tenser: the sharp eleventh, the major seventh against minor, the altered
 // tones. Each step is relative to the chord held, so a step kept (latched) is a colour for the song:
 // one right is the ninths, C Cadd9, Am Am(add9), G7 G9, Fmaj7 Fmaj9, Dm7 Dm9.
@@ -16,7 +16,8 @@
 // Any other chord (dim, aug, the alternate layout's, Barry Harris's sixths) takes no colour. A colour
 // moves as few voices as it can, each to the nearest note of its new tone, so a step is a voice or two
 // stepping (C to Cadd9: the top C up to D). The harp's extra notes (entries 4-6) keep what the chord lets
-// go: an extra the colour lands on takes the note the voice left (C6/9: the harp keeps the G).
+// go: an extra the colour lands on takes the note the voice left (C6/9: the harp keeps the G), except a
+// third a sus colour let go, which would rub against its fourth: that extra takes the fifth (C9sus4).
 //
 // Up and down are momentary: the third leans to the fourth (sus4) or the second (sus2) while held, and
 // comes back let go. Or, in their place, the walking bass (bass_step): each flick down or up steps the
@@ -56,7 +57,7 @@ const float lean_at = 0.5f, lean_off = 0.35f;
 // A flick: out past flick_at counts once, and the next counts once the stick is back inside flick_rearm,
 // clear of the crosstalk a lean held far gives this axis (up to ~0.3 on the real plate)
 const float flick_at = 0.6f, flick_rearm = 0.4f;
-// How far the bass walks either way: three steps reach every note of the scale once
+// How far the bass walks either way: -3 to 3, the seven notes of the scale once each
 const int8_t bass_reach = 3;
 
 // The chords that take colours, by their four voices' pitch classes (bit n, n half steps above the
@@ -180,11 +181,13 @@ CHORD_WALK_CODE static inline void colour(uint8_t *out, uint16_t target) {
     }
     if (fits && (cost < best || (cost == best && height > best_height))) { best = cost; best_height = height; pick = p; }
   }
+  bool sus = !(target >> 3 & 1) && !(target >> 4 & 1);
   for (uint8_t i = 0; i < nv; i++) {
     uint8_t s = vacated[i];
     uint8_t left = out[s];
     uint8_t v = (uint8_t)nearest(left, missing[perms[pick][i]]);
     out[s] = v;
+    if (sus && (left % 12 == 3 || left % 12 == 4)) left = 7;   // not the third back against the fourth
     for (uint8_t e = 4; e < 7; e++) {
       if (out[e] % 12 == v % 12) out[e] = left;
     }

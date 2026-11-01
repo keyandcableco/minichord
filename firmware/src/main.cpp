@@ -5059,8 +5059,11 @@ bool apply_slash_voice_leading(uint8_t *out) {
  */
 // The chord tones three voices can hold: all of a triad's, or a four-note
 // chord's without its fifth (the tone that adds least), or without its last
-// tone if it has no fifth. Leaves out `skip` first if it is a chord tone,
-// since the pinned voice already sounds it. Returns how many.
+// tone if it has no fifth (without its root, with pin_rootless: the walking
+// bass under a coloured chord keeps the colour, the third and the seventh, as
+// a pianist does with a bass player elsewhere). Leaves out `skip` first if it
+// is a chord tone, since the pinned voice already sounds it. Returns how many.
+bool pin_rootless = false;
 static uint8_t tones_for_three(int16_t skip, uint8_t *tones) {
   uint8_t n = collect_chord_tones(current_chord, tones);
   for (uint8_t t = 0; t < n; t++) {
@@ -5068,7 +5071,7 @@ static uint8_t tones_for_three(int16_t skip, uint8_t *tones) {
   }
   if (n == 4) {
     int16_t fifth = (int16_t)((7 * EDO + 6) / 12);
-    int8_t drop = 3, best_d = 127;
+    int8_t drop = pin_rootless && tones[0] == 0 ? 0 : 3, best_d = 127;
     for (uint8_t t = 1; t < 4; t++) {
       int16_t d = (int16_t)abs((int16_t)tones[t] - fifth);
       if (d <= (EDO + 6) / 12 && d < best_d) { best_d = d; drop = t; }
@@ -11044,7 +11047,7 @@ void build_chord_notes() {
     }
   }
   if (by_voice) apply_slash_voice(chord_context_sharp);
-  if (walk_bass_applied != 0 && !chord_context_slashed) walk_bass_place();
+  if (walk_bass_applied != 0 && EDO == 12 && !chord_context_slashed) walk_bass_place();
   if (!apply_brothers()) apply_cantus();
   for (int i = 4; i < 7; i++) {
     current_chord_notes[i] = calculate_note_chord(i, chord_context_slashed, chord_context_sharp);
@@ -11055,14 +11058,17 @@ void build_chord_notes() {
 
 // The walking bass (joystick mode's 64): the bass voice on the note walk_bass_applied steps of the key's
 // major scale from the chord's root, and the three above holding the whole chord, as a slash bass is
-// placed (pin_voice). A slash pressed wins: it names its own bass. Twelve steps an octave only
-// (chord_walk_select sets nothing in another division).
+// placed (pin_voice). A coloured chord with no fifth gives up its root rather than its last tone
+// (pin_rootless). A slash pressed wins: it names its own bass; and brothers or a cantus on the bass,
+// which come after, take the voices as they would a slash's. Twelve steps an octave only.
 FLASHMEM void walk_bass_place() {
   int16_t root = sounding_root();
   uint8_t rel = (uint8_t)(((root - scale_root_offsets[key_signature_selection]) % 12 + 12) % 12);
   int16_t pc = ((root + chordwalk::bass_step(rel, walk_bass_applied)) % 12 + 12) % 12;
   uint8_t slot = slash_slot_effective;   // pin_voice sets it for a slash; this isn't one
+  pin_rootless = true;
   pin_voice(root, pc, 0, PIN_BASS);
+  pin_rootless = false;
   slash_slot_effective = slot;
 }
 
