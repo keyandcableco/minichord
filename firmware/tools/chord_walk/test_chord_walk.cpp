@@ -104,14 +104,14 @@ int main() {
   // the latch: flicks, each counted once out and armed again back near the middle
   {
     bool armed = true;
-    const float xs[] = {0.3f, 0.65f, 0.9f, 0.4f, 0.2f, 0.7f, 0.1f, -0.8f, -0.25f, -0.62f};
+    const float xs[] = {0.3f, 0.65f, 0.9f, 0.45f, 0.35f, 0.7f, 0.1f, -0.8f, -0.25f, -0.62f};
     const int8_t want[] = {0, 1, 0, 0, 0, 1, 0, -1, 0, -1};
     bool ok = true;
     for (int i = 0; i < 10; i++) {
       int8_t f = chordwalk::flick(xs[i], armed);
       if (f != want[i]) { printf("FAIL flick at %.2f gave %d, wanted %d\n", xs[i], f, want[i]); failed++; ok = false; break; }
     }
-    if (ok) printf("ok   flicks: out past 0.6, again once back inside 0.3\n");
+    if (ok) printf("ok   flicks: out past 0.6, again once back inside 0.4\n");
   }
   struct { const char *what; uint8_t *held; int8_t from, flick, want; } latch[] = {
     {"C right from rest: C+", major, 0, 1, 1},
@@ -121,6 +121,7 @@ int main() {
     {"C left at C6 (left 3) stays", major, -3, -1, -3},
     {"C7 left from 3 (a triad's C7): C13 heard", seventh, 3, -1, 1},
     {"Cdim7 left: nowhere to go", full_dim, 0, -1, 0},
+    {"Cdim7 right from a stale -3: 1", full_dim, -3, 1, 1},
   };
   for (auto &t : latch) {
     int8_t got = chordwalk::step_latched(t.held, t.from, t.flick);

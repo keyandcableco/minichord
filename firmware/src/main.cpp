@@ -11978,8 +11978,9 @@ void handle_hover(bool alternate) {
 //     seventh chord.
 //   16 lean: up takes the third to the fourth (sus4), down to the second (sus2), past half way.
 //   32 latch the walk (with 8): each flick of the stick, out past 0.6 and back, walks one step and it
-//     stays: rights climb, lefts come back through the chord as pressed and on down the left side. A
-//     load, the panic, the plate off or the switch off bring it back to the chord as pressed.
+//     stays: rights climb, lefts come back through the chord as pressed and on down the left side. The
+//     step stays on as chords change (C+, then F is F+). A load, the panic, the plate off or the switch
+//     off bring it back to the chord as pressed.
 // The walk retunes the voices sounding and the strings held (change held strings), striking nothing;
 // a chord pressed with the stick out is struck walked. Twelve steps an octave only, and chord memory
 // keeps the chord as the buttons chose it.

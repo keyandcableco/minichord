@@ -40,8 +40,9 @@ namespace chordwalk {
 const float walk_at[3] = {0.3f, 0.6f, 0.9f};
 const float walk_back = 0.08f;
 const float lean_at = 0.5f, lean_off = 0.35f;
-// A flick: out past flick_at counts once, and the next counts once the stick is back inside flick_rearm
-const float flick_at = 0.6f, flick_rearm = 0.3f;
+// A flick: out past flick_at counts once, and the next counts once the stick is back inside flick_rearm,
+// clear of the crosstalk a lean held far gives this axis (up to ~0.3 on the real plate)
+const float flick_at = 0.6f, flick_rearm = 0.4f;
 
 // The walk's step, -3 (full left) to 3 (full right), from the stick's left and right and the step it
 // was on
