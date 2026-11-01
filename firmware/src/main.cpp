@@ -11119,6 +11119,18 @@ void update_chord_notes() {
   if (button_pushed) {
     walk_bass = walk_bass_applied = 0;   // the walking bass starts on the new chord's root
     chord_context_sharp = sharp_active;
+    // A chord on another root is what was pressed (Greg, 2026-11-01: F altered, then C, is C major): the
+    // latched colour lets go, and the chord chord_walk_select coloured a moment ago is built plain. On the
+    // same root (F to F7, or F again) the colour stays: Fadd9 then F7 is F9.
+    static int16_t walk_root = -1;
+    int16_t root = (sounding_root() % EDO + EDO) % EDO;
+    if (root != walk_root) {
+      walk_root = root;
+      if (walk_latched || walk_flicks) {
+        walk_latched = walk_flicks = 0;
+        chord_walk_select();   // walked again without it, before it is built and struck
+      }
+    }
     chord_context_slashed = slash_chord;
     purity_follow_chord(true);
     inversion_repress();
@@ -12004,8 +12016,9 @@ void handle_hover(bool alternate) {
 //   16 lean: up takes the third to the fourth (sus4), down to the second (sus2), past half way.
 //   32 latch the colour (with 8): each flick of the stick, out past 0.6 and back, is one step and it
 //     stays: rights go sweeter, lefts come back through the chord as pressed and on to the tenser side.
-//     The step stays on as chords change (one right: C Cadd9, then G7 is G9). A load, the panic, the
-//     plate off or the switch off bring it back to the chord as pressed.
+//     The step stays on while the root does (Cadd9, then C7 is C9); a chord on another root is what is
+//     pressed (Fadd9, then C, is C). A load, the panic, the plate off or the switch off bring it back to
+//     the chord as pressed.
 //   64 walking bass, in place of 16's lean: each flick down or up steps the bass a note of the key's
 //     major scale under the chord (C in C: B, A, G down; D, E, F up), the voices above holding the
 //     chord, as a slash bass does; it stays until the next chord pressed starts on its root again.

@@ -3,8 +3,9 @@
 // it never lands on a chord the stock layout's buttons play (Greg, 2026-11-01: C7 is a press away, and
 // pressing it is the fun; the alternate layout's add9 or m9 can be a colour, since they take none). Right is sweeter, a colour for each step: the ninth, then the sixth or thirteenth, then
 // both or the eleventh. Left is tenser: the sharp eleventh, the major seventh against minor, the altered
-// tones. Each step is relative to the chord held, so a step kept (latched) is a colour for the song:
-// one right is the ninths, C Cadd9, Am Am(add9), G7 G9, Fmaj7 Fmaj9, Dm7 Dm9.
+// tones. Each step is relative to the chord held, and a step kept (latched) stays while the root does
+// (Cadd9, then C7, is C9); a chord pressed on another root is plain, as pressed (main.cpp,
+// update_chord_notes).
 //
 //            left 3      left 2     left 1      right 1    right 2   right 3
 //   major    maj7#11     add b6     add #11     add9       6         6/9
