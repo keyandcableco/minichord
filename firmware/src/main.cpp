@@ -15,6 +15,7 @@
 #define BENT_BOARD_DATA PROGMEM
 #include "bent_board.h"
 #define CHORD_WALK_CODE FLASHMEM
+#define CHORD_WALK_DATA PROGMEM
 #include "chord_walk.h"
 
 //>>SOFWTARE VERSION 
@@ -570,6 +571,7 @@ uint8_t (*walk_held)[7] = &major;
 uint8_t walked_type = 0;                         // get_chord_type's answer for it, a ChordType
 inline uint8_t (*chord_unwalked())[7] { return current_chord == &walked_chord ? walk_held : current_chord; }
 bool chord_walk_select();
+void walk_bass_place();
 uint8_t current_chord_notes[7];                  // the array for the note calculation within the chord, calculate 7 of them for the arpeggiator mode
 uint8_t current_applied_chord_notes[7];          // the array for the note calculation within the chord
 uint8_t current_harp_notes[12];                  // the array for the note calculation within the string
@@ -1560,6 +1562,8 @@ const uint8_t joystick_walk = 8, joystick_lean = 16;   // 396's switches for the
 const uint8_t joystick_walk_latch = 32;                // and the walk going a step a flick, staying there
 int8_t walk_x = 0, walk_lean = 0;                      // where the stick has the walk: -3 to 3, and -1 to 1
 int8_t walk_flicks = 0, walk_latched = 0;              // latched: flicks not yet taken, and the step it is on
+const uint8_t joystick_walk_bass = 64;                 // up and down walk the bass, in place of the lean
+int8_t walk_bass = 0, walk_bass_applied = 0;           // the bass's steps from the root, flicked, and as built
 uint8_t joystick_orientation = 0;       // 397: how the stick sits: 1 swaps its axes, 2 turns left and right round, 4 up and down
 uint8_t joystick_bend_range = 2;         // 398: semitones at full left or right
 uint8_t joystick_bend_voices = 0;        // 399: what bends: 0 the harp and the chords, 1 the harp, 2 the chords
@@ -8079,7 +8083,7 @@ void load_config(int bank_number) {
   // settings back. And the chord walk latched goes back to the chord as the buttons have it
   joystick_latched = 0;
   stick_frozen = false;
-  walk_latched = walk_flicks = 0;
+  walk_latched = walk_flicks = walk_bass = 0;
   flag_save_needed=false;
   //digitalWrite(_MUTE_PIN, HIGH); // unmuting the DAC
 }
@@ -11040,12 +11044,26 @@ void build_chord_notes() {
     }
   }
   if (by_voice) apply_slash_voice(chord_context_sharp);
+  if (walk_bass_applied != 0 && !chord_context_slashed) walk_bass_place();
   if (!apply_brothers()) apply_cantus();
   for (int i = 4; i < 7; i++) {
     current_chord_notes[i] = calculate_note_chord(i, chord_context_slashed, chord_context_sharp);
   }
   for (int i = 0; i < 4; i++) previous_voicing[i] = current_chord_notes[i];
   acc_snapshot();
+}
+
+// The walking bass (joystick mode's 64): the bass voice on the note walk_bass_applied steps of the key's
+// major scale from the chord's root, and the three above holding the whole chord, as a slash bass is
+// placed (pin_voice). A slash pressed wins: it names its own bass. Twelve steps an octave only
+// (chord_walk_select sets nothing in another division).
+FLASHMEM void walk_bass_place() {
+  int16_t root = sounding_root();
+  uint8_t rel = (uint8_t)(((root - scale_root_offsets[key_signature_selection]) % 12 + 12) % 12);
+  int16_t pc = ((root + chordwalk::bass_step(rel, walk_bass_applied)) % 12 + 12) % 12;
+  uint8_t slot = slash_slot_effective;   // pin_voice sets it for a slash; this isn't one
+  pin_voice(root, pc, 0, PIN_BASS);
+  slash_slot_effective = slot;
 }
 
 // Rebuild what is sounding and retune the voices still active. This is what a
@@ -11093,6 +11111,7 @@ void inversion_repress() {
 
 void update_chord_notes() {
   if (button_pushed) {
+    walk_bass = walk_bass_applied = 0;   // the walking bass starts on the new chord's root
     chord_context_sharp = sharp_active;
     chord_context_slashed = slash_chord;
     purity_follow_chord(true);
@@ -11174,7 +11193,7 @@ FLASHMEM void panic() {
   bent_palm_state = bentboard::palm_hold_state{};
   joystick_latched = 0;   // handle_joystick puts their settings back
   stick_frozen = false;
-  walk_latched = walk_flicks = 0;   // and the chord walk latched goes back to the chord as pressed
+  walk_latched = walk_flicks = walk_bass = 0;   // and the chord walk latched goes back to the chord as pressed
   if (looper_state == LOOPER_PLAYING || looper_state == LOOPER_RECORDING || looper_state == LOOPER_COUNTIN) looper_action(3);
   if (chord_memory_state == CHORD_MEMORY_PLAYING || chord_memory_state == CHORD_MEMORY_RECORDING) chord_memory_action(3);
   noInterrupts();
@@ -11972,15 +11991,18 @@ void handle_hover(bool alternate) {
 // is a tap and hold's second press, and its let-go no tap of the double tap.
 // And two for the chord being played (the chord walk, include/chord_walk.h), each taking its axis from
 // the mode, its bend or vibrato or its directions' settings:
-//   8 walk: left and right walk a voice of the chord by half steps as the stick goes out, a step at
-//     0.3, 0.6 and 0.9 of the travel: right the fifth climbs (C, C+, C6, C7), left the seventh, or a
-//     triad's top root, sinks (C, Cmaj7, C7, C6; Cm, Cm(maj7), Cm7, Cm6). Three steps a triad, two a
-//     seventh chord.
+//   8 colour: left and right colour the chord with what the buttons can't play, a step at 0.3, 0.6
+//     and 0.9 of the travel: right sweeter (C: add9, 6, 6/9; C7: 9, 13, 9sus4), left tenser (C: add#11,
+//     add b6, maj7#11; C7: 7b9, 7#5, 7#9). Major, minor, 7, maj7 and m7 take colours (the table in
+//     chord_walk.h), other chords none.
 //   16 lean: up takes the third to the fourth (sus4), down to the second (sus2), past half way.
-//   32 latch the walk (with 8): each flick of the stick, out past 0.6 and back, walks one step and it
-//     stays: rights climb, lefts come back through the chord as pressed and on down the left side. The
-//     step stays on as chords change (C+, then F is F+). A load, the panic, the plate off or the switch
-//     off bring it back to the chord as pressed.
+//   32 latch the colour (with 8): each flick of the stick, out past 0.6 and back, is one step and it
+//     stays: rights go sweeter, lefts come back through the chord as pressed and on to the tenser side.
+//     The step stays on as chords change (one right: C Cadd9, then G7 is G9). A load, the panic, the
+//     plate off or the switch off bring it back to the chord as pressed.
+//   64 walking bass, in place of 16's lean: each flick down or up steps the bass a note of the key's
+//     major scale under the chord (C in C: B, A, G down; D, E, F up), the voices above holding the
+//     chord, as a slash bass does; it stays until the next chord pressed starts on its root again.
 // The walk retunes the voices sounding and the strings held (change held strings), striking nothing;
 // a chord pressed with the stick out is struck walked. Twelve steps an octave only, and chord memory
 // keeps the chord as the buttons chose it.
@@ -12032,7 +12054,7 @@ const uint8_t joystick_cc = 112;
 // joystick_freeze): one switched off lets go of what it held (joystick_hold, handle_joystick)
 FLASHMEM void joystick_set_mode(uint8_t value) {
   joystick_mode = value & 1;
-  joystick_options = value & (joystick_latch | joystick_freeze | joystick_walk | joystick_lean | joystick_walk_latch);
+  joystick_options = value & (joystick_latch | joystick_freeze | joystick_walk | joystick_lean | joystick_walk_latch | joystick_walk_bass);
   joystick_reapply = true;
 }
 
@@ -12244,7 +12266,7 @@ FLASHMEM void handle_joystick() {
       joystick_push(rest);
       joystick_hold(up, up, up, held);
       joystick_bend_apply(0, 0);
-      walk_x = walk_lean = walk_latched = walk_flicks = 0;
+      walk_x = walk_lean = walk_latched = walk_flicks = walk_bass = 0;
       stick_axes[0] = stick_axes[1] = {};
       stick_released_at = 0;
       was_on = false;
@@ -12310,7 +12332,9 @@ FLASHMEM void handle_joystick() {
 
   // the chord walk takes left and right, the lean up and down, from whatever the mode gives them
   // (twelve steps an octave only, chord_walk_select: in another division the axes do as before)
-  bool walking = (joystick_options & joystick_walk) && EDO == 12, leaning = (joystick_options & joystick_lean) && EDO == 12;
+  bool walking = (joystick_options & joystick_walk) && EDO == 12;
+  bool bassing = (joystick_options & joystick_walk_bass) && EDO == 12;
+  bool leaning = (joystick_options & joystick_lean) && EDO == 12 && !bassing;
   // latched, each flick a step (taken by chord_walk_select, which knows the chord); else as far as it's pushed
   bool latched_walk = walking && (joystick_options & joystick_walk_latch);
   static bool flick_armed = true;
@@ -12321,11 +12345,18 @@ FLASHMEM void handle_joystick() {
   }
   walk_x = walking && !latched_walk ? chordwalk::walk_step(x, walk_x) : 0;
   walk_lean = leaning ? chordwalk::lean_step(y, walk_lean) : 0;
+  // the walking bass: each flick up or down a note of the scale, kept until the next chord (update_chord_notes)
+  static bool bass_armed = true;
+  if (bassing) walk_bass = constrain(walk_bass + chordwalk::flick(y, bass_armed), -chordwalk::bass_reach, chordwalk::bass_reach);
+  else {
+    walk_bass = 0;
+    bass_armed = true;
+  }
 
   // up, down, left, right
   float t[4] = {fmaxf(y, 0), fmaxf(-y, 0), fmaxf(-x, 0), fmaxf(x, 0)};
   if (walking) t[2] = t[3] = 0;
-  if (leaning) t[0] = t[1] = 0;
+  if (leaning || bassing) t[0] = t[1] = 0;
   float bend = 0;
   if (joystick_mode == 1) {
     static float phase = 0;
@@ -12342,9 +12373,9 @@ FLASHMEM void handle_joystick() {
   joystick_send_midi(held);
 }
 
-// The chord walk (joystick mode's 8 and 16, include/chord_walk.h): the chord the buttons chose, walked
-// as the stick has it. Points current_chord at walked_chord, or back at the buttons' chord at rest; true
-// when what it points at changed, for the caller to build. Twelve steps an octave only, and only with
+// The chord walk (joystick mode's 8, 16 and 64, include/chord_walk.h): the chord the buttons chose,
+// coloured as the stick has it. Points current_chord at walked_chord, or back at the buttons' chord at
+// rest; true when what it points at, or the walking bass, changed, for the caller to build. Twelve steps an octave only, and only with
 // the joystick harp's plate on.
 FLASHMEM bool chord_walk_select() {
   uint8_t (*held)[7] = chord_unwalked();
@@ -12353,13 +12384,16 @@ FLASHMEM bool chord_walk_select() {
   for (; walk_flicks > 0; walk_flicks--) walk_latched = chordwalk::step_latched(*held, walk_latched, 1);
   for (; walk_flicks < 0; walk_flicks++) walk_latched = chordwalk::step_latched(*held, walk_latched, -1);
   int8_t w = on ? (latched_walk ? walk_latched : walk_x) : 0, l = on ? walk_lean : 0;
+  int8_t bass = on ? walk_bass : 0;   // built in build_chord_notes (walk_bass_place)
+  bool bass_moved = bass != walk_bass_applied;
+  walk_bass_applied = bass;
   uint8_t next[7];
   if (!(w || l) || !chordwalk::walk(*held, w, l, next)) {
-    if (current_chord != &walked_chord) return false;
+    if (current_chord != &walked_chord) return bass_moved;
     current_chord = held;
     return true;
   }
-  if (current_chord == &walked_chord && walk_held == held && !memcmp(next, walked_chord, 7)) return false;
+  if (current_chord == &walked_chord && walk_held == held && !memcmp(next, walked_chord, 7)) return bass_moved;
   memcpy(walked_chord, next, 7);
   walk_held = held;
   // what it now is, for the harp's scale, purity and brothers: a chord the buttons can make with the same

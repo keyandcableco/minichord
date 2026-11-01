@@ -1,6 +1,7 @@
-// The chord walk (include/chord_walk.h) on a computer: each chord the minichord's buttons make, walked
-// and leaned, against the chord a player would name, and the stick's steps and their hysteresis.
-// Run with run.sh; each check that fails prints a line, and the exit status is 1 if any did.
+// The chord walk (include/chord_walk.h) on a computer: each chord the minichord's buttons make,
+// coloured and leaned, against the chord a player would name; no colour a button already plays; the
+// stick's steps, flicks and their hysteresis; the latch; the walking bass. Run with run.sh; each check
+// that fails prints a line, and the exit status is 1 if any did.
 #include "chord_walk.h"
 #include <cstdio>
 #include <cstring>
@@ -23,23 +24,25 @@ static const char *N[12] = {"C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A"
 static void show(const uint8_t *c, char *s) {
   s[0] = 0;
   for (int i = 0; i < 7; i++) {
-    strcat(s, N[c[i] % 12]);
+    char n[8];
+    snprintf(n, sizeof n, "%s%d", N[c[i] % 12], c[i] / 12);   // the octave above the root, 0 or 1
+    strcat(s, n);
     strcat(s, i == 3 ? " | " : i < 6 ? " " : "");
   }
 }
 
-// The voices (in entry order) and the extras walked to, as note names
-static void expect(const char *what, uint8_t *held, int8_t w, int8_t l, bool moves, const char *voices_extras) {
+// The voices (in entry order, each with its octave above the root) and the extras
+static void expect(const char *what, uint8_t *held, int8_t w, int8_t l, bool moves, const char *want) {
   uint8_t out[7];
   bool m = chordwalk::walk(held, w, l, out);
-  char got[64];
+  char got[96];
   show(out, got);
-  if (m != moves || strcmp(got, voices_extras)) {
+  if (m != moves || strcmp(got, want)) {
     printf("FAIL %s: walk %d lean %d gave %s (%s), wanted %s (%s)\n", what, w, l, got, m ? "moves" : "still",
-           voices_extras, moves ? "moves" : "still");
+           want, moves ? "moves" : "still");
     failed++;
   } else {
-    printf("ok   %-34s %s\n", what, got);
+    printf("ok   %-30s %s\n", what, got);
   }
 }
 
@@ -57,39 +60,68 @@ static void expect_steps(const char *what, const float *xs, int n, const int8_t 
 }
 
 int main() {
-  // right: the fifth climbs
-  expect("C right 1: C+", major, 1, 0, true, "C E Ab C | D F A");
-  expect("C right 2: C6", major, 2, 0, true, "C E A C | D F G");
-  expect("C right 3: C7", major, 3, 0, true, "C E Bb C | D F A");
-  expect("Cm right 1: Cm#5", minor, 1, 0, true, "C Eb Ab C | C# F G");
-  expect("Cm right 2: Cm6", minor, 2, 0, true, "C Eb A C | C# F Ab");
-  expect("Cm right 3: Cm7", minor, 3, 0, true, "C Eb Bb C | C# F Ab");
-  expect("C7 right 2: C13", seventh, 2, 0, true, "C E Bb A | D F G");
-  expect("C7 right 3 stops at C13", seventh, 3, 0, true, "C E Bb A | D F G");
-  expect("Cmaj7 right 2: Cmaj13", maj_seventh, 2, 0, true, "C E B A | D F G");
-  expect("Cm7 right 2: Cm13", min_seventh, 2, 0, true, "C Eb Bb A | C# F Ab");
-  // left: the top sinks
-  expect("C left 1: Cmaj7", major, -1, 0, true, "C E G B | D F A");
-  expect("C left 2: C7", major, -2, 0, true, "C E G Bb | D F A");
-  expect("C left 3: C6", major, -3, 0, true, "C E G A | D F C");
-  expect("Cm left 1: Cm(maj7)", minor, -1, 0, true, "C Eb G B | C# F Ab");
-  expect("Cm left 2: Cm7", minor, -2, 0, true, "C Eb G Bb | C# F Ab");
-  expect("Cm left 3: Cm6", minor, -3, 0, true, "C Eb G A | C# F Ab");
-  expect("Cmaj7 left 1: C7", maj_seventh, -1, 0, true, "C E Bb G | D F A");
-  expect("Cmaj7 left 2: C6", maj_seventh, -2, 0, true, "C E A G | D F B");
-  expect("Cmaj7 left 3 stops at C6", maj_seventh, -3, 0, true, "C E A G | D F B");
-  expect("C7 left 2: C+ over C", seventh, -2, 0, true, "C E Ab G | D F A");
-  expect("Cdim left 2: Cm7b5", dim, -2, 0, true, "C Eb F# Bb | D F A");
-  expect("Cdim7 left: no top to walk", full_dim, -2, 0, false, "C Eb F# A | D F C");
+  // right: sweeter
+  expect("C right 1: Cadd9", major, 1, 0, true, "C0 E0 G0 D1 | C1 F0 A0");
+  expect("C right 2: C6", major, 2, 0, true, "C0 E0 G0 A0 | D0 F0 C1");
+  expect("C right 3: C6/9", major, 3, 0, true, "C0 E0 A0 D1 | C1 F0 G0");
+  expect("Cm right 1: Cm(add9)", minor, 1, 0, true, "C0 Eb0 G0 D1 | C#0 F0 Ab0");
+  expect("Cm right 2: Cm6", minor, 2, 0, true, "C0 Eb0 G0 A0 | C#0 F0 Ab0");
+  expect("Cm right 3: Cm6/9", minor, 3, 0, true, "C0 Eb0 A0 D1 | C#0 F0 Ab0");
+  expect("C7 right 1: C9", seventh, 1, 0, true, "C0 E0 Bb0 D0 | G0 F0 A0");
+  expect("C7 right 2: C13", seventh, 2, 0, true, "C0 E0 Bb0 A0 | D0 F0 G0");
+  expect("C7 right 3: C9sus4", seventh, 3, 0, true, "C0 D0 Bb0 F0 | E0 G0 A0");
+  expect("Cmaj7 right 1: Cmaj9", maj_seventh, 1, 0, true, "C0 E0 B0 D0 | G0 F0 A0");
+  expect("Cmaj7 right 2: Cmaj13", maj_seventh, 2, 0, true, "C0 E0 B0 A0 | D0 F0 G0");
+  expect("Cmaj7 right 3 stops at maj13", maj_seventh, 3, 0, true, "C0 E0 B0 A0 | D0 F0 G0");
+  expect("Cm7 right 1: Cm9", min_seventh, 1, 0, true, "C0 Eb0 Bb0 D0 | C#0 F0 Ab0");
+  expect("Cm7 right 2: Cm13", min_seventh, 2, 0, true, "C0 Eb0 Bb0 A0 | C#0 F0 Ab0");
+  expect("Cm7 right 3: Cm11", min_seventh, 3, 0, true, "C0 Eb0 Bb0 F0 | C#0 G0 Ab0");
+  // left: tenser
+  expect("C left 1: C(add#11)", major, -1, 0, true, "C0 E0 G0 F#1 | D0 F0 A0");
+  expect("C left 2: C(add b6)", major, -2, 0, true, "C0 E0 G0 Ab0 | D0 F0 A0");
+  expect("C left 3: Cmaj7#11", major, -3, 0, true, "C0 E0 F#0 B0 | D0 F0 A0");
+  expect("Cm left 1: Cm(maj7)", minor, -1, 0, true, "C0 Eb0 G0 B0 | C#0 F0 Ab0");
+  expect("Cm left 2: Cm(b6)", minor, -2, 0, true, "C0 Eb0 G0 Ab0 | C#0 F0 C1");
+  expect("Cm left 3: Cm(maj9)", minor, -3, 0, true, "C0 Eb0 B0 D1 | C#0 F0 Ab0");
+  expect("C7 left 1: C7b9", seventh, -1, 0, true, "C0 E0 Bb0 C#1 | D0 F0 A0");
+  expect("C7 left 2: C7#5", seventh, -2, 0, true, "C0 E0 Bb0 Ab0 | D0 F0 A0");
+  expect("C7 left 3: C7#9", seventh, -3, 0, true, "C0 E0 Bb0 Eb0 | D0 F0 A0");
+  expect("Cmaj7 left 1: Cmaj7#11", maj_seventh, -1, 0, true, "C0 E0 B0 F#0 | D0 F0 A0");
+  expect("Cmaj7 left 2: Cmaj7#5", maj_seventh, -2, 0, true, "C0 E0 B0 Ab0 | D0 F0 A0");
+  expect("Cm7 left 1: Cm7b5", min_seventh, -1, 0, true, "C0 Eb0 Bb0 F#0 | C#0 F0 Ab0");
+  expect("Cm7 left 2: Cm7b9", min_seventh, -2, 0, true, "C0 Eb0 Bb0 C#1 | G0 F0 Ab0");
+  // no colours for the rest
+  expect("Cdim: none", dim, 2, 0, false, "C0 Eb0 F#0 C1 | D0 F0 A0");
+  expect("C+: none", aug, -1, 0, false, "C0 E0 Ab0 C1 | D0 F0 A0");
+  expect("Csus4: none", sus_fourth, 1, 0, false, "C0 F0 G0 C1 | D0 A0 Bb0");
   // up and down: the third leans
-  expect("C up: Csus4", major, 0, 1, true, "C F G C | D Bb A");
-  expect("C down: Csus2", major, 0, -1, true, "C D G C | Bb F A");
-  expect("Cm up: Csus4", minor, 0, 1, true, "C F G C | C# D Ab");
-  expect("C7 up: C7sus4 (no free note for the extra)", seventh, 0, 1, true, "C F Bb G | D F A");
-  expect("Csus4 up: no third", sus_fourth, 0, 1, false, "C F G C | D A Bb");
-  // both
-  expect("C up right 2: C6sus4", major, 2, 1, true, "C F A C | D Bb G");
-  expect("C at rest", major, 0, 0, false, "C E G C | D F A");
+  expect("C up: Csus4", major, 0, 1, true, "C0 F0 G0 C1 | D0 Bb0 A0");
+  expect("C down: Csus2", major, 0, -1, true, "C0 D0 G0 C1 | Bb0 F0 A0");
+  expect("C7 up: C7sus4", seventh, 0, 1, true, "C0 F0 Bb0 G0 | D0 F0 A0");
+  expect("Cadd9 down: the D is there", major, 1, -1, true, "C0 E0 G0 D1 | C1 F0 A0");
+  expect("C6 up: C6sus4", major, 2, 1, true, "C0 F0 G0 A0 | D0 Bb0 C1");
+  expect("C at rest", major, 0, 0, false, "C0 E0 G0 C1 | D0 F0 A0");
+
+  // nothing the stick plays is a chord a button plays
+  {
+    uint8_t *held[5] = {major, minor, seventh, maj_seventh, min_seventh};
+    uint8_t *buttons[7] = {major, minor, seventh, maj_seventh, min_seventh, dim, aug};
+    int bad = 0;
+    for (auto h : held) {
+      for (int8_t w = -3; w <= 3; w++) {
+        uint8_t out[7];
+        if (!w || !chordwalk::walk(h, w, 0, out)) continue;
+        for (auto b : buttons) {
+          if (chordwalk::voice_set(out) == chordwalk::voice_set(b)) {
+            printf("FAIL a button's chord: walk %d gives what a button plays\n", w);
+            bad++;
+          }
+        }
+      }
+    }
+    failed += bad;
+    if (!bad) printf("ok   no step plays a button's chord\n");
+  }
 
   const float right[] = {0.1f, 0.3f, 0.5f, 0.6f, 0.53f, 0.51f, 0.9f, 1.0f, 0.85f, 0.2f, 0.0f};
   const int8_t right_want[] = {0, 1, 1, 2, 2, 1, 3, 3, 3, 0, 0};
@@ -114,24 +146,39 @@ int main() {
     if (ok) printf("ok   flicks: out past 0.6, again once back inside 0.4\n");
   }
   struct { const char *what; uint8_t *held; int8_t from, flick, want; } latch[] = {
-    {"C right from rest: C+", major, 0, 1, 1},
-    {"C right at C7 stays", major, 3, 1, 3},
-    {"C left from C6 (right 2): C+", major, 2, -1, 1},
-    {"C left from rest: Cmaj7", major, 0, -1, -1},
-    {"C left at C6 (left 3) stays", major, -3, -1, -3},
-    {"C7 left from 3 (a triad's C7): C13 heard", seventh, 3, -1, 1},
-    {"Cdim7 left: nowhere to go", full_dim, 0, -1, 0},
-    {"Cdim7 right from a stale -3: 1", full_dim, -3, 1, 1},
+    {"C right from rest: add9", major, 0, 1, 1},
+    {"C right at 6/9 stays", major, 3, 1, 3},
+    {"C left from C6: add9", major, 2, -1, 1},
+    {"C left from rest: add#11", major, 0, -1, -1},
+    {"Cmaj7 left from 3 (a triad's): #11 heard", maj_seventh, -3, 1, -1},
+    {"Cmaj7 right from 3 (a triad's): maj9", maj_seventh, 3, -1, 1},
+    {"Cdim: no colour either way", dim, 2, 1, 0},
   };
   for (auto &t : latch) {
     int8_t got = chordwalk::step_latched(t.held, t.from, t.flick);
     if (got != t.want) { printf("FAIL %s: %d, wanted %d\n", t.what, got, t.want); failed++; }
-    else printf("ok   latch %-38s %d\n", t.what, got);
+    else printf("ok   latch %-40s %d\n", t.what, got);
   }
-  if (chordwalk::reach(major, 1) != 3 || chordwalk::reach(seventh, 1) != 2 || chordwalk::reach(full_dim, -1) != 0) {
-    printf("FAIL reach: C right %d, C7 right %d, Cdim7 left %d\n", chordwalk::reach(major, 1), chordwalk::reach(seventh, 1), chordwalk::reach(full_dim, -1));
+  if (chordwalk::reach(major, 1) != 3 || chordwalk::reach(maj_seventh, 1) != 2 || chordwalk::reach(maj_seventh, -1) != 2 ||
+      chordwalk::reach(min_seventh, -1) != 2 || chordwalk::reach(dim, 1) != 0) {
+    printf("FAIL reach\n");
     failed++;
-  } else printf("ok   reach: C right 3, C7 right 2, Cdim7 left 0\n");
+  } else printf("ok   reach: C 3, Cmaj7 2 and 2, Cm7 left 2, dim 0\n");
+
+  // the walking bass: the key's major scale from the chord's root (as half steps above the root)
+  struct { const char *what; uint8_t root; int8_t steps; uint8_t want; } bass[] = {
+    {"C in C, down 1: B", 0, -1, 11}, {"C in C, down 2: A", 0, -2, 9}, {"C in C, down 3: G", 0, -3, 7},
+    {"C in C, up 1: D", 0, 1, 2}, {"C in C, up 3: F", 0, 3, 5},
+    {"A in C, down 1: G", 9, -1, 10}, {"A in C, down 2: F", 9, -2, 8},
+    {"F in C, down 1: E", 5, -1, 11}, {"G in C, up 1: A", 7, 1, 2},
+    {"Bb in C, down 1: A", 10, -1, 11}, {"Bb in C, up 1: B", 10, 1, 1},
+    {"no step: the root", 4, 0, 0},
+  };
+  for (auto &b : bass) {
+    uint8_t got = chordwalk::bass_step(b.root, b.steps);
+    if (got != b.want) { printf("FAIL bass %s: %d, wanted %d\n", b.what, got, b.want); failed++; }
+    else printf("ok   bass %s\n", b.what);
+  }
 
   printf(failed ? "%d failed\n" : "all passed\n", failed);
   return failed ? 1 : 0;
