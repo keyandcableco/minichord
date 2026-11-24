@@ -22,7 +22,7 @@
 const uint16_t firmware_version_adress = 7;   // where the writing firmware's version is stamped
 void apply_preset_version(int bank_number);
 void apply_harp_thresholds();
-int version_ID=125; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated; 99: the arcade wheel's bearing from the centre of its readings, corrected, quiet while A or B is pressed, and the neighbour guard on it; zipper 24's wrap island read by a margin, and where that can't tell the ends apart, by the end a touch is at or last left; hover measured on both; 100: a chord change strikes once, a press under a sounding line no longer asking for the chord again, and a slash waits 250 ms; 101: the drum pads, harp plate 13, read as 28 places, twelve pads and the sixteen seams between them, each seam a sound of its own with harp drums, drum seams, 419; drum press, 426, a struck pad pressed chokes a cymbal or bends a skin, the bayan's meend, and pads mute the groove, 427, a resting finger holds its voice out of the groove, both on any plate with harp drums; melodic pads, 446, the 28 places as 28 notes, a key pressed into damped; drum groove 48, kendang; plate detect's window widens for a plate resting low, and a print keeps a zone far from the plate's mean; a hand slapped across the strings plays, and a flat hand lifted isn't taken for no plate on; the harp's filter corner and keytrack act on the strings already sounding; the vibrato and pitch envelope reach the sample voices; 102: the harp volume knob is harp drums' level, half way as before; 112: the old filesystem's presets.bin, from firmware 72 to 76, no longer moved into the preset store, and LittleFS gone with it, 24 kB of fast code RAM and 29 kB of flash back (103 to 111 are on their own branches); 113: your own drum kit, drum kit 13, up to thirteen one-shots of the player's sent from minicontrol over SysEx (F0 7D 6B) into the flash between the firmware and the presets, 256 kB at most, checked at boot and played from there, the studio kit in its place while none is sent (include/user_kit.h); 114: piano glide, harp plate 12, guarded as the piano plate with a strum along its strip let through, and with harp ribbon its keys landing on their notes, in tune, and its strip sliding; 115: control command 11, the minichord restarted into the Teensy's update mode for minicontrol's firmware updater; 116: the kalimba's C#3 without the E-flat4 tine that rang in it, its E-flat4 and the marimba's C3 and G3 looped where they have settled; 120: the joystick harp, harp plate 11 (firmware 101 on its own branch, from 90 and 91's joystick plate): a thumbstick, its click and A and B read through the touch contacts, 396-415, the stick's rest and ends as the real plate reads them, and a strip of twelve places from six pads, harp drums on it too; a drum note struck again sends its note-off first over MIDI, and two strikes of one note within 2 ms go out as one (117 to 119 are on their own branches); 121: the bends (firmware 102 on its own branch), pitch drop, voltage starve, bitcrush, clock bend and stutter on the whole mix, 430-445, spring back and stutter refresh, and control change 75-79 into them (112-116 on 102's branch, now the joystick harp's out); and the bent board, harp plate 5 (firmware 111 on its own branch as plate 21), a harp of thirteen places on six of its lines and touch areas on the other six, the bend rail's five points, the palm pad and the thumb ribbon, each moving a setting of its own, by default the bends, 472-485, and bent board options, 486, its areas played together: catch with the thumb, the harp strikes the held bends, the second knob, rolls, the plug, the palm hold and the chain; 122: a pop leaves the harp plate as it is, the plate fitted rather than one pushed before a swap or before plate detect found it; 125: upside down leaves the plates drawn with their notes as they are drawn, so each key or zone plays the note it shows: the piano plate and piano glide (2 and 12), the chord plates, zipper 24 and the fretless wrap read the right way up, and the bent board's and the joystick plate's harps (5 and 11) unturned, their touch areas and stick still turned; the chord plates' numbers, 6 the tesseract, 7 the torus and 14 the Celtic knot, playing as twelve zones without the strip guard (123 and 124 are on their own branches))
+int version_ID=128; //to be read 00.03, stored at adress 7 in memory (18: 24-EDO, the quarter-tone modifier; 19: knob layer; 20: formants; 21: push and pop; 22: palm mute, harp midi notes ring; 23: harp pluck on lift; 24: usb audio, 244; 25: harp plate, touch thresholds, harp ribbon; 26: knobs and double tap reach 236 on; 27: hover, 249-251; 28: touch velocity and pressure, 252-253; 29: MIDI in plays, 8; 30: plucked string model, 217-219; 31: the parameter array grows to 512, page 1 from 256; 32: the looper, 256; 33: string spread and chord ensemble, 257-259; 34: the vocoder, 260-262; 35: strum velocity, 263; 36: sampled instruments, 264-265; 37: the double tap works a looper on the computer, 256 action 7; 38: generator scales, 267-269; 39: a push can replace the one held, and loading another bank drops it; 40: a knob holds its sweep within the setting's range; 41: each chord note's own voice, 270-273; 42: rhythm styles, 274-280; 43: MIDI clock out, 266; 44: tap tempo counts, 281; 45: rhythm mode from MIDI (command 8, CC 102 and 103) and MIDI chords, 282; 46: the looper in time, 283-286; 47: chord memory, 287; 48: looper length, 288; 49: koto press, 289; 50: the preset's name, 290-301; 51: hammer-on, 302; 52: the phone follower, 303-313; 53: rhythm variation B, fills, breaks, intro and ending, 314-319; 54: fingered glide, 320; 55: double tap hold, 321; 56: revert and panic, 322-323; 57: the held chord pressed again, 324; 58: alternate hover, 325-326; 59: the DJ box and the harp that plays the song, 327-333, voice source 5; 60: drums, 334-343; 61: the tabla recorded, preset storage 1 MB to 512 kB; 62: the dayan tuned to the key; 63: the step scale, 344-346, and the custom scale read by name in 19, 24 and 31; 64: koto press in steps and its snap, 347-348, modifier step, 349, ribbon step snap, 350; 65: melodic direction and the down forms, 351-355, the maqams, scalar harp modes 14 and 15, 356-357; 66: purity, 358; 67: your own temperament, 359-370, from MIDI Tuning Standard messages too, and MTS output, 371; 68: the drone, 372-375; 69: hammer-on time, 376, tabla laya, 377, drum and drone reverb, 378-379, speed ramp, 380, the looper keeps harp drums, sampled chord voices glide, the dayan on the drone's Sa; 70: preset storage 512 kB to 128 kB, which held only two presets; 71: back to 512 kB; 72: the twelve presets in one file, presets.bin, preset storage 256 kB; 73: four more sampled instruments, voice source 6-9: vibraphone, bass, sitar, electric piano; 74: the tanpura's jawari, 381; 75: upside down for a left-handed player, 384; 76: the locks, 385; 77: the presets in raw flash, the top 32 kB, and the samples as mu-law; 78: the reed piano, voice source 10, its bark and tremolo, 386-387; 79: kalimba, marimba and the tonewheel organ, voice source 11-13, the organ's drawbars and percussion, 388-389; 80: upright bass and accordion, voice source 14-15; 81: brothers, 390; 84: brothers under every standard chord (82 is the TRS MIDI out, on its own branch; 83 went unused); 85: the cliqhop kit, drum kit 12, and its grooves, 44-47; 86: the time signature, 393; 87: brothers again, 394; 88: brothers strikes the block with retrigger chords on; 89: chords follow the harp's touch, 395; 92: usb audio 2 at full speed, its recording at 44.1 or 48 kHz (90 and 91 are on their own branches); 93: the plates numbered from the released ones, 1 the Keymaster, 2 the piano plate and its neighbour guard, 416, 3 twin rows and 4 framed strings, each with its touch calibration, and harp touch scale, 418; zipper 24, the arcade wheel and the fretless wrap move to 8-10; 95: the strip guard, 417, on the stock strip and framed strings, on by default, and the plates' own touch thresholds (241 and 242 at 0); 94 was the strip guard's first form, off by default, on the bench only; 96: hover per plate, and its charge fit checked; 97: a default lock a newer firmware brings is locked at its default on an instrument that already has its locks, as 416-418 now are on one upgraded from 76-96; 98: plate detect, 422, the plate fitted known by how its zones read at rest, learned on each instrument and shown on the LED, and a plate swapped with the power on waited out and recalibrated; 99: the arcade wheel's bearing from the centre of its readings, corrected, quiet while A or B is pressed, and the neighbour guard on it; zipper 24's wrap island read by a margin, and where that can't tell the ends apart, by the end a touch is at or last left; hover measured on both; 100: a chord change strikes once, a press under a sounding line no longer asking for the chord again, and a slash waits 250 ms; 101: the drum pads, harp plate 13, read as 28 places, twelve pads and the sixteen seams between them, each seam a sound of its own with harp drums, drum seams, 419; drum press, 426, a struck pad pressed chokes a cymbal or bends a skin, the bayan's meend, and pads mute the groove, 427, a resting finger holds its voice out of the groove, both on any plate with harp drums; melodic pads, 446, the 28 places as 28 notes, a key pressed into damped; drum groove 48, kendang; plate detect's window widens for a plate resting low, and a print keeps a zone far from the plate's mean; a hand slapped across the strings plays, and a flat hand lifted isn't taken for no plate on; the harp's filter corner and keytrack act on the strings already sounding; the vibrato and pitch envelope reach the sample voices; 102: the harp volume knob is harp drums' level, half way as before; 112: the old filesystem's presets.bin, from firmware 72 to 76, no longer moved into the preset store, and LittleFS gone with it, 24 kB of fast code RAM and 29 kB of flash back (103 to 111 are on their own branches); 113: your own drum kit, drum kit 13, up to thirteen one-shots of the player's sent from minicontrol over SysEx (F0 7D 6B) into the flash between the firmware and the presets, 256 kB at most, checked at boot and played from there, the studio kit in its place while none is sent (include/user_kit.h); 114: piano glide, harp plate 12, guarded as the piano plate with a strum along its strip let through, and with harp ribbon its keys landing on their notes, in tune, and its strip sliding; 115: control command 11, the minichord restarted into the Teensy's update mode for minicontrol's firmware updater; 116: the kalimba's C#3 without the E-flat4 tine that rang in it, its E-flat4 and the marimba's C3 and G3 looped where they have settled; 120: the joystick harp, harp plate 11 (firmware 101 on its own branch, from 90 and 91's joystick plate): a thumbstick, its click and A and B read through the touch contacts, 396-415, the stick's rest and ends as the real plate reads them, and a strip of twelve places from six pads, harp drums on it too; a drum note struck again sends its note-off first over MIDI, and two strikes of one note within 2 ms go out as one (117 to 119 are on their own branches); 121: the bends (firmware 102 on its own branch), pitch drop, voltage starve, bitcrush, clock bend and stutter on the whole mix, 430-445, spring back and stutter refresh, and control change 75-79 into them (112-116 on 102's branch, now the joystick harp's out); and the bent board, harp plate 5 (firmware 111 on its own branch as plate 21), a harp of thirteen places on six of its lines and touch areas on the other six, the bend rail's five points, the palm pad and the thumb ribbon, each moving a setting of its own, by default the bends, 472-485, and bent board options, 486, its areas played together: catch with the thumb, the harp strikes the held bends, the second knob, rolls, the plug, the palm hold and the chain; 122: a pop leaves the harp plate as it is, the plate fitted rather than one pushed before a swap or before plate detect found it; 125: upside down leaves the plates drawn with their notes as they are drawn, so each key or zone plays the note it shows: the piano plate and piano glide (2 and 12), the chord plates, zipper 24 and the fretless wrap read the right way up, and the bent board's and the joystick plate's harps (5 and 11) unturned, their touch areas and stick still turned; the chord plates' numbers, 6 the tesseract, 7 the torus and 14 the Celtic knot, playing as twelve zones without the strip guard (123 and 124 are on their own branches); 128: the arcade wheel as the joystick harp's stick, joystick mode 128, its ring the stick and its hub A and B, playing no notes (126 and 127 are on their own branches))
 //>>BUTTON ARRAYS<<
 debouncer harp_array[12];
 const uint16_t harp_debounce_us = 4000;   // the harp pads' settle, shorter than the buttons' (see setup)
@@ -1564,6 +1564,7 @@ int8_t walk_x = 0, walk_lean = 0;                      // where the stick has th
 int8_t walk_flicks = 0, walk_latched = 0;              // latched: flicks not yet taken, and the step it is on
 const uint8_t joystick_walk_bass = 64;                 // up and down walk the bass, in place of the lean
 int8_t walk_bass = 0, walk_bass_applied = 0;           // the bass's steps from the root, flicked, and as built
+const uint8_t joystick_wheel = 128;                    // 396's last switch: the arcade wheel as the stick (wheel_stick_active)
 uint8_t joystick_orientation = 0;       // 397: how the stick sits: 1 swaps its axes, 2 turns left and right round, 4 up and down
 uint8_t joystick_bend_range = 2;         // 398: semitones at full left or right
 uint8_t joystick_bend_voices = 0;        // 399: what bends: 0 the harp and the chords, 1 the harp, 2 the chords
@@ -9774,6 +9775,36 @@ const uint8_t wheel_touch_cc = 24;   // 127 as a finger lands on the ring, 0 as 
 // The hub's two zones, A (T6) over the top right and B (T7) below, with a zipper on the seam between.
 const uint8_t wheel_hub[2] = {6, 5};
 
+// The wheel as the stick (joystick mode 128): the ring is the joystick harp's stick, pushed all the way
+// towards the finger on it, and the hub's A and B are its A and B (handle_joystick). The wheel plays no
+// notes then. Two fingers are read, one on the ring and one on the hub, so the ring counts as touched
+// while its strongest zone reads at least half the hub's, and A or B as pressed if it read at least
+// half the ring's strongest as it landed: under that it is the edge of a finger on the other (the
+// neighbour guard's share, 416: a press on A or B puts a ring zone at under half the hub's reading seven
+// times in eight; a ring finger's reach onto the hub is unmeasured). A press is judged once, at the first
+// reading after it lands, and stays as judged until it lifts, so a ring finger easing off can't let its
+// edge on the hub strike.
+enum wheel_hub_press : uint8_t { hub_up, hub_landing, hub_pressed, hub_edge };
+bool wheel_ring_held = false;             // a finger on the ring, read by handle_wheel
+float wheel_ring_heading = 0;             // where, as the player holds the plate: degrees clockwise from the top
+wheel_hub_press wheel_hub_state[2] = {hub_up, hub_up};   // A and B
+const int16_t wheel_stick_share = 2;      // a zone under 1/2 of the other's strongest is that finger's edge
+
+FLASHMEM bool wheel_stick_active() {
+  return harp_plate == plate_arcade_wheel && (joystick_options & joystick_wheel);
+}
+
+// A (0) or B (1) pressed, the wheel being the stick: landed, and no ring finger's edge
+FLASHMEM bool wheel_hub_pressed(uint8_t k) {
+  return wheel_hub_state[k] == hub_pressed;
+}
+
+// While a plate swap is waited out the wheel isn't read: nothing on it is held
+FLASHMEM void wheel_stick_let_go() {
+  wheel_ring_held = false;
+  wheel_hub_state[0] = wheel_hub_state[1] = hub_up;
+}
+
 // The bearing is the centre of the readings round the ring, the strongest zone and its neighbours each at
 // its middle's bearing, corrected: a fingertip is wider than a 30 degree segment (6 mm of arc at the ring's
 // middle), and the centre is pulled towards the middles of the zones it covers. Modelled with a round
@@ -9840,8 +9871,17 @@ FLASHMEM void handle_wheel() {
   static elapsedMillis since;
   // the zones by where they are on the plate: upside down the harp reads them from the other end
   auto at = [](uint8_t zone) -> uint8_t { return upside_down ? 11 - zone : zone; };
-  bool down = false;
-  for (uint8_t k = 0; k < 10; k++) down |= harp_array[at(wheel_ring[k].zone)].read_value();
+  bool stick = wheel_stick_active();
+  bool ring_down = false, down = false;
+  for (uint8_t k = 0; k < 10; k++) ring_down |= harp_array[at(wheel_ring[k].zone)].read_value();
+  down = ring_down;
+  // as the stick, a press on the hub is read too, to tell it from a ring finger's edge
+  if (stick) for (uint8_t k = 0; k < 2; k++) {
+    bool hub_down = harp_array[at(wheel_hub[k])].read_value();
+    if (!hub_down) wheel_hub_state[k] = hub_up;
+    else if (wheel_hub_state[k] == hub_up) wheel_hub_state[k] = hub_landing;
+    down |= hub_down;
+  }
   if (down && since < 5) return;   // as often as anything steering needs, and no more
   bool touched = false;
   int16_t strength[12] = {0}, raw[12];
@@ -9851,8 +9891,16 @@ FLASHMEM void handle_wheel() {
     for (uint8_t p = 0; p < 12; p++) strength[p] = raw[at(p)];
     int16_t ring = 0, hub = max(strength[wheel_hub[0]], strength[wheel_hub[1]]);
     for (uint8_t k = 0; k < 10; k++) ring = max(ring, strength[wheel_ring[k].zone]);
-    touched = ring > hub;
+    if (stick) {
+      touched = ring_down && ring * wheel_stick_share >= hub;
+      for (uint8_t k = 0; k < 2; k++) {
+        if (wheel_hub_state[k] == hub_landing) wheel_hub_state[k] = strength[wheel_hub[k]] * wheel_stick_share < ring ? hub_edge : hub_pressed;
+      }
+    } else {
+      touched = ring > hub;
+    }
   }
+  wheel_ring_held = touched;
   if (!touched) {
     if (was_touched) queue_midi_cc(wheel_touch_cc, 0, harp_channel, harp_port);
     was_touched = false;
@@ -9860,6 +9908,7 @@ FLASHMEM void handle_wheel() {
     return;
   }
   float bearing = wheel_bearing(strength) + (upside_down ? 180 : 0);
+  wheel_ring_heading = bearing;
   float steps = bearing * 128 / 360;
   if (!was_touched) queue_midi_cc(wheel_touch_cc, 127, harp_channel, harp_port);
   was_touched = true;
@@ -10560,7 +10609,10 @@ FLASHMEM bool plate_swap_watch() {
 
 void handle_harp() {
   harp_sensor.update(harp_array);
-  if (plate_swap_watch()) return;
+  if (plate_swap_watch()) {
+    wheel_stick_let_go();
+    return;
+  }
   if (harp_sensor.thresholds_pending()) {
     bool clear = true;
     for (int i = 0; i < 12; i++) clear &= !harp_array[i].read_value();
@@ -10629,7 +10681,14 @@ void handle_harp() {
   // on lift, a string sounds as firmly as it was held at its firmest.
   static int16_t pad_strength[12] = {0};
   static int16_t pad_firmest[12] = {0};
-  bool stock = !positions && !ribbon && !places;
+  // The wheel as the stick plays no notes. Taken on or off, it lets go of the strings sounding, as a plate
+  // swap does, and a finger already down plays nothing until it lifts and lands again
+  static bool wheel_stick_was = false;
+  if (wheel_stick_active() != wheel_stick_was) {
+    harp_quiet();
+    wheel_stick_was = !wheel_stick_was;
+  }
+  bool stock = !positions && !ribbon && !places && !wheel_stick_was;
   bool guard = stock && neighbour_guard_active();
   if (!guard) neighbour_guard_settle(stock);
   if (stock && (touch_velocity || touch_pressure || (koto_press && harp_pluck_on_lift) || harp_drums || guard)) {
@@ -10644,7 +10703,7 @@ void handle_harp() {
   // lets off later lands then, for the palm, koto and hammer-on's timing too.
   uint8_t pad_move[12];
   if (guard) neighbour_guard_pass(pad_move, pad_strength, pad_landed, now);
-  if (palm_mute_pads && !harp_drums) {   // pads hit together are a flam, not a palm
+  if (palm_mute_pads && !harp_drums && !wheel_stick_active()) {   // pads hit together are a flam, not a palm
     static bool palm_down = false;
     static uint32_t palm_landed = 0;
     // Plucking on lift, fingers placed on strings are a chord waiting to be
@@ -12025,6 +12084,10 @@ void handle_hover(bool alternate) {
 // The walk retunes the voices sounding and the strings held (change held strings), striking nothing;
 // a chord pressed with the stick out is struck walked. Twelve steps an octave only, and chord memory
 // keeps the chord as the buttons chose it.
+//   128: the arcade wheel (harp plate 9) is the stick, its ring the stick and its hub A and B
+//     (wheel_stick_active, wheel_stick_read), playing no notes. The wheel has no click, so on it the
+//     modifier latches A and B and nothing freezes the stick; the chord walk and the rest are as on the
+//     joystick harp. The joystick harp itself plays 128 and up as it plays them without 128.
 // With knobs send MIDI on, the stick goes out as control changes 112 (left and right) and 113 (up
 // and down), 64 at rest, and A, B and the click as 114, 115 and 116, on the chord channel: past
 // the ones the minichord listens for (75-79 the bends, 85-90 the looper, 102-111 the rhythm and chord
@@ -12070,10 +12133,11 @@ const uint8_t joystick_cc = 112;
 
 // Joystick mode and targets, from their settings: a setting a direction or button leaves goes back
 // as the preset has it. Mode's first switch is the mode, its others the modifier's (joystick_latch,
-// joystick_freeze): one switched off lets go of what it held (joystick_hold, handle_joystick)
+// joystick_freeze), the chord walk's and the wheel's (joystick_wheel): one switched off lets go of what it
+// held (joystick_hold, handle_joystick)
 FLASHMEM void joystick_set_mode(uint8_t value) {
   joystick_mode = value & 1;
-  joystick_options = value & (joystick_latch | joystick_freeze | joystick_walk | joystick_lean | joystick_walk_latch | joystick_walk_bass);
+  joystick_options = value & (joystick_latch | joystick_freeze | joystick_walk | joystick_lean | joystick_walk_latch | joystick_walk_bass | joystick_wheel);
   joystick_reapply = true;
 }
 
@@ -12259,6 +12323,22 @@ FLASHMEM static void joystick_drums(const bool *lands, bool modifier) {
   }
 }
 
+// The arcade wheel as the stick (joystick mode 128, see wheel_stick_active): a finger on the ring pushes
+// it all the way towards where the finger is, sliding round turns it, and a lift lets it spring back. It
+// travels each way in wheel_stick_ease_ms, as a thumb takes a moment to push a stick over, so a bend glides
+// there rather than jumping. As the player holds the plate (handle_wheel turns the bearing round upside down).
+const float wheel_stick_ease_ms = 40;
+float wheel_stick_reach = 0;   // 0 at rest to 1 pushed all the way
+FLASHMEM static void wheel_stick_read(float &x, float &y, float dt) {
+  static float heading = 0;
+  if (wheel_ring_held) heading = wheel_ring_heading;
+  float step = dt * 1000 / wheel_stick_ease_ms;
+  wheel_stick_reach = wheel_ring_held ? fminf(wheel_stick_reach + step, 1) : fmaxf(wheel_stick_reach - step, 0);
+  float r = heading * (float)M_PI / 180;
+  x = wheel_stick_reach * sinf(r);
+  y = wheel_stick_reach * cosf(r);
+}
+
 FLASHMEM void handle_joystick() {
   static bool was_on = false;
   // A, B and the click are read every pass, so a drum isn't late; a press landing waits for the stick's
@@ -12271,10 +12351,12 @@ FLASHMEM void handle_joystick() {
   static uint8_t earlier = 0;   // the oldest of them, and the next to go
   static float frozen_x = 0, frozen_y = 0;
   static bool click_freezing = false;   // the click that froze the stick or let it go, until it lifts
-  bool on = harp_plate == plate_joystick_harp;
+  bool wheel = wheel_stick_active();
+  bool on = harp_plate == plate_joystick_harp || wheel;
   if (!on) {
     if (was_on) {   // the plate taken off, or set to another: everything back as the preset has it
       stick_x = stick_y = 0;
+      wheel_stick_reach = 0;
       joystick_latched = 0;
       stick_frozen = click_freezing = false;
       pressed = pressed_modifier = 0;
@@ -12292,9 +12374,20 @@ FLASHMEM void handle_joystick() {
     }
     return;
   }
+  if (!wheel) wheel_stick_reach = 0;   // the joystick harp fitted with 128 still set: the wheel's stick at rest
   // the modifier, for its combos with the buttons: not while it is a tap and hold's second press
   bool modifier = chord_matrix_array[0].read_value() && !modifier_holding;
-  bool down[3] = {harp_array[contact_zone(5)].read_value(), harp_array[contact_zone(11)].read_value(), harp_array[contact_zone(7)].read_value()};   // A, B, the click
+  // A, B and the click: on the wheel its hub's A and B, and no click
+  bool down[3];
+  if (wheel) {
+    down[0] = wheel_hub_pressed(0);
+    down[1] = wheel_hub_pressed(1);
+    down[2] = false;
+  } else {
+    down[0] = harp_array[contact_zone(5)].read_value();
+    down[1] = harp_array[contact_zone(11)].read_value();
+    down[2] = harp_array[contact_zone(7)].read_value();
+  }
   bool lands[3];
   for (uint8_t b = 0; b < 3; b++) {
     lands[b] = down[b] && !down_was[b] && was_on;   // held as the plate comes on: no press
@@ -12319,14 +12412,18 @@ FLASHMEM void handle_joystick() {
   }
   pressed = pressed_modifier = 0;
 
-  // falling towards the shared contact is left and up, until joystick orientation says otherwise (on the
-  // real plate T3 falls pushed left, T1 pushed up)
-  float x = stick_axis_read(stick_axes[0], harp_sensor.read_filtered(contact_zone(3)), now);
-  float y = -stick_axis_read(stick_axes[1], harp_sensor.read_filtered(contact_zone(1)), now);
-  if (joystick_orientation & 1) { float swap = x; x = y; y = swap; }
-  if (joystick_orientation & 2) x = -x;
-  if (joystick_orientation & 4) y = -y;
-  if (upside_down) { x = -x; y = -y; }
+  float x, y;
+  if (wheel) wheel_stick_read(x, y, dt);
+  else {
+    // falling towards the shared contact is left and up, until joystick orientation says otherwise (on the
+    // real plate T3 falls pushed left, T1 pushed up)
+    x = stick_axis_read(stick_axes[0], harp_sensor.read_filtered(contact_zone(3)), now);
+    y = -stick_axis_read(stick_axes[1], harp_sensor.read_filtered(contact_zone(1)), now);
+    if (joystick_orientation & 1) { float swap = x; x = y; y = swap; }
+    if (joystick_orientation & 2) x = -x;
+    if (joystick_orientation & 4) y = -y;
+    if (upside_down) { x = -x; y = -y; }
+  }
 
   if (!(joystick_options & joystick_freeze)) stick_frozen = false;
   else if (lands[2] && with_modifier[2]) {
@@ -12377,7 +12474,7 @@ FLASHMEM void handle_joystick() {
   if (walking) t[2] = t[3] = 0;
   if (leaning || bassing) t[0] = t[1] = 0;
   float bend = 0;
-  if (joystick_mode == 1) {
+  if (joystick_mode & 1) {
     static float phase = 0;
     phase += 2 * PI * joystick_vibrato_rate * dt;
     if (phase > 2 * PI) phase -= 2 * PI;
@@ -12395,10 +12492,10 @@ FLASHMEM void handle_joystick() {
 // The chord walk (joystick mode's 8, 16 and 64, include/chord_walk.h): the chord the buttons chose,
 // coloured as the stick has it. Points current_chord at walked_chord, or back at the buttons' chord at
 // rest; true when what it points at, or the walking bass, changed, for the caller to build. Twelve steps an octave only, and only with
-// the joystick harp's plate on.
+// the joystick harp's plate on, or the arcade wheel as its stick.
 FLASHMEM bool chord_walk_select() {
   uint8_t (*held)[7] = chord_unwalked();
-  bool on = harp_plate == plate_joystick_harp && EDO == 12;
+  bool on = (harp_plate == plate_joystick_harp || wheel_stick_active()) && EDO == 12;
   bool latched_walk = (joystick_options & joystick_walk) && (joystick_options & joystick_walk_latch);
   for (; walk_flicks > 0; walk_flicks--) walk_latched = chordwalk::step_latched(*held, walk_latched, 1);
   for (; walk_flicks < 0; walk_flicks++) walk_latched = chordwalk::step_latched(*held, walk_latched, -1);
