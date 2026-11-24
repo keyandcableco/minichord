@@ -9777,13 +9777,17 @@ const uint8_t wheel_hub[2] = {6, 5};
 
 // The wheel as the stick (joystick mode 128): the ring is the joystick harp's stick, pushed all the way
 // towards the finger on it, and the hub's A and B are its A and B (handle_joystick). The wheel plays no
-// notes then. Two fingers are read, one on the ring and one on the hub, so the ring counts as touched
-// while its strongest zone reads at least half the hub's, and A or B as pressed if it read at least
-// half the ring's strongest as it landed: under that it is the edge of a finger on the other (the
-// neighbour guard's share, 416: a press on A or B puts a ring zone at under half the hub's reading seven
-// times in eight; a ring finger's reach onto the hub is unmeasured). A press is judged once, at the first
-// reading after it lands, and stays as judged until it lifts, so a ring finger easing off can't let its
-// edge on the hub strike.
+// notes then. Two fingers are read, one on the ring and one on the hub. A finger landing on the ring
+// counts only while its strongest zone reads more than the hub's, as in the wheel's own play: a press on A
+// or B reaches the ring's inner edge too but always reads less there, so a press on the hub alone never
+// pushes the stick. Once down, the ring finger counts while it reads at least half the hub's, so it keeps
+// the stick through a press on A or B. A or B counts as pressed if it read at least half the ring's
+// strongest as it landed: under that it is the edge of a finger on the ring (the neighbour guard's share,
+// 416: a press on A or B puts a ring zone at under half the hub's reading seven times in eight; a ring
+// finger's reach onto the hub is unmeasured). A press is judged once, at the first reading after it lands,
+// and stays as judged until it lifts, so a ring finger easing off can't let its edge on the hub strike;
+// and a finger already on A or B as the wheel becomes the stick is no press until it lifts and lands again
+// (wheel_stick_begin).
 enum wheel_hub_press : uint8_t { hub_up, hub_landing, hub_pressed, hub_edge };
 bool wheel_ring_held = false;             // a finger on the ring, read by handle_wheel
 float wheel_ring_heading = 0;             // where, as the player holds the plate: degrees clockwise from the top
@@ -9803,6 +9807,15 @@ FLASHMEM bool wheel_hub_pressed(uint8_t k) {
 FLASHMEM void wheel_stick_let_go() {
   wheel_ring_held = false;
   wheel_hub_state[0] = wheel_hub_state[1] = hub_up;
+}
+
+// The wheel just became the stick (handle_joystick): a finger already on A or B, judged or not yet, is
+// taken as held from before, as the joystick harp's buttons are, and waits to be lifted and pressed again
+FLASHMEM void wheel_stick_begin() {
+  for (uint8_t k = 0; k < 2; k++) {
+    uint8_t zone = upside_down ? 11 - wheel_hub[k] : wheel_hub[k];
+    if (harp_array[zone].read_value()) wheel_hub_state[k] = hub_edge;
+  }
 }
 
 // The bearing is the centre of the readings round the ring, the strongest zone and its neighbours each at
@@ -9892,7 +9905,7 @@ FLASHMEM void handle_wheel() {
     int16_t ring = 0, hub = max(strength[wheel_hub[0]], strength[wheel_hub[1]]);
     for (uint8_t k = 0; k < 10; k++) ring = max(ring, strength[wheel_ring[k].zone]);
     if (stick) {
-      touched = ring_down && ring * wheel_stick_share >= hub;
+      touched = ring_down && (wheel_ring_held ? ring * wheel_stick_share >= hub : ring > hub);
       for (uint8_t k = 0; k < 2; k++) {
         if (wheel_hub_state[k] == hub_landing) wheel_hub_state[k] = strength[wheel_hub[k]] * wheel_stick_share < ring ? hub_edge : hub_pressed;
       }
@@ -12353,8 +12366,13 @@ FLASHMEM void handle_joystick() {
   static bool click_freezing = false;   // the click that froze the stick or let it go, until it lifts
   bool wheel = wheel_stick_active();
   bool on = harp_plate == plate_joystick_harp || wheel;
-  if (!on) {
-    if (was_on) {   // the plate taken off, or set to another: everything back as the preset has it
+  static bool was_wheel = false;
+  // The plate taken off, or set to another: everything back as the preset has it. So too when the stick
+  // goes over between the joystick harp and the wheel, as a harp plate setting can take it straight from
+  // one to the other: a freeze or a latched click made on the joystick harp couldn't be let go of on the
+  // wheel, which has no click
+  if (!on || (was_on && wheel != was_wheel)) {
+    if (was_on) {
       stick_x = stick_y = 0;
       wheel_stick_reach = 0;
       joystick_latched = 0;
@@ -12372,9 +12390,11 @@ FLASHMEM void handle_joystick() {
       stick_released_at = 0;
       was_on = false;
     }
-    return;
+    if (!on) return;
   }
+  was_wheel = wheel;
   if (!wheel) wheel_stick_reach = 0;   // the joystick harp fitted with 128 still set: the wheel's stick at rest
+  else if (!was_on) wheel_stick_begin();   // a finger already on A or B is no press
   // the modifier, for its combos with the buttons: not while it is a tap and hold's second press
   bool modifier = chord_matrix_array[0].read_value() && !modifier_holding;
   // A, B and the click: on the wheel its hub's A and B, and no click
@@ -12396,7 +12416,9 @@ FLASHMEM void handle_joystick() {
     pressed |= 1 << b;
     if (!modifier) continue;
     pressed_modifier |= 1 << b;
-    if (joystick_options & (joystick_latch | joystick_freeze)) modifier_combo_used = true;   // a combo: its let-go no tap
+    // a combo, its let-go no tap: only where the modifier does something with the button, the latch with
+    // any of them and the freeze with the click (the wheel, with no click, has only the latch)
+    if ((joystick_options & joystick_latch) || (b == 2 && (joystick_options & joystick_freeze))) modifier_combo_used = true;
   }
   joystick_drums(lands, modifier);
   was_on = true;
