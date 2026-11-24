@@ -1,3 +1,4 @@
 This script uses a Venv. Use the requirements.txt to set it up. 
 
 - **user_kit.md** and **user_kit.py**: the user drum kit (drum kit 13, "your own", firmware 113). user_kit.md is the contract: the image, where it lives in flash, the SysEx messages (F0 7D 6B) and what the minichord does with each, which include/user_kit.h, minicontrol's kits.js and minictl's kit.py follow. user_kit.py is its Python reference, standard library only: `python3 user_kit.py vectors` writes test/kits/, which test/user_kit_pc/ runs the firmware's slot against, and `check`, `show`, `frames` and `selftest` look at an image or a .mckit.
+- **progression.md**: the progression upload (firmware number to come). The contract for the SysEx messages (F0 7D 70) that write a chord progression into chord memory and read it back, which include/progression.h and include/progression_core.h follow; test/progression_pc/ runs them against it on a computer.
