@@ -1326,6 +1326,7 @@ void drums_update();
 // user_kit_playing is kit 13's kit: the player's own, or the studio kit while none is stored
 void user_kit_boot();
 bool user_kit_message(const byte *data, uint32_t length);
+bool progression_message(const byte *data, uint32_t length);
 void user_kit_update();
 const drum_kit_t *user_kit_playing();
 uint32_t user_kit_generation();
@@ -2993,6 +2994,7 @@ void bent_options(int value);
 // with the temperament setting. Whether the message was one.
 FLASHMEM bool mts_receive(const byte *data, uint32_t length) {
   if (user_kit_message(data, length)) return true;   // the user drum kit's messages (F0 7D 6B), see USER KIT
+  if (progression_message(data, length)) return true;   // a progression for chord memory (F0 7D 70), see PROGRESSION UPLOAD
   if (length < 6 || data[0] != 0xF0 || (data[1] != 0x7E && data[1] != 0x7F) || data[3] != 0x08) return false;
   float cents[12];
   if (data[4] == 0x08 && length >= 21) {
@@ -7377,7 +7379,8 @@ FLASHMEM void acc_tap(bool button) {
 // nearest bar line, a bar at least, and plays on from there. Playing, each chord goes in a little
 // ahead of its beat, so the rhythm has it there, and a chord pressed meanwhile stands until the
 // next; the rhythm sounds as if a chord were held. Stopped, it keeps the progression to play again
-// from the next bar line.
+// from the next bar line. A progression can also be sent in, or read out, over SysEx: see
+// PROGRESSION UPLOAD (include/progression.h).
 struct chord_moment {
   double at;                  // 24ths of a beat from the start
   int8_t fundamental;
@@ -7811,6 +7814,7 @@ FLASHMEM static void flash_erase(void *addr, uint32_t len) {
   arm_dcache_delete(addr, len);
 }
 #include "user_kit.h"   // USER KIT: drum kit 13, the player's own, in the flash below the presets
+#include "progression.h"   // PROGRESSION UPLOAD: a progression for chord memory, over SysEx
 static inline const uint8_t *preset_half(int h) { return (const uint8_t *)(preset_store_base + h * preset_half_size); }
 static inline const uint8_t *preset_slot(const uint8_t *half, int bank, uint16_t parameters) {
   return half + sizeof(preset_store_header) + (uint32_t)bank * parameters * 2;
